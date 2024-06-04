@@ -17,8 +17,14 @@ using namespace mfem;
  * We need this in order to use MFEM's built-in time-dependent ODE solvers.
  * This will be used to solve the concentration evolution in the 
  * cathode and electrolyte, which follow a second order PDE.
+ *
+ * The general ODE can be written as M du/dt = K u + b
+ * An explicit step will solve du/dt = M^{-1}(K u + b)
+ * An implicit step will solve du/dt = M^{-1}(K (u+du/dt) + b)
+ *                                   = (M - dt K)^{-1}(K u + b)
+ * See MFEM examples 9 and 16.
  * 
- * NOTE: We will likely need a different operator for the evolution in the anode,
+ * NOTE: We might need a different operator for the evolution in the anode,
  *       which is more complicated and follows a fourth order PDE.
  */
 class ConductionOperator : public TimeDependentOperator
