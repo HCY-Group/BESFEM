@@ -701,6 +701,7 @@ int main(int argc, char *argv[])
 		ConductionOperator oper(psi, Kmatp, Fcb);
 		//ODESolver *ode_solver = new ForwardEulerSolver;
 		ODESolver *ode_solver = new BackwardEulerSolver;
+		//ODESolver *ode_solver = new AM1Solver;
 		ode_solver->Init(oper);
 		ode_solver->Step(CpV0, t_ode, dt);
 		delete ode_solver;
@@ -798,16 +799,28 @@ int main(int argc, char *argv[])
    		Ke2->AddDomainIntegrator(new DiffusionIntegrator(cDe));
    		Ke2->Assemble();
    		Ke2->FormLinearSystem(boundary_dofs, CnE, Fet, Kmate, X1v, Feb);
-   		Feb *= dt;		
+		
+		// vector of CnE				
+		CnE.GetTrueDofs(CeV0);				
+		/*
+		ConductionOperator opere(pse, Kmate, Feb);
+		ODESolver *ode_solvere = new ForwardEulerSolver;
+		//ODESolver *ode_solvere = new BackwardEulerSolver;
+		ode_solvere->Init(opere);
+		ode_solvere->Step(CeV0, t_ode, dt);
+		delete ode_solvere;
+		CeVn = CeV0;
+		*/
 		
 		// Crank-Nicolson matrices
 		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
 		TmatL = Add(1.0, Mmate,  0.5*dt, Kmate);		
 		
-		// vector of CnE				
-		CnE.GetTrueDofs(CeV0);		
+		//// vector of CnE				
+		//CnE.GetTrueDofs(CeV0);		
 				
     	TmatR->Mult(CeV0, RHSe);
+   	Feb *= dt;		
     	RHSe += Feb;
     	
     	// solver
@@ -816,6 +829,7 @@ int main(int argc, char *argv[])
     	// time stepping
 		Me_solver.Mult(RHSe, CeVn) ;
 		
+
 		// recover
 		CnE.Distribute(CeVn);    	
 
