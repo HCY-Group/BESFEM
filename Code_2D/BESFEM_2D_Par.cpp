@@ -91,9 +91,7 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    M_solver.SetPreconditioner(M_prec);
    M_solver.SetOperator(Mmat);
    
-
-   //alpha = al;
-   //kappa = kap;
+   //T = Add(1.0, Mmat, dt, Kmat);
 
    T_solver.iterative_mode = false;
    T_solver.SetRelTol(rel_tol);
@@ -101,6 +99,7 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    T_solver.SetMaxIter(100);
    T_solver.SetPrintLevel(0);
    T_solver.SetPreconditioner(T_prec);
+   //T_solver.SetOperator(*T);
 
    //SetParameters(u);
 }
@@ -121,12 +120,9 @@ void ConductionOperator::ImplicitSolve(const double dt,
    // Solve the equation:
    //    du_dt = M^{-1}*[-K(u + dt*du_dt)]
    // for du_dt, where K is linearized by using u from the previous timestep
-   if (!T)
-   {
-      T = Add(1.0, Mmat, dt, Kmat);
-      current_dt = dt;
-      T_solver.SetOperator(*T);
-   }
+   T = Add(1.0, Mmat, dt, Kmat);
+   current_dt = dt;
+   T_solver.SetOperator(*T);
    MFEM_VERIFY(dt == current_dt, ""); // SDIRK methods use the same dt
    Kmat.Mult(u, z);
    z.Neg();
