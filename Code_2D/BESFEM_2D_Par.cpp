@@ -70,12 +70,15 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
 {
    const double rel_tol = 1e-8;
 
-   /*
-   M = new ParBilinearForm(&fespace);
-   M->AddDomainIntegrator(new MassIntegrator());
-   M->Assemble(0); // keep sparsity pattern of M and K the same
+   Kmat = K;
+   
+   GridFunctionCoefficient cp(&ps);
+   
+   M = new ParBilinearForm(ps.ParFESpace());
+   M->AddDomainIntegrator(new MassIntegrator(cp));
+   M->Assemble(); // keep sparsity pattern of M and K the same
    M->FormSystemMatrix(ess_tdof_list, Mmat);
-
+   
    M_solver.iterative_mode = false;
    M_solver.SetRelTol(rel_tol);
    M_solver.SetAbsTol(0.0);
@@ -84,7 +87,7 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    M_prec.SetType(HypreSmoother::Jacobi);
    M_solver.SetPreconditioner(M_prec);
    M_solver.SetOperator(Mmat);
-   */
+   
 
    //alpha = al;
    //kappa = kap;
