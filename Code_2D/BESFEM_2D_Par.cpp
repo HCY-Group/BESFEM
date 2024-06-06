@@ -41,7 +41,7 @@ protected:
    HypreParMatrix Mmat;
    HypreParMatrix Kmat;
    HypreParMatrix *T; // T = M + dt K
-   double current_dt;
+   //double current_dt;
 
    CGSolver M_solver;    // Krylov solver for inverting the mass matrix M
    HypreSmoother M_prec; // Preconditioner for the mass matrix M
@@ -110,7 +110,8 @@ void ConductionOperator::Mult(const Vector &u, Vector &du_dt) const
    //    du_dt = M^{-1}*-Ku
    // for du_dt, where K is linearized by using u from the previous timestep
    Kmat.Mult(u, z);
-   z.Neg(); // z = -z
+   //z.Neg(); // z = -z
+   z += b;
    M_solver.Mult(z, du_dt);
 }
 
@@ -121,11 +122,12 @@ void ConductionOperator::ImplicitSolve(const double dt,
    //    du_dt = M^{-1}*[-K(u + dt*du_dt)]
    // for du_dt, where K is linearized by using u from the previous timestep
    T = Add(1.0, Mmat, dt, Kmat);
-   current_dt = dt;
+   //current_dt = dt;
    T_solver.SetOperator(*T);
-   MFEM_VERIFY(dt == current_dt, ""); // SDIRK methods use the same dt
+   //MFEM_VERIFY(dt == current_dt, ""); // SDIRK methods use the same dt
    Kmat.Mult(u, z);
-   z.Neg();
+   //z.Neg();
+   z += b;
    T_solver.Mult(z, du_dt);
 }
 /*
