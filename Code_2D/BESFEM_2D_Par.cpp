@@ -697,7 +697,7 @@ int main(int argc, char *argv[])
 		// vector of CnP				
 		CnP.GetTrueDofs(CpV0);
 		
-		/*
+		
 		ConductionOperator oper(psi, Kmatp, Fcb);
 		//ODESolver *ode_solver = new ForwardEulerSolver;
 		ODESolver *ode_solver = new BackwardEulerSolver;
@@ -706,8 +706,8 @@ int main(int argc, char *argv[])
 		ode_solver->Step(CpV0, t_ode, dt);
 		delete ode_solver;
 		CpVn = CpV0;
-		*/
 		
+		/*
 		// T matrix
 		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);
 		
@@ -720,7 +720,7 @@ int main(int argc, char *argv[])
 
 		// time stepping
 		Mp_solver.Mult(RHCp, CpVn) ;		
-		
+		*/
 		
 		// Update only the solid region
 		for (int p = 0; p < nDof; p++){
