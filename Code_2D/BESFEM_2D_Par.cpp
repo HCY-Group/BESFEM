@@ -30,7 +30,7 @@ using namespace mfem;
 class ConductionOperator : public TimeDependentOperator
 {
 protected:
-   ParFiniteElementSpace &fespace;
+   //ParFiniteElementSpace &fespace;
    Array<int> ess_tdof_list; // this list remains empty for pure Neumann b.c.
 
    ParBilinearForm *M;
@@ -60,18 +60,17 @@ public:
    virtual void ImplicitSolve(const double dt, const Vector &u, Vector &k);
 
    /// Update the diffusion BilinearForm K using the given true-dof vector `u`.
-   void SetParameters(const Vector &u);
+   //void SetParameters(const Vector &u);
 
    virtual ~ConductionOperator();
 };
 
 ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &b)
-   : TimeDependentOperator(K.Height(), K.Width(), (double) 0.0), fespace(f),
-     M(NULL), K(NULL), T(NULL), current_dt(0.0),
-     M_solver(f.GetComm()), T_solver(f.GetComm()), z(height)
+   : TimeDependentOperator(K.Height(), K.Width(), (double) 0.0) 
 {
    const double rel_tol = 1e-8;
 
+   /*
    M = new ParBilinearForm(&fespace);
    M->AddDomainIntegrator(new MassIntegrator());
    M->Assemble(0); // keep sparsity pattern of M and K the same
@@ -85,9 +84,10 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    M_prec.SetType(HypreSmoother::Jacobi);
    M_solver.SetPreconditioner(M_prec);
    M_solver.SetOperator(Mmat);
+   */
 
-   alpha = al;
-   kappa = kap;
+   //alpha = al;
+   //kappa = kap;
 
    T_solver.iterative_mode = false;
    T_solver.SetRelTol(rel_tol);
@@ -96,7 +96,7 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    T_solver.SetPrintLevel(0);
    T_solver.SetPreconditioner(T_prec);
 
-   SetParameters(u);
+   //SetParameters(u);
 }
 
 void ConductionOperator::Mult(const Vector &u, Vector &du_dt) const
@@ -126,9 +126,10 @@ void ConductionOperator::ImplicitSolve(const double dt,
    z.Neg();
    T_solver.Mult(z, du_dt);
 }
-
+/*
 void ConductionOperator::SetParameters(const Vector &u)
 {
+   
    ParGridFunction u_alpha_gf(&fespace);
    u_alpha_gf.SetFromTrueDofs(u);
    for (int i = 0; i < u_alpha_gf.Size(); i++)
@@ -146,7 +147,9 @@ void ConductionOperator::SetParameters(const Vector &u)
    K->FormSystemMatrix(ess_tdof_list, Kmat);
    delete T;
    T = NULL; // re-compute T on the next ImplicitSolve
+   
 }
+*/
 
 ConductionOperator::~ConductionOperator()
 {
