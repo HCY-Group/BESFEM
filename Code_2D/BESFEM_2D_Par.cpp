@@ -653,6 +653,7 @@ int main(int argc, char *argv[])
 	//  ===================================================================   
 		
 	int t = 0;
+	double t_ode = 0.0;
 // 	for (int t = 0; t < 1000 + 1; t++){
 	while ( Vcell > Vcut){
 //	while ( t<1 ){
@@ -695,19 +696,27 @@ int main(int argc, char *argv[])
    		Kc2->FormLinearSystem(boundary_dofs, CnP, Fct, Kmatp, X1v, Fcb);
    		Fcb *= dt;
 
-	
+		// vector of CnP				
+		CnP.GetTrueDofs(CpV0);
+		
+		ConductionOperator oper(psi, Kmatp, Fcb);
+		ODESolver *ode_solver = new ForwardEulerSolver;
+		ode_solver->Init(oper);
+		//ode_solver->Step(CpV0, t_ode, dt);
+		
 		// T matrix
 		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);
 		
-		// vector of CnP				
-		CnP.GetTrueDofs(CpV0);
+		//// vector of CnP				
+		//CnP.GetTrueDofs(CpV0);
 		
 		Tmatp->Mult(CpV0, RHCp);
 		RHCp += Fcb;		
 
 		// time stepping
 		Mp_solver.Mult(RHCp, CpVn) ;		
-
+		
+		
 		// Update only the solid region
 		for (int p = 0; p < nDof; p++){
 			if (PsVc(p) < 1.0e-5){
