@@ -36,6 +36,8 @@ protected:
    ParBilinearForm *M;
    ParBilinearForm *K;
 
+   HypreParVector b;
+
    HypreParMatrix Mmat;
    HypreParMatrix Kmat;
    HypreParMatrix *T; // T = M + dt K
@@ -47,12 +49,12 @@ protected:
    CGSolver T_solver;    // Implicit solver for T = M + dt K
    HypreSmoother T_prec; // Preconditioner for the implicit solver
 
-   double alpha, kappa;
+   //double alpha, kappa;
 
    mutable Vector z; // auxiliary vector
 
 public:
-   ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &b);
+   ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb);
 
    virtual void Mult(const Vector &u, Vector &du_dt) const;
    /** Solve the Backward-Euler equation: k = f(u + dt*k, t), for the unknown k.
@@ -65,12 +67,13 @@ public:
    virtual ~ConductionOperator();
 };
 
-ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &b)
+ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb)
    : TimeDependentOperator(K.Height(), K.Width(), (double) 0.0) 
 {
    const double rel_tol = 1e-8;
 
    Kmat = K;
+   b = Fb;
    
    GridFunctionCoefficient cp(&ps);
    
