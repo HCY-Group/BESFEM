@@ -74,6 +74,7 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
 
    Kmat = K;
    b = Fb;
+   z = Vector(Fb.Size());
    
    GridFunctionCoefficient cp(&ps);
    
@@ -109,10 +110,14 @@ void ConductionOperator::Mult(const Vector &u, Vector &du_dt) const
    // Compute:
    //    du_dt = M^{-1}*-Ku
    // for du_dt, where K is linearized by using u from the previous timestep
+   //cout << "hereA" << endl;
    Kmat.Mult(u, z);
+   //cout << "hereB" << endl;
    //z.Neg(); // z = -z
    z += b;
+   //cout << "hereC" << endl;
    M_solver.Mult(z, du_dt);
+   //cout << "hereD" << endl;
 }
 
 void ConductionOperator::ImplicitSolve(const double dt,
@@ -702,8 +707,10 @@ int main(int argc, char *argv[])
 		ConductionOperator oper(psi, Kmatp, Fcb);
 		ODESolver *ode_solver = new ForwardEulerSolver;
 		ode_solver->Init(oper);
-		//ode_solver->Step(CpV0, t_ode, dt);
+		ode_solver->Step(CpV0, t_ode, dt);
+		delete ode_solver;
 		
+		/*
 		// T matrix
 		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);
 		
@@ -715,7 +722,7 @@ int main(int argc, char *argv[])
 
 		// time stepping
 		Mp_solver.Mult(RHCp, CpVn) ;		
-		
+		*/
 		
 		// Update only the solid region
 		for (int p = 0; p < nDof; p++){
