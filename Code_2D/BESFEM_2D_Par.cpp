@@ -51,7 +51,7 @@ protected:
 
    //double alpha, kappa;
 
-   mutable Vector z; // auxiliary vector
+   mutable HypreParVector z; // auxiliary vector
 
 public:
    ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb);
@@ -74,7 +74,7 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
 
    Kmat = K;
    b = Fb;
-   z = Vector(Fb.Size());
+   z = Fb.CreateCompatibleVector();
    
    GridFunctionCoefficient cp(&ps);
    
@@ -653,8 +653,8 @@ int main(int argc, char *argv[])
 	int t = 0;
 	double t_ode = 0.0;
 // 	for (int t = 0; t < 1000 + 1; t++){
-	while ( Vcell > Vcut){
-//	while ( t<1 ){
+//	while ( Vcell > Vcut){
+	while ( t<401 ){
 	
 	
 		// // 	=============================
@@ -697,7 +697,7 @@ int main(int argc, char *argv[])
 		// vector of CnP				
 		CnP.GetTrueDofs(CpV0);
 		
-		
+		/*
 		ConductionOperator oper(psi, Kmatp, Fcb);
 		//ODESolver *ode_solver = new ForwardEulerSolver;
 		ODESolver *ode_solver = new BackwardEulerSolver;
@@ -706,8 +706,8 @@ int main(int argc, char *argv[])
 		ode_solver->Step(CpV0, t_ode, dt);
 		delete ode_solver;
 		CpVn = CpV0;
+		*/
 		
-		/*
 		// T matrix
 		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);
 		
@@ -720,7 +720,7 @@ int main(int argc, char *argv[])
 
 		// time stepping
 		Mp_solver.Mult(RHCp, CpVn) ;		
-		*/
+		
 		
 		// Update only the solid region
 		for (int p = 0; p < nDof; p++){
@@ -802,16 +802,16 @@ int main(int argc, char *argv[])
 		
 		// vector of CnE				
 		CnE.GetTrueDofs(CeV0);				
-		/*
+		
 		ConductionOperator opere(pse, Kmate, Feb);
-		ODESolver *ode_solvere = new ForwardEulerSolver;
-		//ODESolver *ode_solvere = new BackwardEulerSolver;
+		//ODESolver *ode_solvere = new ForwardEulerSolver;
+		ODESolver *ode_solvere = new BackwardEulerSolver;
 		ode_solvere->Init(opere);
 		ode_solvere->Step(CeV0, t_ode, dt);
 		delete ode_solvere;
 		CeVn = CeV0;
-		*/
 		
+		/*
 		// Crank-Nicolson matrices
 		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
 		TmatL = Add(1.0, Mmate,  0.5*dt, Kmate);		
@@ -828,7 +828,7 @@ int main(int argc, char *argv[])
     	
     	// time stepping
 		Me_solver.Mult(RHSe, CeVn) ;
-		
+		*/
 
 		// recover
 		CnE.Distribute(CeVn);    	
@@ -1166,7 +1166,7 @@ int main(int argc, char *argv[])
 		}
 		
 		
-	if (t%200 == 1 && myid == 1){cout << t << " - " << Xfr << " - " << tm << " - " << \
+	if (t%20 == 1 && myid == 0){cout << t << " - " << Xfr << " - " << tm << " - " << \
 		Vcell << endl;}
 // 	if (myid == 1 ){cout << t << "  " << Xfr << "  " << tm << "  " << Vcell << endl;}
 		
