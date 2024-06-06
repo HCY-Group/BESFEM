@@ -52,8 +52,7 @@ protected:
    mutable Vector z; // auxiliary vector
 
 public:
-   ConductionOperator(ParFiniteElementSpace &f, double alpha, double kappa,
-                      const Vector &u);
+   ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &b);
 
    virtual void Mult(const Vector &u, Vector &du_dt) const;
    /** Solve the Backward-Euler equation: k = f(u + dt*k, t), for the unknown k.
@@ -66,9 +65,8 @@ public:
    virtual ~ConductionOperator();
 };
 
-ConductionOperator::ConductionOperator(ParFiniteElementSpace &f, double al,
-                                       double kap, const Vector &u)
-   : TimeDependentOperator(f.GetTrueVSize(), (double) 0.0), fespace(f),
+ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &b)
+   : TimeDependentOperator(K.Height(), K.Width(), (double) 0.0), fespace(f),
      M(NULL), K(NULL), T(NULL), current_dt(0.0),
      M_solver(f.GetComm()), T_solver(f.GetComm()), z(height)
 {
