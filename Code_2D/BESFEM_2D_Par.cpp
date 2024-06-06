@@ -92,7 +92,6 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    M_solver.SetPreconditioner(M_prec);
    M_solver.SetOperator(Mmat);
    
-   //T = Add(1.0, Mmat, dt, Kmat);
 
    T_solver.iterative_mode = false;
    T_solver.SetRelTol(rel_tol);
@@ -100,9 +99,7 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    T_solver.SetMaxIter(100);
    T_solver.SetPrintLevel(0);
    T_solver.SetPreconditioner(T_prec);
-   //T_solver.SetOperator(*T);
 
-   //SetParameters(u);
 }
 
 void ConductionOperator::Mult(const Vector &u, Vector &du_dt) const
@@ -110,14 +107,10 @@ void ConductionOperator::Mult(const Vector &u, Vector &du_dt) const
    // Compute:
    //    du_dt = M^{-1}*-Ku
    // for du_dt, where K is linearized by using u from the previous timestep
-   //cout << "hereA" << endl;
    Kmat.Mult(u, z);
-   //cout << "hereB" << endl;
-   //z.Neg(); // z = -z
+   z.Neg(); // z = -z
    z += b;
-   //cout << "hereC" << endl;
    M_solver.Mult(z, du_dt);
-   //cout << "hereD" << endl;
 }
 
 void ConductionOperator::ImplicitSolve(const double dt,
@@ -131,7 +124,7 @@ void ConductionOperator::ImplicitSolve(const double dt,
    T_solver.SetOperator(*T);
    //MFEM_VERIFY(dt == current_dt, ""); // SDIRK methods use the same dt
    Kmat.Mult(u, z);
-   //z.Neg();
+   z.Neg();
    z += b;
    T_solver.Mult(z, du_dt);
 }
@@ -699,16 +692,19 @@ int main(int argc, char *argv[])
    		Kc2->AddDomainIntegrator(new DiffusionIntegrator(cDp));
    		Kc2->Assemble();
    		Kc2->FormLinearSystem(boundary_dofs, CnP, Fct, Kmatp, X1v, Fcb);
-   		Fcb *= dt;
+		//cout << Fcb(1) << endl;
 
 		// vector of CnP				
 		CnP.GetTrueDofs(CpV0);
 		
+		
 		ConductionOperator oper(psi, Kmatp, Fcb);
-		ODESolver *ode_solver = new ForwardEulerSolver;
+		//ODESolver *ode_solver = new ForwardEulerSolver;
+		ODESolver *ode_solver = new BackwardEulerSolver;
 		ode_solver->Init(oper);
 		ode_solver->Step(CpV0, t_ode, dt);
 		delete ode_solver;
+		CpVn = CpV0;
 		
 		/*
 		// T matrix
@@ -718,6 +714,7 @@ int main(int argc, char *argv[])
 		//CnP.GetTrueDofs(CpV0);
 		
 		Tmatp->Mult(CpV0, RHCp);
+   		Fcb *= dt;
 		RHCp += Fcb;		
 
 		// time stepping
@@ -727,9 +724,11 @@ int main(int argc, char *argv[])
 		// Update only the solid region
 		for (int p = 0; p < nDof; p++){
 			if (PsVc(p) < 1.0e-5){
-				CpVn(p) = Cp0;}
+				CpVn(p) = Cp0; 
+				//cout << p << endl;
+			}
 		}
-		
+		//cout << CpVn(6) << endl;
 		// Recover the GridFunction from Vector.
 		CnP.Distribute(CpVn);
 
