@@ -68,7 +68,8 @@ public:
 };
 
 ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb)
-   : TimeDependentOperator(K.Height(), K.Width(), (double) 0.0) 
+   : TimeDependentOperator(K.Height(), K.Width(), (double) 0.0),
+     M_solver(K.GetComm()), T_solver(K.GetComm())
 {
    const double rel_tol = 1e-8;
 
@@ -700,8 +701,8 @@ int main(int argc, char *argv[])
 		
 		
 		ConductionOperator oper(psi, Kmatp, Fcb);
-		ODESolver *ode_solver = new ForwardEulerSolver;
-		//ODESolver *ode_solver = new BackwardEulerSolver;
+		//ODESolver *ode_solver = new ForwardEulerSolver;
+		ODESolver *ode_solver = new BackwardEulerSolver;
 		//ODESolver *ode_solver = new AM1Solver;
 		ode_solver->Init(oper);
 		ode_solver->Step(CpV0, t_ode, dt);
@@ -804,7 +805,7 @@ int main(int argc, char *argv[])
 		// vector of CnE				
 		CnE.GetTrueDofs(CeV0);				
 		
-		/*
+		
 		//TIME DEPENDENT OPERATOR
 		ConductionOperator opere(pse, Kmate, Feb);
 		//ODESolver *ode_solvere = new ForwardEulerSolver;
@@ -813,8 +814,8 @@ int main(int argc, char *argv[])
 		ode_solvere->Step(CeV0, t_ode, dt);
 		delete ode_solvere;
 		CeVn = CeV0;
-		*/
 		
+		/*
 		//SOLVING FOR C, DEFINED MANUALLY
 		// Crank-Nicolson matrices
 		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
@@ -832,7 +833,7 @@ int main(int argc, char *argv[])
     	
     	// time stepping
 		Me_solver.Mult(RHSe, CeVn) ;
-		
+		*/
 		/*
 		//SOLVING FOR DC/DT, DEFINED MANUALLY
 		TmatL = Add(1.0, Mmate, dt, Kmate);
@@ -849,7 +850,7 @@ int main(int argc, char *argv[])
 		*/
 
 
-		cout << CeVn(1) << endl;
+		//cout << CeVn(1) << endl;
 		// recover
 		CnE.Distribute(CeVn);    	
 
