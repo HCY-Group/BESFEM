@@ -98,6 +98,7 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    T_solver.SetAbsTol(0.0);
    T_solver.SetMaxIter(100);
    T_solver.SetPrintLevel(0);
+   T_prec.SetType(HypreSmoother::Jacobi);
    T_solver.SetPreconditioner(T_prec);
 
 }
@@ -654,7 +655,7 @@ int main(int argc, char *argv[])
 	double t_ode = 0.0;
 // 	for (int t = 0; t < 1000 + 1; t++){
 //	while ( Vcell > Vcut){
-	while ( t<401 ){
+	while ( t<21 ){
 	
 	
 		// // 	=============================
@@ -803,6 +804,8 @@ int main(int argc, char *argv[])
 		// vector of CnE				
 		CnE.GetTrueDofs(CeV0);				
 		
+		/*
+		//TIME DEPENDENT OPERATOR
 		ConductionOperator opere(pse, Kmate, Feb);
 		//ODESolver *ode_solvere = new ForwardEulerSolver;
 		ODESolver *ode_solvere = new BackwardEulerSolver;
@@ -810,8 +813,9 @@ int main(int argc, char *argv[])
 		ode_solvere->Step(CeV0, t_ode, dt);
 		delete ode_solvere;
 		CeVn = CeV0;
+		*/
 		
-		/*
+		//SOLVING FOR C, DEFINED MANUALLY
 		// Crank-Nicolson matrices
 		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
 		TmatL = Add(1.0, Mmate,  0.5*dt, Kmate);		
@@ -828,8 +832,24 @@ int main(int argc, char *argv[])
     	
     	// time stepping
 		Me_solver.Mult(RHSe, CeVn) ;
+		
+		/*
+		//SOLVING FOR DC/DT, DEFINED MANUALLY
+		TmatL = Add(1.0, Mmate, dt, Kmate);
+		Me_solver.SetOperator(*TmatL);
+		Kmate.Mult(CeV0, RHSe);
+		RHSe.Neg();
+		RHSe += Feb;
+		//HypreParVector dc_dt = Feb.CreateCompatibleVector();;
+		Vector dc_dt = Feb;
+		Me_solver.Mult(RHSe, dc_dt);
+		dc_dt *= dt;
+		CeV0 += dc_dt;
+		CeVn = CeV0;
 		*/
 
+
+		cout << CeVn(1) << endl;
 		// recover
 		CnE.Distribute(CeVn);    	
 
