@@ -499,8 +499,8 @@ int main(int argc, char *argv[])
 		
 	int t = 0;
 // 	for (int t = 0; t < 1000 + 1; t++){
-	while ( Vcell > Vcut){
-//	while ( t<1 ){
+//	while ( Vcell > Vcut){
+	while ( t<21 ){
 	
 	
 		// // 	=============================
@@ -982,7 +982,7 @@ int main(int argc, char *argv[])
 		}
 		
 		
-	if (t%200 == 1 && myid == 1){cout << t << " - " << Xfr << " - " << tm << " - " << \
+	if (t%20 == 1 && myid == 0){cout << t << " - " << Xfr << " - " << tm << " - " << \
 		Vcell << endl;}
 // 	if (myid == 1 ){cout << t << "  " << Xfr << "  " << tm << "  " << Vcell << endl;}
 		
