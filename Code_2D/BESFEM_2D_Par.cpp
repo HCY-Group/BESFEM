@@ -697,7 +697,8 @@ int main(int argc, char *argv[])
 	//  ===================================================================   
 		
 	int t = 0;
-	double t_ode = 0.0;
+	double t_ode_e = 0.0;
+	double t_ode_p = 0.0;
 // 	for (int t = 0; t < 1000 + 1; t++){
 //	while ( Vcell > Vcut){
 	while ( t<21 ){
@@ -746,7 +747,7 @@ int main(int argc, char *argv[])
 		
 		//Update Parameters and Solve
 		oper.UpdateParams(Kmatp, Fcb);
-		ode_solver->Step(CpV0, t_ode, dt);
+		ode_solver->Step(CpV0, t_ode_p, dt);
 		CpVn = CpV0;
 		
 		/*
@@ -848,7 +849,7 @@ int main(int argc, char *argv[])
 		
 		//Update Parameters and Solve
 		opere.UpdateParams(Kmate, Feb);
-		ode_solvere->Step(CeV0, t_ode, dt);
+		ode_solvere->Step(CeV0, t_ode_e, dt);
 		CeVn = CeV0;
 		
 		/*
