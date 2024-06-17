@@ -64,6 +64,9 @@ public:
    /// Update the diffusion BilinearForm K using the given true-dof vector `u`.
    //void SetParameters(const Vector &u);
 
+   //Update K matrix and b vector
+   void UpdateParams(const HypreParMatrix &K, const HypreParVector &Fb);
+
    virtual ~ConductionOperator();
 };
 
@@ -154,6 +157,12 @@ void ConductionOperator::SetParameters(const Vector &u)
    
 }
 */
+
+void ConductionOperator::UpdateParams(const HypreParMatrix &K, const HypreParVector &Fb)
+{
+   Kmat = K;
+   b = Fb;
+}
 
 ConductionOperator::~ConductionOperator()
 {
@@ -390,6 +399,10 @@ int main(int argc, char *argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 	
 		
+	// containers used later.
+	HypreParVector X1v(&fespace), B1v(&fespace);
+	ParLinearForm B1t(&fespace);
+	
 	// // 	=============================
 	// // 	   _____       _____  
 	// // 	  / ____|     |  __ \ 		//
@@ -467,6 +480,24 @@ int main(int argc, char *argv[])
 	psi.GetTrueDofs(PsVc);		
 	
 	
+
+	
+	GridFunctionCoefficient cDp(&Dp) ;			
+	
+	// K matrix		
+	std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
+   	Kc2->AddDomainIntegrator(new DiffusionIntegrator(cDp));
+   	Kc2->Assemble();
+   	Kc2->FormLinearSystem(boundary_dofs, CnP, Fct, Kmatp, X1v, Fcb);
+	
+	//Initialize TimeDependentOperator and ODESolver
+	ConductionOperator oper(psi, Kmatp, Fcb);
+	//ODESolver *ode_solver = new ForwardEulerSolver;
+	ODESolver *ode_solver = new BackwardEulerSolver;
+	//ODESolver *ode_solver = new AM1Solver;
+	ode_solver->Init(oper);
+
+
 	// 	// ============================
 	// 	//    _____       ______ 
 	// 	//   / ____|     |  ____|
@@ -531,6 +562,22 @@ int main(int argc, char *argv[])
 	double CeC = 0.0;
 	double CeAvg = 0.0;
 	double gCeC = 0.0;			
+
+
+	GridFunctionCoefficient cDe(&De) ;	
+	
+ 	// K matrix		
+	std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(&fespace)); 
+   	Ke2->AddDomainIntegrator(new DiffusionIntegrator(cDe));
+   	Ke2->Assemble();
+   	Ke2->FormLinearSystem(boundary_dofs, CnE, Fet, Kmate, X1v, Feb);
+	
+	//Initialize TimeDependentOperator and ODESolver
+	ConductionOperator opere(pse, Kmate, Feb);
+	//ODESolver *ode_solvere = new ForwardEulerSolver;
+	ODESolver *ode_solvere = new BackwardEulerSolver;
+	ode_solvere->Init(opere);
+	
 
 
 	// ========================================
@@ -633,9 +680,6 @@ int main(int argc, char *argv[])
 	double gErrP, gErrE;
 	double dV, sgn;
 
-	// containers used later.
-	HypreParVector X1v(&fespace), B1v(&fespace);
-	ParLinearForm B1t(&fespace);
 
 	int cnt = 0;
 	string stri;
@@ -700,13 +744,9 @@ int main(int argc, char *argv[])
 		CnP.GetTrueDofs(CpV0);
 		
 		
-		ConductionOperator oper(psi, Kmatp, Fcb);
-		//ODESolver *ode_solver = new ForwardEulerSolver;
-		ODESolver *ode_solver = new BackwardEulerSolver;
-		//ODESolver *ode_solver = new AM1Solver;
-		ode_solver->Init(oper);
+		//Update Parameters and Solve
+		oper.UpdateParams(Kmatp, Fcb);
 		ode_solver->Step(CpV0, t_ode, dt);
-		delete ode_solver;
 		CpVn = CpV0;
 		
 		/*
@@ -806,13 +846,9 @@ int main(int argc, char *argv[])
 		CnE.GetTrueDofs(CeV0);				
 		
 		
-		//TIME DEPENDENT OPERATOR
-		ConductionOperator opere(pse, Kmate, Feb);
-		//ODESolver *ode_solvere = new ForwardEulerSolver;
-		ODESolver *ode_solvere = new BackwardEulerSolver;
-		ode_solvere->Init(opere);
+		//Update Parameters and Solve
+		opere.UpdateParams(Kmate, Feb);
 		ode_solvere->Step(CeV0, t_ode, dt);
-		delete ode_solvere;
 		CeVn = CeV0;
 		
 		/*
