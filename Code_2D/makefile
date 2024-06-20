@@ -1,7 +1,7 @@
 
 # Use the MFEM build directory
-MFEM_DIR ?= ../../mfem-4.5/
-MFEM_BUILD_DIR ?= ../../mfem-4.5/
+MFEM_DIR ?= ../../mfem-4.7/
+MFEM_BUILD_DIR ?= ../../mfem-4.7/
 CONFIG_MK = $(MFEM_BUILD_DIR)/config/config.mk
 # Use the MFEM install directory
 # MFEM_INSTALL_DIR = ../mfem
