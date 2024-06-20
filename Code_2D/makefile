@@ -12,12 +12,13 @@ MFEM_LIB_FILE = mfem_is_not_built
 
 
 
+SOURCECODE = TimeDepOpers.cpp
+
 
 # Remove built-in rule
 %: %.cpp
 
 # Replace the default implicit rule for *.cpp files
-%: %.cpp $(MFEM_LIB_FILE) $(CONFIG_MK)
-	$(MFEM_CXX) $(MFEM_FLAGS) $< -o $@ $(MFEM_LIBS)
-
+%: %.cpp $(MFEM_LIB_FILE) $(CONFIG_MK) $(SOURCECODE)
+	$(MFEM_CXX) $(MFEM_FLAGS) $< -o $@ $(MFEM_LIBS) $(SOURCECODE)
 all: BESFEM_2D_Par
