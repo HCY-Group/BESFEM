@@ -110,7 +110,7 @@ std::vector<std::vector<std::vector<int>>> TIFFReader::getImageData() {
     return imageData;
 }
        
-
+/*
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <tiff_file> [<Row_begin> <Row_end> <Column_begin> <Column_end> <Depth_begin> <Depth_end>]\n";
@@ -147,3 +147,4 @@ int main(int argc, char* argv[]) {
     reader.getImageData();
     return 0;
 }
+*/
