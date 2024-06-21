@@ -11,8 +11,8 @@ MFEM_LIB_FILE = mfem_is_not_built
 -include $(CONFIG_MK)
 
 
-
-SOURCECODE = TimeDepOpers.cpp
+LDFLAGS = -ltiff
+SOURCECODE = TimeDepOpers.cpp readtiff.cpp
 
 
 # Remove built-in rule
@@ -20,5 +20,6 @@ SOURCECODE = TimeDepOpers.cpp
 
 # Replace the default implicit rule for *.cpp files
 %: %.cpp $(MFEM_LIB_FILE) $(CONFIG_MK) $(SOURCECODE)
-	$(MFEM_CXX) $(MFEM_FLAGS) $< -o $@ $(MFEM_LIBS) $(SOURCECODE)
-all: BESFEM_2D_Par
+	$(MFEM_CXX) $(MFEM_FLAGS) $< -o $@ $(MFEM_LIBS) $(SOURCECODE) $(LDFLAGS)
+
+all: BESFEM_2D_Par VoxelToDistFunc
