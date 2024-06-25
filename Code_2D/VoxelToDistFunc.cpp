@@ -183,6 +183,83 @@ int main(int argc, char *argv[])
 	// ======================================
 	// SMOOTH THE DATA USING ALLEN-CAHN
 	// ======================================
+	cout << "SMOOTHING WITH ALLEN-CAHN" << endl;
+	
+	// Natural (Neumann) boundary conditions
+	Array<int> boundary_dofs;
+	
+	ParLinearForm Fct(&fespace);
+	HypreParVector Fcb(&fespace);
+	HypreParVector X1v(&fespace);
+	
+	// mass matrix
+	ParGridFunction ones(&fespace);	
+	ones = 1.0;
+	/*
+	HypreParMatrix Mmat;
+	GridFunctionCoefficient c_ones(&ones);
+	std::unique_ptr<ParBilinearForm> M(new ParBilinearForm(&fespace));
+	M->AddDomainIntegrator(new MassIntegrator(c_ones));
+	M->Assemble();
+	M->FormSystemMatrix(boundary_dofs, Mmat);
+	*/
+
+	// stiffness matrix
+	HypreParMatrix Kmat;
+	ParGridFunction Mob(&fespace);
+	Mob = 0.64;
+	GridFunctionCoefficient cMob(&Mob);
+	std::unique_ptr<ParBilinearForm> K(new ParBilinearForm(&fespace));
+	K->AddDomainIntegrator(new DiffusionIntegrator(cMob));
+	K->Assemble();
+	K->FormLinearSystem(boundary_dofs, Vox, Fct, Kmat, X1v, Fcb);
+
+	// TimeDependentOperator and ODESolver
+	ConductionOperator oper(ones, Kmat, Fcb);
+	ODESolver *ode_solver = new ForwardEulerSolver;
+	//ODESolver *ode_solver = new BackwardEulerSolver;
+	ode_solver->Init(oper);
+	
+	// time step
+	ParGridFunction Pot(&fespace);
+	HypreParVector Vox0(&fespace);
+	double t_ode = 0.0;
+	double dt = 0.05;
+	for (int t = 0; t < 20; t++){
+		
+		//forcing function
+		for (int vi = 0; vi < nV; vi++){
+			Pot(vi) = 2.0*Vox(vi)*(1.0-Vox(vi))*(1.0-2.0*Vox(vi));
+		}
+		GridFunctionCoefficient cPot(&Pot);
+		std::unique_ptr<ParLinearForm> Bc(new ParLinearForm(&fespace));
+		Bc->AddDomainIntegrator(new DomainLFIntegrator(cPot));
+		Bc->Assemble();
+		Fct = std::move(*Bc);
+
+		//Update Parameters and Solve
+		Vox.GetTrueDofs(Vox0);
+		K->FormLinearSystem(boundary_dofs, Vox, Fct, Kmat, X1v, Fcb);
+		oper.UpdateParams(Kmat, Fcb);
+		ode_solver->Step(Vox0, t_ode, dt);
+		Vox.Distribute(Vox0);
+		
+	}
+	
+	
+	// Output Vox to Paraview
+	cout << "PRINTING OUT smoothed Vox" << endl;
+	//ParaViewDataCollection *pd = NULL;
+	pd = NULL;
+	pd = new ParaViewDataCollection("SmoothVox", &pmesh);
+	pd->RegisterField("Vox", &Vox);
+	pd->SetLevelsOfDetail(order);
+	pd->SetDataFormat(VTKFormat::BINARY);
+	pd->SetHighOrderOutput(true);
+	pd->SetCycle(0);
+	pd->SetTime(0.0);
+	pd->Save();
+	delete pd;
 
 
 
@@ -195,8 +272,6 @@ int main(int argc, char *argv[])
 	// FIND CONNECTIVITY
 	// ======================================
 
-	// Natural (Neumann) boundary conditions
-	Array<int> boundary_dofs;
 
 	return 0;
 
