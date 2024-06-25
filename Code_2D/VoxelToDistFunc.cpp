@@ -266,7 +266,21 @@ int main(int argc, char *argv[])
 	// ======================================
 	// FIND DISTANCE FUNCTION BY REINITIALIZING LEVEL SET
 	// ======================================
+	cout << "FINDING DISTANCE FUNCTION WITH LEVEL SET REINITIALIZATION" << endl;
+	
+	// Need to use Discontinuous Galerkin (DG) for upwinding (look at MFEM examples 9 and 18)
+	DG_FECollection fec_dg(order, pmesh.Dimension(), BasisType::GaussLobatto);
+	ParFiniteElementSpace fespace_dg(&pmesh, &fec_dg);
+	ParFiniteElementSpace dfespace_dg(&pmesh, &fec_dg, pmesh.Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
 
+	// Define new grid functions
+	ParGridFunction d(&fespace_dg);
+	ParGridFunction c(&dfespace_dg);
+	cout << "size of d: " << d.Size() << endl;
+	cout << "size of c: " << c.Size() << endl;
+	cout << "size of Vox: " << Vox.Size() << endl;
+	
+	//set d equal to Vox.  Since different sizes, I think we need to use ProjectGridFunction()
 
 	// ======================================
 	// FIND CONNECTIVITY
