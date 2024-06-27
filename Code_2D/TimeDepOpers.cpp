@@ -124,3 +124,74 @@ ConductionOperator::~ConductionOperator()
 
 
 
+// Implementation of class FE_Evolution
+FE_Evolution::FE_Evolution(ParBilinearForm &M_, ParBilinearForm &K_,
+                           const Vector &b_)
+   : TimeDependentOperator(M_.ParFESpace()->GetTrueVSize()), b(b_),
+     M_solver(M_.ParFESpace()->GetComm()),
+     z(height)
+{
+   if (M_.GetAssemblyLevel()==AssemblyLevel::LEGACY)
+   {
+      M.Reset(M_.ParallelAssemble(), true);
+      K.Reset(K_.ParallelAssemble(), true);
+   }
+   else
+   {
+      M.Reset(&M_, false);
+      K.Reset(&K_, false);
+   }
+
+   M_solver.SetOperator(*M);
+
+   Array<int> ess_tdof_list;
+   if (M_.GetAssemblyLevel()==AssemblyLevel::LEGACY)
+   {
+      HypreParMatrix &M_mat = *M.As<HypreParMatrix>();
+      HypreParMatrix &K_mat = *K.As<HypreParMatrix>();
+      HypreSmoother *hypre_prec = new HypreSmoother(M_mat, HypreSmoother::Jacobi);
+      M_prec = hypre_prec;
+
+      dg_solver = new DG_Solver(M_mat, K_mat, *M_.FESpace());
+   }
+   else
+   {
+      M_prec = new OperatorJacobiSmoother(M_, ess_tdof_list);
+      dg_solver = NULL;
+   }
+
+   M_solver.SetPreconditioner(*M_prec);
+   M_solver.iterative_mode = false;
+   M_solver.SetRelTol(1e-9);
+   M_solver.SetAbsTol(0.0);
+   M_solver.SetMaxIter(100);
+   M_solver.SetPrintLevel(0);
+}
+
+// Solve the equation:
+//    u_t = M^{-1}(Ku + b),
+// by solving associated linear system
+//    (M - dt*K) d = K*u + b
+void FE_Evolution::ImplicitSolve(const real_t dt, const Vector &x, Vector &k)
+{
+   K->Mult(x, z);
+   z += b;
+   dg_solver->SetTimeStep(dt);
+   dg_solver->Mult(z, k);
+}
+
+void FE_Evolution::Mult(const Vector &x, Vector &y) const
+{
+   // y = M^{-1} (K x + b)
+   K->Mult(x, z);
+   z += b;
+   M_solver.Mult(z, y);
+}
+
+FE_Evolution::~FE_Evolution()
+{
+   delete M_prec;
+   delete dg_solver;
+}
+
+
