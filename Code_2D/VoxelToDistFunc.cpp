@@ -27,6 +27,11 @@ int main(int argc, char *argv[])
 	Constraints args;
 	args.Depth_begin = 0;	//only read in one slice for 2D data
 	args.Depth_end = 1;	//only read in one slice for 2D data
+	// get a smaller subset so it runs faster
+	args.Row_begin    = 400;
+	args.Row_end      = 480;
+	args.Column_begin = 400;
+	args.Column_end   = 520;
 	TIFFReader reader(tiffname,args);
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffdata;
@@ -51,8 +56,8 @@ int main(int argc, char *argv[])
 	// ======================================
 	cout << "MAKING MESH" << endl;
 	int nz = tiffdata.size();
-	int ny = tiffdata[0].size();
-	int nx = tiffdata[0][0].size();
+	int nx = tiffdata[0].size();
+	int ny = tiffdata[0][0].size();
 	double sx = nx;  //make dx = 1
 	double sy = ny;  //make dy = 1
 	bool generate_edges = false;
@@ -118,7 +123,7 @@ int main(int argc, char *argv[])
 
 
 
-
+/*
 
 
 
@@ -195,14 +200,6 @@ int main(int argc, char *argv[])
 	// mass matrix
 	ParGridFunction ones(&fespace);	
 	ones = 1.0;
-	/*
-	HypreParMatrix Mmat;
-	GridFunctionCoefficient c_ones(&ones);
-	std::unique_ptr<ParBilinearForm> M(new ParBilinearForm(&fespace));
-	M->AddDomainIntegrator(new MassIntegrator(c_ones));
-	M->Assemble();
-	M->FormSystemMatrix(boundary_dofs, Mmat);
-	*/
 
 	// stiffness matrix
 	HypreParMatrix Kmat;
@@ -280,7 +277,97 @@ int main(int argc, char *argv[])
 	cout << "size of c: " << c.Size() << endl;
 	cout << "size of Vox: " << Vox.Size() << endl;
 	
-	//set d equal to Vox.  Since different sizes, I think we need to use ProjectGridFunction()
+	// Set d equal to Vox for initial conditions.
+	// Since they are on different FESpaces, we use ProjectGridFunction()
+	d.ProjectGridFunction(Vox);
+	// Sign function
+	ParGridFunction sgn(&fespace_dg);
+	for (int vi = 0; vi < pmesh.GetNV(); vi++){
+		sgn(vi) = (d(vi)<0.5) ? -1 : 1;
+	}
+	
+	HypreParVector *D = d.GetTrueDofs();
+	// Time Stepping
+	for (int t = 0; t < 50; t++){
+		//gradient of d
+		ParGridFunction gdX(&fespace_dg);
+		ParGridFunction gdY(&fespace_dg);
+		d.GetDerivative(1,0,gdX);
+		d.GetDerivative(1,1,gdY);
+		
+		//calculate c ("velocity")
+		ParGridFunction mgGd(&fespace_dg);
+		for (int vi = 0; vi < pmesh.GetNV(); vi++){
+			// magnitude of gradient
+			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
+			// c_x
+			c(vi) = sgn(vi)*gdX(vi)/mgGd(vi);
+			// c_y
+			c(vi+pmesh.GetNV()) = sgn(vi)*gdY(vi)/mgGd(vi);
+		}
+		
+		//calculate M and K matrices and b vector
+		ParBilinearForm *m = new ParBilinearForm(&fespace_dg);
+		m->AddDomainIntegrator(new MassIntegrator);
+		
+		ParBilinearForm *k = new ParBilinearForm(&fespace_dg);
+		VectorGridFunctionCoefficient cCoef(&c);
+   		k->AddDomainIntegrator(new ConvectionIntegrator(cCoef, -1));
+  		k->AddInteriorFaceIntegrator(
+      			new NonconservativeDGTraceIntegrator(cCoef, -1));
+   		k->AddBdrFaceIntegrator(
+      			new NonconservativeDGTraceIntegrator(cCoef, -1));
+		
+		ParLinearForm *b = new ParLinearForm(&fespace_dg);
+		GridFunctionCoefficient sgnCoef(&sgn);
+		b->AddDomainIntegrator(new DomainLFIntegrator(sgnCoef));
+	
+   		int skip_zeros = 0;
+   		m->Assemble();
+   		k->Assemble(skip_zeros);
+   		b->Assemble();
+   		m->Finalize();
+   		k->Finalize(skip_zeros);
+
+   		HypreParVector *B = b->ParallelAssemble();
+		
+		// TimeDependentOperator and ODESolver
+		FE_Evolution adv(*m, *k, *B);
+		double t_ode = 0.0;
+		double dt = 0.01;
+		ODESolver *ode_solver_dg = new ForwardEulerSolver;
+		ode_solver_dg->Init(adv);
+		ode_solver_dg->Step(*D, t_ode, dt);
+		cout << "iter: " << t << " max distance: " << D->Max() << endl;
+		cout << "iter: " << t << " min distance: " << D->Min() << endl;
+		
+		//free memory
+		delete m;
+		delete k;
+		delete b;
+		delete B;
+		delete ode_solver_dg;
+	}
+	
+	d.Distribute(D);
+	
+	// Output Distance to Paraview
+	cout << "PRINTING OUT DistanceFunction" << endl;
+	//ParaViewDataCollection *pd = NULL;
+	pd = NULL;
+	pd = new ParaViewDataCollection("DstFun", &pmesh);
+	pd->RegisterField("Dst", &d);
+	pd->SetLevelsOfDetail(order);
+	pd->SetDataFormat(VTKFormat::BINARY);
+	pd->SetHighOrderOutput(true);
+	pd->SetCycle(0);
+	pd->SetTime(0.0);
+	pd->Save();
+	delete pd;
+
+
+
+*/
 
 	// ======================================
 	// FIND CONNECTIVITY
