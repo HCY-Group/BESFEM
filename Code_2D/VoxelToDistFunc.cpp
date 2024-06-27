@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
 	d.ProjectGridFunction(Vox);
 	// Sign function
 	ParGridFunction sgn(&fespace_dg);
-	for (int vi = 0; vi < pmesh.GetNV(); vi++){
+	for (int vi = 0; vi < sgn.Size(); vi++){
 		sgn(vi) = (d(vi)<0.5) ? -1 : 1;
 	}
 	
@@ -297,13 +297,13 @@ int main(int argc, char *argv[])
 		
 		//calculate c ("velocity")
 		ParGridFunction mgGd(&fespace_dg);
-		for (int vi = 0; vi < pmesh.GetNV(); vi++){
+		for (int vi = 0; vi < mgGd.Size(); vi++){
 			// magnitude of gradient
 			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
 			// c_x
 			c(vi) = sgn(vi)*gdX(vi)/mgGd(vi);
 			// c_y
-			c(vi+pmesh.GetNV()) = sgn(vi)*gdY(vi)/mgGd(vi);
+			c(vi+mgGd.Size()) = sgn(vi)*gdY(vi)/mgGd(vi);
 		}
 		
 		//calculate M and K matrices and b vector
