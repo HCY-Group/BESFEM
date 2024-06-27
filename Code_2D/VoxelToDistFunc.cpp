@@ -28,10 +28,10 @@ int main(int argc, char *argv[])
 	args.Depth_begin = 0;	//only read in one slice for 2D data
 	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
-	args.Row_begin    = 400;
-	args.Row_end      = 480;
-	args.Column_begin = 400;
-	args.Column_end   = 520;
+	args.Row_begin    = 0;
+	args.Row_end      = 80;
+	args.Column_begin = 0;
+	args.Column_end   = 120;
 	TIFFReader reader(tiffname,args);
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffdata;
@@ -56,8 +56,8 @@ int main(int argc, char *argv[])
 	// ======================================
 	cout << "MAKING MESH" << endl;
 	int nz = tiffdata.size();
-	int nx = tiffdata[0].size();
-	int ny = tiffdata[0][0].size();
+	int ny = tiffdata[0].size();
+	int nx = tiffdata[0][0].size();
 	double sx = nx;  //make dx = 1
 	double sy = ny;  //make dy = 1
 	bool generate_edges = false;
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 	GridFunction gVox(&gFespace);
 	for(int j=0; j<ny; j++){
 		for(int i=0; i<nx; i++){
-			int idx = i+ny*j;
+			int idx = i+nx*j;
 			//cout << "idx = " << i+ny*j << endl;
 			//cout << "gVox[idx] = " << gVox[idx] << endl;
 			//cout << "tiffdata[i][j][0] = " << tiffdata[i][j][0] << endl;
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 
 
 
-/*
+
 
 
 
@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
 
 
 
-*/
+
 
 	// ======================================
 	// FIND CONNECTIVITY
