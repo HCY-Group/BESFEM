@@ -273,6 +273,8 @@ int main(int argc, char *argv[])
 	// Define new grid functions
 	ParGridFunction d(&fespace_dg);
 	ParGridFunction c(&dfespace_dg);
+	ParGridFunction cx(&fespace_dg);
+	ParGridFunction cy(&fespace_dg);
 	cout << "size of d: " << d.Size() << endl;
 	cout << "size of c: " << c.Size() << endl;
 	cout << "size of Vox: " << Vox.Size() << endl;
@@ -288,7 +290,7 @@ int main(int argc, char *argv[])
 	
 	HypreParVector *D = d.GetTrueDofs();
 	// Time Stepping
-	for (int t = 0; t < 50; t++){
+	for (int t = 0; t < 20; t++){
 		//gradient of d
 		ParGridFunction gdX(&fespace_dg);
 		ParGridFunction gdY(&fespace_dg);
@@ -302,26 +304,47 @@ int main(int argc, char *argv[])
 			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
 			// c_x
 			c(vi) = sgn(vi)*gdX(vi)/mgGd(vi);
+			cx(vi) = c(vi);
 			// c_y
 			c(vi+mgGd.Size()) = sgn(vi)*gdY(vi)/mgGd(vi);
+			cy(vi) = c(vi+mgGd.Size());
 		}
 		
 		//calculate M and K matrices and b vector
+		real_t alpha = -1.0;
 		ParBilinearForm *m = new ParBilinearForm(&fespace_dg);
 		m->AddDomainIntegrator(new MassIntegrator);
 		
 		ParBilinearForm *k = new ParBilinearForm(&fespace_dg);
 		VectorGridFunctionCoefficient cCoef(&c);
-   		k->AddDomainIntegrator(new ConvectionIntegrator(cCoef, -1));
+   		k->AddDomainIntegrator(new ConvectionIntegrator(cCoef, alpha));
   		k->AddInteriorFaceIntegrator(
-      			new NonconservativeDGTraceIntegrator(cCoef, -1));
+      			new NonconservativeDGTraceIntegrator(cCoef, alpha));
    		k->AddBdrFaceIntegrator(
-      			new NonconservativeDGTraceIntegrator(cCoef, -1));
+      			new NonconservativeDGTraceIntegrator(cCoef, alpha));
+		//k->AddBdrFaceIntegrator(
+		//	new DGDiffusionIntegrator(-1,-1));
+		//k->AddBdrFaceIntegrator(
+		//	new DiffusionIntegrator);
+		//k->AddBoundaryIntegrator(
+		//	new DiffusionIntegrator);
 		
 		ParLinearForm *b = new ParLinearForm(&fespace_dg);
 		GridFunctionCoefficient sgnCoef(&sgn);
 		b->AddDomainIntegrator(new DomainLFIntegrator(sgnCoef));
-	
+		//ParGridFunction zeros(&fespace_dg);
+		//zeros = 5.0;
+		//GridFunctionCoefficient inflow(&cy);
+		//b->AddBdrFaceIntegrator(
+		//	new BoundaryFlowIntegrator(inflow, cCoef, alpha));
+		cx.Neg();
+		GridFunctionCoefficient c_cx(&cx);
+		cy.Neg();
+		GridFunctionCoefficient c_cy(&cy);
+		b->AddBdrFaceIntegrator(
+			new BoundaryFlowIntegrator(c_cx, cCoef, alpha));
+		//b->AddBdrFaceIntegrator(new BoundaryLFIntegrator(inflow));
+		
    		int skip_zeros = 0;
    		m->Assemble();
    		k->Assemble(skip_zeros);
@@ -347,9 +370,10 @@ int main(int argc, char *argv[])
 		delete b;
 		delete B;
 		delete ode_solver_dg;
-	}
 	
+	}
 	d.Distribute(D);
+	
 	
 	// Output Distance to Paraview
 	cout << "PRINTING OUT DistanceFunction" << endl;
@@ -357,6 +381,20 @@ int main(int argc, char *argv[])
 	pd = NULL;
 	pd = new ParaViewDataCollection("DstFun", &pmesh);
 	pd->RegisterField("Dst", &d);
+	pd->SetLevelsOfDetail(order);
+	pd->SetDataFormat(VTKFormat::BINARY);
+	pd->SetHighOrderOutput(true);
+	pd->SetCycle(0);
+	pd->SetTime(0.0);
+	pd->Save();
+	delete pd;
+
+	// Output Advection Velocity to Paraview
+	//cout << "PRINTING OUT DistanceFunction" << endl;
+	//ParaViewDataCollection *pd = NULL;
+	pd = NULL;
+	pd = new ParaViewDataCollection("AdvVel", &pmesh);
+	pd->RegisterField("Vel", &c);
 	pd->SetLevelsOfDetail(order);
 	pd->SetDataFormat(VTKFormat::BINARY);
 	pd->SetHighOrderOutput(true);
