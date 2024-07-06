@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 	
 	HypreParVector *D = d.GetTrueDofs();
 	// Time Stepping
-	for (int t = 0; t < 20; t++){
+	for (int t = 0; t < 100; t++){
 		//gradient of d
 		ParGridFunction gdX(&fespace_dg);
 		ParGridFunction gdY(&fespace_dg);
@@ -320,31 +320,56 @@ int main(int argc, char *argv[])
    		k->AddDomainIntegrator(new ConvectionIntegrator(cCoef, alpha));
   		k->AddInteriorFaceIntegrator(
       			new NonconservativeDGTraceIntegrator(cCoef, alpha));
-   		k->AddBdrFaceIntegrator(
-      			new NonconservativeDGTraceIntegrator(cCoef, alpha));
-		//k->AddBdrFaceIntegrator(
-		//	new DGDiffusionIntegrator(-1,-1));
+   		//k->AddBdrFaceIntegrator(
+      		//	new NonconservativeDGTraceIntegrator(cCoef, alpha));
+		
+		//Add a (small) diffusive term to allow Neumann BCs to be enforced weakly by FEM
+		ConstantCoefficient diffCoef(1e-8);
+		k->AddDomainIntegrator(new DiffusionIntegrator(diffCoef));
+		k->AddBdrFaceIntegrator(
+			new DGDiffusionIntegrator(diffCoef,-1,-1));
+		k->AddInteriorFaceIntegrator(
+			new DGDiffusionIntegrator(diffCoef,-1,-1));
 		//k->AddBdrFaceIntegrator(
 		//	new DiffusionIntegrator);
 		//k->AddBoundaryIntegrator(
 		//	new DiffusionIntegrator);
-		
+
+		/*
+		cx.Neg();
+		GridFunctionCoefficient c_cx(&cx);
+		cy.Neg();
+		GridFunctionCoefficient c_cy(&cy);
+		k->AddBdrFaceIntegrator(
+			new BoundaryMassIntegrator(c_cx));
+		*/
+
 		ParLinearForm *b = new ParLinearForm(&fespace_dg);
 		GridFunctionCoefficient sgnCoef(&sgn);
 		b->AddDomainIntegrator(new DomainLFIntegrator(sgnCoef));
+		
 		//ParGridFunction zeros(&fespace_dg);
 		//zeros = 5.0;
 		//GridFunctionCoefficient inflow(&cy);
 		//b->AddBdrFaceIntegrator(
 		//	new BoundaryFlowIntegrator(inflow, cCoef, alpha));
-		cx.Neg();
+		
+		/*
+		Array<int> ewbdr(pmesh.bdr_attributes.Max());
+		ewbdr = 0; ewbdr[0]=1; ewbdr[2]=1;
+		Array<int> nsbdr(pmesh.bdr_attributes.Max());
+		nsbdr = 0; nsbdr[1]=1; nsbdr[3]=1;
+		//cx.Neg();
 		GridFunctionCoefficient c_cx(&cx);
-		cy.Neg();
+		//cy.Neg();
 		GridFunctionCoefficient c_cy(&cy);
 		b->AddBdrFaceIntegrator(
-			new BoundaryFlowIntegrator(c_cx, cCoef, alpha));
+			new BoundaryFlowIntegrator(c_cx, cCoef, alpha), ewbdr);
+		b->AddBdrFaceIntegrator(
+			new BoundaryFlowIntegrator(c_cy, cCoef, alpha), nsbdr);
 		//b->AddBdrFaceIntegrator(new BoundaryLFIntegrator(inflow));
-		
+		*/
+
    		int skip_zeros = 0;
    		m->Assemble();
    		k->Assemble(skip_zeros);
