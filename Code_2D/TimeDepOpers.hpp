@@ -56,6 +56,7 @@ protected:
 
 public:
    ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb);
+   ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb, Array<int> &ess_list);
 
    virtual void Mult(const Vector &u, Vector &du_dt) const;
    

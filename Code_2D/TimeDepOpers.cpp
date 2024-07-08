@@ -58,6 +58,45 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
 
 }
 
+ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb, Array<int> &ess_list)
+   : TimeDependentOperator(K.Height(), K.Width(), (double) 0.0),
+     M_solver(K.GetComm()), T_solver(K.GetComm())
+{
+   const double rel_tol = 1e-8;
+
+   ess_tdof_list = ess_list;
+
+   Kmat = K;
+   b = Fb;
+   z = Fb.CreateCompatibleVector();
+   
+   GridFunctionCoefficient cp(&ps);
+   
+   M = new ParBilinearForm(ps.ParFESpace());
+   M->AddDomainIntegrator(new MassIntegrator(cp));
+   M->Assemble(); // keep sparsity pattern of M and K the same
+   M->FormSystemMatrix(ess_tdof_list, Mmat);
+   
+   M_solver.iterative_mode = false;
+   M_solver.SetRelTol(rel_tol);
+   M_solver.SetAbsTol(0.0);
+   M_solver.SetMaxIter(100);
+   M_solver.SetPrintLevel(0);
+   M_prec.SetType(HypreSmoother::Jacobi);
+   M_solver.SetPreconditioner(M_prec);
+   M_solver.SetOperator(Mmat);
+   
+
+   T_solver.iterative_mode = false;
+   T_solver.SetRelTol(rel_tol);
+   T_solver.SetAbsTol(0.0);
+   T_solver.SetMaxIter(100);
+   T_solver.SetPrintLevel(0);
+   T_prec.SetType(HypreSmoother::Jacobi);
+   T_solver.SetPreconditioner(T_prec);
+
+}
+
 void ConductionOperator::Mult(const Vector &u, Vector &du_dt) const
 {
    // Compute:
