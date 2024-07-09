@@ -1,0 +1,13 @@
+This branch addresses two main things:
+
+1) Time Dependent Operators are defined (see TimeDepOpers.cpp and TimeDepOpers.hpp).
+These allow for different time stepping algorithms to be selected/used in the simulations 
+without having to define the appropriate matrices manually. 
+This is accomplished with a user-defined explicit step and implicit step. 
+MFEM then builds all other algorithms based on these.
+The Time Dependent Operators are utilized in the simulation code BESFEM_2D_Par.cpp.
+
+2) The process for taking Voxel input and outputting a Distance Function 
+is demonstrated in VoxelToDistFunc.cpp.  The Distance Function defines the complex geometry
+and is used to define the Order Parameter (psi) in the simulation equations.
+NOTE: THIS CODE IS CURRENTLY UNDER DEVELOPMENT AND SHOULD BE COMPLETED SOON.
