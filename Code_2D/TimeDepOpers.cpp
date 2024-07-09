@@ -64,7 +64,7 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
 {
    const double rel_tol = 1e-8;
 
-   ess_tdof_list = ess_list;
+   //ess_tdof_list = ess_list;
 
    Kmat = K;
    b = Fb;
@@ -75,8 +75,9 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    M = new ParBilinearForm(ps.ParFESpace());
    M->AddDomainIntegrator(new MassIntegrator(cp));
    M->Assemble(); // keep sparsity pattern of M and K the same
-   M->FormSystemMatrix(ess_tdof_list, Mmat);
-   
+   //M->FormSystemMatrix(ess_tdof_list, Mmat);
+   M->FormSystemMatrix(ess_list, Mmat);
+
    M_solver.iterative_mode = false;
    M_solver.SetRelTol(rel_tol);
    M_solver.SetAbsTol(0.0);
@@ -104,8 +105,14 @@ void ConductionOperator::Mult(const Vector &u, Vector &du_dt) const
    // for du_dt, where K is linearized by using u from the previous timestep
    Kmat.Mult(u, z);
    z.Neg(); // z = -z
+   //cout << "Max z: " << z.Max() << endl;
+   //cout << "Min z: " << z.Min() << endl;
    z += b;
+   //cout << "Max z: " << z.Max() << endl;
+   //cout << "Min z: " << z.Min() << endl;
    M_solver.Mult(z, du_dt);
+   //cout << "Max dudt: " << du_dt.Max() << endl;
+   //cout << "Min duxt: " << du_dt.Min() << endl;
 }
 
 void ConductionOperator::ImplicitSolve(const double dt,
@@ -156,9 +163,13 @@ void ConductionOperator::UpdateParams(const HypreParMatrix &K, const HypreParVec
 
 ConductionOperator::~ConductionOperator()
 {
+   //cout << "HERE A DELETE" << endl;
    delete T;
+   //cout << "HERE B DELETE" << endl;
    delete M;
-   delete K;
+   //cout << "HERE C DELETE" << endl;
+   //delete K;
+   //cout << "HERE D DELETE" << endl;
 }
 
 
