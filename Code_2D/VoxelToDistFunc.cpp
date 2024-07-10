@@ -537,10 +537,11 @@ int main(int argc, char *argv[])
 		pd = NULL;
 		if (ConIter==0){
 			pd = new ParaViewDataCollection("Conc_p", &pmesh);
+			pd->RegisterField("Cn_p", &Cn);
 		} else {
 			pd = new ParaViewDataCollection("Conc_e", &pmesh);
+			pd->RegisterField("Cn_e", &Cn);
 		}
-		pd->RegisterField("Cn", &Cn);
 		pd->SetLevelsOfDetail(order);
 		pd->SetDataFormat(VTKFormat::BINARY);
 		pd->SetHighOrderOutput(true);
