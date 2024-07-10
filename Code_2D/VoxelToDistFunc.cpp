@@ -460,73 +460,95 @@ int main(int argc, char *argv[])
 	pd->Save();
 	delete pd;
 
-	// Dirichlet Boundary conditions
-	Array<int> dbc_bdr(pmesh.bdr_attributes.Max());
-	dbc_bdr = 0; dbc_bdr[2] = 1;
-	Array<int> ess_tdof_list(0);
-	fespace.GetEssentialTrueDofs(dbc_bdr, ess_tdof_list);
-	ConstantCoefficient dbcCoef(1.0);
-	
-	// Concentration
-	ParGridFunction Cn(&fespace);
-	Cn = 0.0;
-	Cn.ProjectBdrCoefficient(dbcCoef, dbc_bdr);
-	
-	// Stiffness matrix
-	GridFunctionCoefficient psiCoef(&psi);
-	ParBilinearForm KCn(&fespace);
-	KCn.AddDomainIntegrator(new DiffusionIntegrator(psiCoef));
-	KCn.Assemble();
+	for (int ConIter = 0; ConIter < 2; ConIter++){
+		if (ConIter==1){
+			psi.Neg();
+			psi += 1.0;
+		}
+		// Concentration
+		ParGridFunction Cn(&fespace);
+		Cn = 0.0;
 
-	// Linear form b
-	ParLinearForm b(&fespace);
-	b.Assemble();
-
-	// Form Linear System
-	HypreParMatrix KmatCn;
-	HypreParVector X(&fespace);
-	HypreParVector B(&fespace);
-	KCn.FormLinearSystem(ess_tdof_list, Cn, b, KmatCn, X, B);
-
-	// TimeDependentOperator and ODESolver
-	ConductionOperator operCn(psi, KmatCn, B, ess_tdof_list);
-	ODESolver *ode_solverCn = new BackwardEulerSolver;
-	ode_solverCn->Init(operCn);
-
-	t_ode = 0.0;
-	dt = 0.05;
-	for (int t = 0; t < 50; t++){
-		ode_solverCn->Step(X, t_ode, dt);
-		
-		// Accelerate the diffusion
-		KCn.RecoverFEMSolution(X, b, Cn);  //Cast X back to Cn
+		// Dirichlet Boundary conditions
+		Array<int> dbc_bdr(pmesh.bdr_attributes.Max());
+		dbc_bdr = 0; 
+		if (ConIter==0){
+			dbc_bdr[2] = 1; //north
+		} else {
+			dbc_bdr[0] = 1; //south
+		}
+		Array<int> ess_tdof_list(0);
+		fespace.GetEssentialTrueDofs(dbc_bdr, ess_tdof_list);
+		//ConstantCoefficient dbcCoef(1.0);
+		ParGridFunction dbcval(&fespace);
 		for (int vi = 0; vi < nV; vi++){
-			if ( Cn(vi) > 1.0e-4 && psi(vi) > 0.4 ){
-				Cn(vi) = 1.0;  //Modify Cn
+			if ( psi(vi) > 0.6 ){
+				dbcval(vi) = 1.0;
 			}
 		}
-		KCn.FormLinearSystem(ess_tdof_list, Cn, b, KmatCn, X, B, 1); //Cast Cn back onto X, making sure to copy interior
+		GridFunctionCoefficient dbcCoef(&dbcval);
+		Cn.ProjectBdrCoefficient(dbcCoef, dbc_bdr);
 		
+		// Stiffness matrix
+		GridFunctionCoefficient psiCoef(&psi);
+		ParBilinearForm KCn(&fespace);
+		KCn.AddDomainIntegrator(new DiffusionIntegrator(psiCoef));
+		KCn.Assemble();
+
+		// Linear form b
+		ParLinearForm b(&fespace);
+		b.Assemble();
+
+		// Form Linear System
+		HypreParMatrix KmatCn;
+		HypreParVector X(&fespace);
+		HypreParVector B(&fespace);
+		KCn.FormLinearSystem(ess_tdof_list, Cn, b, KmatCn, X, B);
+
+		// TimeDependentOperator and ODESolver
+		ConductionOperator operCn(psi, KmatCn, B, ess_tdof_list);
+		ODESolver *ode_solverCn = new BackwardEulerSolver;
+		ode_solverCn->Init(operCn);
+
+		t_ode = 0.0;
+		dt = 0.05;
+		for (int t = 0; t < 50; t++){
+			ode_solverCn->Step(X, t_ode, dt);
 			
-		cout << "Max Cn: " << X.Max() << endl;
-		cout << "Min Cn: " << X.Min() << endl;
+			// Accelerate the diffusion
+			KCn.RecoverFEMSolution(X, b, Cn);  //Cast X back to Cn
+			for (int vi = 0; vi < nV; vi++){
+				if ( Cn(vi) > 1.0e-3 && psi(vi) > 0.6 ){
+					Cn(vi) = 1.0;  //Modify Cn
+				}
+			}
+			Cn.ProjectBdrCoefficient(dbcCoef, dbc_bdr); //Reapply Dirichlet BCs
+			KCn.FormLinearSystem(ess_tdof_list, Cn, b, KmatCn, X, B, 1); //Cast Cn back onto X, making sure to copy interior
+			
+				
+			cout << "Max Cn: " << X.Max() << endl;
+			cout << "Min Cn: " << X.Min() << endl;
+		}
+		KCn.RecoverFEMSolution(X, b, Cn);
+
+		// Output Cn to Paraview
+		cout << "PRINTING OUT Electrolyte Concentration" << endl;
+		//ParaViewDataCollection *pd = NULL;
+		pd = NULL;
+		if (ConIter==0){
+			pd = new ParaViewDataCollection("Conc_p", &pmesh);
+		} else {
+			pd = new ParaViewDataCollection("Conc_e", &pmesh);
+		}
+		pd->RegisterField("Cn", &Cn);
+		pd->SetLevelsOfDetail(order);
+		pd->SetDataFormat(VTKFormat::BINARY);
+		pd->SetHighOrderOutput(true);
+		pd->SetCycle(0);
+		pd->SetTime(0.0);
+		pd->Save();
+		delete pd;
 	}
-	KCn.RecoverFEMSolution(X, b, Cn);
-
-	// Output Cn to Paraview
-	cout << "PRINTING OUT Electrolyte Concentration" << endl;
-	//ParaViewDataCollection *pd = NULL;
-	pd = NULL;
-	pd = new ParaViewDataCollection("Conc", &pmesh);
-	pd->RegisterField("Cn", &Cn);
-	pd->SetLevelsOfDetail(order);
-	pd->SetDataFormat(VTKFormat::BINARY);
-	pd->SetHighOrderOutput(true);
-	pd->SetCycle(0);
-	pd->SetTime(0.0);
-	pd->Save();
-	delete pd;
-
 
 
 
