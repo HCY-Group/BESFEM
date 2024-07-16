@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 	
 	// local (parallel) mesh 
 	ParMesh pmesh(MPI_COMM_WORLD, gmesh);
-	pmesh.Save("/mnt/scratch/brandlan/3x90/Pmesh_AMR_T4");
+	//pmesh.Save("/mnt/scratch/brandlan/3x90/Pmesh_AMR_T4");
 	
 	int nV = pmesh.GetNV();					// number of vertices
 	int nE = pmesh.GetNE();					// number of elements
@@ -291,6 +291,9 @@ int main(int argc, char *argv[])
 	Mp_solver.SetPreconditioner(Mp_prec);
 	Mp_solver.SetOperator(Mmatp);
 
+	//Mmatp.Print("OG Mmatp");
+
+
 	HypreParMatrix *Tmatp;
 
 	// SBM stiffness matrix
@@ -326,62 +329,62 @@ int main(int argc, char *argv[])
 // 	// 	//   \_____|_| |_|______|
 // 	// 	// ============================
 	
-	ParGridFunction CnE(&fespace);
-	double Ce0 = 0.001;						// initial value
-	CnE = Ce0;	
+	// ParGridFunction CnE(&fespace);
+	// double Ce0 = 0.001;						// initial value
+	// CnE = Ce0;	
 
-	// SBM mass matrix	
-	HypreParMatrix Mmate; 
-	std::unique_ptr<ParBilinearForm> Me(new ParBilinearForm(&fespace)); 
- 	GridFunctionCoefficient cPe(&pse) ;
- 	Me->AddDomainIntegrator(new MassIntegrator(cPe)); 	
- 	Me->Assemble();
- 	Me->FormSystemMatrix(boundary_dofs, Mmate);
+	// // SBM mass matrix	
+	// HypreParMatrix Mmate; 
+	// std::unique_ptr<ParBilinearForm> Me(new ParBilinearForm(&fespace)); 
+ 	// GridFunctionCoefficient cPe(&pse) ;
+ 	// Me->AddDomainIntegrator(new MassIntegrator(cPe)); 	
+ 	// Me->Assemble();
+ 	// Me->FormSystemMatrix(boundary_dofs, Mmate);
 	
-	HypreParMatrix *TmatL, *TmatR;			// matrices for CN scheme
+	// HypreParMatrix *TmatL, *TmatR;			// matrices for CN scheme
 	
-	HypreSmoother Me_prec;
-	CGSolver Me_solver(MPI_COMM_WORLD);	
-	Me_solver.iterative_mode = false;
-	Me_solver.SetRelTol(1e-7);
-	Me_solver.SetAbsTol(0);
-	Me_solver.SetMaxIter(200);
-	Me_solver.SetPrintLevel(0);
-	Me_prec.SetType(HypreSmoother::Jacobi);
-	Me_solver.SetPreconditioner(Me_prec);	
+	// HypreSmoother Me_prec;
+	// CGSolver Me_solver(MPI_COMM_WORLD);	
+	// Me_solver.iterative_mode = false;
+	// Me_solver.SetRelTol(1e-7);
+	// Me_solver.SetAbsTol(0);
+	// Me_solver.SetMaxIter(200);
+	// Me_solver.SetPrintLevel(0);
+	// Me_prec.SetType(HypreSmoother::Jacobi);
+	// Me_solver.SetPreconditioner(Me_prec);	
 	
-	// stiffness matrix
-	ParGridFunction De(&fespace);		
+	// // stiffness matrix
+	// ParGridFunction De(&fespace);		
 		
-	HypreParMatrix Kmate;
-	ParBilinearForm *Ke2;
+	// HypreParMatrix Kmate;
+	// ParBilinearForm *Ke2;
 
-	// force vector
-	ParGridFunction Rxe(&fespace);
-	ParLinearForm *Be2;
+	// // force vector
+	// ParGridFunction Rxe(&fespace);
+	// ParLinearForm *Be2;
 	
-	// defined for later
-	ParLinearForm Fet(&fespace);		
-	HypreParVector Feb(&fespace);	
+	// // defined for later
+	// ParLinearForm Fet(&fespace);		
+	// HypreParVector Feb(&fespace);	
 	
-	// for imposing Neumann BC
-	ParGridFunction PeR(&fespace);
-	PeR = pse;
-	PeR.Neg();	
-	GridFunctionCoefficient matCoef_R(&PeR) ;
+	// // for imposing Neumann BC
+	// ParGridFunction PeR(&fespace);
+	// PeR = pse;
+	// PeR.Neg();	
+	// GridFunctionCoefficient matCoef_R(&PeR) ;
 	
- 	// Vectors for CnE
-	HypreParVector CeV0(&fespace), CeVn(&fespace), RHSe(&fespace);	
+ 	// // Vectors for CnE
+	// HypreParVector CeV0(&fespace), CeVn(&fespace), RHSe(&fespace);	
 	
-	// parameters used in the calculations
-	double eCrnt = 0.0;
-	double geCrnt = 0.0;
-	double infx = 0.0;
+	// // parameters used in the calculations
+	// double eCrnt = 0.0;
+	// double geCrnt = 0.0;
+	// double infx = 0.0;
 	
-	ParGridFunction CeT(&fespace);
-	double CeC = 0.0;
-	double CeAvg = 0.0;
-	double gCeC = 0.0;			
+	// ParGridFunction CeT(&fespace);
+	// double CeC = 0.0;
+	// double CeAvg = 0.0;
+	// double gCeC = 0.0;			
 
 
 // // 	// ========================================
@@ -395,29 +398,29 @@ int main(int argc, char *argv[])
 // // 	// //  |_|                       
 // // 	// ========================================
 
-	ParGridFunction phP(&fespace);		// electropotential in particle
-	ParGridFunction kap(&fespace);		// conductivity in particle
-	ParGridFunction RpP(&fespace);		// reaction 
-	ParGridFunction pP0(&fespace);
+	// ParGridFunction phP(&fespace);		// electropotential in particle
+	// ParGridFunction kap(&fespace);		// conductivity in particle
+	// ParGridFunction RpP(&fespace);		// reaction 
+	// ParGridFunction pP0(&fespace);
 
-	double BvP = 2.9395;
-	// 	BvP = 1.0;
-	phP = BvP;	
+	// double BvP = 2.9395;
+	// // 	BvP = 1.0;
+	// phP = BvP;	
 
-	// stiffness matrix
-	HypreParMatrix KmP;	
-	ParBilinearForm *Kp2;
+	// // stiffness matrix
+	// HypreParMatrix KmP;	
+	// ParBilinearForm *Kp2;
 
-	CGSolver cgPP(MPI_COMM_WORLD);
-	cgPP.SetRelTol(1e-7);
-	cgPP.SetMaxIter(200);
+	// CGSolver cgPP(MPI_COMM_WORLD);
+	// cgPP.SetRelTol(1e-7);
+	// cgPP.SetMaxIter(200);
 
-	// force Vector
-	ParLinearForm *Bp2;
-	ParLinearForm Fpt(&fespace);	
-	HypreParVector Fpb(&fespace);
+	// // force Vector
+	// ParLinearForm *Bp2;
+	// ParLinearForm Fpt(&fespace);	
+	// HypreParVector Fpb(&fespace);
 
-	HypreParVector Xs0(&fespace);
+	// HypreParVector Xs0(&fespace);
 
 
 // // 	// ========================================
@@ -431,270 +434,275 @@ int main(int argc, char *argv[])
 // // 	// // 	 |_|                       
 // // 	// ========================================
 	
-	double tc1 =(2*t_minus-1.0)/(2*t_minus*(1.0-t_minus));
-	double tc2 = 1.0/(2*t_minus*(1.0-t_minus))*Cst1;
-	double dffe;
+	// double tc1 =(2*t_minus-1.0)/(2*t_minus*(1.0-t_minus));
+	// double tc2 = 1.0/(2*t_minus*(1.0-t_minus))*Cst1;
+	// double dffe;
 
-	ParGridFunction phE(&fespace);		// electropot in electrolyte
-	ParGridFunction Dmp(&fespace);		// D_minus_plus
-	ParGridFunction kpl(&fespace);		// electrolyte conductivity
-	ParGridFunction RpE(&fespace);		// reaction rate for electrolyte
-	ParGridFunction pE0(&fespace);	
+	// ParGridFunction phE(&fespace);		// electropot in electrolyte
+	// ParGridFunction Dmp(&fespace);		// D_minus_plus
+	// ParGridFunction kpl(&fespace);		// electrolyte conductivity
+	// ParGridFunction RpE(&fespace);		// reaction rate for electrolyte
+	// ParGridFunction pE0(&fespace);	
 
-	double BvE = -1.0;
-	phE = BvE;
+	// double BvE = -1.0;
+	// phE = BvE;
 
-	// stiffness matrix
-	HypreParMatrix Kml;
-	ParBilinearForm *Kl2;	
+	// // stiffness matrix
+	// HypreParMatrix Kml;
+	// ParBilinearForm *Kl2;	
 	
-	// force vector
-	ParLinearForm *Bl2;
-	ParLinearForm Flt(&fespace);
-	HypreParVector Flb(&fespace);	
+	// // force vector
+	// ParLinearForm *Bl2;
+	// ParLinearForm Flt(&fespace);
+	// HypreParVector Flb(&fespace);	
 	
-	// Laplace matrix
-	HypreParMatrix Kdm;
-	ParBilinearForm *Kl1;
+	// // Laplace matrix
+	// HypreParMatrix Kdm;
+	// ParBilinearForm *Kl1;
 
-	CGSolver cgPE(MPI_COMM_WORLD);
-	cgPE.SetRelTol(1e-7);
-	cgPE.SetMaxIter(200);
+	// CGSolver cgPE(MPI_COMM_WORLD);
+	// cgPE.SetRelTol(1e-7);
+	// cgPE.SetMaxIter(200);
 
 
 	// HypreParVector LpCe(&fespace), Xe0(&fespace);
 	// HypreParVector RHSl(&fespace);
 	
-	double Vcell = BvP - BvE;
+	// double Vcell = BvP - BvE;
 
-	cout << "Vcell: " << Vcell << std::endl;	
+	// cout << "Vcell: " << Vcell << std::endl;	
 
 
-	// ParGridFunction Rxn(&fespace);
-	// Rxn = 0.0;
-	// 	Rxn = AvP;
-	// 	Rxn *= 1.0e-10;	
+	ParGridFunction Rxn(&fespace);
+	Rxn = 0.0;
+	Rxn = AvP;
+	Rxn *= 1.0e-10;	
 	
-	// containers used later.
-	// HypreParVector X1v(&fespace), B1v(&fespace);
-	// ParLinearForm B1t(&fespace);;
+	//containers used later.
+	HypreParVector X1v(&fespace), B1v(&fespace);
+	ParLinearForm B1t(&fespace);;
 
-	// // rate constants
-	// ParGridFunction dPHE(&fespace);
-	// ParGridFunction Kfw(&fespace);
-	// ParGridFunction Kbw(&fespace);
-	// ParGridFunction OCV(&fespace);
-	// ParGridFunction i0C(&fespace);	
+	// rate constants
+	ParGridFunction dPHE(&fespace);
+	ParGridFunction Kfw(&fespace);
+	ParGridFunction Kbw(&fespace);
+	ParGridFunction OCV(&fespace);
+	ParGridFunction i0C(&fespace);	
 
-	// OCV = 0.0;
-	// i0C = 0.0;
-	// Kfw = 0.0;
-	// Kbw = 0.0;	
+	OCV = 0.0;
+	i0C = 0.0;
+	Kfw = 0.0;
+	Kbw = 0.0;	
 
-	// double errP = 1.0;
-	// double errE = 1.0;
-	// int inlp = 0;
-	// double gErrP, gErrE;
+	double errP = 1.0;
+	double errE = 1.0;
+	int inlp = 0;
+	double gErrP, gErrE;
 	
-	// double dV, sgn;
-	// int cnt = 0;
+	double dV, sgn;
+	int cnt = 0;
 
-	// string stri;
-	// string fname;
+	string stri;
+	string fname;
 		
-// 	// 	===================================================================
-// 	// 	//   _   _                      _                   _             
-// 	// 	//  | | (_)                    | |                 (_)            
-// 	// 	//  | |_ _ _ __ ___   ___   ___| |_ ___ _ __  _ __  _ _ __   __ _ 
-// 	// 	//  | __| | '_ ` _ \ / _ \ / __| __/ _ \ '_ \| '_ \| | '_ \ / _` |
-// 	// 	//  | |_| | | | | | |  __/ \__ \ ||  __/ |_) | |_) | | | | | (_| |
-// 	// 	//   \__|_|_| |_| |_|\___| |___/\__\___| .__/| .__/|_|_| |_|\__, |
-// 	// 	//                                     | |   | |             __/ |
-// 	// 	//                                     |_|   |_|            |___/ 
-// 	//  ===================================================================   
+	// 	===================================================================
+	// 	//   _   _                      _                   _             
+	// 	//  | | (_)                    | |                 (_)            
+	// 	//  | |_ _ _ __ ___   ___   ___| |_ ___ _ __  _ __  _ _ __   __ _ 
+	// 	//  | __| | '_ ` _ \ / _ \ / __| __/ _ \ '_ \| '_ \| | '_ \ / _` |
+	// 	//  | |_| | | | | | |  __/ \__ \ ||  __/ |_) | |_) | | | | | (_| |
+	// 	//   \__|_|_| |_| |_|\___| |___/\__\___| .__/| .__/|_|_| |_|\__, |
+	// 	//                                     | |   | |             __/ |
+	// 	//                                     |_|   |_|            |___/ 
+	//  ===================================================================   
 		
-// 	int t = 0;
-// for (int t = 0; t < 10000 + 1; t++){
-// //while ( Vcell > Vcut){
+int t = 0;
+for (int t = 0; t < 10 + 1; t++){
+//while ( Vcell > Vcut){
 	
 	
-// 		// // 	=============================
-// 		// // 	   _____       _____  
-// 		// // 	  / ____|     |  __ \ 		//
-// 		// // 	 | |     _ __ | |__) |
-// 		// // 	 | |    | '_ \|  ___/ 
-// 		// // 	 | |____| | | | |     
-// 		// // 	  \_____|_| |_|_|     
-// 		// // 	==============================
+		// // 	=============================
+		// // 	   _____       _____  
+		// // 	  / ____|     |  __ \ 		//
+		// // 	 | |     _ __ | |__) |
+		// // 	 | |    | '_ \|  ___/ 
+		// // 	 | |____| | | | |     
+		// // 	  \_____|_| |_|_|     
+		// // 	==============================
 	
 			
-// 		Rxc = Rxn;
-// 		Rxc /= rho;	
-// 		GridFunctionCoefficient cAp(&Rxc) ;	
+		Rxc = Rxn;
+		Rxc /= rho;	
+		GridFunctionCoefficient cAp(&Rxc) ;	
 
-// 		// force term	
-// 		std::unique_ptr<ParLinearForm> Bc2(new ParLinearForm(&fespace));
-// 		Bc2->AddDomainIntegrator(new DomainLFIntegrator(cAp));
-// 		Bc2->Assemble();
-// 		// Move the contents of Bc2 into Fct
-// 		Fct = std::move(*Bc2);
+		// force term	
+		std::unique_ptr<ParLinearForm> Bc2(new ParLinearForm(&fespace));
+		Bc2->AddDomainIntegrator(new DomainLFIntegrator(cAp));
+		Bc2->Assemble();
+		// Move the contents of Bc2 into Fct
+		Fct = std::move(*Bc2);
 		
-// 		// diffusivity in the particles
-// 		for (int vi = 0; vi < nV; vi++ ){
-// 			// appendix equation A-19
-// 			Dp(vi) = psi(vi)*(0.0277-0.084*CnP(vi) + 0.1003*CnP(vi)*CnP(vi))*1.0e-8;
-// 			if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
-// 		}	
-// 		GridFunctionCoefficient cDp(&Dp) ;			
+		// diffusivity in the particles
+		for (int vi = 0; vi < nV; vi++ ){
+			// appendix equation A-19
+			Dp(vi) = psi(vi)*(0.0277-0.084*CnP(vi) + 0.1003*CnP(vi)*CnP(vi))*1.0e-8;
+			if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
+		}	
+		GridFunctionCoefficient cDp(&Dp) ;			
 		
-// 		// K matrix		
-// 		std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
-// 		HypreParMatrix Kmatp; 
+		// K matrix		
+		std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
+		HypreParMatrix Kmatp; 
 
-//    		Kc2->AddDomainIntegrator(new DiffusionIntegrator(cDp));
-//    		Kc2->Assemble();
-//    		Kc2->FormLinearSystem(boundary_dofs, CnP, Fct, Kmatp, X1v, Fcb);
-//    		Fcb *= dt;
+   		Kc2->AddDomainIntegrator(new DiffusionIntegrator(cDp));
+   		Kc2->Assemble();
+   		Kc2->FormLinearSystem(boundary_dofs, CnP, Fct, Kmatp, X1v, Fcb);
+   		Fcb *= dt;
 
-// 		// T matrix
-// 		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);	
+		std::cout << "Boundary DOFs: " << boundary_dofs.Size() << endl;
+
+		std::cout << "Mmatp rows: " << Mmatp.NumRows() << ", cols: " << Mmatp.NumCols() << std::endl;
+    	std::cout << "Kmatp rows: " << Kmatp.NumRows() << ", cols: " << Kmatp.NumCols() << std::endl;
+
+		// T matrix
+		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);	
 		
-// 		// vector of CnP				
-// 		CnP.GetTrueDofs(CpV0);
+		// vector of CnP				
+		CnP.GetTrueDofs(CpV0);
 		
-// 		Tmatp->Mult(CpV0,RHCp);
-// 		RHCp += Fcb;		
+		Tmatp->Mult(CpV0,RHCp);
+		RHCp += Fcb;		
 
-// 		// time stepping
-// 		Mp_solver.Mult(RHCp,CpVn) ;		
+		// time stepping
+		Mp_solver.Mult(RHCp,CpVn) ;		
 
-// 		// Update only the solid region
-// 		for (int p = 0; p < nDof; p++){
-// 			if (PsVc(p) < 1.0e-5){
-// 				CpVn(p) = Cp0;}
-// 		}
+		// Update only the solid region
+		for (int p = 0; p < nDof; p++){
+			if (PsVc(p) < 1.0e-5){
+				CpVn(p) = Cp0;}
+		}
 		
-// 		// Recover the GridFunction from Vector.
-// 		CnP.Distribute(CpVn);
+		// Recover the GridFunction from Vector.
+		CnP.Distribute(CpVn);
 
-// 		// Degree of lithiation
-// 		TmpF = CnP;
-// 		TmpF *= psi;
-// 		lSum = 0.0;
-// 		for (int ei = 0; ei < nE; ei++){	  
-// 			TmpF.GetNodalValues(ei,VtxVal);
-// 			val = 0.0;
-// 			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 			EAvg(ei) = val/nC;		 		  
-// 			lSum += EAvg(ei)*EVol(ei);	
-// 		} 	
-// 		MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
-// 		Xfr = gSum/gtPsi;	
+		// Degree of lithiation
+		TmpF = CnP;
+		TmpF *= psi;
+		lSum = 0.0;
+		for (int ei = 0; ei < nE; ei++){	  
+			TmpF.GetNodalValues(ei,VtxVal);
+			val = 0.0;
+			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+			EAvg(ei) = val/nC;		 		  
+			lSum += EAvg(ei)*EVol(ei);	
+		} 	
+		MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
+		Xfr = gSum/gtPsi;	
 
-// 		delete Tmatp;
-// 		Tmatp->~HypreParMatrix();
-// 		//Bc2->~ParLinearForm();
-
-
+		delete Tmatp;
+		//Tmatp->~HypreParMatrix();
+		//Bc2->~ParLinearForm();
 
 
-// 		// // ============================
-// 		// //    _____       ______ 
-// 		// //   / ____|     |  ____|
-// 		// //  | |     _ __ | |__   
-// 		// //  | |    | '_ \|  __|  
-// 		// //  | |____| | | | |____ 
-// 		// //   \_____|_| |_|______|
-// 		// // ============================
 
-// 		Rxe = Rxn;
-// 		Rxe *= (-1.0*t_minus);	
-// 		GridFunctionCoefficient cAe(&Rxe) ;
+
+		// // ============================
+		// //    _____       ______ 
+		// //   / ____|     |  ____|
+		// //  | |     _ __ | |__   
+		// //  | |    | '_ \|  __|  
+		// //  | |____| | | | |____ 
+		// //   \_____|_| |_|______|
+		// // ============================
+
+		// Rxe = Rxn;
+		// Rxe *= (-1.0*t_minus);	
+		// GridFunctionCoefficient cAe(&Rxe) ;
 		
-// 		// total reaction
-// 		eCrnt = 0.0;
-// 		for (int ei = 0; ei < nE; ei++){	  
-// 			Rxe.GetNodalValues(ei,VtxVal) ;
-// 			val = 0.0;
-// 			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 			EAvg(ei) = val/nC;		 		  
-// 			eCrnt += EAvg(ei)*EVol(ei);	
-// 		} 	
-// 		MPI_Allreduce(&eCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-// 		infx = geCrnt/L_w;		
+		// // total reaction
+		// eCrnt = 0.0;
+		// for (int ei = 0; ei < nE; ei++){	  
+		// 	Rxe.GetNodalValues(ei,VtxVal) ;
+		// 	val = 0.0;
+		// 	for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+		// 	EAvg(ei) = val/nC;		 		  
+		// 	eCrnt += EAvg(ei)*EVol(ei);	
+		// } 	
+		// MPI_Allreduce(&eCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		// infx = geCrnt/L_w;		
 		
-// 		// Neumann BC
-// 		ConstantCoefficient nbcCoef(infx);
-// 		ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);	
+		// // Neumann BC
+		// ConstantCoefficient nbcCoef(infx);
+		// ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);	
 		
-//  		// force term
-// 		std::unique_ptr<ParLinearForm> Be2(new ParLinearForm(&fespace));
-// 		Be2->AddDomainIntegrator(new DomainLFIntegrator(cAe));
-// 		Be2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m_nbcCoef), nbc_w_bdr);
-// 		Be2->Assemble();
-// 		// Move the contents of Be2 into Fet
-// 		Fet = std::move(*Be2);
+ 		// // force term
+		// std::unique_ptr<ParLinearForm> Be2(new ParLinearForm(&fespace));
+		// Be2->AddDomainIntegrator(new DomainLFIntegrator(cAe));
+		// Be2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m_nbcCoef), nbc_w_bdr);
+		// Be2->Assemble();
+		// // Move the contents of Be2 into Fet
+		// Fet = std::move(*Be2);
 
-// 		// salt diffusivity in the electrolyte					
-// 		for (int vi = 0; vi < nV; vi++){
-// 			// appendix equation A-21
-// 			De(vi) = pse(vi)*D0*exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
-// 		}
-// 		GridFunctionCoefficient cDe(&De) ;			
+		// // salt diffusivity in the electrolyte					
+		// for (int vi = 0; vi < nV; vi++){
+		// 	// appendix equation A-21
+		// 	De(vi) = pse(vi)*D0*exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
+		// }
+		// GridFunctionCoefficient cDe(&De) ;			
 		
-//  		// K matrix		
-// 		HypreParMatrix Kmate; //move to hpp
-// 		std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(&fespace)); 
+ 		// // K matrix		
+		// HypreParMatrix Kmate; //move to hpp
+		// std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(&fespace)); 
 
-//    		Ke2->AddDomainIntegrator(new DiffusionIntegrator(cDe));
-//    		Ke2->Assemble();
-//    		Ke2->FormLinearSystem(boundary_dofs, CnE, Fet, Kmate, X1v, Feb);
-//    		Feb *= dt;
+   		// Ke2->AddDomainIntegrator(new DiffusionIntegrator(cDe));
+   		// Ke2->Assemble();
+   		// Ke2->FormLinearSystem(boundary_dofs, CnE, Fet, Kmate, X1v, Feb);
+   		// Feb *= dt;
 		
-// 		// // Crank-Nicolson matrices	
-// 		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
-// 		TmatL = Add(1.0, Mmate,  0.5*dt, Kmate);
+		// // // Crank-Nicolson matrices	
+		// TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
+		// TmatL = Add(1.0, Mmate,  0.5*dt, Kmate);
 		
-// 		// vector of CnE				
-// 		CnE.GetTrueDofs(CeV0);		
+		// // vector of CnE				
+		// CnE.GetTrueDofs(CeV0);		
 				
-//     	TmatR->Mult(CeV0,RHSe);
-//     	RHSe += Feb;
+    	// TmatR->Mult(CeV0,RHSe);
+    	// RHSe += Feb;
     	
-//     	// solver
-// 		Me_solver.SetOperator(*TmatL);    	
+    	// // solver
+		// Me_solver.SetOperator(*TmatL);    	
     	
-//     	// time stepping
-// 		Me_solver.Mult(RHSe,CeVn) ;
+    	// // time stepping
+		// Me_solver.Mult(RHSe,CeVn) ;
 		
-// 		// recover
-// 		CnE.Distribute(CeVn);    	
+		// // recover
+		// CnE.Distribute(CeVn);    	
 
-// 		// check conservation of salt
-// 		if (t%500 == 0 && t > 0){
-// 			CeC = 0.0;
-// 			CeT = CnE;
-// 			CeT *= pse;
-// 			for (int ei = 0; ei < nE; ei++){
-// 				CeT.GetNodalValues(ei,VtxVal) ;
-// 				val = 0.0;
-// 				for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 				EAvg(ei) = val/nC;	
-// 				CeC += EAvg(ei)*EVol(ei) ;
-// 			}
-// 			MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
-// 			// average CnE throughout electrolyte
-// 			CeAvg = gCeC/gtPse;				
+		// // check conservation of salt
+		// if (t%500 == 0 && t > 0){
+		// 	CeC = 0.0;
+		// 	CeT = CnE;
+		// 	CeT *= pse;
+		// 	for (int ei = 0; ei < nE; ei++){
+		// 		CeT.GetNodalValues(ei,VtxVal) ;
+		// 		val = 0.0;
+		// 		for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+		// 		EAvg(ei) = val/nC;	
+		// 		CeC += EAvg(ei)*EVol(ei) ;
+		// 	}
+		// 	MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
+		// 	// average CnE throughout electrolyte
+		// 	CeAvg = gCeC/gtPse;				
 			
-// 			// adjust CnE
-// 			CnE -= (CeAvg-Ce0);
-// 			MPI_Barrier(MPI_COMM_WORLD);
-// 		}	
+		// 	// adjust CnE
+		// 	CnE -= (CeAvg-Ce0);
+		// 	MPI_Barrier(MPI_COMM_WORLD);
+		// }	
 
 	
-// 		TmatR->~HypreParMatrix();
-// 		TmatL->~HypreParMatrix();		
-// 		//Be2->~ParLinearForm();
+		// TmatR->~HypreParMatrix();
+		// TmatL->~HypreParMatrix();		
+		// Be2->~ParLinearForm();
 
 
 // // 		// ==============================================
@@ -707,92 +715,92 @@ int main(int argc, char *argv[])
 // // 		// ==============================================	
  
 
-// 		// electrolyte conductivity and RHS	
-// 		for (int vi = 0; vi < nV; vi++){
-// 			dffe = exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
-// 			Dmp(vi) = pse(vi)*tc1*D0*dffe;
-// 			kpl(vi) = pse(vi)*tc2*D0*dffe*CnE(vi);
-// 		}
-// 		GridFunctionCoefficient cDm(&Dmp);
+		// // electrolyte conductivity and RHS	
+		// for (int vi = 0; vi < nV; vi++){
+		// 	dffe = exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
+		// 	Dmp(vi) = pse(vi)*tc1*D0*dffe;
+		// 	kpl(vi) = pse(vi)*tc2*D0*dffe*CnE(vi);
+		// }
+		// GridFunctionCoefficient cDm(&Dmp);
 
-// 		// Laplace of CnE for the RHS
-// 		std::unique_ptr<ParBilinearForm> Kl1(new ParBilinearForm(&fespace)); // Directly initialize Mt with new ParBilinearForm object
+		// // Laplace of CnE for the RHS
+		// std::unique_ptr<ParBilinearForm> Kl1(new ParBilinearForm(&fespace)); // Directly initialize Mt with new ParBilinearForm object
 
-//    		Kl1->AddDomainIntegrator(new DiffusionIntegrator(cDm));
-//    		Kl1->Assemble();
-//    		Kl1->FormLinearSystem(boundary_dofs, phE, B1t, Kdm, X1v, B1v);
+   		// Kl1->AddDomainIntegrator(new DiffusionIntegrator(cDm));
+   		// Kl1->Assemble();
+   		// Kl1->FormLinearSystem(boundary_dofs, phE, B1t, Kdm, X1v, B1v);
 
-// 		// Vector of CnE
-// 		CnE.GetTrueDofs(CeVn) ;
-// 		Kdm.Mult(CeVn,LpCe) ;
+		// // Vector of CnE
+		// CnE.GetTrueDofs(CeVn) ;
+		// Kdm.Mult(CeVn,LpCe) ;
 
-// 		// electrolyte conductivity and RHS		
-// 		GridFunctionCoefficient cKe(&kpl) ;
+		// // electrolyte conductivity and RHS		
+		// GridFunctionCoefficient cKe(&kpl) ;
 
-// 		std::unique_ptr<ParBilinearForm> Kl2(new ParBilinearForm(&fespace)); 
+		// std::unique_ptr<ParBilinearForm> Kl2(new ParBilinearForm(&fespace)); 
 				
-//    		Kl2->AddDomainIntegrator(new DiffusionIntegrator(cKe));
-//    		Kl2->Assemble();	
+   		// Kl2->AddDomainIntegrator(new DiffusionIntegrator(cKe));
+   		// Kl2->Assemble();	
 	
-// 		// assign known values to the DBC nodes	
-// 		ConstantCoefficient dbc_w_Coef(BvE);
+		// // assign known values to the DBC nodes	
+		// ConstantCoefficient dbc_w_Coef(BvE);
 		
-// 		phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
-// 		Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);		
+		// phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
+		// Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);		
 		
-// 		// Solve the system using PCG with hypre's BoomerAMG preconditioner.
-// 		HypreBoomerAMG Mpe(Kml);
-// 		Mpe.SetPrintLevel(0);
-// 		cgPE.SetPreconditioner(Mpe);
-// 		cgPE.SetOperator(Kml);
+		// // Solve the system using PCG with hypre's BoomerAMG preconditioner.
+		// HypreBoomerAMG Mpe(Kml);
+		// Mpe.SetPrintLevel(0);
+		// cgPE.SetPreconditioner(Mpe);
+		// cgPE.SetOperator(Kml);
 					
 		
-// 		// assign known values to the DBC nodes	
-// 		ConstantCoefficient dbc_e_Coef(BvP);			
+		// // assign known values to the DBC nodes	
+		// ConstantCoefficient dbc_e_Coef(BvP);			
 		
-// 		// particle conductivity
-// 		// appendix equation A-20
-// 		for (int vi = 0; vi < nV; vi++){
-// 			kap(vi) = psi(vi)*(0.01929 + 0.7045*tanh(2.399*CnP(vi)) - \
-// 				0.7238*tanh(2.412*CnP(vi)) - 4.2106e-6);
-// 		}	
-// 		GridFunctionCoefficient cKp(&kap) ;
+		// // particle conductivity
+		// // appendix equation A-20
+		// for (int vi = 0; vi < nV; vi++){
+		// 	kap(vi) = psi(vi)*(0.01929 + 0.7045*tanh(2.399*CnP(vi)) - \
+		// 		0.7238*tanh(2.412*CnP(vi)) - 4.2106e-6);
+		// }	
+		// GridFunctionCoefficient cKp(&kap) ;
 		
-//  		// stiffness matrix for phP
-// 		std::unique_ptr<ParBilinearForm> Kp2(new ParBilinearForm(&fespace));
+ 		// // stiffness matrix for phP
+		// std::unique_ptr<ParBilinearForm> Kp2(new ParBilinearForm(&fespace));
 
-//    		Kp2->AddDomainIntegrator(new DiffusionIntegrator(cKp));
-//    		Kp2->Assemble();
+   		// Kp2->AddDomainIntegrator(new DiffusionIntegrator(cKp));
+   		// Kp2->Assemble();
 		
-// 		// project values to DBC nodes
-// 		phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
-// 		Kp2->FormLinearSystem(ess_tdof_list_e, phP, B1t, KmP, X1v, B1v);			
+		// // project values to DBC nodes
+		// phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
+		// Kp2->FormLinearSystem(ess_tdof_list_e, phP, B1t, KmP, X1v, B1v);			
 
-// 		// Solve the system using PCG with hypre's BoomerAMG preconditioner.
-// 		HypreBoomerAMG Mpp(KmP);
-// 		Mpp.SetPrintLevel(0);
-// 		cgPP.SetPreconditioner(Mpp);
-// 		cgPP.SetOperator(KmP);
+		// // Solve the system using PCG with hypre's BoomerAMG preconditioner.
+		// HypreBoomerAMG Mpp(KmP);
+		// Mpp.SetPrintLevel(0);
+		// cgPP.SetPreconditioner(Mpp);
+		// cgPP.SetOperator(KmP);
 
-// 		// rate constants and exchange current density at interface
-// 		for (int vi = 0; vi < nV; vi++){
-// 			if ( AvB(vi)*dh > 0.0 ){
-// 				val = -0.2*(CnP(vi)-0.37)-1.559-0.9376*tanh(8.961*CnP(vi)-3.195);
-// 				i0C(vi) = pow(10.0,val)*1.0e-3;
+		// // rate constants and exchange current density at interface
+		// for (int vi = 0; vi < nV; vi++){
+		// 	if ( AvB(vi)*dh > 0.0 ){
+		// 		val = -0.2*(CnP(vi)-0.37)-1.559-0.9376*tanh(8.961*CnP(vi)-3.195);
+		// 		i0C(vi) = pow(10.0,val)*1.0e-3;
 				
-// 				OCV(vi) = 1.095*CnP(vi)*CnP(vi) - 8.324e-7*exp(14.31*CnP(vi)) + \
-// 					4.692*exp(-0.5389*CnP(vi));
+		// 		OCV(vi) = 1.095*CnP(vi)*CnP(vi) - 8.324e-7*exp(14.31*CnP(vi)) + \
+		// 			4.692*exp(-0.5389*CnP(vi));
 					
-// 				Kfw(vi) = i0C(vi)/(Frd*0.001  )*exp( alp*Cst1*OCV(vi)) ;	
-// 				Kbw(vi) = i0C(vi)/(Frd*CnP(vi))*exp(-alp*Cst1*OCV(vi)) ;
-// 			}
-// 		}	
+		// 		Kfw(vi) = i0C(vi)/(Frd*0.001  )*exp( alp*Cst1*OCV(vi)) ;	
+		// 		Kbw(vi) = i0C(vi)/(Frd*CnP(vi))*exp(-alp*Cst1*OCV(vi)) ;
+		// 	}
+		// }	
 
 
-// 		// convergence residuals
-// 		gErrP = 1.0;
-// 		gErrE = 1.0;
-// 		inlp = 0;	
+		// convergence residuals
+		// gErrP = 1.0;
+		// gErrE = 1.0;
+		// inlp = 0;	
 
 // 		// internal loop
 // 		if (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){ // should be while
@@ -919,77 +927,80 @@ int main(int argc, char *argv[])
 
 // 		} // internal loop	
 
-// 		// total reaction current
-// 		sCrnt = 0.0;
-// 		for (int ei = 0; ei < nE; ei++){
-// 			Rxn.GetNodalValues(ei,VtxVal) ;
-// 			val = 0.0;
-// 			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 			EAvg(ei) = val/nC;
-// 			sCrnt += EAvg(ei)*EVol(ei) ;
-// 		} 			
-// 		MPI_Allreduce(&sCrnt, &gCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		// total reaction current
+		// sCrnt = 0.0;
+		// for (int ei = 0; ei < nE; ei++){
+		// 	Rxn.GetNodalValues(ei,VtxVal) ;
+		// 	val = 0.0;
+		// 	for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+		// 	EAvg(ei) = val/nC;
+		// 	sCrnt += EAvg(ei)*EVol(ei) ;
+		// } 			
+		// MPI_Allreduce(&sCrnt, &gCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 					
-// 		// adjust BvP for constant C rate loading
-// 		sgn = copysign(1, gTrgI - gCrnt);
-// 		dV = dt*Vsr*sgn;
-// 		BvP -= dV;
-// 		phP -= dV;
+		// // adjust BvP for constant C rate loading
+		// sgn = copysign(1, gTrgI - gCrnt);
+		// dV = dt*Vsr*sgn;
+		// BvP -= dV;
+		// phP -= dV;
 		
-// 		Vcell = BvP - BvE;
+		// Vcell = BvP - BvE;
 
-//  		//cout << myid << " " << sgn << " " << gTrgI-gCrnt << endl;
-// 		//cout << t << " " << sgn << " " << Vcell << endl;
+ 		// //cout << myid << " " << sgn << " " << gTrgI-gCrnt << endl;
+		// cout << t << " " << sgn << " " << Vcell << endl;
 
-// 		tm = tm + dt;
+		// tm = tm + dt;
 
-// 		t += 1;
+		// t += 1;
 		
-// 	// 	if (t%2000==0 && myid == 1){cout << t << " - " << Xfr << " - " << tm << " " << \
-// 	// 		Vcell << endl;}
+	// 	if (t%2000==0 && myid == 1){cout << t << " - " << Xfr << " - " << tm << " " << \
+	// 		Vcell << endl;}
 
-// 		if ( Xfr > 0.3+cnt*0.005 ){
-// 			// output values to a text file
-// 			if (myid == 1){
-// 				ofstream myfile;
-// 				myfile.open ("Output_3x90_Test3.txt", ios::app);
-// 				myfile << t << " " << tm << " " << Xfr << " " << Vcell << " " \
-// 					<< " " << gCrnt << " " << gTrgI << " " << CeAvg << endl;
-// 				myfile.close();
-// 			}
+		// if ( Xfr > 0.3+cnt*0.005 ){
+		// 	// output values to a text file
+		// 	if (myid == 1){
+		// 		ofstream myfile;
+		// 		myfile.open ("Output_3x90_Test3.txt", ios::app);
+		// 		myfile << t << " " << tm << " " << Xfr << " " << Vcell << " " \
+		// 			<< " " << gCrnt << " " << gTrgI << " " << CeAvg << endl;
+		// 		myfile.close();
+		// 	}
 			
-// 			stri = to_string(1000+cnt);
+		// 	stri = to_string(1000+cnt);
 		
-// 			fname = "/mnt/scratch/brandlan/3x90/CnP_30x20_T04_" + stri;			
-// 			const char *test1 = fname.c_str();
-// 			CnP.Save(test1);
+		// 	fname = "/mnt/scratch/brandlan/3x90/CnP_30x20_T04_" + stri;			
+		// 	const char *test1 = fname.c_str();
+		// 	CnP.Save(test1);
 
-// 			fname = "/mnt/scratch/brandlan/3x90/CnE_30x20_T04_" + stri;			
-// 			const char *test2 = fname.c_str();
-// 			CnE.Save(test2);
+		// 	fname = "/mnt/scratch/brandlan/3x90/CnE_30x20_T04_" + stri;			
+		// 	const char *test2 = fname.c_str();
+		// 	CnE.Save(test2);
 			
-// 			fname = "/mnt/scratch/brandlan/3x90/phP_30x20_T04_" + stri;			
-// 			const char *test3 = fname.c_str();
-// 			phP.Save(test3);			
+		// 	fname = "/mnt/scratch/brandlan/3x90/phP_30x20_T04_" + stri;			
+		// 	const char *test3 = fname.c_str();
+		// 	phP.Save(test3);			
 
-// 			fname = "/mnt/scratch/brandlan/3x90/phE_30x20_T04_" + stri;			
-// 			const char *test4 = fname.c_str();
-// 			phE.Save(test4);
+		// 	fname = "/mnt/scratch/brandlan/3x90/phE_30x20_T04_" + stri;			
+		// 	const char *test4 = fname.c_str();
+		// 	phE.Save(test4);
 						
-// 			cnt += 1;
+		// 	cnt += 1;
 			
-// 			MPI_Barrier(MPI_COMM_WORLD);
-// 	 	}
+		// 	MPI_Barrier(MPI_COMM_WORLD);
+	 	// }
 
-	// 	//cout << t << " - " << Xfr << " - " << tm << " " << endl; 
+		//cout << t << " - " << Xfr << " - " << tm << " " << endl; 
 		
- //	}
+ 	}
 
 	// CnP.Save("/mnt/scratch/brandlan/3x90/CnP_AMR_T3");
 	// CnE.Save("/mnt/scratch/brandlan/3x90/CnE_AMR_T3");
 	// phP.Save("/mnt/scratch/brandlan/3x90/phP_AMR_T3");
 	// phE.Save("/mnt/scratch/brandlan/3x90/phE_AMR_T3");
-	// Rxn.Save("/mnt/scratch/brandlan/3x90/Rxn_AMR_T3");		
+	// Rxn.Save("/mnt/scratch/brandlan/3x90/Rxn_AMR_T3");
 	
-   //return 0;
+	CnP.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/CnP");
+		
+	
+   return 0;
 }	
