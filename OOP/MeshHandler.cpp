@@ -157,3 +157,11 @@ void MeshHandler::PrintMeshInfo() {
     cout << "Total Pse: " << gtPse << endl;
     cout << "Target Current: " << gTrgI << endl;
 }
+
+void MeshHandler::Save() {
+    if (pmesh) {
+        pmesh->Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/Pmesh");
+    } else {
+        std::cerr << "Error: pmesh is not initialized.\n";
+    }
+}

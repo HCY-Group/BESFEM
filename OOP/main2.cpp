@@ -45,6 +45,7 @@
 #include <iostream>
 #include "MeshHandler.hpp"
 #include "CnP.hpp"
+#include "CnE.hpp"
 #include "Constants.hpp"
 
 using namespace mfem;
@@ -60,19 +61,25 @@ int main(int argc, char *argv[]) {
     MeshHandler mesh_handler;
     mesh_handler.InitializeMesh();
     mesh_handler.PrintMeshInfo();
+    mesh_handler.Save();
 
     // Create the CnP object
     CnP cnp(mesh_handler);
     cnp.Initialize();
 
+    // Create the CnE object
+    CnE cne(mesh_handler);
+    cne.Initialize();
+
     // Time-stepping loop
     for (int t = 0; t < 10 + 1; ++t) {
         cnp.TimeStep(Constants::dt);
+        cne.TimeStep(Constants::dt);
     }
 
     // Save the results
-    cnp.Save();
-    
+    //cnp.Save();
+
     // Finalize MPI
     Mpi::Finalize();
     return 0;
