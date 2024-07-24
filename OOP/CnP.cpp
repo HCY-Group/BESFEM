@@ -13,7 +13,9 @@ CnP::CnP(MeshHandler &mesh_handler)
       gtPsi(mesh_handler.GetTotalPsi()), 
       rho(Constants::rho), 
       Cr(Constants::Cr), 
-      CnPGridFunction(fespace) 
+      CnPGridFunction(fespace),
+      Rxn(std::make_unique<mfem::ParGridFunction>(fespace)) // Initialize Rxn
+
 {
     // Initialize psi with the values from mesh_handler.GetPsi()
     psi = *mesh_handler.GetPsi();
@@ -133,7 +135,7 @@ void CnP::TimeStep(double dt) {
     int nV = fespace->GetNV(); // Get number of vertices
 
     ParGridFunction Rxc(fespace);
-    Rxc = Rxn;
+    Rxc = *Rxn;
     Rxc /= rho;
     GridFunctionCoefficient cAp(&Rxc);
 
@@ -245,5 +247,6 @@ void CnP::TimeStep(double dt) {
 void CnP::Save() {
     CnPGridFunction.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/OOPCnP");
 }
+
 
 

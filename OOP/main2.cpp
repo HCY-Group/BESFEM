@@ -40,6 +40,10 @@
 //     return 0;
 // }
 
+// mpicxx -g -O3 -std=c++14 -I../../.. -I../../../../hypre/src/hypre/include main2.cpp 
+// Constants.cpp MeshHandler.cpp CnP.cpp CnE.cpp -o main2 -L../../.. -lmfem -L../../../../hypre/src/hypre/lib
+// -lHYPRE -L../../../../metis-4.0 -lmetis -lrt
+
 #include "mfem.hpp"
 #include "mpi.h"
 #include <iostream>
@@ -61,14 +65,14 @@ int main(int argc, char *argv[]) {
     MeshHandler mesh_handler;
     mesh_handler.InitializeMesh();
     mesh_handler.PrintMeshInfo();
-    mesh_handler.Save();
+    //mesh_handler.Save();
 
     // Create the CnP object
     CnP cnp(mesh_handler);
     cnp.Initialize();
 
     // Create the CnE object
-    CnE cne(mesh_handler);
+    CnE cne(mesh_handler, cnp);
     cne.Initialize();
 
     // Time-stepping loop
@@ -78,7 +82,9 @@ int main(int argc, char *argv[]) {
     }
 
     // Save the results
-    //cnp.Save();
+    cnp.Save();
+    cne.Save();
+
 
     // Finalize MPI
     Mpi::Finalize();

@@ -1,24 +1,32 @@
 #include "CnE.hpp"
+#include "CnP.hpp"
 #include "Constants.hpp"
 #include <iostream>
+#include "MeshHandler.hpp" 
+#include "mfem.hpp"
 
 using namespace mfem;
 using namespace std;
 
-CnE::CnE(MeshHandler &mesh_handler)
+CnE::CnE(MeshHandler &mesh_handler, CnP &cnp)
     : mesh_handler(mesh_handler),
       fespace(mesh_handler.GetFESpace()), 
       pse(fespace), // Initialize psi using fespace
       AvP(fespace),
+      Rxn(std::make_unique<mfem::ParGridFunction>(fespace)), // Allocate Rxn
       gtPse(mesh_handler.GetTotalPse()), 
       rho(Constants::rho), 
       Cr(Constants::Cr), 
       CnEGridFunction(fespace),
-      L_w(mesh_handler.GetLw()) 
+      L_w(mesh_handler.GetLw())
+      //Rxn(cnp.GetRxn())
+
 {
     // Initialize psi with the values from mesh_handler.GetPsi()
     pse = *mesh_handler.GetPse();
     AvP = *mesh_handler.GetAvP();
+    *Rxn = *cnp.GetRxn();
+
 }
 
 void CnE::Initialize() {
@@ -32,7 +40,10 @@ void CnE::Initialize() {
     ParGridFunction PeR(fespace);
     PeR = pse;
     PeR.Neg();
-    GridFunctionCoefficient matCoef_R(PeR);
+    GridFunctionCoefficient matCoef_R(&PeR);
+
+    //matCoef_R = std::make_unique<GridFunctionCoefficient>(&PeR); // Use unique_ptr
+
 
     // SBM mass matrix
     //HypreParMatrix Mmatp;
@@ -75,7 +86,7 @@ void CnE::Initialize() {
     //HypreParVector Fcb(fespace);
 
     // Create a Vector for CnP
-    HypreParVector CeV0(fespace), CeVn(fespace), RHSe(fespace);
+    // HypreParVector CeV0(fespace), CeVn(fespace), RHSe(fespace);
 
     // int nDof = CpV0.Size();
 
@@ -94,16 +105,25 @@ void CnE::TimeStep(double dt) {
     // Mt->Assemble();
     // Array<int> boundary_dofs;
     // Mt->FormSystemMatrix(boundary_dofs, Mmatp);
+
+    std::unique_ptr<ParBilinearForm> Me(new ParBilinearForm(fespace));
+    GridFunctionCoefficient cPe(&pse);
+    Me->AddDomainIntegrator(new MassIntegrator(cPe));
+    Me->Assemble();
+    Array<int> boundary_dofs;
+    Me->FormSystemMatrix(boundary_dofs, Mmate);
     
     
     HypreParVector Feb(fespace);
+    HypreParVector CeV0(fespace), CeVn(fespace), RHSe(fespace);
+
 
     //std::cout << "DEBUG: Before accessing Mmatp in TimeStep" << std::endl;
     //Mmatp.Print("TimeStep Mmatp");
     //std::cout << "DEBUG: After accessing Mmatp in TimeStep" << std::endl;
 
     ParGridFunction Rxe(fespace);
-    Rxe = Rxn;
+    Rxe = *Rxn;
     Rxe *= (-1.0*Constants::t_minus);
 
     HypreParVector X1v(fespace);
@@ -174,6 +194,8 @@ void CnE::TimeStep(double dt) {
     std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(fespace));
     //HypreParMatrix Kmate;
 
+    //Array<int> boundary_dofs;
+
     Ke2->AddDomainIntegrator(new DiffusionIntegrator(cDe));
     Ke2->Assemble();
     Ke2->FormLinearSystem(boundary_dofs, CnEGridFunction, Fet, Kmate, X1v, Feb);
@@ -185,32 +207,49 @@ void CnE::TimeStep(double dt) {
     std::cout << "Mmate rows: " << Mmate.NumRows() << ", cols: " << Mmate.NumCols() << std::endl;
     std::cout << "Kmate rows: " << Kmate.NumRows() << ", cols: " << Kmate.NumCols() << std::endl;
 
-    // Mmatp.Print("Mmatp");
-    // Kmatp.Print("Kmatp");
+    // Mmate.Print("Mmate");
+    // Kmate.Print("Kmate");
 
 // // Crank-Nicolson matrices	
     TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
     TmatL = Add(1.0, Mmate,  0.5*dt, Kmate);
+
+    std::cout << "TmatR rows: " << TmatR->NumRows() << ", cols: " << TmatR->NumCols() << std::endl;
+    std::cout << "TmatL rows: " << TmatL->NumRows() << ", cols: " << TmatL->NumCols() << std::endl;
+
     
     // vector of CnE				
-    CnE.GetTrueDofs(CeV0);		
+    CnEGridFunction.GetTrueDofs(CeV0);		
             
     TmatR->Mult(CeV0,RHSe);
     RHSe += Feb;
     
     // solver
+
+    HypreSmoother Me_prec;
+    CGSolver Me_solver(MPI_COMM_WORLD);
+
+    Me_solver.iterative_mode = false;
+    Me_solver.SetRelTol(1e-7);
+    Me_solver.SetAbsTol(0);
+    Me_solver.SetMaxIter(200);
+    Me_solver.SetPrintLevel(0);
+    Me_prec.SetType(HypreSmoother::Jacobi);
+    Me_solver.SetPreconditioner(Me_prec);
+
+
     Me_solver.SetOperator(*TmatL);    	
     
     // time stepping
     Me_solver.Mult(RHSe,CeVn) ;
     
     // recover
-    CnE.Distribute(CeVn);    	
+    CnEGridFunction.Distribute(CeVn);    	
 
     // check conservation of salt
-    if (t%500 == 0 && t > 0){
+    //if (t%500 == 0 && t > 0){
         CeC = 0.0;
-        CeT = CnE;
+        CeT = CnEGridFunction;
         CeT *= pse;
         for (int ei = 0; ei < nE; ei++){
             CeT.GetNodalValues(ei,VtxVal) ;
@@ -224,14 +263,9 @@ void CnE::TimeStep(double dt) {
         CeAvg = gCeC/gtPse;				
         
         // adjust CnE
-        CnE -= (CeAvg-Ce0);
+        CnEGridFunction -= (CeAvg-Ce0);
         MPI_Barrier(MPI_COMM_WORLD);
-    }	
-    TmatR->~HypreParMatrix();
-    TmatL->~HypreParMatrix();		
-    Be2->~ParLinearForm();
-
-    std::cout << "Tmatp rows: " << Tmatp->NumRows() << ", cols: " << Tmatp->NumCols() << std::endl;
+    //}	 
 }
 
 void CnE::Save() {

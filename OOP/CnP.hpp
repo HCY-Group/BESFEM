@@ -18,6 +18,9 @@ public:
 
     void Save();
 
+    mfem::ParGridFunction* GetRxn() const { return Rxn.get(); }
+
+
 
 private:
     MeshHandler &mesh_handler; // Reference to MeshHandler object
@@ -25,6 +28,13 @@ private:
     mfem::ParFiniteElementSpace *fespace; // Pointer to the parallel finite element space
     mfem::ParGridFunction psi; // Grid function for psi
     mfem::ParGridFunction AvP; // Grid function for psi
+    
+   //mfem::ParGridFunction Rxn; // Grid function for psi
+
+    std::unique_ptr<mfem::ParGridFunction> Rxn;
+
+
+
     double gtPsi; // Total Psi value
     double rho; // Rho value
     double Cr; // Cr value
