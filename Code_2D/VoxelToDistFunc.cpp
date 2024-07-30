@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	const char* tiffname ="II_1_bin.tif";
 	Constraints args;
 	args.Depth_begin = 0;	//only read in one slice for 2D data
-	args.Depth_end = 1;	//only read in one slice for 2D data
+	args.Depth_end = 5;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
 	args.Row_end      = 80;
@@ -60,9 +60,15 @@ int main(int argc, char *argv[])
 	int nx = tiffdata[0][0].size();
 	double sx = nx;  //make dx = 1
 	double sy = ny;  //make dy = 1
+	double sz = nz;  //make dz = 1
 	bool generate_edges = false;
 	bool sfc_ordering = false;
-	Mesh gmesh = Mesh::MakeCartesian2D(nx-1, ny-1, Element::QUADRILATERAL, generate_edges, sx, sy, sfc_ordering);
+	Mesh gmesh;
+	if (args.Depth_end-args.Depth_begin == 1) {
+		gmesh = Mesh::MakeCartesian2D(nx-1, ny-1, Element::QUADRILATERAL, generate_edges, sx, sy, sfc_ordering);
+	} else {
+		gmesh = Mesh::MakeCartesian3D(nx-1, ny-1, nz-1, Element::HEXAHEDRON, sx, sy, sz, sfc_ordering);
+	}
 	gmesh.EnsureNCMesh(true);
 
 	// Create global FE space for Voxel Data
@@ -73,13 +79,15 @@ int main(int argc, char *argv[])
 	// global grid function for voxel data
 	cout << "Defining Voxel GridFunction" << endl;
 	GridFunction gVox(&gFespace);
-	for(int j=0; j<ny; j++){
-		for(int i=0; i<nx; i++){
-			int idx = i+nx*j;
-			//cout << "idx = " << i+ny*j << endl;
-			//cout << "gVox[idx] = " << gVox[idx] << endl;
-			//cout << "tiffdata[i][j][0] = " << tiffdata[i][j][0] << endl;
-			gVox[idx] = tiffdata[0][j][i];
+	for (int k=0; k<nz; k++){
+		for (int j=0; j<ny; j++){
+			for (int i=0; i<nx; i++){
+				int idx = i + nx*j + nx*ny*k;
+				//cout << "idx = " << i+ny*j << endl;
+				//cout << "gVox[idx] = " << gVox[idx] << endl;
+				//cout << "tiffdata[i][j][0] = " << tiffdata[i][j][0] << endl;
+				gVox[idx] = tiffdata[k][j][i];
+			}
 		}
 	}
 	
