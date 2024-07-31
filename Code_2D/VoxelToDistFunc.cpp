@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 	bool generate_edges = false;
 	bool sfc_ordering = false;
 	Mesh gmesh;
-	if (args.Depth_end-args.Depth_begin == 1) {
+	if (nz == 1) {
 		gmesh = Mesh::MakeCartesian2D(nx-1, ny-1, Element::QUADRILATERAL, generate_edges, sx, sy, sfc_ordering);
 	} else {
 		gmesh = Mesh::MakeCartesian3D(nx-1, ny-1, nz-1, Element::HEXAHEDRON, sx, sy, sz, sfc_ordering);
