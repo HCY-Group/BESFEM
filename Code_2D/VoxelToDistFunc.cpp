@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	const char* tiffname ="II_1_bin.tif";
 	Constraints args;
 	args.Depth_begin = 0;	//only read in one slice for 2D data
-	args.Depth_end = 1;	//only read in one slice for 2D data
+	args.Depth_end = 5;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
 	args.Row_end      = 80;
@@ -480,11 +480,19 @@ int main(int argc, char *argv[])
 		// Dirichlet Boundary conditions
 		Array<int> dbc_bdr(pmesh.bdr_attributes.Max());
 		dbc_bdr = 0; 
-		if (ConIter==0){
-			dbc_bdr[2] = 1; //north
+		if (pmesh.Dimension()==2) {
+			if (ConIter==0){
+				dbc_bdr[2] = 1; //north?
+			} else {
+				dbc_bdr[0] = 1; //south?
+			}
 		} else {
-			dbc_bdr[0] = 1; //south
-		}
+			if (ConIter==0){
+				dbc_bdr[3] = 1; //north?
+			} else {
+				dbc_bdr[1] = 1; //south?
+			}
+		}	
 		Array<int> ess_tdof_list(0);
 		fespace.GetEssentialTrueDofs(dbc_bdr, ess_tdof_list);
 		//ConstantCoefficient dbcCoef(1.0);
