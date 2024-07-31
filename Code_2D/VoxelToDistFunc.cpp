@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	const char* tiffname ="II_1_bin.tif";
 	Constraints args;
 	args.Depth_begin = 0;	//only read in one slice for 2D data
-	args.Depth_end = 5;	//only read in one slice for 2D data
+	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
 	args.Row_end      = 80;
@@ -550,6 +550,7 @@ int main(int argc, char *argv[])
 			pd = new ParaViewDataCollection("Conc_e", &pmesh);
 			pd->RegisterField("Cn_e", &Cn);
 		}
+		pd->RegisterField("psi", &psi);
 		pd->SetLevelsOfDetail(order);
 		pd->SetDataFormat(VTKFormat::BINARY);
 		pd->SetHighOrderOutput(true);
