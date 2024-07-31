@@ -489,6 +489,7 @@ int main(int argc, char *argv[])
 		fespace.GetEssentialTrueDofs(dbc_bdr, ess_tdof_list);
 		//ConstantCoefficient dbcCoef(1.0);
 		ParGridFunction dbcval(&fespace);
+		dbcval = 0.0;
 		for (int vi = 0; vi < nV; vi++){
 			if ( psi(vi) > 0.6 ){
 				dbcval(vi) = 1.0;
