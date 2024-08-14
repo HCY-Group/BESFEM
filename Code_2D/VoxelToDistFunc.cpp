@@ -529,13 +529,13 @@ int main(int argc, char *argv[])
 
 		t_ode = 0.0;
 		dt = 0.05;
-		for (int t = 0; t < 50; t++){
+		for (int t = 0; t < 100; t++){
 			ode_solverCn->Step(X, t_ode, dt);
 			
 			// Accelerate the diffusion
 			KCn.RecoverFEMSolution(X, b, Cn);  //Cast X back to Cn
 			for (int vi = 0; vi < nV; vi++){
-				if ( Cn(vi) > 1.0e-3 && psi(vi) > 0.6 ){
+				if ( Cn(vi) > 1.0e-2 && psi(vi) > 0.6 ){
 					Cn(vi) = 1.0;  //Modify Cn
 				}
 			}
