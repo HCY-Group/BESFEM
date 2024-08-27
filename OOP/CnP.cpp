@@ -1,5 +1,7 @@
 #include "CnP.hpp"
+#include "MeshHandler.hpp"
 #include "Constants.hpp"
+#include <fstream>
 #include <iostream>
 
 using namespace mfem;
@@ -13,8 +15,8 @@ CnP::CnP(MeshHandler &mesh_handler)
       gtPsi(mesh_handler.GetTotalPsi()), 
       rho(Constants::rho), 
       Cr(Constants::Cr), 
-      CnPGridFunction(fespace),
-      Rxn(std::make_unique<mfem::ParGridFunction>(fespace)) // Initialize Rxn
+      CnPGridFunction(fespace)
+    //   Rxn(make_unique<ParGridFunction>(fespace)) // Initialize Rxn
 
 {
     // Initialize psi with the values from mesh_handler.GetPsi()
@@ -26,6 +28,12 @@ void CnP::Initialize() {
     double Cp0 = 0.3; // initial value
     CnPGridFunction = Cp0;
 
+    // // psi trial 
+    // cout << "PSI bringing into CnP" << endl;
+    // psi.Print(std::cout);
+    // cout << "end" << endl;
+
+
     // Degree of lithiation
     double Xfr = 0.0;
 
@@ -36,6 +44,10 @@ void CnP::Initialize() {
     double lSum = 0.0;
     int nE = fespace->GetNE(); // Get number of elements
     int nC = pow(2, fespace->GetMesh()->Dimension()); // Number of corner vertices
+
+    // std::cout << "CnP nC: " << nC << std::endl;
+
+
     Vector EVol(nE);
     for (int ei = 0; ei < nE; ei++) {
         EVol(ei) = fespace->GetMesh()->GetElementVolume(ei);
@@ -107,6 +119,13 @@ void CnP::Initialize() {
     psi.GetTrueDofs(PsVc);
 
     cout << "Degree of Lithiation: " << Xfr << std::endl;
+
+    Rxn = make_unique<ParGridFunction>(fespace); // this was the difference!
+    // ParGridFunction Rxn(fespace);
+    // *Rxn = 0.0;
+    *Rxn = AvP; // why do I need * ?
+    *Rxn *= 1.0e-10; // why do I need * ?
+
 }
 
 void CnP::TimeStep(double dt) {
@@ -126,9 +145,12 @@ void CnP::TimeStep(double dt) {
     //std::cout << "DEBUG: After accessing Mmatp in TimeStep" << std::endl;
 
     ParGridFunction Rxn(fespace);
-    Rxn = 0.0;
-    Rxn = AvP;
-    Rxn *= 1.0e-10;
+    // Rxn = 0.0;
+    // Rxn = AvP;
+    // Rxn *= 1.0e-10;
+
+    // Rxn.Print(std::cout);
+
 
     HypreParVector X1v(fespace);
 
@@ -238,6 +260,10 @@ void CnP::TimeStep(double dt) {
     double gSum;
     MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     double Xfr = gSum / gtPsi;
+
+    // cout << "Rxn after CnP" << endl;
+    // Rxn.Print(std::cout);
+
     
     delete Tmatp;
 
@@ -247,6 +273,10 @@ void CnP::TimeStep(double dt) {
 void CnP::Save() {
     CnPGridFunction.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/OOPCnP");
 }
+
+// mfem::ParGridFunction* CnP::GetRxn() {
+//     return Rxn.get();
+// }
 
 
 

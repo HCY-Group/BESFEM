@@ -18,7 +18,9 @@ public:
 
     void Save();
 
-    mfem::ParGridFunction* GetRxn() const { return Rxn.get(); }
+    mfem::ParGridFunction* GetRxn() const { return Rxn.get(); } // similar to how psi came from meshhandler
+    // mfem::ParGridFunction* GetRxn();
+
 
 
 
@@ -30,8 +32,9 @@ private:
     mfem::ParGridFunction AvP; // Grid function for psi
     
    //mfem::ParGridFunction Rxn; // Grid function for psi
+    // std::unique_ptr<mfem::ParFiniteElementSpace> fespace;
 
-    std::unique_ptr<mfem::ParGridFunction> Rxn;
+    std::unique_ptr<mfem::ParGridFunction> Rxn; // similar to how psi was done
 
 
 

@@ -1,9 +1,9 @@
 #include "CnE.hpp"
 #include "CnP.hpp"
 #include "Constants.hpp"
-#include <iostream>
-#include "MeshHandler.hpp" 
-#include "mfem.hpp"
+// #include <iostream>
+// #include "MeshHandler.hpp" 
+// #include "mfem.hpp"
 
 using namespace mfem;
 using namespace std;
@@ -13,25 +13,39 @@ CnE::CnE(MeshHandler &mesh_handler, CnP &cnp)
       fespace(mesh_handler.GetFESpace()), 
       pse(fespace), // Initialize psi using fespace
       AvP(fespace),
-      Rxn(std::make_unique<mfem::ParGridFunction>(fespace)), // Allocate Rxn
+      //Rxn(std::make_unique<mfem::ParGridFunction>(fespace)), // Allocate Rxn
       gtPse(mesh_handler.GetTotalPse()), 
       rho(Constants::rho), 
       Cr(Constants::Cr), 
       CnEGridFunction(fespace),
-      L_w(mesh_handler.GetLw())
+      L_w(mesh_handler.GetLw()),
+      cnp(cnp)
       //Rxn(cnp.GetRxn())
 
 {
+
     // Initialize psi with the values from mesh_handler.GetPsi()
     pse = *mesh_handler.GetPse();
     AvP = *mesh_handler.GetAvP();
-    *Rxn = *cnp.GetRxn();
+    //*Rxn = *cnp.GetRxn();
+
+    Rxn = *cnp.GetRxn();
+
+    // cout << "Rxn CnE Initialize" << endl;
+    // Pse->Print(std::cout);
 
 }
 
+
 void CnE::Initialize() {
+    // std::cout << "Entering CnE::Initialize()" << std::endl;
+
     double Ce0 = 0.001; // initial value
     CnEGridFunction = Ce0;
+
+    // CnEGridFunction.Print(std::cout);
+
+    // Rxn->Print(std::cout);
 
     // Degree of lithiation
     // double Xfr = 0.0;
@@ -95,16 +109,30 @@ void CnE::Initialize() {
     // psi.GetTrueDofs(PsVc);
 
     // cout << "Degree of Lithiation: " << Xfr << std::endl;
+
+    int nE = fespace->GetNE(); // Get number of elements
+    int nC = pow(2, fespace->GetMesh()->Dimension()); // Number of corner vertices
+
+    // std::cout << "CnE nC: " << nC << std::endl;
+
+
+    Array<double> VtxVal(nC);
+    Vector EVol(nE);
+    Vector EAvg(nE);
+    double eCrnt = 0.0;
+
+    double geCrnt = 0.0;
+	double infx = 0.0;
+
+    double CeC = 0.0;
+    double gCeC = 0.0;
+    double CeAvg = 0.0;
+
+    ParGridFunction CeT(fespace);
+
 }
 
 void CnE::TimeStep(double dt) {
-    
-    // std::unique_ptr<ParBilinearForm> Mt(new ParBilinearForm(fespace));
-    // GridFunctionCoefficient cPs(&psi);
-    // Mt->AddDomainIntegrator(new MassIntegrator(cPs));
-    // Mt->Assemble();
-    // Array<int> boundary_dofs;
-    // Mt->FormSystemMatrix(boundary_dofs, Mmatp);
 
     std::unique_ptr<ParBilinearForm> Me(new ParBilinearForm(fespace));
     GridFunctionCoefficient cPe(&pse);
@@ -113,75 +141,68 @@ void CnE::TimeStep(double dt) {
     Array<int> boundary_dofs;
     Me->FormSystemMatrix(boundary_dofs, Mmate);
     
-    
     HypreParVector Feb(fespace);
     HypreParVector CeV0(fespace), CeVn(fespace), RHSe(fespace);
 
+    cout << "Rxn bringing into CnE" << endl;
+    Rxn.Print(std::cout);
 
-    //std::cout << "DEBUG: Before accessing Mmatp in TimeStep" << std::endl;
-    //Mmatp.Print("TimeStep Mmatp");
-    //std::cout << "DEBUG: After accessing Mmatp in TimeStep" << std::endl;
+    // ParGridFunction Rxe(fespace);
+    Rxe = make_unique<ParGridFunction>(fespace);
+    *Rxe = Rxn;
+    *Rxe *= (-1.0*Constants::t_minus);
+    cout << "Rxe in CnE" << endl;
+    Rxe->Print(std::cout);
 
-    ParGridFunction Rxe(fespace);
-    Rxe = *Rxn;
-    Rxe *= (-1.0*Constants::t_minus);
+    // GridFunctionCoefficient cAe(&Rxe);
+    GridFunctionCoefficient cAe(Rxe.get()); // had to pass pointer from unique_ptr to GFC
 
-    HypreParVector X1v(fespace);
+    int nC = pow(2, fespace->GetMesh()->Dimension()); // Number of corner vertices
+    // std::cout << "nC: " << nC << std::endl;
 
-    // int nV = fespace->GetNV(); // Get number of vertices
+    int nE = fespace->GetNE(); // Get number of elements
+    // std::cout << "nE: " << nE << std::endl;
 
-    // ParGridFunction Rxc(fespace);
-    // Rxc = Rxn;
-    // Rxc /= rho;
-    GridFunctionCoefficient cAe(&Rxe);
+    int nV = fespace->GetNV();
 
-    int nV = fespace->GetNV(); // Get number of vertices
-
-    int nE = fespace->GetNE();
-    int nC = pow(2, fespace->GetMesh()->Dimension());
-    
+    Array<double> VtxVal(nC);
     Vector EVol(nE);
-
-
-    for (int ei = 0; ei < nE; ei++) {
+	for (int ei = 0; ei < nE; ei++){
+		// EVol(ei) = pmesh.GetElementVolume(ei);	
         EVol(ei) = fespace->GetMesh()->GetElementVolume(ei);
-    }
 
-    Array<double> VtxVal(nC) ;				// values of corner vertices
-	Vector EAvg(nE);						// element average	
-    double val;
+	} 	
+    Vector EAvg(nE);
 
-    // total reaction
-	double eCrnt = 0.0;
-    double geCrnt = 0.0;
-    double infx = 0.0;
+	eCrnt = 0.0;
+    for (int ei = 0; ei < nE; ei++){
 
-	ParGridFunction CeT(fespace);
-	double CeC = 0.0;
-	double CeAvg = 0.0;
-	double gCeC = 0.0;	
-
-
-
-	for (int ei = 0; ei < nE; ei++){	  
-		Rxe.GetNodalValues(ei,VtxVal) ;
+		// Rxe.GetNodalValues(ei,VtxVal) ;
+        Rxe->GetNodalValues(ei, VtxVal);  // -> due to unique_ptr
 		val = 0.0;
-		for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+		for (int vt = 0; vt < nC; vt++){
+            val += VtxVal[vt];
+        }
 		EAvg(ei) = val/nC;		 		  
 		eCrnt += EAvg(ei)*EVol(ei);	
 	} 	
+
 	MPI_Allreduce(&eCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	infx = geCrnt/L_w;
+
+    cout << "eCrnt: " << eCrnt << endl;
 
     // Neumann BC
 	ConstantCoefficient nbcCoef(infx);
 	ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
 
+ 	// force term
     std::unique_ptr<ParLinearForm> Be2(new ParLinearForm(fespace));
     Be2->AddDomainIntegrator(new DomainLFIntegrator(cAe));
     Be2->Assemble();
     ParLinearForm Fet(fespace);
     Fet = std::move(*Be2);
+    // Rxe.Print(std::cout);
 
     ParGridFunction De(fespace);
     // salt diffusivity in the electrolyte					
@@ -191,39 +212,29 @@ void CnE::TimeStep(double dt) {
     }
     GridFunctionCoefficient cDe(&De) ;
 
+    // K Matrix
+
     std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(fespace));
     //HypreParMatrix Kmate;
 
-    //Array<int> boundary_dofs;
+
+    HypreParVector X1v(fespace);
 
     Ke2->AddDomainIntegrator(new DiffusionIntegrator(cDe));
     Ke2->Assemble();
     Ke2->FormLinearSystem(boundary_dofs, CnEGridFunction, Fet, Kmate, X1v, Feb);
     Feb *= dt;
+    // Feb.Print("Feb.txt");
 
-    //HypreParMatrix *Tmatp;
-
-    // std::cout << "Boundary DOFs: " << boundary_dofs.Size() << endl;
-    std::cout << "Mmate rows: " << Mmate.NumRows() << ", cols: " << Mmate.NumCols() << std::endl;
-    std::cout << "Kmate rows: " << Kmate.NumRows() << ", cols: " << Kmate.NumCols() << std::endl;
-
-    // Mmate.Print("Mmate");
-    // Kmate.Print("Kmate");
-
-// // Crank-Nicolson matrices	
+    // Crank-Nicolson matrices	
     TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
     TmatL = Add(1.0, Mmate,  0.5*dt, Kmate);
-
-    std::cout << "TmatR rows: " << TmatR->NumRows() << ", cols: " << TmatR->NumCols() << std::endl;
-    std::cout << "TmatL rows: " << TmatL->NumRows() << ", cols: " << TmatL->NumCols() << std::endl;
-
     
     // vector of CnE				
     CnEGridFunction.GetTrueDofs(CeV0);		
             
     TmatR->Mult(CeV0,RHSe);
-    RHSe += Feb;
-    
+
     // solver
 
     HypreSmoother Me_prec;
@@ -236,35 +247,37 @@ void CnE::TimeStep(double dt) {
     Me_solver.SetPrintLevel(0);
     Me_prec.SetType(HypreSmoother::Jacobi);
     Me_solver.SetPreconditioner(Me_prec);
-
+    
 
     Me_solver.SetOperator(*TmatL);    	
-    
-    // time stepping
-    Me_solver.Mult(RHSe,CeVn) ;
-    
+    Me_solver.Mult(RHSe, CeVn); 
+
     // recover
-    CnEGridFunction.Distribute(CeVn);    	
+    CnEGridFunction.Distribute(CeVn);   
+    // CeVn.Print("CeVn_TAD.txt");
+ 	
 
     // check conservation of salt
     //if (t%500 == 0 && t > 0){
-        CeC = 0.0;
-        CeT = CnEGridFunction;
-        CeT *= pse;
-        for (int ei = 0; ei < nE; ei++){
-            CeT.GetNodalValues(ei,VtxVal) ;
-            val = 0.0;
-            for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-            EAvg(ei) = val/nC;	
-            CeC += EAvg(ei)*EVol(ei) ;
-        }
-        MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
-        // average CnE throughout electrolyte
-        CeAvg = gCeC/gtPse;				
+        // CeC = 0.0;
+        // CeT = CnEGridFunction;
+        // CeT *= pse;
+        // for (int ei = 0; ei < nE; ei++){
+        //     CeT.GetNodalValues(ei,VtxVal) ;
+        //     val = 0.0;
+        //     for (int vt = 0; vt < nC; vt++){
+        //         val += VtxVal[vt];
+        //     }
+        //     EAvg(ei) = val/nC;	
+        //     CeC += EAvg(ei)*EVol(ei) ;
+        // }
+        // MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
+        // // average CnE throughout electrolyte
+        // CeAvg = gCeC/gtPse;				
         
-        // adjust CnE
-        CnEGridFunction -= (CeAvg-Ce0);
-        MPI_Barrier(MPI_COMM_WORLD);
+        // // adjust CnE
+        // CnEGridFunction -= (CeAvg-Ce0);
+        // MPI_Barrier(MPI_COMM_WORLD);
     //}	 
 }
 

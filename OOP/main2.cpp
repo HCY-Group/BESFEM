@@ -75,15 +75,18 @@ int main(int argc, char *argv[]) {
     CnE cne(mesh_handler, cnp);
     cne.Initialize();
 
-    // Time-stepping loop
-    for (int t = 0; t < 10 + 1; ++t) {
+    //Time-stepping loop
+    for (int t = 0; t < 2 + 1; ++t) {
         cnp.TimeStep(Constants::dt);
         cne.TimeStep(Constants::dt);
     }
 
-    // Save the results
-    cnp.Save();
-    cne.Save();
+
+
+
+    // // Save the results
+    // cnp.Save();
+    // cne.Save();
 
 
     // Finalize MPI

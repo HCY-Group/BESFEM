@@ -84,6 +84,8 @@ int main(int argc, char *argv[])
 	int nV = pmesh.GetNV();					// number of vertices
 	int nE = pmesh.GetNE();					// number of elements
 	int nC = pow(2,pmesh.Dimension());		// number of corner vertices
+
+    std::cout << "nC: " << nC << std::endl;
 	
 	Array<double> VtxVal(nC) ;				// values of corner vertices
 	
@@ -152,7 +154,9 @@ int main(int argc, char *argv[])
         
         if (psi(vi) < eps){psi(vi) = eps;}   
         if (pse(vi) < eps){pse(vi) = eps;}         
-    } 	
+    } 
+
+	//pse.Print(std::cout);	
 	
 	ParGridFunction AvB(&fespace);
 	AvB = AvP;
@@ -477,6 +481,9 @@ int main(int argc, char *argv[])
 	Rxn = 0.0;
 	Rxn = AvP;
 	Rxn *= 1.0e-10;	
+
+	cout << "Rxn before timestepping" << endl;
+	Rxn.Print(std::cout);
 	
 	//containers used later.
 	HypreParVector X1v(&fespace), B1v(&fespace);
@@ -517,7 +524,7 @@ int main(int argc, char *argv[])
 	//  ===================================================================   
 		
 int t = 0;
-for (int t = 0; t < 10 + 1; t++){
+for (int t = 0; t < 1 + 1; t++){
 //while ( Vcell > Vcut){
 	
 	
@@ -597,7 +604,7 @@ for (int t = 0; t < 10 + 1; t++){
 			lSum += EAvg(ei)*EVol(ei);	
 		} 	
 		MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
-		Xfr = gSum/gtPsi;	
+		Xfr = gSum/gtPsi;
 
 		delete Tmatp;
 		// Tmatp->~HypreParMatrix();
@@ -615,8 +622,19 @@ for (int t = 0; t < 10 + 1; t++){
 		// //   \_____|_| |_|______|
 		// // ============================
 
+		//CnE.Print(std::cout);
+
+		
+
 		Rxe = Rxn;
 		Rxe *= (-1.0*t_minus);	
+		
+		cout << "Rxe in CnE" << endl;
+		Rxe.Print(std::cout);
+
+		// cout << "pse" << endl;
+		// pse.Print(std::cout);
+
 		GridFunctionCoefficient cAe(&Rxe) ;
 		
 		// total reaction
@@ -624,12 +642,18 @@ for (int t = 0; t < 10 + 1; t++){
 		for (int ei = 0; ei < nE; ei++){	  
 			Rxe.GetNodalValues(ei,VtxVal) ;
 			val = 0.0;
-			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+			for (int vt = 0; vt < nC; vt++){
+				val += VtxVal[vt];
+			}
 			EAvg(ei) = val/nC;		 		  
 			eCrnt += EAvg(ei)*EVol(ei);	
 		} 	
+
 		MPI_Allreduce(&eCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		infx = geCrnt/L_w;		
+		infx = geCrnt/L_w;
+
+		cout << "eCrnt: " << eCrnt << endl;
+		
 		
 		// Neumann BC
 		ConstantCoefficient nbcCoef(infx);
@@ -642,6 +666,8 @@ for (int t = 0; t < 10 + 1; t++){
 		Be2->Assemble();
 		// Move the contents of Be2 into Fet
 		Fet = std::move(*Be2);
+		// Rxe.Print(std::cout);
+
 
 		// salt diffusivity in the electrolyte					
 		for (int vi = 0; vi < nV; vi++){
@@ -654,10 +680,14 @@ for (int t = 0; t < 10 + 1; t++){
 		HypreParMatrix Kmate; //move to hpp
 		std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(&fespace)); 
 
+		// Fet.Print(std::cout);
+
    		Ke2->AddDomainIntegrator(new DiffusionIntegrator(cDe));
    		Ke2->Assemble();
    		Ke2->FormLinearSystem(boundary_dofs, CnE, Fet, Kmate, X1v, Feb);
    		Feb *= dt;
+		// Feb.Print("Feb_trial.txt");
+
 		
 		// // Crank-Nicolson matrices	
 		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
@@ -667,46 +697,57 @@ for (int t = 0; t < 10 + 1; t++){
 		CnE.GetTrueDofs(CeV0);		
 				
     	TmatR->Mult(CeV0,RHSe);
-    	RHSe += Feb;
+    	// RHSe += Feb;
+		//RHSe.Print("RHSe_Trial_after.txt");
+
     	
     	// solver
-		Me_solver.SetOperator(*TmatL);    	
+		Me_solver.SetOperator(*TmatL);    
+
+			
     	
     	// time stepping
 		Me_solver.Mult(RHSe,CeVn) ;
-		
-		// recover
-		CnE.Distribute(CeVn);    	
+		// CeVn.Print("CeVn_Trial_after.txt");
 
-		// check conservation of salt
-		//if (t%500 == 0 && t > 0){
-			CeC = 0.0;
-			CeT = CnE;
-			CeT *= pse;
-			for (int ei = 0; ei < nE; ei++){
-				CeT.GetNodalValues(ei,VtxVal) ;
-				val = 0.0;
-				for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-				EAvg(ei) = val/nC;	
-				CeC += EAvg(ei)*EVol(ei) ;
-			}
-			MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
-			// average CnE throughout electrolyte
-			CeAvg = gCeC/gtPse;				
+		
+		// CeVn.Print("CeVn_TBD.txt");
+
+		// recover
+		CnE.Distribute(CeVn);
+
+		// CeVn.Print("CeVn_Trial_AD.txt");
+
+
+		// // check conservation of salt
+		// //if (t%500 == 0 && t > 0){
+		// 	CeC = 0.0;
+		// 	CeT = CnE;
+		// 	CeT *= pse;
+		// 	for (int ei = 0; ei < nE; ei++){
+		// 		CeT.GetNodalValues(ei,VtxVal) ;
+		// 		val = 0.0;
+		// 		for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+		// 		EAvg(ei) = val/nC;	
+		// 		CeC += EAvg(ei)*EVol(ei) ;
+		// 	}
+		// 	MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
+		// 	// average CnE throughout electrolyte
+		// 	CeAvg = gCeC/gtPse;				
 			
-			// adjust CnE
-			CnE -= (CeAvg-Ce0);
-			MPI_Barrier(MPI_COMM_WORLD);
-		//}	
+		// 	// adjust CnE
+		// 	CnE -= (CeAvg-Ce0);
+		// 	MPI_Barrier(MPI_COMM_WORLD);
+		// //}	
 
 	
-		//TmatR->~HypreParMatrix();
-		//TmatL->~HypreParMatrix();		
-		//Be2->~ParLinearForm();
+		// //TmatR->~HypreParMatrix();
+		// //TmatL->~HypreParMatrix();		
+		// //Be2->~ParLinearForm();
 
 
-		delete TmatR;
-		delete TmatL;
+		// delete TmatR;
+		// delete TmatL;
 
 
 // // 		// ==============================================
@@ -1003,8 +1044,8 @@ for (int t = 0; t < 10 + 1; t++){
 	// phE.Save("/mnt/scratch/brandlan/3x90/phE_AMR_T3");
 	// Rxn.Save("/mnt/scratch/brandlan/3x90/Rxn_AMR_T3");
 	
-	CnP.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/CnP");
-	CnE.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/CnE");
+	// CnP.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/CnP");
+	// CnE.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/CnE");
 
 		
 	

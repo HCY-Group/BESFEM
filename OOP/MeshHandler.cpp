@@ -156,6 +156,13 @@ void MeshHandler::PrintMeshInfo() {
     cout << "Total Psi: " << gtPsi << endl;
     cout << "Total Pse: " << gtPse << endl;
     cout << "Target Current: " << gTrgI << endl;
+
+    // // psi info
+
+    // cout << "PSI in MeshHandler" << endl;
+    // psi->Print(std::cout);
+    // cout << "end" << endl;
+
 }
 
 void MeshHandler::Save() {

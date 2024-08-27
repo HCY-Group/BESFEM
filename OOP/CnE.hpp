@@ -22,13 +22,32 @@ public:
 
 private:
     MeshHandler &mesh_handler; // Reference to MeshHandler object
+    CnP &cnp;
 
     mfem::ParFiniteElementSpace *fespace; // Pointer to the parallel finite element space
     mfem::ParGridFunction pse; // Grid function for psi
     mfem::ParGridFunction AvP; // Grid function for psi
     //mfem::ParGridFunction Rxn; // Grid function for psi
 
-    std::unique_ptr<mfem::ParGridFunction> Rxn;
+    //std::unique_ptr<mfem::ParGridFunction> Rxn;
+    // mfem::ParGridFunction* Rxn;
+    mfem::ParGridFunction Rxn; // Grid function for Rxn - similar to how psi was in CnP
+    std::unique_ptr<mfem::ParGridFunction> Rxe;
+    // mfem::ParGridFunction Rxe;
+
+    mfem::ParGridFunction De;
+
+    double val;
+    double eCrnt;
+    double geCrnt;
+    double infx;
+    double CeC;
+    double gCeC;
+    double CeAvg;
+
+    int nE;
+    int nC;
+    int nV;
 
     double gtPse; // Total Psi value
     double rho; // Rho value
@@ -42,6 +61,9 @@ private:
     mfem::GridFunctionCoefficient matCoef_R; // Declare matCoef_R as a pointer
 
     mfem::ParGridFunction CnEGridFunction; // Renamed member variable for CnP grid function
+    mfem::ParGridFunction cDe;
+
+    mfem::ParGridFunction CeT;
 
 };
 
