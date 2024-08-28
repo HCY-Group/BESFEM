@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     cne.Initialize();
 
     //Time-stepping loop
-    for (int t = 0; t < 2 + 1; ++t) {
+    for (int t = 0; t < 10 + 1; ++t) {
         cnp.TimeStep(Constants::dt);
         cne.TimeStep(Constants::dt);
     }
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 
     // // Save the results
     // cnp.Save();
-    // cne.Save();
+    cne.Save();
 
 
     // Finalize MPI

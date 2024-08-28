@@ -82,7 +82,7 @@ void CnE::Initialize() {
     Me_prec.SetType(HypreSmoother::Jacobi);
     Me_solver.SetPreconditioner(Me_prec);
 
-    std::cout << "Mmate rows after initialization: " << Mmate.NumRows() << ", cols: " << Mmate.NumCols() << std::endl;
+    // std::cout << "Mmate rows after initialization: " << Mmate.NumRows() << ", cols: " << Mmate.NumCols() << std::endl;
    // Mmatp.Print("Simplified Mmatp");
 
     //HypreParMatrix *Tmatp;
@@ -130,6 +130,8 @@ void CnE::Initialize() {
 
     ParGridFunction CeT(fespace);
 
+    int s = 0;
+
 }
 
 void CnE::TimeStep(double dt) {
@@ -144,15 +146,15 @@ void CnE::TimeStep(double dt) {
     HypreParVector Feb(fespace);
     HypreParVector CeV0(fespace), CeVn(fespace), RHSe(fespace);
 
-    cout << "Rxn bringing into CnE" << endl;
-    Rxn.Print(std::cout);
+    // cout << "Rxn bringing into CnE" << endl;
+    // Rxn.Print(std::cout);
 
     // ParGridFunction Rxe(fespace);
     Rxe = make_unique<ParGridFunction>(fespace);
     *Rxe = Rxn;
     *Rxe *= (-1.0*Constants::t_minus);
-    cout << "Rxe in CnE" << endl;
-    Rxe->Print(std::cout);
+    // cout << "Rxe in CnE" << endl;
+    // Rxe->Print(std::cout);
 
     // GridFunctionCoefficient cAe(&Rxe);
     GridFunctionCoefficient cAe(Rxe.get()); // had to pass pointer from unique_ptr to GFC
@@ -255,30 +257,52 @@ void CnE::TimeStep(double dt) {
     // recover
     CnEGridFunction.Distribute(CeVn);   
     // CeVn.Print("CeVn_TAD.txt");
- 	
 
+    ParGridFunction CeT(fespace);
+
+    Ce0 = 0.001;
+ 	    
     // check conservation of salt
-    //if (t%500 == 0 && t > 0){
-        // CeC = 0.0;
-        // CeT = CnEGridFunction;
-        // CeT *= pse;
-        // for (int ei = 0; ei < nE; ei++){
-        //     CeT.GetNodalValues(ei,VtxVal) ;
-        //     val = 0.0;
-        //     for (int vt = 0; vt < nC; vt++){
-        //         val += VtxVal[vt];
-        //     }
-        //     EAvg(ei) = val/nC;	
-        //     CeC += EAvg(ei)*EVol(ei) ;
-        // }
-        // MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
-        // // average CnE throughout electrolyte
-        // CeAvg = gCeC/gtPse;				
+    if (s%1 == 0 && s > 0){ // used variable s for timestep 
+        CeC = 0.0;
+        CeT = CnEGridFunction;
+        CeT *= pse;
+        for (int ei = 0; ei < nE; ei++){
+            CeT.GetNodalValues(ei,VtxVal) ;
+            // cout << "s: " << s << ", ei: " << ei << ", val: " << val << ", VtxVal: ";
+            // for (int vt = 0; vt < nC; vt++) {
+            //     cout << VtxVal[vt] << " ";
+            // }
+            // cout << endl;
+            val = 0.0;
+            for (int vt = 0; vt < nC; vt++){
+                val += VtxVal[vt];
+            }
+            EAvg(ei) = val/nC;	
+            CeC += EAvg(ei)*EVol(ei) ;
+        }
         
-        // // adjust CnE
-        // CnEGridFunction -= (CeAvg-Ce0);
-        // MPI_Barrier(MPI_COMM_WORLD);
-    //}	 
+        cout << "CeC: " << CeC << endl;
+
+        MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
+        // average CnE throughout electrolyte
+        CeAvg = gCeC/gtPse;	
+
+        // cout << "CeAvg: " << CeAvg << endl;
+        // cout << "gtPse: " << gtPse << endl;
+        // cout << "gCeC: " << gCeC << endl;	
+
+        // cout << "Ce0: " << Ce0 << endl;
+        // cout << "nC: " << nC << endl;		
+        
+        // adjust CnE
+        CnEGridFunction -= (CeAvg-Ce0);
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
+    
+    cout << "CeAvg: " << CeAvg << endl;
+
+    s = s + 1;	 
 }
 
 void CnE::Save() {

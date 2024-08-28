@@ -48,6 +48,7 @@ private:
     int nE;
     int nC;
     int nV;
+    int s;
 
     double gtPse; // Total Psi value
     double rho; // Rho value

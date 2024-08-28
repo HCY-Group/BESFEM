@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	double Vsr = 0.2;				// voltage scanning rate
 	double Vcut = 2.7; 				// cut-off voltage
 	
-
+	int s = 0;
 
 	// // =====================================
 	// // 	  __  __           _     
@@ -482,8 +482,8 @@ int main(int argc, char *argv[])
 	Rxn = AvP;
 	Rxn *= 1.0e-10;	
 
-	cout << "Rxn before timestepping" << endl;
-	Rxn.Print(std::cout);
+	// cout << "Rxn before timestepping" << endl;
+	// Rxn.Print(std::cout);
 	
 	//containers used later.
 	HypreParVector X1v(&fespace), B1v(&fespace);
@@ -524,7 +524,7 @@ int main(int argc, char *argv[])
 	//  ===================================================================   
 		
 int t = 0;
-for (int t = 0; t < 1 + 1; t++){
+for (int t = 0; t < 10 + 1; t++){
 //while ( Vcell > Vcut){
 	
 	
@@ -629,8 +629,8 @@ for (int t = 0; t < 1 + 1; t++){
 		Rxe = Rxn;
 		Rxe *= (-1.0*t_minus);	
 		
-		cout << "Rxe in CnE" << endl;
-		Rxe.Print(std::cout);
+		// cout << "Rxe in CnE" << endl;
+		// Rxe.Print(std::cout);
 
 		// cout << "pse" << endl;
 		// pse.Print(std::cout);
@@ -718,28 +718,42 @@ for (int t = 0; t < 1 + 1; t++){
 
 		// CeVn.Print("CeVn_Trial_AD.txt");
 
-
-		// // check conservation of salt
-		// //if (t%500 == 0 && t > 0){
-		// 	CeC = 0.0;
-		// 	CeT = CnE;
-		// 	CeT *= pse;
-		// 	for (int ei = 0; ei < nE; ei++){
-		// 		CeT.GetNodalValues(ei,VtxVal) ;
-		// 		val = 0.0;
-		// 		for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-		// 		EAvg(ei) = val/nC;	
-		// 		CeC += EAvg(ei)*EVol(ei) ;
-		// 	}
-		// 	MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
-		// 	// average CnE throughout electrolyte
-		// 	CeAvg = gCeC/gtPse;				
+		// check conservation of salt
+		if (s%1 == 0 && s > 0){
+			CeC = 0.0;
+			CeT = CnE;
+			CeT *= pse;
+			for (int ei = 0; ei < nE; ei++){
+				CeT.GetNodalValues(ei,VtxVal) ;
+				// cout << "s: " << s << ", ei: " << ei << ", val: " << val << ", VtxVal: ";
+            	// for (int vt = 0; vt < nC; vt++) {
+                // 	cout << VtxVal[vt] << " ";
+            	// }
+				// cout << endl;
+				val = 0.0;
+				for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+				EAvg(ei) = val/nC;	
+				CeC += EAvg(ei)*EVol(ei) ;
+			}
+			MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
+			// average CnE throughout electrolyte
+			CeAvg = gCeC/gtPse;	
 			
-		// 	// adjust CnE
-		// 	CnE -= (CeAvg-Ce0);
-		// 	MPI_Barrier(MPI_COMM_WORLD);
-		// //}	
+			// cout << "CeAvg: " << CeAvg << endl;
+			// cout << "gtPse: " << gtPse << endl;
+        	// cout << "gCeC: " << gCeC << endl;
 
+			// cout << "Ce0: " << Ce0 << endl;
+
+			
+			// adjust CnE
+			CnE -= (CeAvg-Ce0);
+			MPI_Barrier(MPI_COMM_WORLD);
+		}	
+
+		cout << "CeAvg: " << CeAvg << endl;
+
+		s = s + 1;
 	
 		// //TmatR->~HypreParMatrix();
 		// //TmatL->~HypreParMatrix();		
@@ -1045,12 +1059,34 @@ for (int t = 0; t < 1 + 1; t++){
 	// Rxn.Save("/mnt/scratch/brandlan/3x90/Rxn_AMR_T3");
 	
 	// CnP.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/CnP");
-	// CnE.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/CnE");
+	CnE.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/CnE");
 
 		
 	
    return 0;
 }	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // #include "mfem.hpp"
