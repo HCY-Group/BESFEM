@@ -402,29 +402,29 @@ int main(int argc, char *argv[])
 // 	// //  |_|                       
 // 	// ========================================
 
-	// ParGridFunction phP(&fespace);		// electropotential in particle
-	// ParGridFunction kap(&fespace);		// conductivity in particle
-	// ParGridFunction RpP(&fespace);		// reaction 
-	// ParGridFunction pP0(&fespace);
+	ParGridFunction phP(&fespace);		// electropotential in particle
+	ParGridFunction kap(&fespace);		// conductivity in particle
+	ParGridFunction RpP(&fespace);		// reaction 
+	ParGridFunction pP0(&fespace);
 
-	// double BvP = 2.9395;
-	// // 	BvP = 1.0;
-	// phP = BvP;	
+	double BvP = 2.9395;
+	// 	BvP = 1.0;
+	phP = BvP;	
 
-	// // stiffness matrix
-	// HypreParMatrix KmP;	
-	// ParBilinearForm *Kp2;
+	// stiffness matrix
+	HypreParMatrix KmP;	
+	ParBilinearForm *Kp2;
 
-	// CGSolver cgPP(MPI_COMM_WORLD);
-	// cgPP.SetRelTol(1e-7);
-	// cgPP.SetMaxIter(200);
+	CGSolver cgPP(MPI_COMM_WORLD);
+	cgPP.SetRelTol(1e-7);
+	cgPP.SetMaxIter(200);
 
-	// // force Vector
-	// ParLinearForm *Bp2;
-	// ParLinearForm Fpt(&fespace);	
-	// HypreParVector Fpb(&fespace);
+	// force Vector
+	ParLinearForm *Bp2;
+	ParLinearForm Fpt(&fespace);	
+	HypreParVector Fpb(&fespace);
 
-	// HypreParVector Xs0(&fespace);
+	HypreParVector Xs0(&fespace);
 
 
 // // 	// ========================================
@@ -438,43 +438,43 @@ int main(int argc, char *argv[])
 // // 	// // 	 |_|                       
 // // 	// ========================================
 	
-	// double tc1 =(2*t_minus-1.0)/(2*t_minus*(1.0-t_minus));
-	// double tc2 = 1.0/(2*t_minus*(1.0-t_minus))*Cst1;
-	// double dffe;
+	double tc1 =(2*t_minus-1.0)/(2*t_minus*(1.0-t_minus));
+	double tc2 = 1.0/(2*t_minus*(1.0-t_minus))*Cst1;
+	double dffe;
 
-	// ParGridFunction phE(&fespace);		// electropot in electrolyte
-	// ParGridFunction Dmp(&fespace);		// D_minus_plus
-	// ParGridFunction kpl(&fespace);		// electrolyte conductivity
-	// ParGridFunction RpE(&fespace);		// reaction rate for electrolyte
-	// ParGridFunction pE0(&fespace);	
+	ParGridFunction phE(&fespace);		// electropot in electrolyte
+	ParGridFunction Dmp(&fespace);		// D_minus_plus
+	ParGridFunction kpl(&fespace);		// electrolyte conductivity
+	ParGridFunction RpE(&fespace);		// reaction rate for electrolyte
+	ParGridFunction pE0(&fespace);	
 
-	// double BvE = -1.0;
-	// phE = BvE;
+	double BvE = -1.0;
+	phE = BvE;
 
-	// // stiffness matrix
-	// HypreParMatrix Kml;
-	// ParBilinearForm *Kl2;	
+	// stiffness matrix
+	HypreParMatrix Kml;
+	ParBilinearForm *Kl2;	
 	
-	// // force vector
-	// ParLinearForm *Bl2;
-	// ParLinearForm Flt(&fespace);
-	// HypreParVector Flb(&fespace);	
+	// force vector
+	ParLinearForm *Bl2;
+	ParLinearForm Flt(&fespace);
+	HypreParVector Flb(&fespace);	
 	
-	// // Laplace matrix
-	// HypreParMatrix Kdm;
-	// ParBilinearForm *Kl1;
+	// Laplace matrix
+	HypreParMatrix Kdm;
+	ParBilinearForm *Kl1;
 
-	// CGSolver cgPE(MPI_COMM_WORLD);
-	// cgPE.SetRelTol(1e-7);
-	// cgPE.SetMaxIter(200);
+	CGSolver cgPE(MPI_COMM_WORLD);
+	cgPE.SetRelTol(1e-7);
+	cgPE.SetMaxIter(200);
 
 
-	// HypreParVector LpCe(&fespace), Xe0(&fespace);
-	// HypreParVector RHSl(&fespace);
+	HypreParVector LpCe(&fespace), Xe0(&fespace);
+	HypreParVector RHSl(&fespace);
 	
-	// double Vcell = BvP - BvE;
+	double Vcell = BvP - BvE;
 
-	// cout << "Vcell: " << Vcell << std::endl;	
+	cout << "Vcell: " << Vcell << std::endl;	
 
 
 	ParGridFunction Rxn(&fespace);
@@ -774,13 +774,16 @@ for (int t = 0; t < 10 + 1; t++){
 // // 		// ==============================================	
  
 
-		// // electrolyte conductivity and RHS	
-		// for (int vi = 0; vi < nV; vi++){
-		// 	dffe = exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
-		// 	Dmp(vi) = pse(vi)*tc1*D0*dffe;
-		// 	kpl(vi) = pse(vi)*tc2*D0*dffe*CnE(vi);
-		// }
-		// GridFunctionCoefficient cDm(&Dmp);
+		// electrolyte conductivity and RHS	
+		for (int vi = 0; vi < nV; vi++){
+			dffe = exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
+			Dmp(vi) = pse(vi)*tc1*D0*dffe;
+			kpl(vi) = pse(vi)*tc2*D0*dffe*CnE(vi);
+		}
+		GridFunctionCoefficient cDm(&Dmp);
+
+		Dmp.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/DmpTrial");
+
 
 		// // Laplace of CnE for the RHS
 		// std::unique_ptr<ParBilinearForm> Kl1(new ParBilinearForm(&fespace)); // Directly initialize Mt with new ParBilinearForm object
@@ -859,19 +862,21 @@ for (int t = 0; t < 10 + 1; t++){
 		// convergence residuals
 		// gErrP = 1.0;
 		// gErrE = 1.0;
-		// inlp = 0;	
+		// inlp = 0;
+
+//////////////// INTERNAL LOOP REACTION BEGINNING	
 
 // 		// internal loop
-// 		if (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){ // should be while
+		// if (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){ // should be while
 
-// 			// Butler-Volmer Equation for Reaction Rate
-// 			for (int vi = 0; vi < nV; vi++){
-// 				if ( AvB(vi)*dh > 0.0 ){
-// 					dPHE(vi) = phP(vi) - phE(vi);
-// 					Rxn(vi) = AvP(vi)*(Kfw(vi)*CnE(vi)*exp(-alp*Cst1*dPHE(vi)) - \
-// 					                   Kbw(vi)*CnP(vi)*exp( alp*Cst1*dPHE(vi)));
-// 				}
-// 			}
+		// 	// Butler-Volmer Equation for Reaction Rate
+		// 	for (int vi = 0; vi < nV; vi++){
+		// 		if ( AvB(vi)*dh > 0.0 ){
+		// 			dPHE(vi) = phP(vi) - phE(vi);
+		// 			Rxn(vi) = AvP(vi)*(Kfw(vi)*CnE(vi)*exp(-alp*Cst1*dPHE(vi)) - \
+		// 			                   Kbw(vi)*CnP(vi)*exp( alp*Cst1*dPHE(vi)));
+		// 		}
+		// 	}
 
 // // 			// ========================================
 // // 			// //               _     _____  
@@ -986,6 +991,9 @@ for (int t = 0; t < 10 + 1; t++){
 
 // 		} // internal loop	
 
+//////////////// INTERNAL LOOP REACTION	END
+
+
 		// total reaction current
 		// sCrnt = 0.0;
 		// for (int ei = 0; ei < nE; ei++){
@@ -1059,7 +1067,7 @@ for (int t = 0; t < 10 + 1; t++){
 	// Rxn.Save("/mnt/scratch/brandlan/3x90/Rxn_AMR_T3");
 	
 	// CnP.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/CnP");
-	CnE.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/CnE");
+	// CnE.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/CnE");
 
 		
 	

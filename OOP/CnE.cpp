@@ -153,19 +153,15 @@ void CnE::TimeStep(double dt) {
     Rxe = make_unique<ParGridFunction>(fespace);
     *Rxe = Rxn;
     *Rxe *= (-1.0*Constants::t_minus);
-    // cout << "Rxe in CnE" << endl;
-    // Rxe->Print(std::cout);
 
     // GridFunctionCoefficient cAe(&Rxe);
     GridFunctionCoefficient cAe(Rxe.get()); // had to pass pointer from unique_ptr to GFC
 
-    int nC = pow(2, fespace->GetMesh()->Dimension()); // Number of corner vertices
-    // std::cout << "nC: " << nC << std::endl;
+    nC = pow(2, fespace->GetMesh()->Dimension()); // Number of corner vertices
 
-    int nE = fespace->GetNE(); // Get number of elements
-    // std::cout << "nE: " << nE << std::endl;
+    nE = fespace->GetNE(); // Get number of elements
 
-    int nV = fespace->GetNV();
+    nV = fespace->GetNV();
 
     Array<double> VtxVal(nC);
     Vector EVol(nE);
@@ -217,8 +213,6 @@ void CnE::TimeStep(double dt) {
     // K Matrix
 
     std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(fespace));
-    //HypreParMatrix Kmate;
-
 
     HypreParVector X1v(fespace);
 
@@ -226,7 +220,6 @@ void CnE::TimeStep(double dt) {
     Ke2->Assemble();
     Ke2->FormLinearSystem(boundary_dofs, CnEGridFunction, Fet, Kmate, X1v, Feb);
     Feb *= dt;
-    // Feb.Print("Feb.txt");
 
     // Crank-Nicolson matrices	
     TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
@@ -250,14 +243,11 @@ void CnE::TimeStep(double dt) {
     Me_prec.SetType(HypreSmoother::Jacobi);
     Me_solver.SetPreconditioner(Me_prec);
     
-
     Me_solver.SetOperator(*TmatL);    	
     Me_solver.Mult(RHSe, CeVn); 
 
     // recover
     CnEGridFunction.Distribute(CeVn);   
-    // CeVn.Print("CeVn_TAD.txt");
-
     ParGridFunction CeT(fespace);
 
     Ce0 = 0.001;
@@ -269,11 +259,6 @@ void CnE::TimeStep(double dt) {
         CeT *= pse;
         for (int ei = 0; ei < nE; ei++){
             CeT.GetNodalValues(ei,VtxVal) ;
-            // cout << "s: " << s << ", ei: " << ei << ", val: " << val << ", VtxVal: ";
-            // for (int vt = 0; vt < nC; vt++) {
-            //     cout << VtxVal[vt] << " ";
-            // }
-            // cout << endl;
             val = 0.0;
             for (int vt = 0; vt < nC; vt++){
                 val += VtxVal[vt];
@@ -287,14 +272,7 @@ void CnE::TimeStep(double dt) {
         MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
         // average CnE throughout electrolyte
         CeAvg = gCeC/gtPse;	
-
-        // cout << "CeAvg: " << CeAvg << endl;
-        // cout << "gtPse: " << gtPse << endl;
-        // cout << "gCeC: " << gCeC << endl;	
-
-        // cout << "Ce0: " << Ce0 << endl;
-        // cout << "nC: " << nC << endl;		
-        
+ 
         // adjust CnE
         CnEGridFunction -= (CeAvg-Ce0);
         MPI_Barrier(MPI_COMM_WORLD);

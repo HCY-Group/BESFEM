@@ -1,47 +1,6 @@
-// #include "mfem.hpp"
-// #include "mpi.h"
-// #include "MeshHandler.hpp"
-// #include "CnP.hpp"
-// //#include "CnE.hpp"
-// //#include "SimulationLoop.hpp"
-// #include <iostream>
-
-// using namespace mfem;
-// using namespace std;
-
-
-// int main(int argc, char *argv[])
-// {
-//     // Initialize MPI and HYPRE.
-//     Mpi::Init(argc, argv);
-//     Hypre::Init();
-
-//     int myid = Mpi::WorldRank();
-
-//     const char *mesh_file = "Mesh_3x90_T3.mesh";
-//     const char *dsF_file = "dsF_3x90_T3.txt";
-//     int order = 1;
-
-//     MeshHandler mesh_handler(mesh_file, dsF_file, order);
-//     mesh_handler.InitializeMesh();
-//     mesh_handler.PrintMeshInfo();
-
-//     InitializeCnP(*mesh_handler.GetFESpace(), *mesh_handler.GetPsi(), mesh_handler.GetGtPsi(), *mesh_handler.GetPmesh());
-//     //InitializeCnE(*mesh_handler.GetFESpace(), *mesh_handler.GetPse(), *mesh_handler.GetPmesh());
-
-//     //SimulationLoop loop(mesh_handler);
-//     // Inside For Loop
-//     // CnP
-//     // CnE ...
-//     // Reaction
-//     //loop.Run(100); 
-
-//     Mpi::Finalize();
-//     return 0;
-// }
-
 // mpicxx -g -O3 -std=c++14 -I../../.. -I../../../../hypre/src/hypre/include main2.cpp 
-// Constants.cpp MeshHandler.cpp CnP.cpp CnE.cpp -o main2 -L../../.. -lmfem -L../../../../hypre/src/hypre/lib
+// Constants.cpp MeshHandler.cpp CnP.cpp CnE.cpp PotP.cpp PotE.cpp Reaction.cpp -o main2 
+// -L../../.. -lmfem -L../../../../hypre/src/hypre/lib
 // -lHYPRE -L../../../../metis-4.0 -lmetis -lrt
 
 #include "mfem.hpp"
@@ -51,6 +10,9 @@
 #include "CnP.hpp"
 #include "CnE.hpp"
 #include "Constants.hpp"
+#include "PotP.hpp"
+#include "PotE.hpp"
+#include "Reaction.hpp"
 
 using namespace mfem;
 using namespace std;
@@ -75,10 +37,28 @@ int main(int argc, char *argv[]) {
     CnE cne(mesh_handler, cnp);
     cne.Initialize();
 
+    // Create the PotP object
+    PotP potp(mesh_handler);
+    potp.Initialize();
+
+    // Create the PotE object
+    PotE pote(mesh_handler, potp);
+    pote.Initialize();
+
+    // Create Reaction
+    // Reaction reaction(mesh_handler, cne);
+
+
     //Time-stepping loop
     for (int t = 0; t < 10 + 1; ++t) {
         cnp.TimeStep(Constants::dt);
         cne.TimeStep(Constants::dt);
+        
+        // Create Reaction
+        Reaction reaction(mesh_handler, cne, pote);
+        reaction.TimeStep(Constants::dt);
+
+
     }
 
 
@@ -86,50 +66,10 @@ int main(int argc, char *argv[]) {
 
     // // Save the results
     // cnp.Save();
-    cne.Save();
+    // cne.Save();
 
 
     // Finalize MPI
     Mpi::Finalize();
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // next sections
-
-// // #include "CnE.hpp"
-// // #include "PotP.hpp"
-// // #include "PotE.hpp"
-// // #include "TS_CnP.hpp"
-
-//     // InitializeCnE(*mesh_handler.GetFESpace(), *mesh_handler.GetPse(), *mesh_handler.GetPmesh());
-//     // InitializePotP(*mesh_handler.GetFESpace());
-//     // InitializePotE(*mesh_handler.GetFESpace());
-
-//     // cout << "BvP: " << BvP << endl;
-//     // cout << "BvE: " << BvE << endl;
-
-//     // double Vcell = BvP - BvE;
-//     // cout << "Vcell: " << Vcell << endl;

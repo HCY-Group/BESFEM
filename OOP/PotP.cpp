@@ -1,36 +1,42 @@
 #include "mfem.hpp"
+#include "PotP.hpp"
+#include "MeshHandler.hpp"
+#include "Constants.hpp"
+#include <fstream>
+#include <iostream>
 
 using namespace mfem;
 using namespace std;
 
-double BvP;
+PotP::PotP(MeshHandler &mesh_handler)
+    : mesh_handler(mesh_handler),
+    fespace(mesh_handler.GetFESpace()),
+    phP(fespace),
+    kap(fespace),
+    RpP(fespace),
+    pP0(fespace)
+{}
 
-void InitializePotP(mfem::ParFiniteElementSpace &fespace)
-{
-    ParGridFunction phP(&fespace);  // Electropotential in particle
-    ParGridFunction kap(&fespace);  // Conductivity in particle
-    ParGridFunction RpP(&fespace);  // Reaction
-    ParGridFunction pP0(&fespace);  // Initial potential
+void PotP::Initialize(){
 
     BvP = 2.9395;
     phP = BvP;
 
-    // Stiffness matrix
-    HypreParMatrix KmP;
-    ParBilinearForm *Kp2;
+	ParBilinearForm *Kp2;
 
-    // Solver setup
-    CGSolver cgPP(MPI_COMM_WORLD);
-    cgPP.SetRelTol(1e-7);
-    cgPP.SetMaxIter(200);
+	CGSolver cgPP(MPI_COMM_WORLD);
+	cgPP.SetRelTol(1e-7);
+	cgPP.SetMaxIter(200);
 
-    // Force vector
-    ParLinearForm *Bp2;
-    ParLinearForm Fpt(&fespace);
-    HypreParVector Fpb(&fespace);
+	// force Vector
+	ParLinearForm *Bp2;
+	ParLinearForm Fpt(fespace);	
+	HypreParVector Fpb(fespace);
 
-    // Initial solution vector
-    HypreParVector Xs0(&fespace);
-
-    //cout << "BvPTEST: " << BvP << std::endl;
+	HypreParVector Xs0(fespace);
 }
+
+
+
+
+

@@ -110,8 +110,8 @@ void MeshHandler::CalculateTotalPsi() {
 void MeshHandler::CalculateTotalPse() {
     double tPse = 0.0;
 
-    int nV = pmesh->GetNV();					// number of vertices
-	int nE = pmesh->GetNE();					// number of elements
+    int nV = pmesh->GetNV();					// number of vertices, from MFEM parmesh
+	int nE = pmesh->GetNE();					// number of elements, from MFEM parmesh
 	int nC = pow(2, pmesh->Dimension());		// number of corner vertices
 
     Vector EVol(nE);

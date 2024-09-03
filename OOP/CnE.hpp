@@ -11,29 +11,25 @@ public:
     // Constructor that takes a reference to a MeshHandler object
     CnE(MeshHandler &mesh_handler, CnP &cnp);
 
-    // Initialize method to set up the initial conditions
     void Initialize();
 
-    // TimeStep method to perform a single time step
     void TimeStep(double dt);
 
     void Save();
 
+    const mfem::ParGridFunction& GetCnE() const { return CnEGridFunction; } 
+
 
 private:
-    MeshHandler &mesh_handler; // Reference to MeshHandler object
+    MeshHandler &mesh_handler; 
     CnP &cnp;
 
-    mfem::ParFiniteElementSpace *fespace; // Pointer to the parallel finite element space
-    mfem::ParGridFunction pse; // Grid function for psi
-    mfem::ParGridFunction AvP; // Grid function for psi
-    //mfem::ParGridFunction Rxn; // Grid function for psi
+    mfem::ParFiniteElementSpace *fespace; 
+    mfem::ParGridFunction pse; 
+    mfem::ParGridFunction AvP; 
 
-    //std::unique_ptr<mfem::ParGridFunction> Rxn;
-    // mfem::ParGridFunction* Rxn;
     mfem::ParGridFunction Rxn; // Grid function for Rxn - similar to how psi was in CnP
     std::unique_ptr<mfem::ParGridFunction> Rxe;
-    // mfem::ParGridFunction Rxe;
 
     mfem::ParGridFunction De;
 
@@ -55,13 +51,15 @@ private:
     double Cr; // Cr value
     double L_w;
     double Ce0;
-    mfem::HypreParMatrix Mmate; // Declare Mmatp as a class member
-    mfem::HypreParMatrix Kmate; // Declare Mmatp as a class member
-    mfem::HypreParMatrix *TmatR; // Declare Mmatp as a class member
-    mfem::HypreParMatrix *TmatL; // Declare Mmatp as a class member
-    mfem::GridFunctionCoefficient matCoef_R; // Declare matCoef_R as a pointer
+    mfem::HypreParMatrix Mmate; 
+    mfem::HypreParMatrix Kmate; 
+    mfem::HypreParMatrix *TmatR; 
+    mfem::HypreParMatrix *TmatL; 
+    mfem::GridFunctionCoefficient matCoef_R; 
 
-    mfem::ParGridFunction CnEGridFunction; // Renamed member variable for CnP grid function
+    mfem::ParGridFunction CnEGridFunction; // Renamed member variable for CnE grid function
+    
+    
     mfem::ParGridFunction cDe;
 
     mfem::ParGridFunction CeT;

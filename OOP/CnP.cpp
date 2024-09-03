@@ -10,13 +10,12 @@ using namespace std;
 CnP::CnP(MeshHandler &mesh_handler)
     : mesh_handler(mesh_handler),
       fespace(mesh_handler.GetFESpace()), 
-      psi(fespace), // Initialize psi using fespace
+      psi(fespace), 
       AvP(fespace),
       gtPsi(mesh_handler.GetTotalPsi()), 
       rho(Constants::rho), 
       Cr(Constants::Cr), 
       CnPGridFunction(fespace)
-    //   Rxn(make_unique<ParGridFunction>(fespace)) // Initialize Rxn
 
 {
     // Initialize psi with the values from mesh_handler.GetPsi()
@@ -25,28 +24,20 @@ CnP::CnP(MeshHandler &mesh_handler)
 }
 
 void CnP::Initialize() {
-    double Cp0 = 0.3; // initial value
+
+    Cp0 = 0.3; // initial value
     CnPGridFunction = Cp0;
 
-    // // psi trial 
-    // cout << "PSI bringing into CnP" << endl;
-    // psi.Print(std::cout);
-    // cout << "end" << endl;
-
-
     // Degree of lithiation
-    double Xfr = 0.0;
+    Xfr = 0.0;
 
     ParGridFunction TmpF(fespace);
     TmpF = CnPGridFunction;
     TmpF *= psi;
 
-    double lSum = 0.0;
-    int nE = fespace->GetNE(); // Get number of elements
-    int nC = pow(2, fespace->GetMesh()->Dimension()); // Number of corner vertices
-
-    // std::cout << "CnP nC: " << nC << std::endl;
-
+    lSum = 0.0;
+    nE = fespace->GetNE(); // Get number of elements
+    nC = pow(2, fespace->GetMesh()->Dimension()); // Number of corner vertices
 
     Vector EVol(nE);
     for (int ei = 0; ei < nE; ei++) {
@@ -54,7 +45,6 @@ void CnP::Initialize() {
     }
     Vector EAvg(nE);
     Array<double> VtxVal(nC);
-    double val;
 
     for (int ei = 0; ei < nE; ei++) {
         TmpF.GetNodalValues(ei, VtxVal);
@@ -68,12 +58,10 @@ void CnP::Initialize() {
 
     cout << "Sum: " << lSum << std::endl;
 
-    double gSum;
     MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     Xfr = gSum / gtPsi;
 
     // SBM mass matrix
-    //HypreParMatrix Mmatp;
     std::unique_ptr<ParBilinearForm> Mt(new ParBilinearForm(fespace));
     GridFunctionCoefficient cPs(&psi);
     Mt->AddDomainIntegrator(new MassIntegrator(cPs));
@@ -94,25 +82,19 @@ void CnP::Initialize() {
     Mp_solver.SetOperator(Mmatp);
 
     std::cout << "Mmatp rows after initialization: " << Mmatp.NumRows() << ", cols: " << Mmatp.NumCols() << std::endl;
-   // Mmatp.Print("Simplified Mmatp");
-
-    //HypreParMatrix *Tmatp;
 
     // SBM stiffness matrix
     ParGridFunction Dp(fespace);
-
-    // HypreParMatrix Kmatp;
 
     // Force vector
     ParGridFunction Rxc(fespace);
     ParLinearForm *Bc2;
     ParLinearForm Fct(fespace);
-    //HypreParVector Fcb(fespace);
 
     // Create a Vector for CnP
     HypreParVector CpV0(fespace), CpVn(fespace), RHCp(fespace);
 
-    int nDof = CpV0.Size();
+    nDof = CpV0.Size();
 
     // Vector of psi
     HypreParVector PsVc(fespace);
@@ -121,9 +103,7 @@ void CnP::Initialize() {
     cout << "Degree of Lithiation: " << Xfr << std::endl;
 
     Rxn = make_unique<ParGridFunction>(fespace); // this was the difference!
-    // ParGridFunction Rxn(fespace);
-    // *Rxn = 0.0;
-    *Rxn = AvP; // why do I need * ?
+    *Rxn = AvP; 
     *Rxn *= 1.0e-10; // why do I need * ?
 
 }
@@ -136,25 +116,14 @@ void CnP::TimeStep(double dt) {
     Mt->Assemble();
     Array<int> boundary_dofs;
     Mt->FormSystemMatrix(boundary_dofs, Mmatp);
-    
-    
+      
     HypreParVector Fcb(fespace);
 
-    //std::cout << "DEBUG: Before accessing Mmatp in TimeStep" << std::endl;
-    //Mmatp.Print("TimeStep Mmatp");
-    //std::cout << "DEBUG: After accessing Mmatp in TimeStep" << std::endl;
-
     ParGridFunction Rxn(fespace);
-    // Rxn = 0.0;
-    // Rxn = AvP;
-    // Rxn *= 1.0e-10;
-
-    // Rxn.Print(std::cout);
-
 
     HypreParVector X1v(fespace);
 
-    int nV = fespace->GetNV(); // Get number of vertices
+    nV = fespace->GetNV(); // Get number of vertices
 
     ParGridFunction Rxc(fespace);
     Rxc = *Rxn;
@@ -177,25 +146,17 @@ void CnP::TimeStep(double dt) {
     GridFunctionCoefficient cDp(&Dp);
 
     std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(fespace));
-    //HypreParMatrix Kmatp;
 
     Kc2->AddDomainIntegrator(new DiffusionIntegrator(cDp));
     Kc2->Assemble();
     Kc2->FormLinearSystem(boundary_dofs, CnPGridFunction, Fct, Kmatp, X1v, Fcb);
     Fcb *= dt;
 
-    //HypreParMatrix *Tmatp;
-
     std::cout << "Boundary DOFs: " << boundary_dofs.Size() << endl;
     std::cout << "Mmatp rows: " << Mmatp.NumRows() << ", cols: " << Mmatp.NumCols() << std::endl;
     std::cout << "Kmatp rows: " << Kmatp.NumRows() << ", cols: " << Kmatp.NumCols() << std::endl;
 
-    // Mmatp.Print("Mmatp");
-    // Kmatp.Print("Kmatp");
-
     Tmatp = Add(1.0, Mmatp, -dt, Kmatp);
-
-
 
     std::cout << "Tmatp rows: " << Tmatp->NumRows() << ", cols: " << Tmatp->NumCols() << std::endl;
 
@@ -236,16 +197,15 @@ void CnP::TimeStep(double dt) {
     TmpF = CnPGridFunction;
     TmpF *= psi;
 
-    double lSum = 0.0;
-    int nE = fespace->GetNE();
-    int nC = pow(2, fespace->GetMesh()->Dimension());
+    lSum = 0.0;
+    nE = fespace->GetNE();
+    nC = pow(2, fespace->GetMesh()->Dimension());
     Vector EVol(nE);
     for (int ei = 0; ei < nE; ei++) {
         EVol(ei) = fespace->GetMesh()->GetElementVolume(ei);
     }
     Vector EAvg(nE);
     Array<double> VtxVal(nC);
-    double val;
 
     for (int ei = 0; ei < nE; ei++) {
         TmpF.GetNodalValues(ei, VtxVal);
@@ -257,26 +217,15 @@ void CnP::TimeStep(double dt) {
         lSum += EAvg(ei) * EVol(ei);
     }
 
-    double gSum;
     MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    double Xfr = gSum / gtPsi;
+    Xfr = gSum / gtPsi;
 
-    // cout << "Rxn after CnP" << endl;
-    // Rxn.Print(std::cout);
-
-    
     delete Tmatp;
-
-    // cout << "Degree of Lithiation: " << Xfr << std::endl;
 }
 
 void CnP::Save() {
     CnPGridFunction.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/OOPCnP");
 }
-
-// mfem::ParGridFunction* CnP::GetRxn() {
-//     return Rxn.get();
-// }
 
 
 
