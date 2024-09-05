@@ -5,7 +5,7 @@ include $(CONFIG_MK)
 
 
 LDFLAGS = -ltiff
-SOURCECODE = TimeDepOpers.cpp readtiff.cpp
+SOURCECODE = TimeDepOpers.cpp readtiff.cpp MeshMaker.cpp
 
 
 

@@ -5,6 +5,7 @@
 #include "mpi.h"
 #include "TimeDepOpers.hpp"
 #include "readtiff.h"
+#include "MeshMaker.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -26,7 +27,7 @@ int main(int argc, char *argv[])
 	const char* tiffname ="II_1_bin.tif";
 	Constraints args;
 	args.Depth_begin = 0;	//only read in one slice for 2D data
-	args.Depth_end = 5;	//only read in one slice for 2D data
+	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
 	args.Row_end      = 80;
@@ -55,6 +56,11 @@ int main(int argc, char *argv[])
 	// SERIAL MESH AND GLOBAL DATA
 	// ======================================
 	cout << "MAKING MESH" << endl;
+	MeshMaker maker(tiffdata);
+	maker.MakeGlobalMesh();
+	int order = 1;
+
+///*
 	int nz = tiffdata.size();
 	int ny = tiffdata[0].size();
 	int nx = tiffdata[0][0].size();
@@ -72,7 +78,6 @@ int main(int argc, char *argv[])
 	gmesh.EnsureNCMesh(true);
 
 	// Create global FE space for Voxel Data
-	int order = 1;
 	H1_FECollection gFec(order, gmesh.Dimension());
 	FiniteElementSpace gFespace(&gmesh, &gFec);
 
@@ -90,18 +95,34 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	
+//*/
+
+///*
+	cout << "returning gVox" << endl;
+	GridFunction gVox2(*maker.GetGlobalVox());
+	cout << "returning Mesh" << endl;
+	Mesh gmesh2(*maker.GetGlobalMesh());
+
 	// double check our read-in: output gVox to Paraview
 	cout << "PRINTING gVox" << endl;
+	cout << gVox.Size() << endl;
+	cout << gmesh.Dimension() << endl;
+	cout << gmesh.GetNV() << endl;
+//*/	
 	ParaViewDataCollection *pd = NULL;
-	pd = new ParaViewDataCollection("gVoxelData", &gmesh);
-	pd->RegisterField("gVox", &gVox);
+	cout << "before" << endl;
+	//pd = new ParaViewDataCollection("gVoxelData", &gmesh2);
+	pd = new ParaViewDataCollection("gVoxelData", maker.GetGlobalMesh());
+	//pd->RegisterField("gVox", &gVox);
+	pd->RegisterField("gVox", maker.GetGlobalVox());
 	pd->SetLevelsOfDetail(order);
 	pd->SetDataFormat(VTKFormat::BINARY);
 	pd->SetHighOrderOutput(true);
 	pd->SetCycle(0);
 	pd->SetTime(0.0);
+	cout << "after" << endl;
 	pd->Save();
+	cout << "after" << endl;
 	delete pd;
 		
 	/*
@@ -140,6 +161,7 @@ int main(int argc, char *argv[])
 	// ======================================
 	// LOCAL (PARALLEL) MESH AND DATA
 	// ======================================
+	cout << "starting parallel mesh" << endl;
 	ParMesh pmesh(MPI_COMM_WORLD, gmesh);
 	int nV = pmesh.GetNV();			//number of vertices
 	int nE = pmesh.GetNE();			//number of elements
