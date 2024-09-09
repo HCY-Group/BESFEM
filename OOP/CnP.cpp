@@ -3,24 +3,36 @@
 #include "Constants.hpp"
 #include <fstream>
 #include <iostream>
+#include "PotP.hpp"
 
 using namespace mfem;
 using namespace std;
 
-CnP::CnP(MeshHandler &mesh_handler)
+CnP::CnP(MeshHandler &mesh_handler, PotP &potp)
     : mesh_handler(mesh_handler),
+      pmesh(mesh_handler.GetParMesh()),
       fespace(mesh_handler.GetFESpace()), 
       psi(fespace), 
       AvP(fespace),
+      AvB(fespace),
       gtPsi(mesh_handler.GetTotalPsi()), 
       rho(Constants::rho), 
       Cr(Constants::Cr), 
-      CnPGridFunction(fespace)
+      CnPGridFunction(fespace),
+      TmpF(fespace),
+      potp(potp),
+      kap(fespace),
+      B1t(fespace),
+      B1v(fespace),
+      phP(potp.GetphP()) // defined in PotP.hpp
 
 {
     // Initialize psi with the values from mesh_handler.GetPsi()
     psi = *mesh_handler.GetPsi();
     AvP = *mesh_handler.GetAvP();
+    AvB = *mesh_handler.GetAvB();
+
+    BvP = potp.GetBvP();
 }
 
 void CnP::Initialize() {
@@ -31,7 +43,6 @@ void CnP::Initialize() {
     // Degree of lithiation
     Xfr = 0.0;
 
-    ParGridFunction TmpF(fespace);
     TmpF = CnPGridFunction;
     TmpF *= psi;
 
@@ -104,12 +115,13 @@ void CnP::Initialize() {
 
     Rxn = make_unique<ParGridFunction>(fespace); // this was the difference!
     *Rxn = AvP; 
-    *Rxn *= 1.0e-10; // why do I need * ?
+    *Rxn *= 1.0e-10; 
 
 }
 
 void CnP::TimeStep(double dt) {
     
+    // make sub functions to clean this portion up
     std::unique_ptr<ParBilinearForm> Mt(new ParBilinearForm(fespace));
     GridFunctionCoefficient cPs(&psi);
     Mt->AddDomainIntegrator(new MassIntegrator(cPs));
@@ -145,6 +157,8 @@ void CnP::TimeStep(double dt) {
     }
     GridFunctionCoefficient cDp(&Dp);
 
+    // try just doing Kc2 update instead of lines 150-152
+    
     std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(fespace));
 
     Kc2->AddDomainIntegrator(new DiffusionIntegrator(cDp));
@@ -221,6 +235,64 @@ void CnP::TimeStep(double dt) {
     Xfr = gSum / gtPsi;
 
     delete Tmatp;
+
+    // STARTING FROM REACTION PART
+
+    // assign known values to the DBC nodes	
+    ConstantCoefficient dbc_e_Coef(BvP);			
+    
+    // particle conductivity
+    // appendix equation A-20
+    for (int vi = 0; vi < nV; vi++){
+        kap(vi) = psi(vi)*(0.01929 + 0.7045*tanh(2.399*CnPGridFunction(vi)) - \
+            0.7238*tanh(2.412*CnPGridFunction(vi)) - 4.2106e-6);
+    }	
+    GridFunctionCoefficient cKp(&kap) ;
+		
+    // stiffness matrix for phP
+    std::unique_ptr<ParBilinearForm> Kp2(new ParBilinearForm(fespace));
+
+    Kp2->AddDomainIntegrator(new DiffusionIntegrator(cKp));
+    Kp2->Assemble();
+
+    // Dirichlet BC on the east boundary. phP
+	Array<int> dbc_e_bdr(pmesh->bdr_attributes.Max());
+	dbc_e_bdr = 0; dbc_e_bdr[2] = 1;
+	// use dbc_e_bdr array to extract all node labels of Dirichlet BC
+	Array<int> ess_tdof_list_e(0);			
+	fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+    
+    // project values to DBC nodes
+    phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
+    Kp2->FormLinearSystem(ess_tdof_list_e, phP, B1t, KmP, X1v, B1v);			
+
+    // Solve the system using PCG with hypre's BoomerAMG preconditioner.
+    
+    CGSolver cgPP(MPI_COMM_WORLD);
+	cgPP.SetRelTol(1e-7);
+	cgPP.SetMaxIter(200);
+    
+    HypreBoomerAMG Mpp(KmP);
+    Mpp.SetPrintLevel(0);
+    cgPP.SetPreconditioner(Mpp);
+    cgPP.SetOperator(KmP);
+
+    // rate constants and exchange current density at interface
+    for (int vi = 0; vi < nV; vi++){
+        if ( AvB(vi)*Constants::dh > 0.0 ){
+            val = -0.2*(CnPGridFunction(vi)-0.37)-1.559-0.9376*tanh(8.961*CnPGridFunction(vi)-3.195);
+            i0C(vi) = pow(10.0,val)*1.0e-3;
+            
+            OCV(vi) = 1.095*CnP(vi)*CnPGridFunction(vi) - 8.324e-7*exp(14.31*CnPGridFunction(vi)) + \
+                4.692*exp(-0.5389*CnPGridFunction(vi));
+                
+            Kfw(vi) = i0C(vi)/(Constants::Frd*0.001  )*exp( Constants::alp*Constants::Cst1*OCV(vi)) ;	
+            Kbw(vi) = i0C(vi)/(Constants::Frd*CnPGridFunction(vi))*exp(-Constants::alp*Constants::Cst1*OCV(vi)) ;
+        }
+    }
+
+
+
 }
 
 void CnP::Save() {

@@ -18,6 +18,9 @@ public:
     double Gettc1() const { return tc1; }
     double Gettc2() const { return tc2; }
 
+    const mfem::ParGridFunction& GetphE() const { return phE; }
+    double GetBvE() const { return BvE; } 
+
 
 
 
@@ -27,6 +30,9 @@ private:
 
 
     mfem::ParFiniteElementSpace *fespace;
+    // std::unique_ptr<mfem::ParMesh> pmesh;
+    mfem::ParMesh *pmesh;
+
     mfem::ParGridFunction phE; // electropot in electrolyte
     mfem::ParGridFunction kpl; // electrolyte conductivity
     mfem::ParGridFunction RpE; // reaction rate for electrolyte

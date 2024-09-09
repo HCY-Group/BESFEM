@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 	}	
 	
 	// Local domain parameters
-	ParGridFunction psi(&fespace);
+	ParGridFunction psi(&fespace); // psi is an object here
 	ParGridFunction pse(&fespace);	
 	ParGridFunction AvP(&fespace);	
 
@@ -487,7 +487,7 @@ int main(int argc, char *argv[])
 	
 	//containers used later.
 	HypreParVector X1v(&fespace), B1v(&fespace);
-	ParLinearForm B1t(&fespace);;
+	ParLinearForm B1t(&fespace);
 
 	// rate constants
 	ParGridFunction dPHE(&fespace);
@@ -774,6 +774,7 @@ for (int t = 0; t < 10 + 1; t++){
 // // 		// ==============================================	
  
 
+		// *** move to CnE
 		// electrolyte conductivity and RHS	
 		for (int vi = 0; vi < nV; vi++){
 			dffe = exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
@@ -782,41 +783,42 @@ for (int t = 0; t < 10 + 1; t++){
 		}
 		GridFunctionCoefficient cDm(&Dmp);
 
-		Dmp.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/DmpTrial");
+		// Dmp.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/DmpTrial");
 
 
-		// // Laplace of CnE for the RHS
-		// std::unique_ptr<ParBilinearForm> Kl1(new ParBilinearForm(&fespace)); // Directly initialize Mt with new ParBilinearForm object
+		// Laplace of CnE for the RHS
+		std::unique_ptr<ParBilinearForm> Kl1(new ParBilinearForm(&fespace)); // Directly initialize Mt with new ParBilinearForm object
 
-   		// Kl1->AddDomainIntegrator(new DiffusionIntegrator(cDm));
-   		// Kl1->Assemble();
-   		// Kl1->FormLinearSystem(boundary_dofs, phE, B1t, Kdm, X1v, B1v);
+   		Kl1->AddDomainIntegrator(new DiffusionIntegrator(cDm));
+   		Kl1->Assemble();
+   		Kl1->FormLinearSystem(boundary_dofs, phE, B1t, Kdm, X1v, B1v);
 
-		// // Vector of CnE
-		// CnE.GetTrueDofs(CeVn) ;
-		// Kdm.Mult(CeVn,LpCe) ;
+		// Vector of CnE
+		CnE.GetTrueDofs(CeVn) ;
+		Kdm.Mult(CeVn,LpCe) ;
 
-		// // electrolyte conductivity and RHS		
-		// GridFunctionCoefficient cKe(&kpl) ;
+		Kdm.Print("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/KdmTrial");
 
-		// std::unique_ptr<ParBilinearForm> Kl2(new ParBilinearForm(&fespace)); 
+		// electrolyte conductivity and RHS		
+		GridFunctionCoefficient cKe(&kpl) ;
+
+		std::unique_ptr<ParBilinearForm> Kl2(new ParBilinearForm(&fespace)); 
 				
-   		// Kl2->AddDomainIntegrator(new DiffusionIntegrator(cKe));
-   		// Kl2->Assemble();	
+   		Kl2->AddDomainIntegrator(new DiffusionIntegrator(cKe));
+   		Kl2->Assemble();	
 	
-		// // assign known values to the DBC nodes	
-		// ConstantCoefficient dbc_w_Coef(BvE);
+		// assign known values to the DBC nodes	
+		ConstantCoefficient dbc_w_Coef(BvE);
 		
-		// phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
-		// Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);		
+		phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
+		Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);		
 		
-		// // Solve the system using PCG with hypre's BoomerAMG preconditioner.
-		// HypreBoomerAMG Mpe(Kml);
-		// Mpe.SetPrintLevel(0);
-		// cgPE.SetPreconditioner(Mpe);
-		// cgPE.SetOperator(Kml);
+		// Solve the system using PCG with hypre's BoomerAMG preconditioner.
+		HypreBoomerAMG Mpe(Kml);
+		Mpe.SetPrintLevel(0);
+		cgPE.SetPreconditioner(Mpe);
+		cgPE.SetOperator(Kml);
 					
-		
 		// // assign known values to the DBC nodes	
 		// ConstantCoefficient dbc_e_Coef(BvP);			
 		

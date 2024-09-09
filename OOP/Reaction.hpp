@@ -29,10 +29,13 @@ private:
     PotE &pote;
 
     mfem::ParFiniteElementSpace *fespace; // Pointer to the parallel finite element space
+    mfem::ParMesh *pmesh;
+
 
     double dffe;
     double tc1;
     double tc2;
+    double BvE;
 
     int nV;
     int vi;
@@ -42,6 +45,16 @@ private:
     mfem::ParGridFunction kpl;
     mfem::ParGridFunction CnEGridFunction;
     mfem::ParGridFunction pse; // Grid function for pse
+    mfem::ParGridFunction phE;
+
+    mfem::ParLinearForm B1t;
+
+    mfem::HypreParMatrix Kdm;
+    mfem::HypreParMatrix Kml;
+    mfem::HypreParVector X1v;
+    mfem::HypreParVector B1v;
+    mfem::HypreParVector CeVn;
+    mfem::HypreParVector LpCe;
 
 
 

@@ -15,6 +15,7 @@ public:
     mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
     mfem::ParGridFunction* GetPsi() const { return psi.get(); }
     mfem::ParGridFunction* GetAvP() const { return AvP.get(); }
+    mfem::ParGridFunction* GetAvB() const { return AvB.get(); }
     double GetTotalPsi() const { return gtPsi; }
     mfem::ParGridFunction* GetPse() const { return pse.get(); }
     double GetTotalPse() const { return gtPse; }
@@ -26,7 +27,9 @@ private:
     const char* dsF_file;
     int order;
     double dh, zeta, eps, rho, Cr;
-    double gtPsi, gtPse, gTrgI, L_w;
+    double gtPsi, gtPse, gTrgI, L_w, tPsi, val, tPse, trgI;
+
+    int nV, nE, nC;
 
     mfem::Mesh gmesh;
     std::unique_ptr<mfem::FiniteElementSpace> gFespace;
@@ -34,6 +37,8 @@ private:
     std::unique_ptr<mfem::ParMesh> pmesh;
     std::unique_ptr<mfem::ParFiniteElementSpace> fespace;
     std::unique_ptr<mfem::ParGridFunction> dsF, psi, pse, AvP;
+
+    std::unique_ptr<mfem::ParGridFunction> AvB;
 
     void ReadGlobalDistanceFunction();
     void InterpolateDomainParameters();

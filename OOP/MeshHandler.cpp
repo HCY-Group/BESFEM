@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 
+// reads mesh_file & dsF_file from Constants.cpp
+
 using namespace mfem;
 using namespace std;
 
@@ -18,10 +20,18 @@ void MeshHandler::LoadMesh() {
 
 void MeshHandler::InitializeMesh() {
     gmesh.EnsureNCMesh(true);
+
+    // Create global FE space for distance function.
     gFespace = make_unique<FiniteElementSpace>(&gmesh, new H1_FECollection(order, gmesh.Dimension()));
 
     ReadGlobalDistanceFunction();
 
+    // west boundary size
+    Vector Rmin, Rmax;
+    gmesh.GetBoundingBox(Rmin, Rmax);
+    L_w = Rmax(1) - Rmin(1);
+
+    // local (parallel) mesh
     pmesh = make_unique<ParMesh>(MPI_COMM_WORLD, gmesh);
     fespace = make_unique<ParFiniteElementSpace>(pmesh.get(), new H1_FECollection(order, pmesh->Dimension()));
     dsF = make_unique<ParGridFunction>(fespace.get());
@@ -30,9 +40,9 @@ void MeshHandler::InitializeMesh() {
     Array<HYPRE_BigInt> E_L2G;
     pmesh->GetGlobalElementIndices(E_L2G);
 
-    int nV = pmesh->GetNV();					// number of vertices
-	int nE = pmesh->GetNE();					// number of elements
-	int nC = pow(2, pmesh->Dimension());		// number of corner vertices
+    nV = pmesh->GetNV();					// number of vertices
+	nE = pmesh->GetNE();					// number of elements
+	nC = pow(2, pmesh->Dimension());		// number of corner vertices
 
     Array<int> gVTX(nC);
     Array<int> VTX(nC);
@@ -46,11 +56,13 @@ void MeshHandler::InitializeMesh() {
         }
     }
 
+
     InterpolateDomainParameters();
     CalculateTotalPsi();
     CalculateTotalPse();
 }
 
+// Read global distance function
 void MeshHandler::ReadGlobalDistanceFunction() {
     gDsF = make_unique<GridFunction>(gFespace.get());
     ifstream myfile(dsF_file);
@@ -61,12 +73,13 @@ void MeshHandler::ReadGlobalDistanceFunction() {
 }
 
 void MeshHandler::InterpolateDomainParameters() {
-    psi = make_unique<ParGridFunction>(fespace.get());
+    psi = make_unique<ParGridFunction>(fespace.get()); // psi is a pointer here
     pse = make_unique<ParGridFunction>(fespace.get());
     AvP = make_unique<ParGridFunction>(fespace.get());
+    AvB = make_unique<ParGridFunction>(fespace.get());
 
     for (int vi = 0; vi < fespace->GetNV(); vi++) {
-        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (zeta * dh)));
+        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (zeta * dh))); // must use * to dereference to access
         (*pse)(vi) = 1.0 - (*psi)(vi);
         (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (zeta * dh)), 2) - 1.0) / (2 * zeta * dh);
 
@@ -74,17 +87,20 @@ void MeshHandler::InterpolateDomainParameters() {
         if ((*pse)(vi) < eps) { (*pse)(vi) = eps; }
     }
 
+    AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
+
     for (int vi = 0; vi < fespace->GetNV(); vi++) {
         if ((*AvP)(vi) * dh < 1.0e-3) { (*AvP)(vi) = 0.0; }
+        if ((*AvB)(vi) * dh < 1.0e-3) { (*AvB)(vi) = 0.0; }
     }
 }
 
 void MeshHandler::CalculateTotalPsi() {
-    double tPsi = 0.0;
+    tPsi = 0.0;
     
-    int nV = pmesh->GetNV();					// number of vertices
-	int nE = pmesh->GetNE();					// number of elements
-	int nC = pow(2, pmesh->Dimension());		// number of corner vertices
+    nV = pmesh->GetNV();					// number of vertices
+	nE = pmesh->GetNE();					// number of elements
+	nC = pow(2, pmesh->Dimension());		// number of corner vertices
 
     Vector EVol(nE);
     for (int ei = 0; ei < nE; ei++) {
@@ -95,7 +111,7 @@ void MeshHandler::CalculateTotalPsi() {
     for (int ei = 0; ei < nE; ei++) {
         Array<double> VtxVal(nC);
         psi->GetNodalValues(ei, VtxVal);
-        double val = 0.0;
+        val = 0.0;
         for (int vt = 0; vt < nC; vt++) {
             val += VtxVal[vt];
         }
@@ -108,11 +124,11 @@ void MeshHandler::CalculateTotalPsi() {
 }
 
 void MeshHandler::CalculateTotalPse() {
-    double tPse = 0.0;
+    tPse = 0.0;
 
-    int nV = pmesh->GetNV();					// number of vertices, from MFEM parmesh
-	int nE = pmesh->GetNE();					// number of elements, from MFEM parmesh
-	int nC = pow(2, pmesh->Dimension());		// number of corner vertices
+    nV = pmesh->GetNV();					// number of vertices, from MFEM parmesh
+	nE = pmesh->GetNE();					// number of elements, from MFEM parmesh
+	nC = pow(2, pmesh->Dimension());		// number of corner vertices
 
     Vector EVol(nE);
     for (int ei = 0; ei < nE; ei++) {
@@ -123,7 +139,7 @@ void MeshHandler::CalculateTotalPse() {
     for (int ei = 0; ei < nE; ei++) {
         Array<double> VtxVal(nC);
         pse->GetNodalValues(ei, VtxVal);
-        double val = 0.0;
+        val = 0.0;
         for (int vt = 0; vt < nC; vt++) {
             val += VtxVal[vt];
         }
@@ -135,33 +151,24 @@ void MeshHandler::CalculateTotalPse() {
 }
 
 void MeshHandler::CalculateTargetCurrent(double tPsi) {
-    double trgI = tPsi * rho * (0.9 - 0.3) / (3600.0 / Cr);
+    trgI = tPsi * rho * (0.9 - 0.3) / (3600.0 / Cr);
     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 }
 
 void MeshHandler::PrintMeshInfo() {
     
-    int nV = pmesh->GetNV();					// number of vertices
-	int nE = pmesh->GetNE();					// number of elements
-	int nC = pow(2, pmesh->Dimension());		// number of corner vertices
+    nV = pmesh->GetNV();					// number of vertices
+	nE = pmesh->GetNE();					// number of elements
+	nC = pow(2, pmesh->Dimension());		// number of corner vertices
     
     cout << "Number of vertices: " << nV << endl;
     cout << "Number of elements: " << nE << endl;
 
-    Vector Rmin, Rmax;
-    gmesh.GetBoundingBox(Rmin, Rmax);
-    double L_w = Rmax(1) - Rmin(1);
     cout << "West boundary size: " << L_w << endl;
 
     cout << "Total Psi: " << gtPsi << endl;
     cout << "Total Pse: " << gtPse << endl;
     cout << "Target Current: " << gTrgI << endl;
-
-    // // psi info
-
-    // cout << "PSI in MeshHandler" << endl;
-    // psi->Print(std::cout);
-    // cout << "end" << endl;
 
 }
 

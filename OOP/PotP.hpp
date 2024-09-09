@@ -13,7 +13,8 @@ public:
 
     void Initialize();
 
-    double GetBvP() const { return BvP; } 
+    double GetBvP() const { return BvP; }
+    const mfem::ParGridFunction& GetphP() const { return phP; } 
 
 
 

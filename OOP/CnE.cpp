@@ -1,5 +1,6 @@
 #include "CnE.hpp"
 #include "CnP.hpp"
+#include "PotE.hpp"
 #include "Constants.hpp"
 // #include <iostream>
 // #include "MeshHandler.hpp" 
@@ -8,8 +9,9 @@
 using namespace mfem;
 using namespace std;
 
-CnE::CnE(MeshHandler &mesh_handler, CnP &cnp)
+CnE::CnE(MeshHandler &mesh_handler, CnP &cnp, PotE &pote)
     : mesh_handler(mesh_handler),
+      pmesh(mesh_handler.GetParMesh()),
       fespace(mesh_handler.GetFESpace()), 
       pse(fespace), // Initialize psi using fespace
       AvP(fespace),
@@ -19,7 +21,16 @@ CnE::CnE(MeshHandler &mesh_handler, CnP &cnp)
       Cr(Constants::Cr), 
       CnEGridFunction(fespace),
       L_w(mesh_handler.GetLw()),
-      cnp(cnp)
+      cnp(cnp),
+      Dmp(fespace),
+      kpl(fespace),
+      CeVn(fespace),
+      B1t(fespace),
+      X1v(fespace),
+      B1v(fespace),
+      LpCe(fespace),
+      pote(pote),
+      phE(pote.GetphE()) // defined in PotE.hpp
       //Rxn(cnp.GetRxn())
 
 {
@@ -27,12 +38,13 @@ CnE::CnE(MeshHandler &mesh_handler, CnP &cnp)
     // Initialize psi with the values from mesh_handler.GetPsi()
     pse = *mesh_handler.GetPse();
     AvP = *mesh_handler.GetAvP();
-    //*Rxn = *cnp.GetRxn();
+
+    tc1 = pote.Gettc1();
+    tc2 = pote.Gettc2();
 
     Rxn = *cnp.GetRxn();
 
-    // cout << "Rxn CnE Initialize" << endl;
-    // Pse->Print(std::cout);
+    BvE = pote.GetBvE();
 
 }
 
@@ -43,20 +55,11 @@ void CnE::Initialize() {
     double Ce0 = 0.001; // initial value
     CnEGridFunction = Ce0;
 
-    // CnEGridFunction.Print(std::cout);
-
-    // Rxn->Print(std::cout);
-
-    // Degree of lithiation
-    // double Xfr = 0.0;
-
 	// // for imposing Neumann BC
     ParGridFunction PeR(fespace);
     PeR = pse;
     PeR.Neg();
     GridFunctionCoefficient matCoef_R(&PeR);
-
-    //matCoef_R = std::make_unique<GridFunctionCoefficient>(&PeR); // Use unique_ptr
 
 
     // SBM mass matrix
@@ -82,39 +85,17 @@ void CnE::Initialize() {
     Me_prec.SetType(HypreSmoother::Jacobi);
     Me_solver.SetPreconditioner(Me_prec);
 
-    // std::cout << "Mmate rows after initialization: " << Mmate.NumRows() << ", cols: " << Mmate.NumCols() << std::endl;
-   // Mmatp.Print("Simplified Mmatp");
-
-    //HypreParMatrix *Tmatp;
-
     // SBM stiffness matrix
     ParGridFunction De(fespace);
-
-    // HypreParMatrix Kmatp;
 
     // Force vector
     ParBilinearForm *Ke2;
     ParGridFunction Rxe(fespace);
     ParLinearForm *Be2;
     ParLinearForm Fet(fespace);
-    //HypreParVector Fcb(fespace);
-
-    // Create a Vector for CnP
-    // HypreParVector CeV0(fespace), CeVn(fespace), RHSe(fespace);
-
-    // int nDof = CpV0.Size();
-
-    // // Vector of psi
-    // HypreParVector PsVc(fespace);
-    // psi.GetTrueDofs(PsVc);
-
-    // cout << "Degree of Lithiation: " << Xfr << std::endl;
 
     int nE = fespace->GetNE(); // Get number of elements
     int nC = pow(2, fespace->GetMesh()->Dimension()); // Number of corner vertices
-
-    // std::cout << "CnE nC: " << nC << std::endl;
-
 
     Array<double> VtxVal(nC);
     Vector EVol(nE);
@@ -144,7 +125,7 @@ void CnE::TimeStep(double dt) {
     Me->FormSystemMatrix(boundary_dofs, Mmate);
     
     HypreParVector Feb(fespace);
-    HypreParVector CeV0(fespace), CeVn(fespace), RHSe(fespace);
+    HypreParVector CeV0(fespace), RHSe(fespace);
 
     // cout << "Rxn bringing into CnE" << endl;
     // Rxn.Print(std::cout);
@@ -197,6 +178,7 @@ void CnE::TimeStep(double dt) {
  	// force term
     std::unique_ptr<ParLinearForm> Be2(new ParLinearForm(fespace));
     Be2->AddDomainIntegrator(new DomainLFIntegrator(cAe));
+    // Be2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m_nbcCoef), nbc_w_bdr);
     Be2->Assemble();
     ParLinearForm Fet(fespace);
     Fet = std::move(*Be2);
@@ -280,7 +262,65 @@ void CnE::TimeStep(double dt) {
     
     cout << "CeAvg: " << CeAvg << endl;
 
-    s = s + 1;	 
+    s = s + 1;
+
+
+
+    // STARTING FROM REACTION PART
+
+    // electrolyte conductivity and RHS	
+    for (int vi = 0; vi < nV; vi++){
+        dffe = exp(-7.02-830*CnEGridFunction(vi)+50000*CnEGridFunction(vi)*CnEGridFunction(vi));
+        Dmp(vi) = pse(vi)*tc1*Constants::D0*dffe;
+        kpl(vi) = pse(vi)*tc2*Constants::D0*dffe*CnEGridFunction(vi);
+    }
+    GridFunctionCoefficient cDm(&Dmp);
+
+    // Dmp.Save("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/DmpOOP_CnE");
+
+    // Laplace of CnE for the RHS
+    std::unique_ptr<ParBilinearForm> Kl1(new ParBilinearForm(fespace)); // Directly initialize Mt with new ParBilinearForm object
+
+    Kl1->AddDomainIntegrator(new DiffusionIntegrator(cDm));
+    Kl1->Assemble();
+    Kl1->FormLinearSystem(boundary_dofs, phE, B1t, Kdm, X1v, B1v);
+
+    // Vector of CnE
+    CnEGridFunction.GetTrueDofs(CeVn) ;
+    Kdm.Mult(CeVn,LpCe) ;
+
+    // Kdm.Print("/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/OOP/KdmOOP_CnE");	 
+
+    // electrolyte conductivity and RHS		
+    GridFunctionCoefficient cKe(&kpl) ;
+
+    std::unique_ptr<ParBilinearForm> Kl2(new ParBilinearForm(fespace)); 
+            
+    Kl2->AddDomainIntegrator(new DiffusionIntegrator(cKe));
+    Kl2->Assemble();	
+
+    // assign known values to the DBC nodes	
+    ConstantCoefficient dbc_w_Coef(BvE);
+
+    // Dirichlet BC on the west boundary. phE
+	Array<int> dbc_w_bdr(pmesh->bdr_attributes.Max());
+	dbc_w_bdr = 0; dbc_w_bdr[0] = 1;
+	// use dbc_w_bdr array to extract all node labels of Dirichlet BC
+	Array<int> ess_tdof_list_w(0);			
+	fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
+
+    phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
+    Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);		
+    
+    CGSolver cgPE(MPI_COMM_WORLD);
+	cgPE.SetRelTol(1e-7);
+	cgPE.SetMaxIter(200);
+
+    // Solve the system using PCG with hypre's BoomerAMG preconditioner.
+    HypreBoomerAMG Mpe(Kml);
+    Mpe.SetPrintLevel(0);
+    cgPE.SetPreconditioner(Mpe);
+    cgPE.SetOperator(Kml);
 }
 
 void CnE::Save() {

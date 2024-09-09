@@ -25,17 +25,8 @@ int main(int argc, char *argv[]) {
 
     // Create the MeshHandler object
     MeshHandler mesh_handler;
-    mesh_handler.InitializeMesh();
-    mesh_handler.PrintMeshInfo();
+    mesh_handler.LoadMesh(); // includes initalizing & printing info
     //mesh_handler.Save();
-
-    // Create the CnP object
-    CnP cnp(mesh_handler);
-    cnp.Initialize();
-
-    // Create the CnE object
-    CnE cne(mesh_handler, cnp);
-    cne.Initialize();
 
     // Create the PotP object
     PotP potp(mesh_handler);
@@ -45,18 +36,37 @@ int main(int argc, char *argv[]) {
     PotE pote(mesh_handler, potp);
     pote.Initialize();
 
-    // Create Reaction
-    // Reaction reaction(mesh_handler, cne);
+    // Create the CnP object
+    CnP cnp(mesh_handler, potp);
+    cnp.Initialize();
 
+    // Create the CnE object
+    // CnE cne(mesh_handler, cnp);
+    CnE cne(mesh_handler, cnp, pote);
+    cne.Initialize();
+
+    // // Create the PotP object
+    // PotP potp(mesh_handler);
+    // potp.Initialize();
+
+    // // Create the PotE object
+    // PotE pote(mesh_handler, potp);
+    // pote.Initialize();
+
+    // Create Reaction
+    // Reaction reaction(mesh_handler, cne, pote);
 
     //Time-stepping loop
     for (int t = 0; t < 10 + 1; ++t) {
         cnp.TimeStep(Constants::dt);
         cne.TimeStep(Constants::dt);
+        // reaction.TimeStep(Constants::dt);
         
         // Create Reaction
-        Reaction reaction(mesh_handler, cne, pote);
-        reaction.TimeStep(Constants::dt);
+        // Reaction reaction(mesh_handler, cne, pote);
+        // reaction.TimeStep(Constants::dt);
+        // for ......
+        // end
 
 
     }

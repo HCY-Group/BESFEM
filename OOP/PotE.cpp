@@ -5,6 +5,7 @@
 #include "Constants.hpp"
 #include <fstream>
 #include <iostream>
+#include "mpi.h"
 
 
 using namespace mfem;
@@ -13,6 +14,7 @@ using namespace std;
 PotE::PotE(MeshHandler &mesh_handler, PotP &potp)
     : mesh_handler(mesh_handler),
     fespace(mesh_handler.GetFESpace()),
+    pmesh(mesh_handler.GetParMesh()),
     phE(fespace),
     kpl(fespace),
     RpE(fespace),
@@ -55,56 +57,26 @@ void PotE::Initialize(){
     // cout << "BvE: " << BvE << endl; 
 
     cout << "Vcell: " << Vcell << endl; 
+
+
+    // // assign known values to the DBC nodes	
+    // ConstantCoefficient dbc_w_Coef(BvE);
+
+    // // Dirichlet BC on the west boundary. phE
+	// Array<int> dbc_w_bdr(pmesh->bdr_attributes.Max());
+	// dbc_w_bdr = 0; dbc_w_bdr[0] = 1;
+	// // use dbc_w_bdr array to extract all node labels of Dirichlet BC
+	// Array<int> ess_tdof_list_w(0);			
+	// fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
+    
+    // phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
+    // Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);		
+    
+    // // // Solve the system using PCG with hypre's BoomerAMG preconditioner.
+    // // HypreBoomerAMG Mpe(Kml);
+    // // Mpe.SetPrintLevel(0);
+    // // cgPE.SetPreconditioner(Mpe);
+    // // cgPE.SetOperator(Kml);
+
+
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// void InitializePotE(ParFiniteElementSpace &fespace)
-// {
-//     double t_minus = 7.619047619047619e-01; // transference number
-//     double Cst1 = 1.6021766e-19/(1.3806488e-23*300.0);
-//     double tc1 = (2*t_minus - 1.0) / (2 * t_minus * (1.0 - t_minus));
-//     double tc2 = 1.0 / (2 * t_minus * (1.0 - t_minus)) * Cst1;
-//     double dffe;
-
-//     ParGridFunction phE(&fespace);    // electropotential in electrolyte
-//     ParGridFunction Dmp(&fespace);    // D_minus_plus
-//     ParGridFunction kpl(&fespace);    // electrolyte conductivity
-//     ParGridFunction RpE(&fespace);    // reaction rate for electrolyte
-//     ParGridFunction pE0(&fespace);
-
-//     BvE = -1.0;
-//     phE = BvE;
-
-//     // stiffness matrix
-//     HypreParMatrix Kml;
-//     ParBilinearForm *Kl2;
-
-//     // force vector
-//     ParLinearForm *Bl2;
-//     ParLinearForm Flt(&fespace);
-//     HypreParVector Flb(&fespace);
-
-//     // Laplace matrix
-//     HypreParMatrix Kdm;
-//     ParBilinearForm *Kl1;
-
-//     CGSolver cgPE(MPI_COMM_WORLD);
-//     cgPE.SetRelTol(1e-7);
-//     cgPE.SetMaxIter(200);
-
-//     //cout << "BvETEST: " << BvE << std::endl;
-
-// }

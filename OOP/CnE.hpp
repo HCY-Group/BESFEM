@@ -3,13 +3,14 @@
 
 #include "mfem.hpp"
 #include "CnP.hpp"
+#include "PotE.hpp"
 #include "MeshHandler.hpp"
 #include <memory>
 
 class CnE {
 public:
     // Constructor that takes a reference to a MeshHandler object
-    CnE(MeshHandler &mesh_handler, CnP &cnp);
+    CnE(MeshHandler &mesh_handler, CnP &cnp, PotE &pote);
 
     void Initialize();
 
@@ -18,13 +19,16 @@ public:
     void Save();
 
     const mfem::ParGridFunction& GetCnE() const { return CnEGridFunction; } 
+    const mfem::HypreParVector& GetCeVn() const { return CeVn; }
 
 
 private:
     MeshHandler &mesh_handler; 
     CnP &cnp;
+    PotE &pote;
 
     mfem::ParFiniteElementSpace *fespace; 
+    mfem::ParMesh *pmesh; 
     mfem::ParGridFunction pse; 
     mfem::ParGridFunction AvP; 
 
@@ -33,6 +37,8 @@ private:
 
     mfem::ParGridFunction De;
 
+    mfem::HypreParVector CeVn;
+
     double val;
     double eCrnt;
     double geCrnt;
@@ -40,6 +46,27 @@ private:
     double CeC;
     double gCeC;
     double CeAvg;
+    double tc1;
+    double tc2;
+    double dffe;
+    double BvE;
+
+    mfem::ParGridFunction Dmp;
+    mfem::ParGridFunction kpl;
+    mfem::ParGridFunction phE;
+
+    mfem::ParLinearForm B1t;
+
+    mfem::HypreParVector B1v;
+    mfem::HypreParVector X1v;
+
+    mfem::HypreParVector LpCe;
+
+
+
+    mfem::HypreParMatrix Kdm;
+    mfem::HypreParMatrix Kml;
+
 
     int nE;
     int nC;

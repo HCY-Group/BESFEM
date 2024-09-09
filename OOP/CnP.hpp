@@ -3,12 +3,13 @@
 
 #include "mfem.hpp"
 #include "MeshHandler.hpp"
+#include "PotP.hpp"
 #include <memory>
 
 class CnP {
 public:
     // Constructor that takes a reference to a MeshHandler object
-    CnP(MeshHandler &mesh_handler);
+    CnP(MeshHandler &mesh_handler, PotP &potp);
 
     void Initialize();
 
@@ -23,10 +24,20 @@ public:
 
 private:
     MeshHandler &mesh_handler; 
+    PotP &potp;
 
     mfem::ParFiniteElementSpace *fespace; 
+    mfem::ParMesh *pmesh;
     mfem::ParGridFunction psi; 
     mfem::ParGridFunction AvP; 
+    mfem::ParGridFunction AvB; 
+    mfem::ParGridFunction TmpF;
+    mfem::ParGridFunction kap;
+    mfem::ParGridFunction phP;
+
+    mfem::ParLinearForm B1t;
+    mfem::HypreParMatrix KmP;
+    mfem::HypreParVector B1v;
     
     std::unique_ptr<mfem::ParGridFunction> Rxn; // similar to how psi was done
 
@@ -40,6 +51,7 @@ private:
     double lSum;
     double val;
     double gSum;
+    double BvP;
 
     double gtPsi; // Total Psi value
     double rho; // Rho value
