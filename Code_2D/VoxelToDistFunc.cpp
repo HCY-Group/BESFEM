@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 	maker.MakeGlobalMesh();
 	int order = 1;
 
-///*
+/*
 	int nz = tiffdata.size();
 	int ny = tiffdata[0].size();
 	int nx = tiffdata[0][0].size();
@@ -95,9 +95,10 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-//*/
-
-///*
+*/
+	// weirdness to get the paraview save to work.
+	// Can't just return the grid function from the class
+	// we have to create the FiniteElementSpace again from scratch, starting with the FECollection
 	cout << "returning gVox" << endl;
 	
 	GridFunction gVox3(*maker.GetGlobalVox());
@@ -106,13 +107,18 @@ int main(int argc, char *argv[])
 	//cout << "HERE" << maker.GetGlobalVox()->FESpace()->GetMesh() << endl;;
 	
 	
-	FiniteElementSpace *gFespace3 = maker.GetGlobalVox()->FESpace();
-	cout << "HERE" << gFespace3 << endl;
+	H1_FECollection gFec2(order, maker.GetGlobalMesh()->Dimension());
+	FiniteElementSpace gFespace2(maker.GetGlobalMesh(), &gFec2);
+	GridFunction gVox2(&gFespace2);
+	
+	//FiniteElementSpace *gFespace3 = maker.GetGlobalVox()->FESpace();
+	//cout << "HERE" << gFespace3 << endl;
 	//FiniteElementSpace gFespace2(*gFespace3);
-	GridFunction gVox2(&gFespace);
+	//FiniteElementSpace gFespace2(*maker.GetGlobalVox()->FESpace());
+	//GridFunction gVox2(&gFespace);
 	//GridFunction gVox2(&gFespace2);
 	//gVox2 = *maker.GetGlobalVox();
-	
+
 	//for (int idx=0; idx<gVox2.Size(); idx++){
 	//	gVox2[idx] = gVox3[idx];
 	//	cout << idx << " " << gVox2[idx] << endl;
@@ -129,7 +135,7 @@ int main(int argc, char *argv[])
 	cout << gVox2[1] << endl;
 	cout << gmesh2.Dimension() << endl;
 	cout << gmesh2.GetNV() << endl;
-//*/	
+
 	ParaViewDataCollection *pd = NULL;
 	cout << "before" << endl;
 	//pd = new ParaViewDataCollection("gVoxelData", &gmesh2);
@@ -183,6 +189,10 @@ int main(int argc, char *argv[])
 	// ======================================
 	// LOCAL (PARALLEL) MESH AND DATA
 	// ======================================
+	// make variable names match from up above...
+	Mesh gmesh(*maker.GetGlobalMesh());
+	GridFunction gVox(gVox2);
+	
 	cout << "starting parallel mesh" << endl;
 	ParMesh pmesh(MPI_COMM_WORLD, gmesh);
 	int nV = pmesh.GetNV();			//number of vertices
