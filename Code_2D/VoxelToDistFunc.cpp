@@ -6,6 +6,7 @@
 #include "TimeDepOpers.hpp"
 #include "readtiff.h"
 #include "MeshMaker.hpp"
+#include "VoxelSolver.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -59,6 +60,8 @@ int main(int argc, char *argv[])
 	MeshMaker maker(tiffdata);
 	maker.MakeGlobalMesh();
 	maker.AssignGlobalValues();
+	
+	VoxelSolver solver(maker.GetGlobalFESpace());
 	int order = 1;
 
 	// weirdness to get the paraview save to work.

@@ -10,14 +10,15 @@ public:
 	void MakeGlobalMesh();
 	void AssignGlobalValues();
 	
-	GridFunction* GetGlobalVox() {return &gVox;}
+	GridFunction* GetGlobalVox() {return gVox;}
 	Mesh* GetGlobalMesh() {return &gmesh;}
+	FiniteElementSpace* GetGlobalFESpace() {return gFespace;}
 	//Mesh GetGlobalMesh() {return gmesh;}
 	//Mesh* GetGlobalMesh() const {return gFespace.GetMesh();}
 
 private:
 	std::vector<std::vector<std::vector<int>>> data;
 	Mesh gmesh;
-	GridFunction gVox;
-	FiniteElementSpace gFespace;
+	GridFunction *gVox;
+	FiniteElementSpace *gFespace;
 };
