@@ -8,6 +8,7 @@ class MeshMaker {
 public:
 	MeshMaker(std::vector<std::vector<std::vector<int>>> tiffdata); //constructor
 	void MakeGlobalMesh();
+	void AssignGlobalValues();
 	
 	GridFunction* GetGlobalVox() {return &gVox;}
 	Mesh* GetGlobalMesh() {return &gmesh;}

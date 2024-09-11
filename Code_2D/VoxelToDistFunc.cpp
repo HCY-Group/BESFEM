@@ -58,44 +58,9 @@ int main(int argc, char *argv[])
 	cout << "MAKING MESH" << endl;
 	MeshMaker maker(tiffdata);
 	maker.MakeGlobalMesh();
+	maker.AssignGlobalValues();
 	int order = 1;
 
-/*
-	int nz = tiffdata.size();
-	int ny = tiffdata[0].size();
-	int nx = tiffdata[0][0].size();
-	double sx = nx;  //make dx = 1
-	double sy = ny;  //make dy = 1
-	double sz = nz;  //make dz = 1
-	bool generate_edges = false;
-	bool sfc_ordering = false;
-	Mesh gmesh;
-	if (nz == 1) {
-		gmesh = Mesh::MakeCartesian2D(nx-1, ny-1, Element::QUADRILATERAL, generate_edges, sx, sy, sfc_ordering);
-	} else {
-		gmesh = Mesh::MakeCartesian3D(nx-1, ny-1, nz-1, Element::HEXAHEDRON, sx, sy, sz, sfc_ordering);
-	}
-	gmesh.EnsureNCMesh(true);
-
-	// Create global FE space for Voxel Data
-	H1_FECollection gFec(order, gmesh.Dimension());
-	FiniteElementSpace gFespace(&gmesh, &gFec);
-
-	// global grid function for voxel data
-	cout << "Defining Voxel GridFunction" << endl;
-	GridFunction gVox(&gFespace);
-	for (int k=0; k<nz; k++){
-		for (int j=0; j<ny; j++){
-			for (int i=0; i<nx; i++){
-				int idx = i + nx*j + nx*ny*k;
-				//cout << "idx = " << i+ny*j << endl;
-				//cout << "gVox[idx] = " << gVox[idx] << endl;
-				//cout << "tiffdata[i][j][0] = " << tiffdata[i][j][0] << endl;
-				gVox[idx] = tiffdata[k][j][i];
-			}
-		}
-	}
-*/
 	// weirdness to get the paraview save to work.
 	// Can't just return the grid function from the class
 	// we have to create the FiniteElementSpace again from scratch, starting with the FECollection
