@@ -156,7 +156,12 @@ int main(int argc, char *argv[])
         if (pse(vi) < eps){pse(vi) = eps;}         
     } 
 
-	//pse.Print(std::cout);	
+	// Debugging: Print some psi values
+    for (int vi = 0; vi < nV; vi++) {
+        std::cout << "Vertex " << vi << " Psi: " << (psi)(vi) << std::endl;
+    }
+
+	// psi.Print(std::cout);	
 	
 	ParGridFunction AvB(&fespace);
 	AvB = AvP;

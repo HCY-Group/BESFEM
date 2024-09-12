@@ -26,7 +26,7 @@ CFLAGS += -g
 CXXFLAGS += -g
 
 SEQ_EXAMPLES = ex0
-PAR_EXAMPLES = ex0p Trial
+PAR_EXAMPLES = ex0p main
 
 ifeq ($(MFEM_USE_MPI),NO)
    EXAMPLES = $(SEQ_EXAMPLES)

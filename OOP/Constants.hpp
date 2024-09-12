@@ -7,6 +7,7 @@ namespace Constants {
     extern const int order;
     extern const double dh;
     extern const double zeta;
+    extern const double thres;
     extern const double eps;
     extern const double dt;
     extern const double tm;
