@@ -118,43 +118,32 @@ void MeshHandler::InterpolateDomainParameters(int nV, const std::unique_ptr<mfem
     }
 }
 
-void MeshHandler::CalculateTotalPsi(int nV, int nE, int nC, const mfem::Vector& EVol) {
-    tPsi = 0.0;
+// Common Function Used in Pse & Psi
+void MeshHandler::CalculateTotals(const std::unique_ptr<mfem::ParGridFunction>& GridFunction, int nV, int nE, int nC, const mfem::Vector& EVol, double& localTotal, double& globalTotal) {
+    localTotal = 0.0;
 
-    // make common function
     Vector EAvg(nE);
     for (int ei = 0; ei < nE; ei++) {
         Array<double> VtxVal(nC);
-        psi->GetNodalValues(ei, VtxVal);
+        GridFunction->GetNodalValues(ei, VtxVal);
         val = 0.0;
         for (int vt = 0; vt < nC; vt++) {
             val += VtxVal[vt];
         }
         EAvg(ei) = val / nC;
-        tPsi += EAvg(ei) * EVol(ei);
+        localTotal += EAvg(ei) * EVol(ei);
     }
 
-    MPI_Allreduce(&tPsi, &gtPsi, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&localTotal, &globalTotal, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
+}
+
+void MeshHandler::CalculateTotalPsi(int nV, int nE, int nC, const mfem::Vector& EVol) {
+    CalculateTotals(psi, nV, nE, nC, EVol, tPsi, gtPsi);
     CalculateTargetCurrent(tPsi);
 }
 
 void MeshHandler::CalculateTotalPse(int nV, int nE, int nC, const mfem::Vector& EVol) {
-    tPse = 0.0;
-
-    // make common function
-    Vector EAvg(nE);
-    for (int ei = 0; ei < nE; ei++) {
-        Array<double> VtxVal(nC);
-        pse->GetNodalValues(ei, VtxVal);
-        val = 0.0;
-        for (int vt = 0; vt < nC; vt++) {
-            val += VtxVal[vt];
-        }
-        EAvg(ei) = val / nC;
-        tPse += EAvg(ei) * EVol(ei);
-    }
-
-    MPI_Allreduce(&tPse, &gtPse, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    CalculateTotals(pse, nV, nE, nC, EVol, tPse, gtPse);
 }
 
 void MeshHandler::CalculateTargetCurrent(double tPsi) {

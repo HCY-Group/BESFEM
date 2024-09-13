@@ -1,72 +1,72 @@
 #ifndef MESH_HANDLER_HPP
 #define MESH_HANDLER_HPP
 
-#include "mfem.hpp"
+#include "Constants.hpp"
+#include <mfem.hpp>
+#include <memory>
+
+using namespace mfem;
 
 class MeshHandler {
 public:
+    // Constructor
     MeshHandler();
+
+    // Public member functions
     void LoadMesh();
-    void InitializeMesh();
-    void PrintMeshInfo();
     void Save();
     
-    mfem::ParMesh* GetParMesh() const { return pmesh.get(); }
-    mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
-
-
-
-    mfem::ParGridFunction* GetPsi() const { return psi.get(); }
-    mfem::ParGridFunction* GetAvP() const { return AvP.get(); }
-    mfem::ParGridFunction* GetAvB() const { return AvB.get(); }
-    double GetTotalPsi() const { return gtPsi; }
-    mfem::ParGridFunction* GetPse() const { return pse.get(); }
-    double GetTotalPse() const { return gtPse; }
-    double GetLw() const { return L_w; }
-
-
 private:
+    // Member functions
+    void InitializeMesh();
+    void CalculateElementVolume(int nE, const std::unique_ptr<ParMesh>& pmesh, Vector& EVol);
+    void ReadGlobalDistanceFunction(const std::unique_ptr<FiniteElementSpace>& fespace);
+    void InterpolateDomainParameters(int nV, const std::unique_ptr<ParFiniteElementSpace>& fespace);
+    void CalculateTotals(const std::unique_ptr<ParGridFunction>& GridFunction, int nV, int nE, int nC, const Vector& EVol, double& localTotal, double& globalTotal);
+    void CalculateTotalPsi(int nV, int nE, int nC, const Vector& EVol);
+    void CalculateTotalPse(int nV, int nE, int nC, const Vector& EVol);
+    void CalculateTargetCurrent(double tPsi);
+    void PrintMeshInfo();
+
+    // Member variables
     const char* mesh_file;
     const char* dsF_file;
     int order;
-    double dh, zeta, eps, rho, Cr;
-    double gtPsi, gtPse, gTrgI, L_w, tPsi, val, tPse, trgI;
+    double dh;
+    double zeta;
+    double eps;
+    double rho;
+    double Cr;
+    double Onm;
 
-    int Onm, nV, nE, nC;
+    // Computed values
+    double gtPsi;
+    double gtPse;
+    double gTrgI;
 
-    mfem::Mesh gmesh;
+    // Mesh and FE space
+    std::unique_ptr<Mesh> gmesh;
+    std::unique_ptr<ParMesh> pmesh;
+    std::unique_ptr<FiniteElementSpace> gFespace;
+    std::unique_ptr<ParFiniteElementSpace> fespace;
+    std::unique_ptr<ParGridFunction> dsF;
+    std::unique_ptr<GridFunction> gDsF;
+    std::unique_ptr<ParGridFunction> psi;
+    std::unique_ptr<ParGridFunction> pse;
+    std::unique_ptr<ParGridFunction> AvP;
+    std::unique_ptr<ParGridFunction> AvB;
 
-    std::unique_ptr<mfem::FiniteElementSpace> gFespace;
-    std::unique_ptr<mfem::GridFunction> gDsF;
-    std::unique_ptr<mfem::ParMesh> pmesh;
-    std::unique_ptr<mfem::ParFiniteElementSpace> fespace;
-    std::unique_ptr<mfem::ParGridFunction> dsF, psi, pse, AvP, AvB;
-
-    void ReadGlobalDistanceFunction(const std::unique_ptr<mfem::FiniteElementSpace>& fespace);    
-    void CalculateElementVolume(int nE, const std::unique_ptr<mfem::ParMesh>& pmesh, mfem::Vector& EVol);
-    void InterpolateDomainParameters(int nV, const std::unique_ptr<mfem::ParFiniteElementSpace>& fespace);
-    void CalculateTotalPsi(int nV, int nE, int nC, const mfem::Vector& EVol);
-    void CalculateTotalPse(int nV, int nE, int nC, const mfem::Vector& EVol);
-    void CalculateTargetCurrent(double tPsi);
+    // Other variables
+    int nV; // Number of vertices
+    int nE; // Number of elements
+    int nC; // Number of corner vertices
+    double L_w; // West boundary size
+    double localTotal; // Total computed value
+    double val; // Intermediate value
+    double globalTotal; // Global sum
+    double tPsi; // Target Psi value
+    double tPse; // Target Pse value
+    double trgI; // Target current value
 };
 
 #endif // MESH_HANDLER_HPP
-
-
-    // fespace = make_unique<ParFiniteElementSpace>(pmesh.get(), new H1_FECollection(order, pmesh->Dimension()));
-    // dsF = make_unique<ParGridFunction>(fespace.get());
-
-    // // Map local distance function from global one
-    // Array<HYPRE_BigInt> E_L2G;
-    // pmesh->GetGlobalElementIndices(E_L2G);
-
-
-
-    // for (int ei = 0; ei < nE; ei++) {
-    //     int gei = E_L2G[ei];
-    //     gmesh.GetElementVertices(gei, gVTX);
-    //     pmesh->GetElementVertices(ei, VTX);
-    //     for (int vi = 0; vi < nC; vi++) {
-    //         (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]);
-    //     }
-    // }
