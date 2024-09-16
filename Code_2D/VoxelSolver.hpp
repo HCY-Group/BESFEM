@@ -7,8 +7,9 @@ using namespace mfem;
 class VoxelSolver {
 public:
 	VoxelSolver(FiniteElementSpace *fes); //constructor
+	void AssignGlobalValues(vector<vector<vector<int>>> data);
 	
-	GridFunction* GetGlobal() {return gVox;}
+	GridFunction* GetGlobalVox() {return gVox;}
 
 private:
 	GridFunction* gVox;

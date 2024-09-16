@@ -49,11 +49,18 @@ void MeshMaker::MakeGlobalMesh() {
 	*/
 }
 
+void MeshMaker::Make_H1_FESpace(int order) {
+	H1_FECollection gFec(order, gmesh.Dimension());
+	gFespace = new FiniteElementSpace(&gmesh, &gFec);
+}	
+/*
 void MeshMaker::AssignGlobalValues() {
 	// Create global FE space for Voxel Data
+	
 	int order = 1;
 	H1_FECollection gFec(order, gmesh.Dimension());
 	gFespace = new FiniteElementSpace(&gmesh, &gFec);
+	
 
 	// global grid function for voxel data
 	cout << "Defining Voxel GridFunction" << endl;
@@ -79,3 +86,4 @@ void MeshMaker::AssignGlobalValues() {
 	*gVox = tmp;
 
 }
+*/

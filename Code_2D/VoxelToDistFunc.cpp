@@ -59,9 +59,11 @@ int main(int argc, char *argv[])
 	cout << "MAKING MESH" << endl;
 	MeshMaker maker(tiffdata);
 	maker.MakeGlobalMesh();
-	maker.AssignGlobalValues();
+	maker.Make_H1_FESpace();
+	//maker.AssignGlobalValues();
 	
 	VoxelSolver solver(maker.GetGlobalFESpace());
+	solver.AssignGlobalValues(tiffdata);
 	int order = 1;
 
 	// weirdness to get the paraview save to work.
@@ -69,7 +71,8 @@ int main(int argc, char *argv[])
 	// we have to create the FiniteElementSpace again from scratch, starting with the FECollection
 	cout << "returning gVox" << endl;
 	
-	GridFunction gVox3(*maker.GetGlobalVox());
+	//GridFunction gVox3(*maker.GetGlobalVox());
+	GridFunction gVox3(*solver.GetGlobalVox());
 	
 	//GridFunction gVox2(maker.GetGlobalVox()->FESpace());
 	//cout << "HERE" << maker.GetGlobalVox()->FESpace()->GetMesh() << endl;;
