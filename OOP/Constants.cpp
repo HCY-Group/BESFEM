@@ -4,7 +4,7 @@ namespace Constants {
     const char* mesh_file = "Mesh_3x90_T3.mesh";
     const char* dsF_file = "dsF_3x90_T3.txt";
     const int order = 1;
-    const double dh = 0.2e-4;
+    const double dh = 0.5e-4;
     const double zeta = 1.0 * 0.375;                              // interfacial thickness
     const double thres = 1.0e-3;                                  // AvP musk
     const double eps = 1.0e-6;                                    // var - epsilon

@@ -15,7 +15,25 @@ public:
     // Public member functions
     void LoadMesh();
     void Save();
+
+    // Functions to Get Values to Use Elsewhere
+    mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
+    mfem::ParGridFunction* GetPsi() const { return psi.get(); }
+    mfem::ParGridFunction* GetPse() const { return pse.get(); }
     
+    // const mfem::Vector& GetElementVolume() const {return EVol; }
+    // const mfem::Vector& EVol = mesh_handler.GetElementVolume();
+    const mfem::Vector& GetElementVolume() const;
+
+
+    
+    double GetTotalPsi() const { return gtPsi; }
+    int GetNE() const { return nE; }
+    int GetNC() const { return nC; }
+    int GetNV() const { return nV; }
+
+
+
 private:
     // Member functions
     void InitializeMesh();
@@ -38,6 +56,7 @@ private:
     double rho;
     double Cr;
     double Onm;
+    mfem::Vector EVol;
 
     // Computed values
     double gtPsi;

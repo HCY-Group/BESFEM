@@ -47,8 +47,13 @@ void MeshHandler::InitializeMesh() {
     Array<int> gVTX(nC);                    // global indices of corner vertices
     Array<int> VTX(nC);                     // local indices of corner vertices
 
-    Vector EVol;
-    CalculateElementVolume(nE, pmesh, EVol);
+    // Vector EVol;
+    // CalculateElementVolume(nE, pmesh, EVol);
+    // // cout << "Size of EVol: " << EVol.Size() << endl; // Debug print to check size
+
+    Vector EVolTemp;
+    CalculateElementVolume(nE, pmesh, EVolTemp);
+    EVol = EVolTemp;
 
     // Create Local FE Space
     fespace = make_unique<ParFiniteElementSpace>(pmesh.get(), new H1_FECollection(order, pmesh->Dimension()));
@@ -174,4 +179,8 @@ void MeshHandler::Save() {
     } else {
         std::cerr << "Error: pmesh is not initialized.\n";
     }
+}
+
+const mfem::Vector& MeshHandler::GetElementVolume() const {
+    return EVol; // Ensure this is a reference to the actual Vector
 }

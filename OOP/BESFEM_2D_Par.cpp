@@ -23,8 +23,8 @@ int main(int argc, char *argv[])
 //	string mesh_file = "Mesh/Smesh_80x90_AMR_D01.mesh";
 //	string dsF_file =  "Mesh/dsF_81x91_AMR_D01.txt";
 		
- 	const char *mesh_file = "Smesh_AMR_T03.mesh";
- 	const char *dsF_file = "dsF_30x20_T03.txt"; // had "dsF_AMR_T03.txt" 
+ 	const char *mesh_file = "Mesh_3x90_T3.mesh";
+ 	const char *dsF_file = "dsF_3x90_T3.txt"; // had "dsF_AMR_T03.txt" 
 
 
 // 	bool visualization = true;
@@ -205,26 +205,26 @@ int main(int argc, char *argv[])
 // 	double sCrnt = 0.0;	
 // 	double gCrnt = 0.0;	
 		
-// 	// Some containers that will be used later.
-// 	Array<int> boundary_dofs;					// nature boundary
+	// Some containers that will be used later.
+	Array<int> boundary_dofs;					// nature boundary
 	
-// 	// Neumann BC on the west boundary. CnE
-// 	Array<int> nbc_w_bdr(pmesh.bdr_attributes.Max());
-// 	nbc_w_bdr = 0; nbc_w_bdr[0] = 1;
+	// Neumann BC on the west boundary. CnE
+	Array<int> nbc_w_bdr(pmesh.bdr_attributes.Max());
+	nbc_w_bdr = 0; nbc_w_bdr[0] = 1;
 
-// 	// Dirichlet BC on the east boundary. phP
-// 	Array<int> dbc_e_bdr(pmesh.bdr_attributes.Max());
-// 	dbc_e_bdr = 0; dbc_e_bdr[2] = 1;
-// 	// use dbc_e_bdr array to extract all node labels of Dirichlet BC
-// 	Array<int> ess_tdof_list_e(0);			
-// 	fespace.GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+	// Dirichlet BC on the east boundary. phP
+	Array<int> dbc_e_bdr(pmesh.bdr_attributes.Max());
+	dbc_e_bdr = 0; dbc_e_bdr[2] = 1;
+	// use dbc_e_bdr array to extract all node labels of Dirichlet BC
+	Array<int> ess_tdof_list_e(0);			
+	fespace.GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
 	
-// 	// Dirichlet BC on the west boundary. phE
-// 	Array<int> dbc_w_bdr(pmesh.bdr_attributes.Max());
-// 	dbc_w_bdr = 0; dbc_w_bdr[0] = 1;
-// 	// use dbc_w_bdr array to extract all node labels of Dirichlet BC
-// 	Array<int> ess_tdof_list_w(0);			
-// 	fespace.GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);	
+	// Dirichlet BC on the west boundary. phE
+	Array<int> dbc_w_bdr(pmesh.bdr_attributes.Max());
+	dbc_w_bdr = 0; dbc_w_bdr[0] = 1;
+	// use dbc_w_bdr array to extract all node labels of Dirichlet BC
+	Array<int> ess_tdof_list_w(0);			
+	fespace.GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);	
 	
 // // 	ConstantCoefficient one(1.0);		
 		
@@ -244,38 +244,44 @@ int main(int argc, char *argv[])
 // 	// // 	  \_____|_| |_|_|     
 // 	// // 	==============================
 
-// 	// initial condition
-// 	ParGridFunction CnP(&fespace);
-// 	double Cp0 = 0.3;					// initial value
-// 	CnP = Cp0;	
+	// initial condition
+	ParGridFunction CnP(&fespace);
+	double Cp0 = 0.3;					// initial value
+	CnP = Cp0;	
 	
-// 	// degree of lithiation
-// 	double Xfr = 0.0;
+	// degree of lithiation
+	double Xfr = 0.0;
 
-// 	ParGridFunction TmpF(&fespace);
-// 	TmpF = CnP;
-// 	TmpF *= psi;
-// 	double lSum = 0.0;
-// 	for (int ei = 0; ei < nE; ei++){	  
-// 		TmpF.GetNodalValues(ei,VtxVal);
-// 		val = 0.0;
-// 		for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 		EAvg(ei) = val/nC;		 		  
-// 		lSum += EAvg(ei)*EVol(ei);	
-// 	} 	
-// 	double gSum;
-// 	MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
-// 	Xfr = gSum/gtPsi;	
+	ParGridFunction TmpF(&fespace);
+	TmpF = CnP;
+	TmpF *= psi;
+	double lSum = 0.0;
+	for (int ei = 0; ei < nE; ei++){	  
+		TmpF.GetNodalValues(ei,VtxVal);
+		val = 0.0;
+		for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+		EAvg(ei) = val/nC;		 		  
+		lSum += EAvg(ei)*EVol(ei);	
+	} 	
+
+	double gSum;
+	MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
+	Xfr = gSum/gtPsi;
+
+	// cout << "gSum: " << gSum << std::endl;
 	
-// 	// SBM mass matrix	
-// 	HypreParMatrix Mmatp;
-//  	GridFunctionCoefficient cPs(&psi) ;	
 	
-// 	// use unique pointer to form ParBilinearForm
-// 	std::unique_ptr<ParBilinearForm> Mt(new ParBilinearForm(&fespace));
-//  	Mt->AddDomainIntegrator(new MassIntegrator(cPs)); 	
-//  	Mt->Assemble();
-//  	Mt->FormSystemMatrix(boundary_dofs, Mmatp);
+	// SBM mass matrix	
+	HypreParMatrix Mmatp;
+ 	GridFunctionCoefficient cPs(&psi) ;	
+	
+	// use unique pointer to form ParBilinearForm
+	std::unique_ptr<ParBilinearForm> Mt(new ParBilinearForm(&fespace));
+ 	Mt->AddDomainIntegrator(new MassIntegrator(cPs)); 	
+ 	Mt->Assemble();
+ 	Mt->FormSystemMatrix(boundary_dofs, Mmatp);
+
+	// Mmatp.Print("Mmatp_Original.txt", 0);
 
 	
 // 	HypreSmoother Mp_prec;

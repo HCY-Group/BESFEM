@@ -10,13 +10,7 @@
 
 #include "Constants.hpp"
 #include "Mesh_Handler.hpp"
-
-// #include "CnP.hpp"
-// #include "CnE.hpp"
-// #include "PotP.hpp"
-// #include "PotE.hpp"
-// #include "Reaction.hpp"
-
+#include "Concentrations.hpp"
 #include <iostream>
 
 using namespace mfem;
@@ -32,6 +26,10 @@ int main(int argc, char *argv[]) {
     MeshHandler mesh_handler;       // define mesh and dsf file in Constants.cpp
     mesh_handler.LoadMesh();
     //mesh_handler.Save();
+
+    // Create the Concentrations object using the mesh_handler
+    Concentrations concentrations(mesh_handler);
+    concentrations.InitializeCnP(); 
 
     // // Create Reaction
     // Reaction reaction(mesh_handler);
@@ -84,4 +82,5 @@ int main(int argc, char *argv[]) {
     // Finalize MPI
     Mpi::Finalize();
     return 0;
+
 }
