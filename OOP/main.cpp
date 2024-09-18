@@ -11,6 +11,8 @@
 #include "Constants.hpp"
 #include "Mesh_Handler.hpp"
 #include "Concentrations.hpp"
+#include "Reaction.hpp"
+
 #include <iostream>
 
 using namespace mfem;
@@ -27,13 +29,14 @@ int main(int argc, char *argv[]) {
     mesh_handler.LoadMesh();
     //mesh_handler.Save();
 
-    // Create the Concentrations object using the mesh_handler
+    // Initialize CnP & CnE
     Concentrations concentrations(mesh_handler);
-    concentrations.InitializeCnP(); 
+    concentrations.InitializeCnP();
+    concentrations.InitializeCnE();  
 
-    // // Create Reaction
-    // Reaction reaction(mesh_handler);
-    // reaction.Initialize(); 
+    // Initialize Reaction
+    Reaction reaction(mesh_handler, concentrations);
+    reaction.Initialize(); 
 
     // // Create the CnP object
     // CnP cnp(mesh_handler, reaction);
@@ -54,22 +57,22 @@ int main(int argc, char *argv[]) {
     // // // Create Reaction
     // // // Reaction reaction(mesh_handler, cne, pote);
 
-    // //Time-stepping loop
-    // for (int t = 0; t < 10 + 1; ++t) {
-    //     cnp.TimeStep(Constants::dt);
-    //     cne.TimeStep(Constants::dt);
-    //     // potp.TimeStep(Constants::dt);
-    //     pote.TimeStep(Constants::dt);
-    //     // reaction.TimeStep(Constants::dt);
+    //Time-stepping loop
+    for (int t = 0; t < 10 + 1; ++t) {
+        concentrations.TimeStepCnP();
+        concentrations.TimeStepCnE();
+        // potp.TimeStep(Constants::dt);
+        // pote.TimeStep(Constants::dt);
+        // reaction.TimeStep(Constants::dt);
         
-    //     // Create Reaction
-    //     // Reaction reaction(mesh_handler, cne, pote);
-    //     // reaction.TimeStep(Constants::dt);
-    //     // for ......
-    //     // end
+        // Create Reaction
+        // Reaction reaction(mesh_handler, cne, pote);
+        // reaction.TimeStep(Constants::dt);
+        // for ......
+        // end
 
 
-    // }
+    }
 
 
 

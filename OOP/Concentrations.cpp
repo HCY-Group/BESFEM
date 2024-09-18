@@ -10,7 +10,8 @@ using namespace std;
 
 Concentrations::Concentrations(MeshHandler &mesh_handler)
     : fespace(mesh_handler.GetFESpace()), psi(*mesh_handler.GetPsi()), pse(*mesh_handler.GetPse()),
-      EVol(mesh_handler.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi())
+      EVol(mesh_handler.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), reaction(mesh_handler, *this)
+      
 {
     nE = mesh_handler.GetNE();
     nC = mesh_handler.GetNC();
@@ -19,6 +20,12 @@ Concentrations::Concentrations(MeshHandler &mesh_handler)
     // Initialize ParGridFunction for CnP and CnE
     CnP = make_unique<ParGridFunction>(fespace);
     CnE = make_unique<ParGridFunction>(fespace);
+
+    Rxc = make_unique<ParGridFunction>(fespace);
+    Rxe = make_unique<ParGridFunction>(fespace);
+
+
+    reaction.Initialize();
 }
 
 
@@ -27,18 +34,48 @@ void Concentrations::InitializeCnP() {
     Lithiation(*CnP, 0.3);
     SetupBoundaryConditions();
     SBM_Matrix(psi, Mmatp);
-    Solver(Mmatp);
+    CGSolver Mp_solver(MPI_COMM_WORLD);
+    Solver(Mmatp, Mp_solver); 
 
 }
 
+void Concentrations::InitializeCnE() {
 
-// void Concentrations::InitializeCnE() {
+    CreateCnE(*CnE, 0.001);
+    SetupBoundaryConditions();
+    SBM_Matrix(pse, Mmate);
+    CGSolver Me_solver(MPI_COMM_WORLD);
+    Solver(Mmate, Me_solver);
 
-//     Lithiation(*CnP, 0.3);
+}
 
+void Concentrations::TimeStepCnP() {
 
-// }
+    mfem::ParGridFunction &Rxn = *reaction.Rxn;
+    GridFunctionCoefficient cAp(Rxc.get());
+    SetupRx(Rxn, *Rxc, Constants::rho, cAp); // Rxn needs to come from Reacions.cpp
 
+    // Rxc->Print(std::cout);
+
+    // cout << "rho : " << Constants::rho << endl;
+
+}
+
+void Concentrations::TimeStepCnE() {
+
+    mfem::ParGridFunction &Rxn = *reaction.Rxn;
+    GridFunctionCoefficient cAe(Rxe.get());
+    SetupRx(Rxn, *Rxe, Constants::t_minus, cAe);
+
+    Rxe->Print(std::cout);
+
+}
+
+void Concentrations::CreateCnE(mfem::ParGridFunction &Cn, double initial_value) {
+
+    Cn = initial_value;
+
+}
 
 void Concentrations::Lithiation(mfem::ParGridFunction &Cn, double initial_value) {
 
@@ -78,18 +115,13 @@ void Concentrations::SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat
     M->AddDomainIntegrator(new MassIntegrator(cP));
     M->Assemble();
     
-    // HypreParMatrix Mmat;
     M->FormSystemMatrix(boundary_dofs, Mmat); 
-
-    // Mmat.Print("Mmat.txt", 0);
-
 
 }
 
-void Concentrations::Solver(HypreParMatrix &Mmat) {
+void Concentrations::Solver(HypreParMatrix &Mmat, CGSolver &M_solver) {
     
     HypreSmoother M_prec;
-    CGSolver M_solver(MPI_COMM_WORLD);
 
     M_solver.iterative_mode = false;
     M_solver.SetRelTol(1e-7);
@@ -98,7 +130,10 @@ void Concentrations::Solver(HypreParMatrix &Mmat) {
     M_solver.SetPrintLevel(0);
     M_prec.SetType(HypreSmoother::Jacobi);
     M_solver.SetPreconditioner(M_prec);
-    M_solver.SetOperator(Mmat);
+
+    if (&Mmat == &Mmatp) {
+        M_solver.SetOperator(Mmat); // this is only needed for Mmatp
+    }
 
 }
 
@@ -127,10 +162,19 @@ void Concentrations::SetupBoundaryConditions() {
     Array<int> ess_tdof_list_w(0);
     fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
     
-    // // Combine the Dirichlet BCs into one array (if needed later)
-    // boundary_dofs.SetSize(ess_tdof_list_e.Size() + ess_tdof_list_w.Size());
-    // boundary_dofs.CopyFrom(ess_tdof_list_e);
-    // boundary_dofs.Append(ess_tdof_list_w);
-    
 }
 
+void Concentrations::SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, 
+double value, GridFunctionCoefficient cAx) {
+
+    Rx2 = Rx1;
+
+    if (&Rx2 == Rxc.get()) {
+        Rx2 /= value; // this is needed for CnP & Rxc
+    }
+
+    if (&Rx2 == Rxe.get()) {
+        Rx2 *= (-1.0 * value); // this is needed for CnE & Rxe
+    }
+
+}

@@ -284,17 +284,17 @@ int main(int argc, char *argv[])
 	// Mmatp.Print("Mmatp_Original.txt", 0);
 
 	
-// 	HypreSmoother Mp_prec;
-// 	CGSolver Mp_solver(MPI_COMM_WORLD);	
+	HypreSmoother Mp_prec;
+	CGSolver Mp_solver(MPI_COMM_WORLD);	
 
-// 	Mp_solver.iterative_mode = false;
-// 	Mp_solver.SetRelTol(1e-7);
-// 	Mp_solver.SetAbsTol(0);
-// 	Mp_solver.SetMaxIter(102);
-// 	Mp_solver.SetPrintLevel(0);
-// 	Mp_prec.SetType(HypreSmoother::Jacobi);
-// 	Mp_solver.SetPreconditioner(Mp_prec);
-// 	Mp_solver.SetOperator(Mmatp);
+	Mp_solver.iterative_mode = false;
+	Mp_solver.SetRelTol(1e-7);
+	Mp_solver.SetAbsTol(0);
+	Mp_solver.SetMaxIter(102);
+	Mp_solver.SetPrintLevel(0);
+	Mp_prec.SetType(HypreSmoother::Jacobi);
+	Mp_solver.SetPreconditioner(Mp_prec);
+	Mp_solver.SetOperator(Mmatp);
 
 // 	HypreParMatrix *Tmatp;
 
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
 // 	HypreParMatrix Kmatp;
 	
 // 	// force vector
-// 	ParGridFunction Rxc(&fespace);	
+	ParGridFunction Rxc(&fespace);	
 // 	ParLinearForm Fct(&fespace);
 // 	HypreParVector Fcb(&fespace);	
 
@@ -327,28 +327,31 @@ int main(int argc, char *argv[])
 // 	// 	//   \_____|_| |_|______|
 // 	// 	// ============================
 	
-// 	ParGridFunction CnE(&fespace);
-// 	double Ce0 = 0.001;						// initial value
-// 	CnE = Ce0;	
+	ParGridFunction CnE(&fespace);
+	double Ce0 = 0.001;						// initial value
+	CnE = Ce0;	
 
-// 	// SBM mass matrix	
-// 	HypreParMatrix Mmate;	
-// 	GridFunctionCoefficient cPe(&pse) ;	
+	// SBM mass matrix	
+	HypreParMatrix Mmate;	
+	GridFunctionCoefficient cPe(&pse) ;	
 	
-// 	std::unique_ptr<ParBilinearForm> Me(new ParBilinearForm(&fespace)); 	
-//  	Me->AddDomainIntegrator(new MassIntegrator(cPe)); 	
-//  	Me->Assemble();
-//  	Me->FormSystemMatrix(boundary_dofs, Mmate);
+	std::unique_ptr<ParBilinearForm> Me(new ParBilinearForm(&fespace)); 	
+ 	Me->AddDomainIntegrator(new MassIntegrator(cPe)); 	
+ 	Me->Assemble();
+ 	Me->FormSystemMatrix(boundary_dofs, Mmate);
+	
+	Mmate.Print("Mmate_Original.txt", 0);
+
  	
-// 	HypreSmoother Me_prec;
-// 	CGSolver Me_solver(MPI_COMM_WORLD);	
-// 	Me_solver.iterative_mode = false;
-// 	Me_solver.SetRelTol(1e-7);
-// 	Me_solver.SetAbsTol(0);
-// 	Me_solver.SetMaxIter(100);
-// 	Me_solver.SetPrintLevel(0);
-// 	Me_prec.SetType(HypreSmoother::Jacobi);
-// 	Me_solver.SetPreconditioner(Me_prec);
+	HypreSmoother Me_prec;
+	CGSolver Me_solver(MPI_COMM_WORLD);	
+	Me_solver.iterative_mode = false;
+	Me_solver.SetRelTol(1e-7);
+	Me_solver.SetAbsTol(0);
+	Me_solver.SetMaxIter(100);
+	Me_solver.SetPrintLevel(0);
+	Me_prec.SetType(HypreSmoother::Jacobi);
+	Me_solver.SetPreconditioner(Me_prec);
  	
 // 	HypreParMatrix *TmatL, *TmatR;			// matrices for CN scheme
 	
@@ -358,7 +361,7 @@ int main(int argc, char *argv[])
 // 	HypreParMatrix Kmate;
 
 // 	// force vector
-// 	ParGridFunction Rxe(&fespace);
+	ParGridFunction Rxe(&fespace);
 	
 // 	// defined for later
 // 	ParLinearForm Fet(&fespace);		
@@ -461,10 +464,10 @@ int main(int argc, char *argv[])
 	
 // 	double Vcell = BvP - BvE;
 
-// 	// reaction term
-// 	ParGridFunction Rxn(&fespace);
-// 	Rxn = 0.0;
-// // 	Rxn = AvP; Rxn *= 1.0e-8;	
+	// reaction term
+	ParGridFunction Rxn(&fespace);
+	Rxn = 0.0;
+	Rxn = AvP; Rxn *= 1.0e-8;	
 	 
 // 	// rate constants
 // 	ParGridFunction dPHE(&fespace);		// voltage drop
@@ -504,7 +507,7 @@ int main(int argc, char *argv[])
 // 	//  ===================================================================   
 		
 // 	int t = 0;
-// // 	for (int t = 0; t < 1000 + 1; t++){
+for (int t = 0; t < 10 + 1; t++){
 // 	while ( Vcell > Vcut){
 // //	while ( t<1 ){
 	
@@ -519,9 +522,11 @@ int main(int argc, char *argv[])
 // 		// // 	==============================
 	
 			
-// 		Rxc = Rxn;
-// 		Rxc /= rho;	
-// 		GridFunctionCoefficient cAp(&Rxc) ;	
+		Rxc = Rxn;
+		Rxc /= rho;	
+		GridFunctionCoefficient cAp(&Rxc) ;	
+
+		// Rxc.Print(std::cout);
 		
 // 		// force term
 // 		std::unique_ptr<ParLinearForm> Bc2(new ParLinearForm(&fespace));		
@@ -594,9 +599,12 @@ int main(int argc, char *argv[])
 // 		// //   \_____|_| |_|______|
 // 		// // ============================
 
-// 		Rxe = Rxn;
-// 		Rxe *= (-1.0*t_minus);	
-// 		GridFunctionCoefficient cAe(&Rxe) ;
+		Rxe = Rxn;
+		Rxe *= (-1.0*t_minus);	
+		GridFunctionCoefficient cAe(&Rxe) ;
+
+		Rxe.Print(std::cout);
+
 		
 // 		// total reaction
 // 		eCrnt = 0.0;
@@ -1014,4 +1022,5 @@ int main(int argc, char *argv[])
 	
 	
 //    return 0;
-}	
+	}	
+}

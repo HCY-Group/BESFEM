@@ -25,6 +25,7 @@ public:
     // const mfem::Vector& EVol = mesh_handler.GetElementVolume();
     const mfem::Vector& GetElementVolume() const;
 
+    std::unique_ptr<ParGridFunction> AvP;
 
     
     double GetTotalPsi() const { return gtPsi; }
@@ -72,7 +73,7 @@ private:
     std::unique_ptr<GridFunction> gDsF;
     std::unique_ptr<ParGridFunction> psi;
     std::unique_ptr<ParGridFunction> pse;
-    std::unique_ptr<ParGridFunction> AvP;
+    // std::unique_ptr<ParGridFunction> AvP;
     std::unique_ptr<ParGridFunction> AvB;
 
     // Other variables

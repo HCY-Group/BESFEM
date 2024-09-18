@@ -4,6 +4,7 @@
 #include "mfem.hpp"
 #include "Mesh_Handler.hpp"
 #include "Constants.hpp"
+#include "Reaction.hpp"
 #include <memory>
 
 class Concentrations {
@@ -13,13 +14,22 @@ public:
 
     // Initialization method
     void InitializeCnP();
+    void InitializeCnE();
+
+    void TimeStepCnP();
+    void TimeStepCnE();
 
 private:
+
+    Reaction reaction;
+
     // Internal methods for different operations
+    void CreateCnE(mfem::ParGridFunction &Cn, double initial_value);
     void Lithiation(mfem::ParGridFunction &Cn, double initial_value);
     void SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat);
-    void Solver(HypreParMatrix &Mmat);
+    void Solver(HypreParMatrix &Mmat, CGSolver &M_solver);
     void SetupBoundaryConditions();
+    void SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value, GridFunctionCoefficient cAx);
 
     // Member variables
     mfem::ParFiniteElementSpace* fespace;           // Finite element space
@@ -36,11 +46,20 @@ private:
 
     Array<int> boundary_dofs;
 
+    CGSolver Mp_solver;
+    CGSolver Me_solver;
+
     std::unique_ptr<mfem::ParGridFunction> CnP;     // Concentration CnP (ParGridFunction)
     std::unique_ptr<mfem::ParGridFunction> CnE;     // Concentration CnE (ParGridFunction)
 
     HypreParMatrix Mmatp;
     HypreParMatrix Mmate;
+
+    std::unique_ptr<mfem::ParGridFunction> Rxc;     
+    std::unique_ptr<mfem::ParGridFunction> Rxe;     
+
+
+
 };
 
 #endif // CONCENTRATIONS_HPP
