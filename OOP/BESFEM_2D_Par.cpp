@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
 	
 // 	// force vector
 	ParGridFunction Rxc(&fespace);	
-// 	ParLinearForm Fct(&fespace);
+	ParLinearForm Fct(&fespace);
 // 	HypreParVector Fcb(&fespace);	
 
 //  	// create a Vector for CnP
@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
  	Me->Assemble();
  	Me->FormSystemMatrix(boundary_dofs, Mmate);
 	
-	Mmate.Print("Mmate_Original.txt", 0);
+	// Mmate.Print("Mmate_Original.txt", 0);
 
  	
 	HypreSmoother Me_prec;
@@ -528,12 +528,15 @@ for (int t = 0; t < 10 + 1; t++){
 
 		// Rxc.Print(std::cout);
 		
-// 		// force term
-// 		std::unique_ptr<ParLinearForm> Bc2(new ParLinearForm(&fespace));		
-// 		Bc2->AddDomainIntegrator(new DomainLFIntegrator(cAp));	
-// 		Bc2->Assemble();		
-// 		// Move the contents of Bc2 into Fct
-// 		Fct = std::move(*Bc2);		
+		// force term
+		std::unique_ptr<ParLinearForm> Bc2(new ParLinearForm(&fespace));	
+		// Use update () instead 
+		Bc2->AddDomainIntegrator(new DomainLFIntegrator(cAp));	
+		Bc2->Assemble();		
+		// Move the contents of Bc2 into Fct
+		Fct = std::move(*Bc2);
+
+		// Fct.Print(std::cout);		
 
 
 // 		// diffusivity in the particles
@@ -603,7 +606,7 @@ for (int t = 0; t < 10 + 1; t++){
 		Rxe *= (-1.0*t_minus);	
 		GridFunctionCoefficient cAe(&Rxe) ;
 
-		Rxe.Print(std::cout);
+		// Rxe.Print(std::cout);
 
 		
 // 		// total reaction

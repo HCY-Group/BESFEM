@@ -9,7 +9,7 @@ using namespace mfem;
 using namespace std;
 
 Concentrations::Concentrations(MeshHandler &mesh_handler)
-    : fespace(mesh_handler.GetFESpace()), psi(*mesh_handler.GetPsi()), pse(*mesh_handler.GetPse()),
+    : mesh_handler(mesh_handler), fespace(mesh_handler.GetFESpace()), psi(*mesh_handler.GetPsi()), pse(*mesh_handler.GetPse()),
       EVol(mesh_handler.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), reaction(mesh_handler, *this)
       
 {
@@ -55,9 +55,12 @@ void Concentrations::TimeStepCnP() {
     GridFunctionCoefficient cAp(Rxc.get());
     SetupRx(Rxn, *Rxc, Constants::rho, cAp); // Rxn needs to come from Reacions.cpp
 
+    ForceTerm(cAp, Fct);
+    // Fct.Print(std::cout);
+
     // Rxc->Print(std::cout);
 
-    // cout << "rho : " << Constants::rho << endl;
+
 
 }
 
@@ -67,7 +70,9 @@ void Concentrations::TimeStepCnE() {
     GridFunctionCoefficient cAe(Rxe.get());
     SetupRx(Rxn, *Rxe, Constants::t_minus, cAe);
 
-    Rxe->Print(std::cout);
+    TotalReaction(*Rxe, eCrnt);
+
+    // Rxe->Print(std::cout);
 
 }
 
@@ -176,5 +181,46 @@ double value, GridFunctionCoefficient cAx) {
     if (&Rx2 == Rxe.get()) {
         Rx2 *= (-1.0 * value); // this is needed for CnE & Rxe
     }
+
+}
+
+void Concentrations::ForceTerm(GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx) {
+
+    std::unique_ptr<ParLinearForm> Bx2(new ParLinearForm(fespace));	
+
+    Bx2->AddDomainIntegrator(new DomainLFIntegrator(cXx));
+
+    // if (cXx == cAe) {
+
+    //     Bx2.AddBoundaryIntegrator(new BoundaryLFIntegrator(m_nbcCoef), nbc_w_bdr);
+    // }
+
+    Bx2->Assemble();
+
+    Fxx = std::move(*Bx2);
+
+
+}
+
+void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
+
+    xCrnt = 0.0;
+    Array<double> VtxVal(nC);
+    Vector EAvg(nE);
+    for (int ei = 0; ei < nE; ei++) {
+        Rx.GetNodalValues(ei, VtxVal);
+        double val = 0.0;
+        for (int vt = 0; vt < nC; vt++) {
+            val += VtxVal[vt];
+        }
+        EAvg(ei) = val / nC;
+        xCrnt += EAvg(ei) * EVol(ei);
+    }
+
+    double geCrnt;
+    MPI_Allreduce(&xCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    double infx = geCrnt / (mesh_handler.L_w);
+
+    cout << "infx: " << infx << std::endl;
 
 }

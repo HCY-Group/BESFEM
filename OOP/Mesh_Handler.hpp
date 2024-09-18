@@ -33,6 +33,9 @@ public:
     int GetNC() const { return nC; }
     int GetNV() const { return nV; }
 
+    double L_w;
+
+
 
 
 private:
@@ -80,7 +83,6 @@ private:
     int nV; // Number of vertices
     int nE; // Number of elements
     int nC; // Number of corner vertices
-    double L_w; // West boundary size
     double localTotal; // Total computed value
     double val; // Intermediate value
     double globalTotal; // Global sum
