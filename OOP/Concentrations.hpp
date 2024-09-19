@@ -30,6 +30,7 @@ private:
     void SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat);
     void Solver(HypreParMatrix &Mmat, CGSolver &M_solver);
     void SetupBoundaryConditions();
+    void ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx);
     void SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value, GridFunctionCoefficient cAx);
     void ForceTerm(GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx);
     void TotalReaction(mfem::ParGridFunction &Rx, double xCrnt);
@@ -42,6 +43,7 @@ private:
 
     const mfem::Vector& EVol;                       // Element volumes from MeshHandler
     double gtPsi;                                   // Total Psi from MeshHandler
+    double infx;
 
     int nE;                                         // Number of elements
     int nC;                                         // Number of corners (assuming this is number of corners)
@@ -65,6 +67,14 @@ private:
     std::unique_ptr<mfem::ParLinearForm> Be2;
 
     mfem::ParLinearForm Fct;
+    mfem::ParLinearForm Fet;
+    mfem::ParGridFunction PeR;
+
+    GridFunctionCoefficient matCoef_R;
+    GridFunctionCoefficient cAe;
+
+    std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef;    
+    mfem::Array<int> nbc_w_bdr;       
 
     double eCrnt;
 
