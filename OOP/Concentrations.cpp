@@ -46,6 +46,8 @@ void Concentrations::InitializeCnE() {
     SBM_Matrix(pse, Mmate);
     CGSolver Me_solver(MPI_COMM_WORLD);
     Solver(Mmate, Me_solver);
+    ImposeNeumannBC(PeR, pse);
+    GridFunctionCoefficient matCoef_R(&PeR);
 
 }
 
@@ -71,8 +73,12 @@ void Concentrations::TimeStepCnE() {
     SetupRx(Rxn, *Rxe, Constants::t_minus, cAe);
 
     TotalReaction(*Rxe, eCrnt);
+    ConstantCoefficient nbcCoef(infx); // Neumann BC
+    m_nbcCoef = std::make_unique<ProductCoefficient>(matCoef_R, nbcCoef); // Initialize here
 
-    // Rxe->Print(std::cout);
+    ForceTerm(cAe, Fet);
+
+    Fet.Print(std::cout);
 
 }
 
@@ -169,6 +175,13 @@ void Concentrations::SetupBoundaryConditions() {
     
 }
 
+void Concentrations::ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx) {
+
+    PGF = psx;
+    PGF.Neg();
+
+}
+
 void Concentrations::SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, 
 double value, GridFunctionCoefficient cAx) {
 
@@ -190,9 +203,9 @@ void Concentrations::ForceTerm(GridFunctionCoefficient cXx, mfem::ParLinearForm 
 
     Bx2->AddDomainIntegrator(new DomainLFIntegrator(cXx));
 
-    // if (cXx == cAe) {
+    // if (&cXx == &cAe && m_nbcCoef) {
 
-    //     Bx2.AddBoundaryIntegrator(new BoundaryLFIntegrator(m_nbcCoef), nbc_w_bdr);
+    //     Bx2->AddBoundaryIntegrator(new BoundaryLFIntegrator(*m_nbcCoef), nbc_w_bdr);
     // }
 
     Bx2->Assemble();
@@ -219,8 +232,8 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
 
     double geCrnt;
     MPI_Allreduce(&xCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    double infx = geCrnt / (mesh_handler.L_w);
+    infx = geCrnt / (mesh_handler.L_w);
 
-    cout << "infx: " << infx << std::endl;
+    // cout << "infx: " << infx << std::endl;
 
 }
