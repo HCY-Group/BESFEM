@@ -17,7 +17,15 @@ MeshHandler::MeshHandler()
 void MeshHandler::LoadMesh() {
 
     InitializeMesh();
+
     std::cout << "MeshHandler - fespace initialized with " << fespace->GetNE() << " elements." << std::endl;
+
+    // Initialize test_f using fespace after it's created
+    test_f = mfem::ParGridFunction(fespace.get());
+    test_f = 1.0; // Set all values in test_f to 1
+
+    // Output the first value of test_f as a test
+    std::cout << "MeshHandler - First value of test_f: " << test_f(0) << std::endl;
 
 
     PrintMeshInfo();
@@ -193,10 +201,18 @@ const mfem::Vector& MeshHandler::GetElementVolume() const {
 }
 
 void MeshHandler::TestFESpace() {
+    
+    std::cout << "MeshHandler - fespace pointer: " << fespace.get() << std::endl;
+
     // Create a test ParGridFunction on the fespace
     ParGridFunction test_f(fespace.get());
     test_f = 1.0; // Set all values in test_f to 1
 
+
     // Output the first value of test_f as a test
     std::cout << "MeshHandler - First value of test_f: " << test_f(0) << std::endl;
+}
+
+mfem::ParGridFunction& MeshHandler::GetTestF() {
+    return test_f; // Return the reference to the member variable test_f
 }

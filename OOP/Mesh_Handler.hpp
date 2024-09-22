@@ -19,6 +19,11 @@ public:
 
     // Functions to Get Values to Use Elsewhere
     mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
+
+    // std::shared_ptr<ParFiniteElementSpace> fespace;
+    // std::shared_ptr<ParFiniteElementSpace> GetFESpace() const { return fespace; }
+
+
     mfem::ParMesh* GetPmesh() const { return pmesh.get(); }
     mfem::ParGridFunction* GetPsi() const { return psi.get(); }
     mfem::ParGridFunction* GetPse() const { return pse.get(); }
@@ -44,7 +49,8 @@ public:
 
     Array<int> nbc_w_bdr;
 
-    // std::unique_ptr<ParFiniteElementSpace> fespace;
+    mfem::ParGridFunction& GetTestF(); // Ensure the correct namespace
+
 
 
 
@@ -60,6 +66,9 @@ private:
     void CalculateTotalPse(int nV, int nE, int nC, const Vector& EVol);
     void CalculateTargetCurrent(double tPsi);
     void PrintMeshInfo();
+
+    mfem::ParGridFunction test_f; // Declare test_f as a member variable
+
 
     // Member variables
     const char* mesh_file;

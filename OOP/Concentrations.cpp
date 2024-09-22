@@ -27,6 +27,27 @@ Concentrations::Concentrations(MeshHandler &mesh_handler)
     reaction.Initialize(); 
 }
 
+// Concentrations::Concentrations(MeshHandler &mesh_handler)
+//     : mesh_handler(mesh_handler), fespace(mesh_handler.GetFESpace()) {
+//     std::cout << "Concentrations - fespace pointer: " << fespace.get() << std::endl;
+
+//     mfem::ParGridFunction& myTestF = mesh_handler.GetTestF();
+//     std::cout << "First value of test_f in Concentrations: " << myTestF(0) << std::endl; 
+
+
+//     // ParGridFunction test_f(fespace.get());
+//     // std::cout << "Concentrations - Initial value of test_f: " << test_f(0) << std::endl;
+
+
+//     // Initialize ParGridFunction for CnP and CnE using the shared fespace
+//     // CnP = std::make_unique<ParGridFunction>(fespace.get());
+//     // CnE = std::make_unique<ParGridFunction>(fespace.get());
+
+//     // Rxc = std::make_unique<ParGridFunction>(fespace.get());
+//     // Rxe = std::make_unique<ParGridFunction>(fespace.get());
+
+// }
+
 
 void Concentrations::InitializeCnP(ParFiniteElementSpace *fespace) {
 
@@ -79,7 +100,7 @@ void Concentrations::TimeStepCnE(ParFiniteElementSpace *fespace) {
     SetupRx(Rxn, *Rxe, Constants::t_minus, cAe);
 
     TotalReaction(*Rxe, eCrnt);
-    ConstantCoefficient nbcCoef(infx); // Neumann BC
+    ConstantCoefficient nbcCoef(-infx); // Neumann BC
 
     // PeR.Print(std::cout);
 
@@ -90,9 +111,9 @@ void Concentrations::TimeStepCnE(ParFiniteElementSpace *fespace) {
     nbc_w_bdr = 0; 
     nbc_w_bdr[0] = 1;  // Applying Neumann BC to the west boundary
 
-    ForceTerm(fespace, cAe, Fet, nbc_w_bdr, matCoef_R);
+    ForceTerm(fespace, cAe, Fet, nbc_w_bdr, nbcCoef);
 
-    // Fet.Print(std::cout);
+    Fet.Print(std::cout);
 
 }
 
@@ -213,7 +234,7 @@ double value, GridFunctionCoefficient cAx) {
 
 }
 
-void Concentrations::ForceTerm(ParFiniteElementSpace *fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, GridFunctionCoefficient m) {
+void Concentrations::ForceTerm(ParFiniteElementSpace *fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m) {
 
     EnsureValidBoundaryAndFESpace();
     DebugBoundaryArray(boundary);
@@ -300,9 +321,11 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
 
 }
 
-void Concentrations::TestFESpace(ParFiniteElementSpace *fespace) {
-    ParGridFunction test_f(fespace);
-    
-    // Check the value of test_f
-    std::cout << "Concentrations - First value of test_f: " << test_f(0) << std::endl;
-}
+
+// void Concentrations::TestFESpace(std::shared_ptr<ParFiniteElementSpace> fespace) {
+
+//     ParGridFunction test_f(fespace.get());
+
+//     // Check the value of test_f
+//     std::cout << "Concentrations - First value of test_f: " << test_f(0) << std::endl;
+// }

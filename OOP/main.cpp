@@ -31,38 +31,38 @@ int main(int argc, char *argv[]) {
     mesh_handler.LoadMesh();
     //mesh_handler.Save();
 
-    mesh_handler.TestFESpace(); 
+    mesh_handler.TestFESpace();
 
     // Initialize CnP & CnE
     Concentrations concentrations(mesh_handler);
-    concentrations.TestFESpace(mesh_handler.GetFESpace());
+    // concentrations.TestFESpace(mesh_handler.GetFESpace());
 
     
-    // concentrations.SetupBoundaryConditions(mesh_handler.GetFESpace());
+    concentrations.SetupBoundaryConditions(mesh_handler.GetFESpace());
 
-    // concentrations.InitializeCnP(mesh_handler.GetFESpace());
-    // concentrations.InitializeCnE(mesh_handler.GetFESpace());  
+    concentrations.InitializeCnP(mesh_handler.GetFESpace());
+    concentrations.InitializeCnE(mesh_handler.GetFESpace());  
 
     // // Initialize Reaction
-    // Reaction reaction(mesh_handler, concentrations);
-    // reaction.Initialize(); 
+    Reaction reaction(mesh_handler, concentrations);
+    reaction.Initialize(); 
 
-    // //Time-stepping loop
-    // for (int t = 0; t < 10 + 1; ++t) {
-    //     concentrations.TimeStepCnP(mesh_handler.GetFESpace());
-    //     concentrations.TimeStepCnE(mesh_handler.GetFESpace());
+    //Time-stepping loop
+    for (int t = 0; t < 10 + 1; ++t) {
+        concentrations.TimeStepCnP(mesh_handler.GetFESpace());
+        concentrations.TimeStepCnE(mesh_handler.GetFESpace());
 
 
     }
 
-    // }
+    }
 
 
 
 
-    // // // Save the results
-    // // cnp.Save();
-    // // cne.Save();
+    // // Save the results
+    // cnp.Save();
+    // cne.Save();
 
 
     // Finalize MPI
