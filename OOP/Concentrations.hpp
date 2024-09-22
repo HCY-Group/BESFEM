@@ -13,11 +13,20 @@ public:
     Concentrations(MeshHandler &mesh_handler);
 
     // Initialization method
-    void InitializeCnP();
-    void InitializeCnE();
+    void InitializeCnP(ParFiniteElementSpace *fespace);
+    void InitializeCnE(ParFiniteElementSpace *fespace);
 
-    void TimeStepCnP();
-    void TimeStepCnE();
+    void TimeStepCnP(ParFiniteElementSpace *fespace);
+    void TimeStepCnE(ParFiniteElementSpace *fespace);
+
+    void SetupBoundaryConditions(ParFiniteElementSpace *fespace);
+
+    void TestFESpace(ParFiniteElementSpace *fespace);
+
+    mfem::ParGridFunction PeR;
+    mfem::GridFunctionCoefficient matCoef_R;
+
+
 
 private:
 
@@ -26,20 +35,22 @@ private:
 
     // Internal methods for different operations
     void CreateCnE(mfem::ParGridFunction &Cn, double initial_value);
-    void Lithiation(mfem::ParGridFunction &Cn, double initial_value);
-    void SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat);
+    void Lithiation(mfem::ParGridFunction &Cn, double initial_value, ParFiniteElementSpace *fespace);
+    void SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat, ParFiniteElementSpace *fespace);
     void Solver(HypreParMatrix &Mmat, CGSolver &M_solver);
-    void SetupBoundaryConditions();
     void ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx);
     void SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value, GridFunctionCoefficient cAx);
-    void ForceTerm(GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx);
+    void ForceTerm(ParFiniteElementSpace *fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, GridFunctionCoefficient m);
     void TotalReaction(mfem::ParGridFunction &Rx, double xCrnt);
+    void EnsureValidBoundaryAndFESpace();
+    void DebugBoundaryArray(const Array<int> &boundary);
 
     // Member variables
     mfem::ParFiniteElementSpace* fespace;           // Finite element space
     mfem::ParGridFunction psi;                     // Psi grid function from MeshHandler
     mfem::ParGridFunction pse;                     // Pse grid function from MeshHandler
     mfem::ParGridFunction TmpF;
+    mfem::ParMesh* pmesh;
 
     const mfem::Vector& EVol;                       // Element volumes from MeshHandler
     double gtPsi;                                   // Total Psi from MeshHandler
@@ -68,9 +79,9 @@ private:
 
     mfem::ParLinearForm Fct;
     mfem::ParLinearForm Fet;
-    mfem::ParGridFunction PeR;
+    // mfem::ParGridFunction PeR;
 
-    GridFunctionCoefficient matCoef_R;
+    // GridFunctionCoefficient matCoef_R;
     GridFunctionCoefficient cAe;
 
     std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef;    

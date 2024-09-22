@@ -9,8 +9,8 @@ using namespace mfem;
 using namespace std;
 
 Concentrations::Concentrations(MeshHandler &mesh_handler)
-    : mesh_handler(mesh_handler), fespace(mesh_handler.GetFESpace()), psi(*mesh_handler.GetPsi()), pse(*mesh_handler.GetPse()),
-      EVol(mesh_handler.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), reaction(mesh_handler, *this)
+    : mesh_handler(mesh_handler), fespace(mesh_handler.GetFESpace()), pmesh(mesh_handler.GetPmesh()), psi(*mesh_handler.GetPsi()), pse(*mesh_handler.GetPse()),
+      EVol(mesh_handler.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), reaction(mesh_handler, *this), PeR(fespace), matCoef_R(&PeR)
       
 {
     nE = mesh_handler.GetNE();
@@ -24,40 +24,46 @@ Concentrations::Concentrations(MeshHandler &mesh_handler)
     Rxc = make_unique<ParGridFunction>(fespace);
     Rxe = make_unique<ParGridFunction>(fespace);
 
-
-    reaction.Initialize();
+    reaction.Initialize(); 
 }
 
 
-void Concentrations::InitializeCnP() {
+void Concentrations::InitializeCnP(ParFiniteElementSpace *fespace) {
 
-    Lithiation(*CnP, 0.3);
-    SetupBoundaryConditions();
-    SBM_Matrix(psi, Mmatp);
+    Lithiation(*CnP, 0.3, fespace);
+    // SetupBoundaryConditions();
+    SBM_Matrix(psi, Mmatp, fespace);
     CGSolver Mp_solver(MPI_COMM_WORLD);
     Solver(Mmatp, Mp_solver); 
 
+    // CnP->Print(std::cout);
+
 }
 
-void Concentrations::InitializeCnE() {
+void Concentrations::InitializeCnE(ParFiniteElementSpace *fespace) {
 
     CreateCnE(*CnE, 0.001);
-    SetupBoundaryConditions();
-    SBM_Matrix(pse, Mmate);
+    // SetupBoundaryConditions();
+    SBM_Matrix(pse, Mmate, fespace);
     CGSolver Me_solver(MPI_COMM_WORLD);
     Solver(Mmate, Me_solver);
     ImposeNeumannBC(PeR, pse);
-    GridFunctionCoefficient matCoef_R(&PeR);
+    // GridFunctionCoefficient matCoef_R(&PeR);
+
+    // PeR.Print(std::cout);
+
+
+    // CnE->Print(std::cout);
 
 }
 
-void Concentrations::TimeStepCnP() {
+void Concentrations::TimeStepCnP(ParFiniteElementSpace *fespace) {
 
     mfem::ParGridFunction &Rxn = *reaction.Rxn;
     GridFunctionCoefficient cAp(Rxc.get());
     SetupRx(Rxn, *Rxc, Constants::rho, cAp); // Rxn needs to come from Reacions.cpp
 
-    ForceTerm(cAp, Fct);
+    // ForceTerm(cAp, Fct);
     // Fct.Print(std::cout);
 
     // Rxc->Print(std::cout);
@@ -66,7 +72,7 @@ void Concentrations::TimeStepCnP() {
 
 }
 
-void Concentrations::TimeStepCnE() {
+void Concentrations::TimeStepCnE(ParFiniteElementSpace *fespace) {
 
     mfem::ParGridFunction &Rxn = *reaction.Rxn;
     GridFunctionCoefficient cAe(Rxe.get());
@@ -74,11 +80,19 @@ void Concentrations::TimeStepCnE() {
 
     TotalReaction(*Rxe, eCrnt);
     ConstantCoefficient nbcCoef(infx); // Neumann BC
-    m_nbcCoef = std::make_unique<ProductCoefficient>(matCoef_R, nbcCoef); // Initialize here
 
-    ForceTerm(cAe, Fet);
+    // PeR.Print(std::cout);
 
-    Fet.Print(std::cout);
+    ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
+
+    // Boundary attributes for Neumann BC on the west boundary
+    Array<int> nbc_w_bdr(pmesh->bdr_attributes.Max());
+    nbc_w_bdr = 0; 
+    nbc_w_bdr[0] = 1;  // Applying Neumann BC to the west boundary
+
+    ForceTerm(fespace, cAe, Fet, nbc_w_bdr, matCoef_R);
+
+    // Fet.Print(std::cout);
 
 }
 
@@ -88,7 +102,7 @@ void Concentrations::CreateCnE(mfem::ParGridFunction &Cn, double initial_value) 
 
 }
 
-void Concentrations::Lithiation(mfem::ParGridFunction &Cn, double initial_value) {
+void Concentrations::Lithiation(mfem::ParGridFunction &Cn, double initial_value, ParFiniteElementSpace *fespace) {
 
     Cn = initial_value;
 
@@ -117,9 +131,9 @@ void Concentrations::Lithiation(mfem::ParGridFunction &Cn, double initial_value)
 
 }
 
-void Concentrations::SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat) {
+void Concentrations::SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat, ParFiniteElementSpace *fespace) {
 
-    SetupBoundaryConditions();
+    // SetupBoundaryConditions();
 
     std::unique_ptr<ParBilinearForm> M(new ParBilinearForm(fespace));
     GridFunctionCoefficient cP(&psx);
@@ -148,15 +162,17 @@ void Concentrations::Solver(HypreParMatrix &Mmat, CGSolver &M_solver) {
 
 }
 
-void Concentrations::SetupBoundaryConditions() {
+void Concentrations::SetupBoundaryConditions(ParFiniteElementSpace *fespace) {
+    
+    Array<int> boundary_dofs;
     
     // Boundary attributes for Neumann BC on the west boundary
-    Array<int> nbc_w_bdr(fespace->GetMesh()->bdr_attributes.Max());
+    Array<int> nbc_w_bdr(pmesh->bdr_attributes.Max());
     nbc_w_bdr = 0; 
     nbc_w_bdr[0] = 1;  // Applying Neumann BC to the west boundary
 
     // Dirichlet BC on the east boundary for CnP
-    Array<int> dbc_e_bdr(fespace->GetMesh()->bdr_attributes.Max());
+    Array<int> dbc_e_bdr(pmesh->bdr_attributes.Max());
     dbc_e_bdr = 0; 
     dbc_e_bdr[2] = 1;  // Applying Dirichlet BC to the east boundary
 
@@ -165,7 +181,7 @@ void Concentrations::SetupBoundaryConditions() {
     fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
     
     // Dirichlet BC on the west boundary for CnE
-    Array<int> dbc_w_bdr(fespace->GetMesh()->bdr_attributes.Max());
+    Array<int> dbc_w_bdr(pmesh->bdr_attributes.Max());
     dbc_w_bdr = 0; 
     dbc_w_bdr[0] = 1;  // Applying Dirichlet BC to the west boundary
 
@@ -197,23 +213,69 @@ double value, GridFunctionCoefficient cAx) {
 
 }
 
-void Concentrations::ForceTerm(GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx) {
+void Concentrations::ForceTerm(ParFiniteElementSpace *fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, GridFunctionCoefficient m) {
+
+    EnsureValidBoundaryAndFESpace();
+    DebugBoundaryArray(boundary);
 
     std::unique_ptr<ParLinearForm> Bx2(new ParLinearForm(fespace));	
 
     Bx2->AddDomainIntegrator(new DomainLFIntegrator(cXx));
+    // ConstantCoefficient temp_coef(1.0);
 
     // if (&cXx == &cAe && m_nbcCoef) {
 
-    //     Bx2->AddBoundaryIntegrator(new BoundaryLFIntegrator(*m_nbcCoef), nbc_w_bdr);
+        Bx2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m), boundary);
+
     // }
 
     Bx2->Assemble();
 
     Fxx = std::move(*Bx2);
 
+    // Bx2->Print(std::cout);
+
 
 }
+
+void Concentrations::DebugBoundaryArray(const Array<int> &boundary)
+{
+    std::cout << "Boundary array contents: ";
+    for (int i = 0; i < boundary.Size(); i++)
+    {
+        std::cout << boundary[i] << " ";
+    }
+    std::cout << std::endl;
+}
+
+void Concentrations::EnsureValidBoundaryAndFESpace()
+{
+    // Check if the mesh has boundary attributes defined
+    if (!pmesh->bdr_attributes.Size())
+    {
+        std::cerr << "Error: The mesh does not have any boundary attributes defined." << std::endl;
+        return;
+    }
+
+    std::cout << "Mesh boundary attributes size: " << pmesh->bdr_attributes.Size() << std::endl;
+    std::cout << "Boundary attributes: ";
+    for (int i = 0; i < pmesh->bdr_attributes.Size(); i++)
+    {
+        std::cout << pmesh->bdr_attributes[i] << " ";
+    }
+    std::cout << std::endl;
+
+    // Now check that the finite element space (fespace) is valid and initialized with the mesh
+    if (fespace->GetMesh() == nullptr)
+    {
+        std::cerr << "Error: The finite element space is not associated with a mesh." << std::endl;
+        return;
+    }
+
+    std::cout << "Finite element space associated with the mesh is valid." << std::endl;
+}
+
+
 
 void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
 
@@ -236,4 +298,11 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
 
     // cout << "infx: " << infx << std::endl;
 
+}
+
+void Concentrations::TestFESpace(ParFiniteElementSpace *fespace) {
+    ParGridFunction test_f(fespace);
+    
+    // Check the value of test_f
+    std::cout << "Concentrations - First value of test_f: " << test_f(0) << std::endl;
 }

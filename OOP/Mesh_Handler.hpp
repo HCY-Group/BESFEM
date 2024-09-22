@@ -15,12 +15,19 @@ public:
     // Public member functions
     void LoadMesh();
     void Save();
+    void TestFESpace();
 
     // Functions to Get Values to Use Elsewhere
     mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
+    mfem::ParMesh* GetPmesh() const { return pmesh.get(); }
     mfem::ParGridFunction* GetPsi() const { return psi.get(); }
     mfem::ParGridFunction* GetPse() const { return pse.get(); }
     
+//     std::unique_ptr<ParFiniteElementSpace> GetFESpace() const {
+//     return fespace;  // Return shared pointer
+// }
+
+
     // const mfem::Vector& GetElementVolume() const {return EVol; }
     // const mfem::Vector& EVol = mesh_handler.GetElementVolume();
     const mfem::Vector& GetElementVolume() const;
@@ -34,6 +41,10 @@ public:
     int GetNV() const { return nV; }
 
     double L_w;
+
+    Array<int> nbc_w_bdr;
+
+    // std::unique_ptr<ParFiniteElementSpace> fespace;
 
 
 

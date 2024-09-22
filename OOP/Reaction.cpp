@@ -28,6 +28,8 @@ void Reaction::Initialize(){
     CreateRx(*Rxn, 0.0);
     SetAvP(*Rxn, AvP, 1.0e-08);
 
+    // Rxn->Print(std::cout);
+
 }
 
 void Reaction::CreateRx(mfem::ParGridFunction &Rx, double initial_value) {

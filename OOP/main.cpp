@@ -24,55 +24,38 @@ int main(int argc, char *argv[]) {
     Mpi::Init(argc, argv);
     Hypre::Init();
 
+    {
+
     // Create the MeshHandler object
     MeshHandler mesh_handler;       // define mesh and dsf file in Constants.cpp
     mesh_handler.LoadMesh();
     //mesh_handler.Save();
 
+    mesh_handler.TestFESpace(); 
+
     // Initialize CnP & CnE
     Concentrations concentrations(mesh_handler);
-    concentrations.InitializeCnP();
-    concentrations.InitializeCnE();  
+    concentrations.TestFESpace(mesh_handler.GetFESpace());
 
-    // Initialize Reaction
-    Reaction reaction(mesh_handler, concentrations);
-    reaction.Initialize(); 
+    
+    // concentrations.SetupBoundaryConditions(mesh_handler.GetFESpace());
 
-    // // Create the CnP object
-    // CnP cnp(mesh_handler, reaction);
-    // cnp.Initialize();
+    // concentrations.InitializeCnP(mesh_handler.GetFESpace());
+    // concentrations.InitializeCnE(mesh_handler.GetFESpace());  
 
-    // // Create the CnE object
-    // CnE cne(mesh_handler, reaction, cnp);
-    // cne.Initialize();
+    // // Initialize Reaction
+    // Reaction reaction(mesh_handler, concentrations);
+    // reaction.Initialize(); 
 
-    // // Create the PotP object
-    // PotP potp(mesh_handler);
-    // potp.Initialize();
-
-    // // Create the PotE object
-    // PotE pote(mesh_handler, potp, cne);
-    // pote.Initialize();
-
-    // // // Create Reaction
-    // // // Reaction reaction(mesh_handler, cne, pote);
-
-    //Time-stepping loop
-    for (int t = 0; t < 10 + 1; ++t) {
-        concentrations.TimeStepCnP();
-        concentrations.TimeStepCnE();
-        // potp.TimeStep(Constants::dt);
-        // pote.TimeStep(Constants::dt);
-        // reaction.TimeStep(Constants::dt);
-        
-        // Create Reaction
-        // Reaction reaction(mesh_handler, cne, pote);
-        // reaction.TimeStep(Constants::dt);
-        // for ......
-        // end
+    // //Time-stepping loop
+    // for (int t = 0; t < 10 + 1; ++t) {
+    //     concentrations.TimeStepCnP(mesh_handler.GetFESpace());
+    //     concentrations.TimeStepCnE(mesh_handler.GetFESpace());
 
 
     }
+
+    // }
 
 
 

@@ -15,8 +15,15 @@ MeshHandler::MeshHandler()
 
 // Function to Initialize and Print Mesh Information
 void MeshHandler::LoadMesh() {
+
     InitializeMesh();
+    std::cout << "MeshHandler - fespace initialized with " << fespace->GetNE() << " elements." << std::endl;
+
+
     PrintMeshInfo();
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
 }
 
 // Function to Initialize Mesh 
@@ -183,4 +190,13 @@ void MeshHandler::Save() {
 
 const mfem::Vector& MeshHandler::GetElementVolume() const {
     return EVol; // Ensure this is a reference to the actual Vector
+}
+
+void MeshHandler::TestFESpace() {
+    // Create a test ParGridFunction on the fespace
+    ParGridFunction test_f(fespace.get());
+    test_f = 1.0; // Set all values in test_f to 1
+
+    // Output the first value of test_f as a test
+    std::cout << "MeshHandler - First value of test_f: " << test_f(0) << std::endl;
 }

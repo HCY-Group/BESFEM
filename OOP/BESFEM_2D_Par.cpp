@@ -210,7 +210,15 @@ int main(int argc, char *argv[])
 	
 	// Neumann BC on the west boundary. CnE
 	Array<int> nbc_w_bdr(pmesh.bdr_attributes.Max());
-	nbc_w_bdr = 0; nbc_w_bdr[0] = 1;
+	nbc_w_bdr = 0; 
+	nbc_w_bdr[0] = 1;
+
+    // Printing the values
+    std::cout << "nbc_w_bdr values: ";
+    for (int i = 0; i < nbc_w_bdr.Size(); i++) {
+        std::cout << nbc_w_bdr[i] << " ";
+    }
+    std::cout << std::endl;
 
 	// Dirichlet BC on the east boundary. phP
 	Array<int> dbc_e_bdr(pmesh.bdr_attributes.Max());
@@ -232,7 +240,7 @@ int main(int argc, char *argv[])
 // 	// delete global mesh because it is longer used
 // 	gmesh.Clear();
 		
-// 	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
 	
 		
 // 	// // 	=============================
@@ -248,6 +256,8 @@ int main(int argc, char *argv[])
 	ParGridFunction CnP(&fespace);
 	double Cp0 = 0.3;					// initial value
 	CnP = Cp0;	
+
+	// CnP.Print(std::cout);
 	
 	// degree of lithiation
 	double Xfr = 0.0;
@@ -364,22 +374,28 @@ int main(int argc, char *argv[])
 	ParGridFunction Rxe(&fespace);
 	
 // 	// defined for later
-// 	ParLinearForm Fet(&fespace);		
+	ParLinearForm Fet(&fespace);		
 // 	HypreParVector Feb(&fespace);	
 	
-// 	// for imposing Neumann BC
-// 	ParGridFunction PeR(&fespace);
-// 	PeR = pse;
-// 	PeR.Neg();	
-// 	GridFunctionCoefficient matCoef_R(&PeR) ;
+	// for imposing Neumann BC
+	ParGridFunction PeR(&fespace);
+	PeR = pse;
+	PeR.Neg();	
+	GridFunctionCoefficient matCoef_R(&PeR) ;
+
+	PeR.Print(std::cout);
+
+	// CnE.Print(std::cout);
+
+
 	
 //  	// Vectors for CnE
 // 	HypreParVector CeV0(&fespace), CeVn(&fespace), RHSe(&fespace);	
 	
-// 	// parameters used in the calculations
-// 	double eCrnt = 0.0;
-// 	double geCrnt = 0.0;
-// 	double infx = 0.0;
+	// parameters used in the calculations
+	double eCrnt = 0.0;
+	double geCrnt = 0.0;
+	double infx = 0.0;
 	
 // 	ParGridFunction CeT(&fespace);
 // 	double CeC = 0.0;
@@ -467,7 +483,9 @@ int main(int argc, char *argv[])
 	// reaction term
 	ParGridFunction Rxn(&fespace);
 	Rxn = 0.0;
-	Rxn = AvP; Rxn *= 1.0e-8;	
+	Rxn = AvP; Rxn *= 1.0e-8;
+
+	// Rxn.Print(std::cout);	
 	 
 // 	// rate constants
 // 	ParGridFunction dPHE(&fespace);		// voltage drop
@@ -536,7 +554,7 @@ for (int t = 0; t < 10 + 1; t++){
 		// Move the contents of Bc2 into Fct
 		Fct = std::move(*Bc2);
 
-		// Fct.Print(std::cout);		
+		// Bc2->Print(std::cout);		
 
 
 // 		// diffusivity in the particles
@@ -609,29 +627,38 @@ for (int t = 0; t < 10 + 1; t++){
 		// Rxe.Print(std::cout);
 
 		
-// 		// total reaction
-// 		eCrnt = 0.0;
-// 		for (int ei = 0; ei < nE; ei++){	  
-// 			Rxe.GetNodalValues(ei,VtxVal) ;
-// 			val = 0.0;
-// 			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 			EAvg(ei) = val/nC;		 		  
-// 			eCrnt += EAvg(ei)*EVol(ei);	
-// 		} 	
-// 		MPI_Allreduce(&eCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-// 		infx = geCrnt/L_w;		
-		
-// 		// Neumann BC
-// 		ConstantCoefficient nbcCoef(infx);
-// 		ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);	
+		// total reaction
+		eCrnt = 0.0;
+		for (int ei = 0; ei < nE; ei++){	  
+			Rxe.GetNodalValues(ei,VtxVal) ;
+			val = 0.0;
+			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+			EAvg(ei) = val/nC;		 		  
+			eCrnt += EAvg(ei)*EVol(ei);	
+		} 	
+		MPI_Allreduce(&eCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		infx = geCrnt/L_w;
 
-//  		// force term
-// 		std::unique_ptr<ParLinearForm> Be2(new ParLinearForm(&fespace));
-// 		Be2->AddDomainIntegrator(new DomainLFIntegrator(cAe));
-// 		Be2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m_nbcCoef), nbc_w_bdr);
-// 		Be2->Assemble();
-// 		// Move the contents of Be2 into Fet
-// 		Fet = std::move(*Be2);
+		// cout << "infx: " << infx << std::endl;
+		
+		
+		// Neumann BC
+		ConstantCoefficient nbcCoef(infx);
+
+		ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);	
+
+ 		// force term
+		std::unique_ptr<ParLinearForm> Be2(new ParLinearForm(&fespace));
+		Be2->AddDomainIntegrator(new DomainLFIntegrator(cAe));
+		// Be2->Print(std::cout);
+
+		Be2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m_nbcCoef), nbc_w_bdr);
+		Be2->Assemble();
+		// Move the contents of Be2 into Fet
+		Fet = std::move(*Be2);
+
+		Fet.Print(std::cout);
+
 				
 // 		// salt diffusivity in the electrolyte					
 // 		for (int vi = 0; vi < nV; vi++){
@@ -1027,3 +1054,4 @@ for (int t = 0; t < 10 + 1; t++){
 //    return 0;
 	}	
 }
+
