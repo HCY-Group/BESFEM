@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
 	
 	VoxelSolver solver(maker.GetGlobalFESpace());
 	solver.AssignGlobalValues(tiffdata);
+	solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
 	int order = 1;
 
 	// weirdness to get the paraview save to work.

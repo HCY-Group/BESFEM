@@ -25,6 +25,7 @@ void MeshMaker::MakeGlobalMesh() {
 	}
 	gmesh.EnsureNCMesh(true);
 
+	cout << "Mesh from MeshMaker " << &gmesh << endl;
 	/*
 	// Create global FE space for Voxel Data
 	int order = 1;
