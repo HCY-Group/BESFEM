@@ -13,6 +13,10 @@ Concentrations::Concentrations(MeshHandler &mesh_handler)
       EVol(mesh_handler.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), reaction(mesh_handler, *this), PeR(fespace), matCoef_R(&PeR)
       
 {
+
+    nbc_w_bdr.SetSize(mesh_handler.pmesh->bdr_attributes.Max());
+    nbc_w_bdr = 0;  // Initialize the array with zeros
+
     nE = mesh_handler.GetNE();
     nC = mesh_handler.GetNC();
     nV = mesh_handler.GetNV();
@@ -73,9 +77,6 @@ void Concentrations::InitializeCnE(ParFiniteElementSpace *fespace) {
 
     // PeR.Print(std::cout);
 
-
-    // CnE->Print(std::cout);
-
 }
 
 void Concentrations::TimeStepCnP(ParFiniteElementSpace *fespace) {
@@ -84,7 +85,14 @@ void Concentrations::TimeStepCnP(ParFiniteElementSpace *fespace) {
     GridFunctionCoefficient cAp(Rxc.get());
     SetupRx(Rxn, *Rxc, Constants::rho, cAp); // Rxn needs to come from Reacions.cpp
 
-    // ForceTerm(cAp, Fct);
+    // Dummy boundary: empty array
+    Array<int> dummy_boundary;
+    
+    // Dummy coefficient: 0.0 (won't affect the result if not used)
+    ConstantCoefficient dummy_coef(0.0);
+
+    // Call ForceTerm with dummy boundary and coefficient
+    ForceTerm(fespace, cAp, Fct, dummy_boundary, dummy_coef, false);
     // Fct.Print(std::cout);
 
     // Rxc->Print(std::cout);
@@ -100,18 +108,13 @@ void Concentrations::TimeStepCnE(ParFiniteElementSpace *fespace) {
     SetupRx(Rxn, *Rxe, Constants::t_minus, cAe);
 
     TotalReaction(*Rxe, eCrnt);
-    ConstantCoefficient nbcCoef(-infx); // Neumann BC
+    ConstantCoefficient nbcCoef(-infx); // Neumann BC works with -infx
 
     // PeR.Print(std::cout);
 
     ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
 
-    // Boundary attributes for Neumann BC on the west boundary
-    Array<int> nbc_w_bdr(pmesh->bdr_attributes.Max());
-    nbc_w_bdr = 0; 
-    nbc_w_bdr[0] = 1;  // Applying Neumann BC to the west boundary
-
-    ForceTerm(fespace, cAe, Fet, nbc_w_bdr, nbcCoef);
+    ForceTerm(fespace, cAe, Fet, nbc_w_bdr, nbcCoef, true); // true since applying boundary conditions
 
     Fet.Print(std::cout);
 
@@ -188,7 +191,7 @@ void Concentrations::SetupBoundaryConditions(ParFiniteElementSpace *fespace) {
     Array<int> boundary_dofs;
     
     // Boundary attributes for Neumann BC on the west boundary
-    Array<int> nbc_w_bdr(pmesh->bdr_attributes.Max());
+    // Array<int> nbc_w_bdr(pmesh->bdr_attributes.Max());
     nbc_w_bdr = 0; 
     nbc_w_bdr[0] = 1;  // Applying Neumann BC to the west boundary
 
@@ -234,7 +237,7 @@ double value, GridFunctionCoefficient cAx) {
 
 }
 
-void Concentrations::ForceTerm(ParFiniteElementSpace *fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m) {
+void Concentrations::ForceTerm(ParFiniteElementSpace *fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m, bool apply_boundary_conditions) {
 
     EnsureValidBoundaryAndFESpace();
     DebugBoundaryArray(boundary);
@@ -244,11 +247,11 @@ void Concentrations::ForceTerm(ParFiniteElementSpace *fespace, GridFunctionCoeff
     Bx2->AddDomainIntegrator(new DomainLFIntegrator(cXx));
     // ConstantCoefficient temp_coef(1.0);
 
-    // if (&cXx == &cAe && m_nbcCoef) {
+    if (apply_boundary_conditions) {
 
         Bx2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m), boundary);
 
-    // }
+    }
 
     Bx2->Assemble();
 

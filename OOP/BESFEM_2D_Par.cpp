@@ -650,8 +650,6 @@ for (int t = 0; t < 10 + 1; t++){
  		// force term
 		std::unique_ptr<ParLinearForm> Be2(new ParLinearForm(&fespace));
 		Be2->AddDomainIntegrator(new DomainLFIntegrator(cAe));
-		// Be2->Print(std::cout);
-
 		Be2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m_nbcCoef), nbc_w_bdr);
 		Be2->Assemble();
 		// Move the contents of Be2 into Fet

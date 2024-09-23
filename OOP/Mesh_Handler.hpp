@@ -50,6 +50,7 @@ public:
     Array<int> nbc_w_bdr;
 
     mfem::ParGridFunction& GetTestF(); // Ensure the correct namespace
+    std::unique_ptr<ParMesh> pmesh;
 
 
 
@@ -89,7 +90,6 @@ private:
 
     // Mesh and FE space
     std::unique_ptr<Mesh> gmesh;
-    std::unique_ptr<ParMesh> pmesh;
     std::unique_ptr<FiniteElementSpace> gFespace;
     std::unique_ptr<ParFiniteElementSpace> fespace;
     std::unique_ptr<ParGridFunction> dsF;

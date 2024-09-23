@@ -26,6 +26,8 @@ public:
     mfem::ParGridFunction PeR;
     mfem::GridFunctionCoefficient matCoef_R;
 
+    Array<int> nbc_w_bdr;
+
     // std::shared_ptr<ParFiniteElementSpace> fespace;
     // void TestFESpace(std::shared_ptr<ParFiniteElementSpace> fespace);
 
@@ -42,7 +44,7 @@ private:
     void Solver(HypreParMatrix &Mmat, CGSolver &M_solver);
     void ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx);
     void SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value, GridFunctionCoefficient cAx);
-    void ForceTerm(ParFiniteElementSpace *fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m);
+    void ForceTerm(ParFiniteElementSpace *fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m, bool apply_boundary_conditions);
     void TotalReaction(mfem::ParGridFunction &Rx, double xCrnt);
     void EnsureValidBoundaryAndFESpace();
     void DebugBoundaryArray(const Array<int> &boundary);
@@ -87,7 +89,7 @@ private:
     GridFunctionCoefficient cAe;
 
     std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef;    
-    mfem::Array<int> nbc_w_bdr;       
+    // mfem::Array<int> nbc_w_bdr;       
 
     double eCrnt;
 
