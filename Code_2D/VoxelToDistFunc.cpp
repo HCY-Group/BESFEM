@@ -108,46 +108,6 @@ int main(int argc, char *argv[])
 	solver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
 	solver.ParaviewSave("pVoxelData","Vox",solver.GetParallelVox());
 	
-	/*
-	// make variable names match from up above...
-	Mesh gmesh(*maker.GetGlobalMesh());
-	//GridFunction gVox(gVox2);
-	GridFunction gVox(*solver.GetGlobalVox());
-	
-	cout << "starting parallel mesh" << endl;
-	ParMesh pmesh(MPI_COMM_WORLD, gmesh);
-	int nV = pmesh.GetNV();			//number of vertices
-	int nE = pmesh.GetNE();			//number of elements
-	int nC = pow(2,pmesh.Dimension());	//number of corner vertices
-	
-	// Define finite element space
-	int order = 1;
-	H1_FECollection fec(order, pmesh.Dimension());
-	ParFiniteElementSpace fespace(&pmesh, &fec);
-
-	// Map local to global element indices
-	Array<HYPRE_BigInt> E_L2G;
-	pmesh.GetGlobalElementIndices(E_L2G);
-
-	// Local GridFunction
-	cout << "DEFINING LOCAL GRIDFUNCTION" << endl;
-	ParGridFunction Vox(&fespace);
-	
-	Array<int> gVTX(nC);	//global indices of corner vertices
-	Array<int> VTX(nC);	//local indices of corner vertices
-	int gei;			//global element indices
-	int ei;			//local element indices
-	for (ei=0; ei<nE; ei++){
-		gei = E_L2G[ei];
-
-		gmesh.GetElementVertices(gei,gVTX);
-		pmesh.GetElementVertices(ei,VTX);
-	
-		for (int vi = 0; vi<nC; vi++){
-			Vox(VTX[vi]) = gVox(gVTX[vi]);
-		}
-	}
-	*/
 
 
 	// make variable names match from up above...
@@ -174,21 +134,6 @@ int main(int argc, char *argv[])
 
 	Vox = Vox2;
 	
-	/*
-	// double check our read-in: output Vox to Paraview
-	cout << "PRINTING OUT Vox" << endl;
-	ParaViewDataCollection *pd = NULL;
-	pd = NULL;
-	pd = new ParaViewDataCollection("pVoxelData", &pmesh);
-	pd->RegisterField("Vox", &Vox);
-	pd->SetLevelsOfDetail(order);
-	pd->SetDataFormat(VTKFormat::BINARY);
-	pd->SetHighOrderOutput(true);
-	pd->SetCycle(0);
-	pd->SetTime(0.0);
-	pd->Save();
-	delete pd;
-	*/
 
 
 
