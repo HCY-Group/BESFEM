@@ -65,66 +65,8 @@ int main(int argc, char *argv[])
 	VoxelSolver solver(maker.GetGlobalFESpace());
 	solver.AssignGlobalValues(tiffdata);
 	solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
-	int order = 1;
-
-	// weirdness to get the paraview save to work.
-	// Can't just return the grid function from the class
-	// we have to create the FiniteElementSpace again from scratch, starting with the FECollection
-	cout << "returning gVox" << endl;
-	
-	//GridFunction gVox3(*maker.GetGlobalVox());
-	GridFunction gVox3(*solver.GetGlobalVox());
-	
-	//GridFunction gVox2(maker.GetGlobalVox()->FESpace());
-	//cout << "HERE" << maker.GetGlobalVox()->FESpace()->GetMesh() << endl;;
 	
 	
-	H1_FECollection gFec2(order, maker.GetGlobalMesh()->Dimension());
-	FiniteElementSpace gFespace2(maker.GetGlobalMesh(), &gFec2);
-	GridFunction gVox2(&gFespace2);
-	
-	//FiniteElementSpace *gFespace3 = maker.GetGlobalVox()->FESpace();
-	//cout << "HERE" << gFespace3 << endl;
-	//FiniteElementSpace gFespace2(*gFespace3);
-	//FiniteElementSpace gFespace2(*maker.GetGlobalVox()->FESpace());
-	//GridFunction gVox2(&gFespace);
-	//GridFunction gVox2(&gFespace2);
-	//gVox2 = *maker.GetGlobalVox();
-
-	//for (int idx=0; idx<gVox2.Size(); idx++){
-	//	gVox2[idx] = gVox3[idx];
-	//	cout << idx << " " << gVox2[idx] << endl;
-	//}
-	gVox2 = gVox3;
-	
-	cout << "returning Mesh" << endl;
-	Mesh gmesh2(*maker.GetGlobalMesh());
-
-	// double check our read-in: output gVox to Paraview
-	cout << "PRINTING gVox" << endl;
-	cout << gVox2.Size() << endl;
-	cout << gVox2.OwnsData() << endl;
-	cout << gVox2[1] << endl;
-	cout << gmesh2.Dimension() << endl;
-	cout << gmesh2.GetNV() << endl;
-
-	ParaViewDataCollection *pd = NULL;
-	cout << "before" << endl;
-	//pd = new ParaViewDataCollection("gVoxelData", &gmesh2);
-	pd = new ParaViewDataCollection("gVoxelData", maker.GetGlobalMesh());
-	//pd->RegisterField("gVox", &gVox);
-	pd->RegisterField("gVox", &gVox2);
-	//pd->RegisterField("gVox", maker.GetGlobalVox());
-	pd->SetLevelsOfDetail(order);
-	pd->SetDataFormat(VTKFormat::BINARY);
-	pd->SetHighOrderOutput(true);
-	pd->SetCycle(0);
-	pd->SetTime(0.0);
-	cout << "after" << endl;
-	pd->Save();
-	cout << "after" << endl;
-	delete pd;
-		
 	/*
 	// glvis -m gmesh.mesh -g gvox.gf
 	gVox.Save("gvox.gf");
@@ -163,7 +105,8 @@ int main(int argc, char *argv[])
 	// ======================================
 	// make variable names match from up above...
 	Mesh gmesh(*maker.GetGlobalMesh());
-	GridFunction gVox(gVox2);
+	//GridFunction gVox(gVox2);
+	GridFunction gVox(*solver.GetGlobalVox());
 	
 	cout << "starting parallel mesh" << endl;
 	ParMesh pmesh(MPI_COMM_WORLD, gmesh);
@@ -172,6 +115,7 @@ int main(int argc, char *argv[])
 	int nC = pow(2,pmesh.Dimension());	//number of corner vertices
 	
 	// Define finite element space
+	int order = 1;
 	H1_FECollection fec(order, pmesh.Dimension());
 	ParFiniteElementSpace fespace(&pmesh, &fec);
 
@@ -202,7 +146,7 @@ int main(int argc, char *argv[])
 
 	// double check our read-in: output Vox to Paraview
 	cout << "PRINTING OUT Vox" << endl;
-	//ParaViewDataCollection *pd = NULL;
+	ParaViewDataCollection *pd = NULL;
 	pd = NULL;
 	pd = new ParaViewDataCollection("pVoxelData", &pmesh);
 	pd->RegisterField("Vox", &Vox);
