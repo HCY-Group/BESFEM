@@ -60,9 +60,11 @@ int main(int argc, char *argv[])
 	MeshMaker maker(tiffdata);
 	maker.MakeGlobalMesh();
 	maker.Make_H1_FESpace();
-	//maker.AssignGlobalValues();
+	maker.MakeParallelMesh();
+	maker.Make_H1_FESpace_Parallel();
 	
-	VoxelSolver solver(maker.GetGlobalFESpace());
+	//VoxelSolver solver(maker.GetGlobalFESpace());
+	VoxelSolver solver(maker.GetGlobalFESpace(), maker.GetParallelFESpace());
 	solver.AssignGlobalValues(tiffdata);
 	solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
 	
@@ -103,6 +105,10 @@ int main(int argc, char *argv[])
 	// ======================================
 	// LOCAL (PARALLEL) MESH AND DATA
 	// ======================================
+	solver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
+	solver.ParaviewSave("pVoxelData","Vox",solver.GetParallelVox());
+	
+	/*
 	// make variable names match from up above...
 	Mesh gmesh(*maker.GetGlobalMesh());
 	//GridFunction gVox(gVox2);
@@ -141,9 +147,34 @@ int main(int argc, char *argv[])
 			Vox(VTX[vi]) = gVox(gVTX[vi]);
 		}
 	}
+	*/
+
+
+	// make variable names match from up above...
+	ParMesh pmesh(*maker.GetParallelMesh());
+	ParGridFunction Vox2(*solver.GetParallelVox());
+	int order = 1;
+	int nV = pmesh.GetNV();			//number of vertices
 	
+	// more MFEM weirdness...
+	// Can't just return fespace
+	// Have to make from scratch
+	// or just a coding error on my part...
+	/*
+	cout << "HERE before" << endl;
+	cout << maker.GetParallelFESpace() << endl;
+	cout << Vox.ParFESpace() << endl;;
+	ParFiniteElementSpace fespace(*maker.GetParallelFESpace());
+	ParFiniteElementSpace fespace(*Vox.ParFESpace());
+	cout << "HERE after" << endl;
+	*/
+	H1_FECollection fec(order, pmesh.Dimension());
+	ParFiniteElementSpace fespace(&pmesh, &fec);
+	ParGridFunction Vox(&fespace);
 
-
+	Vox = Vox2;
+	
+	/*
 	// double check our read-in: output Vox to Paraview
 	cout << "PRINTING OUT Vox" << endl;
 	ParaViewDataCollection *pd = NULL;
@@ -157,7 +188,7 @@ int main(int argc, char *argv[])
 	pd->SetTime(0.0);
 	pd->Save();
 	delete pd;
-
+	*/
 
 
 
@@ -225,8 +256,10 @@ int main(int argc, char *argv[])
 	//oper.~ConductionOperator();
 	
 	// Output Vox to Paraview
+	solver.ParaviewSave("SmoothVox","Vox",solver.GetGlobalVox());
+	/*
 	cout << "PRINTING OUT smoothed Vox" << endl;
-	//ParaViewDataCollection *pd = NULL;
+	ParaViewDataCollection *pd = NULL;
 	pd = NULL;
 	pd = new ParaViewDataCollection("SmoothVox", &pmesh);
 	pd->RegisterField("Vox", &Vox);
@@ -237,7 +270,7 @@ int main(int argc, char *argv[])
 	pd->SetTime(0.0);
 	pd->Save();
 	delete pd;
-
+	*/
 
 
 	// ======================================
@@ -382,7 +415,7 @@ int main(int argc, char *argv[])
 	
 	// Output Distance to Paraview
 	cout << "PRINTING OUT DistanceFunction" << endl;
-	//ParaViewDataCollection *pd = NULL;
+	ParaViewDataCollection *pd = NULL;
 	pd = NULL;
 	pd = new ParaViewDataCollection("DstFun", &pmesh);
 	pd->RegisterField("Dst", &d);

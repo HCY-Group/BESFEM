@@ -50,41 +50,16 @@ void MeshMaker::MakeGlobalMesh() {
 	*/
 }
 
+void MeshMaker::MakeParallelMesh() {
+	pmesh = new ParMesh(MPI_COMM_WORLD, gmesh);
+}
+
 void MeshMaker::Make_H1_FESpace(int order) {
 	H1_FECollection gFec(order, gmesh.Dimension());
 	gFespace = new FiniteElementSpace(&gmesh, &gFec);
 }	
-/*
-void MeshMaker::AssignGlobalValues() {
-	// Create global FE space for Voxel Data
-	
-	int order = 1;
-	H1_FECollection gFec(order, gmesh.Dimension());
-	gFespace = new FiniteElementSpace(&gmesh, &gFec);
-	
 
-	// global grid function for voxel data
-	cout << "Defining Voxel GridFunction" << endl;
-	gVox = new GridFunction(gFespace);
-	int nz = data.size();
-	int ny = data[0].size();
-	int nx = data[0][0].size();
-	Vector tmp(gVox->Size());
-	for (int k=0; k<nz; k++){
-		for (int j=0; j<ny; j++){
-			for (int i=0; i<nx; i++){
-				int idx = i + nx*j + nx*ny*k;
-				//cout << idx << endl;
-				//cout << "idx = " << i+ny*j << endl;
-				//cout << "gVox[idx] = " << gVox[idx] << endl;
-				//cout << "data[i][j][0] = " << data[i][j][0] << endl;
-				
-				//gVox[idx] = data[k][j][i];
-				tmp[idx] = data[k][j][i];
-			}
-		}
-	}
-	*gVox = tmp;
-
+void MeshMaker::Make_H1_FESpace_Parallel(int order) {
+	H1_FECollection fec(order, pmesh->Dimension());
+	fespace = new ParFiniteElementSpace(pmesh, &fec);
 }
-*/

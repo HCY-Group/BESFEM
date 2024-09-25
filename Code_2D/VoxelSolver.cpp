@@ -9,6 +9,10 @@ VoxelSolver::VoxelSolver(FiniteElementSpace *fes){
 	cout << "GVOX SIZE" << gVox->Size() << endl;
 	
 }
+VoxelSolver::VoxelSolver(FiniteElementSpace *gfes, ParFiniteElementSpace *fes){
+	gVox = new GridFunction(gfes);
+	Vox = new ParGridFunction(fes);
+}
 	
 void VoxelSolver::AssignGlobalValues(vector<vector<vector<int>>> data) {
 	// Create global FE space for Voxel Data
@@ -45,6 +49,40 @@ void VoxelSolver::AssignGlobalValues(vector<vector<vector<int>>> data) {
 	//cout << "gVox fec: " << gVox->OwnFEC() << endl;
 	
 	//FiniteElementSpace* fes = gVox->FESpace();
+}
+
+void VoxelSolver::MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh) {
+	int nV = pmesh->GetNV();		//number of vertices
+	int nE = pmesh->GetNE();		//number of elements
+	int nC = pow(2,pmesh->Dimension());	//number of corner vertices
+	
+	// Map local to global element indices
+	Array<HYPRE_BigInt> E_L2G;
+	pmesh->GetGlobalElementIndices(E_L2G);
+
+	Array<int> gVTX(nC);	//global indices of corner vertices
+	Array<int> VTX(nC);	//local indices of corner vertices
+	int gei;		//global element indices
+	int ei;			//local element indices
+	
+	GridFunction tmp_gf_glob(*gVox);	// Copy constructor (using to "dereference")
+	ParGridFunction tmp_gf_par(*Vox);	// Copy constructor (using to "dereference")
+	
+	for (ei=0; ei<nE; ei++){
+		gei = E_L2G[ei];
+
+		gmesh->GetElementVertices(gei,gVTX);
+		pmesh->GetElementVertices(ei,VTX);
+	
+		for (int vi = 0; vi<nC; vi++){
+			//Vox(VTX[vi]) = gVox(gVTX[vi]);
+			tmp_gf_par(VTX[vi]) = tmp_gf_glob(gVTX[vi]);
+		}
+	}
+	
+	*gVox = tmp_gf_glob;
+	*Vox = tmp_gf_par;
+
 }
 
 void VoxelSolver::ParaviewSave(string FileName, string VariableName, GridFunction* gf) {
