@@ -15,23 +15,18 @@ public:
     // Public member functions
     void LoadMesh();
     void Save();
-    void TestFESpace();
+    // void TestFESpace();
 
     // Functions to Get Values to Use Elsewhere
-    mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
+    // mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
 
-    // std::shared_ptr<ParFiniteElementSpace> fespace;
-    // std::shared_ptr<ParFiniteElementSpace> GetFESpace() const { return fespace; }
+    std::shared_ptr<mfem::ParFiniteElementSpace> GetFESpace();
 
 
     mfem::ParMesh* GetPmesh() const { return pmesh.get(); }
     mfem::ParGridFunction* GetPsi() const { return psi.get(); }
     mfem::ParGridFunction* GetPse() const { return pse.get(); }
     
-//     std::unique_ptr<ParFiniteElementSpace> GetFESpace() const {
-//     return fespace;  // Return shared pointer
-// }
-
 
     // const mfem::Vector& GetElementVolume() const {return EVol; }
     // const mfem::Vector& EVol = mesh_handler.GetElementVolume();
@@ -48,8 +43,6 @@ public:
     double L_w;
 
     Array<int> nbc_w_bdr;
-
-    mfem::ParGridFunction& GetTestF(); // Ensure the correct namespace
     std::unique_ptr<ParMesh> pmesh;
 
 
@@ -61,7 +54,7 @@ private:
     void InitializeMesh();
     void CalculateElementVolume(int nE, const std::unique_ptr<ParMesh>& pmesh, Vector& EVol);
     void ReadGlobalDistanceFunction(const std::unique_ptr<FiniteElementSpace>& fespace);
-    void InterpolateDomainParameters(int nV, const std::unique_ptr<ParFiniteElementSpace>& fespace);
+    void InterpolateDomainParameters(int nV, const std::shared_ptr<ParFiniteElementSpace>& fespace);
     void CalculateTotals(const std::unique_ptr<ParGridFunction>& GridFunction, int nV, int nE, int nC, const Vector& EVol, double& localTotal, double& globalTotal);
     void CalculateTotalPsi(int nV, int nE, int nC, const Vector& EVol);
     void CalculateTotalPse(int nV, int nE, int nC, const Vector& EVol);
@@ -91,7 +84,8 @@ private:
     // Mesh and FE space
     std::unique_ptr<Mesh> gmesh;
     std::unique_ptr<FiniteElementSpace> gFespace;
-    std::unique_ptr<ParFiniteElementSpace> fespace;
+    // std::unique_ptr<ParFiniteElementSpace> fespace;
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
     std::unique_ptr<ParGridFunction> dsF;
     std::unique_ptr<GridFunction> gDsF;
     std::unique_ptr<ParGridFunction> psi;

@@ -30,7 +30,9 @@ private:
     void CreateRx(mfem::ParGridFunction &Rx, double initial_value);
     void SetAvP(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Av, double value);
 
-    mfem::ParFiniteElementSpace* fespace;           // Finite element space
+    // mfem::ParFiniteElementSpace* fespace;           // Finite element space
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
+
 
     // std::unique_ptr<mfem::ParGridFunction> Rxn;     // Rxn (ParGridFunction)
 

@@ -31,11 +31,14 @@ int main(int argc, char *argv[]) {
     mesh_handler.LoadMesh();
     //mesh_handler.Save();
 
-    mesh_handler.TestFESpace();
+    // mesh_handler.TestFESpace();
 
     // Initialize CnP & CnE
     Concentrations concentrations(mesh_handler);
     // concentrations.TestFESpace(mesh_handler.GetFESpace());
+
+    // MFEM_VERIFY(MeshHandler.GetFESpace()->GetMesh() == Concentrations.GetFESpace()->GetMesh(), "Mesh mismatch between modules!");
+
 
     
     concentrations.SetupBoundaryConditions(mesh_handler.GetFESpace());

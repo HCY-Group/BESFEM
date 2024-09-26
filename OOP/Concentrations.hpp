@@ -13,13 +13,13 @@ public:
     Concentrations(MeshHandler &mesh_handler);
 
     // Initialization method
-    void InitializeCnP(ParFiniteElementSpace *fespace);
-    void InitializeCnE(ParFiniteElementSpace *fespace);
+    void InitializeCnP(std::shared_ptr<ParFiniteElementSpace> fespace);
+    void InitializeCnE(std::shared_ptr<ParFiniteElementSpace> fespace);
 
-    void TimeStepCnP(ParFiniteElementSpace *fespace);
-    void TimeStepCnE(ParFiniteElementSpace *fespace);
+    void TimeStepCnP(std::shared_ptr<ParFiniteElementSpace> fespace);
+    void TimeStepCnE(std::shared_ptr<ParFiniteElementSpace> fespace);
 
-    void SetupBoundaryConditions(ParFiniteElementSpace *fespace);
+    void SetupBoundaryConditions(std::shared_ptr<ParFiniteElementSpace> fespace);
 
     // void TestFESpace(ParFiniteElementSpace *fespace);
 
@@ -27,6 +27,9 @@ public:
     mfem::GridFunctionCoefficient matCoef_R;
 
     Array<int> nbc_w_bdr;
+
+    mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
+
 
     // std::shared_ptr<ParFiniteElementSpace> fespace;
     // void TestFESpace(std::shared_ptr<ParFiniteElementSpace> fespace);
@@ -39,18 +42,23 @@ private:
 
     // Internal methods for different operations
     void CreateCnE(mfem::ParGridFunction &Cn, double initial_value);
-    void Lithiation(mfem::ParGridFunction &Cn, double initial_value, ParFiniteElementSpace *fespace);
-    void SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat, ParFiniteElementSpace *fespace);
+    void Lithiation(mfem::ParGridFunction &Cn, double initial_value, std::shared_ptr<ParFiniteElementSpace> fespace);
+    void SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat, std::shared_ptr<ParFiniteElementSpace> fespace);
     void Solver(HypreParMatrix &Mmat, CGSolver &M_solver);
     void ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx);
     void SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value, GridFunctionCoefficient cAx);
-    void ForceTerm(ParFiniteElementSpace *fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m, bool apply_boundary_conditions);
+    void ForceTerm(std::shared_ptr<ParFiniteElementSpace> fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m, bool apply_boundary_conditions);
     void TotalReaction(mfem::ParGridFunction &Rx, double xCrnt);
     void EnsureValidBoundaryAndFESpace();
     void DebugBoundaryArray(const Array<int> &boundary);
+    GridFunctionCoefficient Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte );
+    void K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, HypreParMatrix &Kmatx, HypreParVector X1v, HypreParVector Fxb, GridFunctionCoefficient &cDx);
 
     // Member variables
-    mfem::ParFiniteElementSpace* fespace;           // Finite element space
+    // mfem::ParFiniteElementSpace* fespace;           // Finite element space
+
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
+
     mfem::ParGridFunction psi;                     // Psi grid function from MeshHandler
     mfem::ParGridFunction pse;                     // Pse grid function from MeshHandler
     mfem::ParGridFunction TmpF;
@@ -74,6 +82,12 @@ private:
 
     HypreParMatrix Mmatp;
     HypreParMatrix Mmate;
+
+    HypreParMatrix Kmatp;
+    // HypreParMatrix Kmate;
+
+    HypreParVector X1v;
+    HypreParVector Fcb;
 
     std::unique_ptr<mfem::ParGridFunction> Rxc;     
     std::unique_ptr<mfem::ParGridFunction> Rxe;     

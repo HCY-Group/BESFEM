@@ -18,16 +18,6 @@ void MeshHandler::LoadMesh() {
 
     InitializeMesh();
 
-    std::cout << "MeshHandler - fespace initialized with " << fespace->GetNE() << " elements." << std::endl;
-
-    // Initialize test_f using fespace after it's created
-    test_f = mfem::ParGridFunction(fespace.get());
-    test_f = 1.0; // Set all values in test_f to 1
-
-    // Output the first value of test_f as a test
-    std::cout << "MeshHandler - First value of test_f: " << test_f(0) << std::endl;
-
-
     PrintMeshInfo();
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -114,7 +104,7 @@ void MeshHandler::ReadGlobalDistanceFunction(const std::unique_ptr<mfem::FiniteE
     myfile.close();
 }
 
-void MeshHandler::InterpolateDomainParameters(int nV, const std::unique_ptr<mfem::ParFiniteElementSpace>& fespace) {
+void MeshHandler::InterpolateDomainParameters(int nV, const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace) {
     psi = make_unique<ParGridFunction>(fespace.get()); // psi is a pointer here
     pse = make_unique<ParGridFunction>(fespace.get());
     AvP = make_unique<ParGridFunction>(fespace.get());
@@ -200,19 +190,7 @@ const mfem::Vector& MeshHandler::GetElementVolume() const {
     return EVol; // Ensure this is a reference to the actual Vector
 }
 
-void MeshHandler::TestFESpace() {
-    
-    std::cout << "MeshHandler - fespace pointer: " << fespace.get() << std::endl;
-
-    // Create a test ParGridFunction on the fespace
-    ParGridFunction test_f(fespace.get());
-    test_f = 1.0; // Set all values in test_f to 1
-
-
-    // Output the first value of test_f as a test
-    std::cout << "MeshHandler - First value of test_f: " << test_f(0) << std::endl;
+std::shared_ptr<mfem::ParFiniteElementSpace> MeshHandler::GetFESpace() {
+    return fespace;  // Provide access to the fespace
 }
 
-mfem::ParGridFunction& MeshHandler::GetTestF() {
-    return test_f; // Return the reference to the member variable test_f
-}

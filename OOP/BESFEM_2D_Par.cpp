@@ -308,8 +308,8 @@ int main(int argc, char *argv[])
 
 // 	HypreParMatrix *Tmatp;
 
-// 	// SBM stiffness matrix
-// 	ParGridFunction Dp(&fespace);		
+	// SBM stiffness matrix
+	ParGridFunction Dp(&fespace);		
 
 // 	HypreParMatrix Kmatp;
 	
@@ -324,8 +324,8 @@ int main(int argc, char *argv[])
 // 	int nDof = CpV0.Size();	
 	
 // 	// Vector of psi
-// 	HypreParVector PsVc(&fespace);
-// 	psi.GetTrueDofs(PsVc);		
+	// HypreParVector PsVc(&fespace);
+	// psi.GetTrueDofs(PsVc);		
 	
 	
 // 	// 	// ============================
@@ -366,8 +366,8 @@ int main(int argc, char *argv[])
 // 	HypreParMatrix *TmatL, *TmatR;			// matrices for CN scheme
 	
 	
-// 	// stiffness matrix
-// 	ParGridFunction De(&fespace);				
+	// stiffness matrix
+	ParGridFunction De(&fespace);				
 // 	HypreParMatrix Kmate;
 
 // 	// force vector
@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
 	PeR.Neg();	
 	GridFunctionCoefficient matCoef_R(&PeR) ;
 
-	PeR.Print(std::cout);
+	// PeR.Print(std::cout);
 
 	// CnE.Print(std::cout);
 
@@ -557,13 +557,15 @@ for (int t = 0; t < 10 + 1; t++){
 		// Bc2->Print(std::cout);		
 
 
-// 		// diffusivity in the particles
-// 		for (int vi = 0; vi < nV; vi++ ){
-// 			// appendix equation A-19
-// 			Dp(vi) = psi(vi)*(0.0277-0.084*CnP(vi) + 0.1003*CnP(vi)*CnP(vi))*1.0e-8;
-// 			if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
-// 		}	
-// 		GridFunctionCoefficient cDp(&Dp) ;			
+		// diffusivity in the particles
+		for (int vi = 0; vi < nV; vi++ ){
+			// appendix equation A-19
+			Dp(vi) = psi(vi)*(0.0277-0.084*CnP(vi) + 0.1003*CnP(vi)*CnP(vi))*1.0e-8;
+			if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
+
+			// std::cout << "Dp[" << vi << "] = " << Dp(vi) << std::endl;
+		}	
+		GridFunctionCoefficient cDp(&Dp) ;			
 		
 // 		// K matrix		
 // 		std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
@@ -655,15 +657,17 @@ for (int t = 0; t < 10 + 1; t++){
 		// Move the contents of Be2 into Fet
 		Fet = std::move(*Be2);
 
-		Fet.Print(std::cout);
+		// Fet.Print(std::cout);
 
 				
-// 		// salt diffusivity in the electrolyte					
-// 		for (int vi = 0; vi < nV; vi++){
-// 			// appendix equation A-21
-// 			De(vi) = pse(vi)*D0*exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
-// 		}
-// 		GridFunctionCoefficient cDe(&De) ;	
+		// salt diffusivity in the electrolyte					
+		for (int vi = 0; vi < nV; vi++){
+			// appendix equation A-21
+			De(vi) = pse(vi)*D0*exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
+			// std::cout << "De[" << vi << "] = " << De(vi) << std::endl;
+
+		}
+		GridFunctionCoefficient cDe(&De) ;	
 		
 //  		// K matrix		
 // 		std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(&fespace)); 

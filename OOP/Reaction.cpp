@@ -16,7 +16,7 @@ Reaction::Reaction(MeshHandler &mesh_handler, Concentrations &concentrations)
 
 {
 
-    Rxn = make_unique<ParGridFunction>(fespace);
+    Rxn = make_unique<ParGridFunction>(fespace.get());
 
 
 }
