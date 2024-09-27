@@ -565,7 +565,13 @@ for (int t = 0; t < 10 + 1; t++){
 
 			// std::cout << "Dp[" << vi << "] = " << Dp(vi) << std::endl;
 		}	
-		GridFunctionCoefficient cDp(&Dp) ;			
+		GridFunctionCoefficient cDp(&Dp) ;	
+
+		std::cout << "cDp values in TimeStepCnP:" << std::endl;
+			for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
+				std::cout << (*cDp.GetGridFunction())(vi) << " ";
+			}
+		std::cout << std::endl;		
 		
 // 		// K matrix		
 // 		std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
@@ -665,6 +671,13 @@ for (int t = 0; t < 10 + 1; t++){
 			// appendix equation A-21
 			De(vi) = pse(vi)*D0*exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
 			// std::cout << "De[" << vi << "] = " << De(vi) << std::endl;
+
+			// std::cout << "De Diffusivity values in Original:" << std::endl;
+			// for (int vi = 0; vi < std::min(nV, 10); ++vi) {
+			// 	std::cout << De(vi) << " ";
+			// }
+    		// std::cout << std::endl;
+
 
 		}
 		GridFunctionCoefficient cDe(&De) ;	

@@ -88,21 +88,27 @@ void Concentrations::TimeStepCnP(std::shared_ptr<ParFiniteElementSpace> fespace)
     GridFunctionCoefficient cAp(Rxc.get());
     SetupRx(Rxn, *Rxc, Constants::rho, cAp); // Rxn needs to come from Reacions.cpp
 
-    // Dummy boundary: empty array
     Array<int> dummy_boundary;
     
-    // Dummy coefficient: 0.0 (won't affect the result if not used)
     ConstantCoefficient dummy_coef(0.0);
 
-    // Call ForceTerm with dummy boundary and coefficient
     ForceTerm(fespace, cAp, Fct, dummy_boundary, dummy_coef, false);
-    // Fct.Print(std::cout);
 
-    // Rxc->Print(std::cout);
+    // GridFunctionCoefficient cDp = Diffusivity(psi, *CnP, true);
+    std::shared_ptr<GridFunctionCoefficient> cDp = Diffusivity(psi, *CnP, true);
 
-    GridFunctionCoefficient cDp = Diffusivity(pse, *CnE, false);
 
-    K_Matrix(boundary_dofs, *CnP, Fct, Kmatp, X1v, Fcb, cDp);
+    std::cout << "cDp values in TimeStepCnP:" << std::endl;
+    for (int vi = 0; vi < fespace->GetTrueVSize(); ++vi) {
+        std::cout << (*cDp->GetGridFunction())(vi) << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "fespace address in TimeStepCnP: " << fespace.get() << std::endl;
+
+
+
+    K_Matrix(boundary_dofs, *CnP, Fct, Kmatp, X1v, Fcb, cDp.get());
 
 
 
@@ -125,7 +131,7 @@ void Concentrations::TimeStepCnE(std::shared_ptr<ParFiniteElementSpace> fespace)
 
     // Fet.Print(std::cout);
 
-    GridFunctionCoefficient cDe = Diffusivity(pse, *CnE, false);
+    // GridFunctionCoefficient cDe = Diffusivity(pse, *CnE, false);
 
 }
 
@@ -296,46 +302,60 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
 }
 
 
-GridFunctionCoefficient Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
+std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
 
-    ParGridFunction Dx(fespace.get());
+    std::shared_ptr<mfem::ParGridFunction> Dx = std::make_shared<mfem::ParGridFunction>(fespace.get());
+    // mfem::ParGridFunction Dx(fespace.get());  // Create local ParGridFunction on the stack
 
-    for (int vi = 0; vi < nV; vi++){
+
+    for (int vi = 0; vi < nV; vi++) {
         if (particle_electrolyte) {
-            Dx(vi) = psx(vi) * (0.0277 - 0.084 * Cn(vi) + 0.1003 * Cn(vi) * Cn(vi)) * 1.0e-8; // true CnP
-            if (Dx(vi) > 4.6e-10) {
-                Dx(vi) = 4.6e-10;
+            (*Dx)(vi) = psx(vi) * (0.0277 - 0.084 * Cn(vi) + 0.1003 * Cn(vi) * Cn(vi)) * 1.0e-8;
+            if ((*Dx)(vi) > 4.6e-10) {
+                (*Dx)(vi) = 4.6e-10;
             }
+        } else {
+            (*Dx)(vi) = psx(vi) * Constants::D0 * exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi));
         }
-        else {
-            Dx(vi) = psx(vi) * Constants::D0 * exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi)); // false CnE
-        }
-        // std::cout << "Dx[" << vi << "] = " << Dx(vi) << std::endl;
     }
-    // GridFunctionCoefficient cDx(&Dx); 
 
-    return GridFunctionCoefficient(&Dx);
+    // return GridFunctionCoefficient(Dx.get());
+    // return GridFunctionCoefficient(&Dx);
+
+    return std::make_shared<mfem::GridFunctionCoefficient>(Dx.get());
+
 }
 
-void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, HypreParMatrix &Kmatx, HypreParVector X1v, HypreParVector Fxb, GridFunctionCoefficient &cDx) {
+void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, HypreParMatrix &Kmatx, HypreParVector X1v, HypreParVector Fxb, GridFunctionCoefficient *cDx) {
+
+
+    std::cout << "Creating ParBilinearForm for fespace with size: " << fespace->GetTrueVSize() << std::endl;
+    std::cout << "Boundary DOFs size: " << boundary.Size() << std::endl;
 
     // SetupBoundaryConditions();
-
     std::unique_ptr<ParBilinearForm> Kx2(new ParBilinearForm(fespace.get()));
-    // GridFunctionCoefficient cP(&psx);
-    Kx2->AddDomainIntegrator(new DiffusionIntegrator(cDx));
+    std::cout << "fespace address in K_Matrix: " << fespace.get() << std::endl;
+
+
+    std::cout << "cDx values in K_Matrix:" << std::endl;
+    for (int vi = 0; vi < fespace->GetTrueVSize(); ++vi) {
+        std::cout << (*cDx->GetGridFunction())(vi) << " ";
+    }
+    std::cout << std::endl;
     
+    // Kx2->AddDomainIntegrator(new DiffusionIntegrator(cDx));
+
+    // Kx2->Assemble();
+    
+    // // Kx2->FormLinearSystem(boundary, Cn, Fct, Kmatx, X1v, Fxb);
+
+    // // Fxb *= Constants::dt;
+
+}
+
     // Verification failed: (GetLastOperation() == Mesh::REFINE) is false:
     //  ... in function: const mfem::CoarseFineTransformations& mfem::Mesh::GetRefinementTransforms()
     //  ... in file: mesh/mesh.cpp:9916
-    Kx2->Assemble();
-    
-    // Kx2->FormLinearSystem(boundary, Cn, Fct, Kmatx, X1v, Fxb);
-
-    // Fxb *= Constants::dt;
-
-}
-
 
 // void Concentrations::TestFESpace(std::shared_ptr<ParFiniteElementSpace> fespace) {
 

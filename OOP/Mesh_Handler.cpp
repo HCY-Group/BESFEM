@@ -30,6 +30,12 @@ void MeshHandler::InitializeMesh() {
     Mesh gmesh(mesh_file);
     gmesh.EnsureNCMesh(true);
 
+    // // Uniformly refine the mesh, e.g., 2 times
+    // int number_of_refinements = 2; // Change as needed
+    // for (int i = 0; i < number_of_refinements; i++) {
+    //     gmesh.UniformRefinement();
+    // }
+
     // Create global FE space for distance function.
     H1_FECollection gFec(order, gmesh.Dimension());
     gFespace = make_unique<FiniteElementSpace>(&gmesh, &gFec);
@@ -61,8 +67,12 @@ void MeshHandler::InitializeMesh() {
     EVol = EVolTemp;
 
     // Create Local FE Space
-    fespace = make_unique<ParFiniteElementSpace>(pmesh.get(), new H1_FECollection(order, pmesh->Dimension()));
+    fespace = make_shared<ParFiniteElementSpace>(pmesh.get(), new H1_FECollection(order, pmesh->Dimension()));
+    // H1_FECollection fec(order, pmesh->Dimension());	
+    // fespace = std::make_shared<mfem::ParFiniteElementSpace>(pmesh, fec);
+
     
+
     // Local (parallel) GridFunction
     dsF = make_unique<ParGridFunction>(fespace.get());
 

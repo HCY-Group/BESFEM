@@ -51,8 +51,8 @@ private:
     void TotalReaction(mfem::ParGridFunction &Rx, double xCrnt);
     void EnsureValidBoundaryAndFESpace();
     void DebugBoundaryArray(const Array<int> &boundary);
-    GridFunctionCoefficient Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte );
-    void K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, HypreParMatrix &Kmatx, HypreParVector X1v, HypreParVector Fxb, GridFunctionCoefficient &cDx);
+    std::shared_ptr<mfem::GridFunctionCoefficient> Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte );
+    void K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, HypreParMatrix &Kmatx, HypreParVector X1v, HypreParVector Fxb, GridFunctionCoefficient *cDx);
 
     // Member variables
     // mfem::ParFiniteElementSpace* fespace;           // Finite element space
@@ -101,6 +101,7 @@ private:
 
     // GridFunctionCoefficient matCoef_R;
     GridFunctionCoefficient cAe;
+    GridFunctionCoefficient *cDp;
 
     std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef;    
     // mfem::Array<int> nbc_w_bdr;       
