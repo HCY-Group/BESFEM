@@ -311,12 +311,12 @@ int main(int argc, char *argv[])
 	// SBM stiffness matrix
 	ParGridFunction Dp(&fespace);		
 
-// 	HypreParMatrix Kmatp;
+	HypreParMatrix Kmatp;
 	
 // 	// force vector
 	ParGridFunction Rxc(&fespace);	
 	ParLinearForm Fct(&fespace);
-// 	HypreParVector Fcb(&fespace);	
+	HypreParVector Fcb(&fespace);	
 
 //  	// create a Vector for CnP
 // 	HypreParVector CpV0(&fespace), CpVn(&fespace), RHCp(&fespace);		
@@ -506,7 +506,7 @@ int main(int argc, char *argv[])
 // 	double dV, sgn;
 
 // 	// containers used later.
-// 	HypreParVector X1v(&fespace), B1v(&fespace);
+	HypreParVector X1v(&fespace), B1v(&fespace);
 // 	ParLinearForm B1t(&fespace);
 
 // 	int cnt = 0;
@@ -573,12 +573,23 @@ for (int t = 0; t < 10 + 1; t++){
 			}
 		std::cout << std::endl;		
 		
-// 		// K matrix		
-// 		std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
-//    		Kc2->AddDomainIntegrator(new DiffusionIntegrator(cDp));
-//    		Kc2->Assemble();
-//    		Kc2->FormLinearSystem(boundary_dofs, CnP, Fct, Kmatp, X1v, Fcb);
-//    		Fcb *= dt;
+		// K matrix		
+		std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
+   		Kc2->AddDomainIntegrator(new DiffusionIntegrator(cDp));
+   		Kc2->Assemble();
+   		Kc2->FormLinearSystem(boundary_dofs, CnP, Fct, Kmatp, X1v, Fcb);
+   		Fcb *= dt;
+
+		// Get the local data of the HypreParVector
+		double *Fxb_data = Fcb.GetData();
+
+		// Print each value of the vector
+		int size = Fcb.Size();
+		std::cout << "Fcb values in original:" << std::endl;
+		for (int i = 0; i < size; i++) {
+			std::cout << Fxb_data[i] << " ";
+		}
+		std::cout << std::endl;
 
 	
 // 		// T matrix

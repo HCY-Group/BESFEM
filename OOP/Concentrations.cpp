@@ -98,15 +98,13 @@ void Concentrations::TimeStepCnP(std::shared_ptr<ParFiniteElementSpace> fespace)
     std::shared_ptr<GridFunctionCoefficient> cDp = Diffusivity(psi, *CnP, true);
 
 
-    std::cout << "cDp values in TimeStepCnP:" << std::endl;
-    for (int vi = 0; vi < fespace->GetTrueVSize(); ++vi) {
-        std::cout << (*cDp->GetGridFunction())(vi) << " ";
-    }
-    std::cout << std::endl;
+    // std::cout << "cDp values in TimeStepCnP:" << std::endl;
+    // for (int vi = 0; vi < fespace->GetTrueVSize(); ++vi) {
+    //     std::cout << (*cDp->GetGridFunction())(vi) << " ";
+    // }
+    // std::cout << std::endl;
 
     std::cout << "fespace address in TimeStepCnP: " << fespace.get() << std::endl;
-
-
 
     K_Matrix(boundary_dofs, *CnP, Fct, Kmatp, X1v, Fcb, cDp.get());
 
@@ -129,9 +127,8 @@ void Concentrations::TimeStepCnE(std::shared_ptr<ParFiniteElementSpace> fespace)
 
     ForceTerm(fespace, cAe, Fet, nbc_w_bdr, nbcCoef, true); // true since applying boundary conditions
 
-    // Fet.Print(std::cout);
+    std::shared_ptr<GridFunctionCoefficient> cDe = Diffusivity(pse, *CnE, true);
 
-    // GridFunctionCoefficient cDe = Diffusivity(pse, *CnE, false);
 
 }
 
@@ -348,11 +345,23 @@ void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, Pa
     
     Kx2->AddDomainIntegrator(new DiffusionIntegrator(*cDx));
 
-    // Kx2->Assemble();
+    Kx2->Assemble();
     
-    // // Kx2->FormLinearSystem(boundary, Cn, Fct, Kmatx, X1v, Fxb);
+    Kx2->FormLinearSystem(boundary, Cn, Fct, Kmatx, X1v, Fxb);
 
-    // // Fxb *= Constants::dt;
+    Fxb *= Constants::dt;
+
+    // // Get the local data of the HypreParVector
+    // double *Fxb_data = Fxb.GetData();
+
+    // // Print each value of the vector
+    // int size = Fxb.Size();
+    // std::cout << "Fxb values:" << std::endl;
+    // for (int i = 0; i < size; i++) {
+    //     std::cout << Fxb_data[i] << " ";
+    // }
+    // std::cout << std::endl;
+
 
 }
 
