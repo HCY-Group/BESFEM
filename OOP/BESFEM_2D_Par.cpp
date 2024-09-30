@@ -368,14 +368,14 @@ int main(int argc, char *argv[])
 	
 	// stiffness matrix
 	ParGridFunction De(&fespace);				
-// 	HypreParMatrix Kmate;
+	HypreParMatrix Kmate;
 
 // 	// force vector
 	ParGridFunction Rxe(&fespace);
 	
 // 	// defined for later
 	ParLinearForm Fet(&fespace);		
-// 	HypreParVector Feb(&fespace);	
+	HypreParVector Feb(&fespace);	
 	
 	// for imposing Neumann BC
 	ParGridFunction PeR(&fespace);
@@ -567,11 +567,11 @@ for (int t = 0; t < 10 + 1; t++){
 		}	
 		GridFunctionCoefficient cDp(&Dp) ;	
 
-		std::cout << "cDp values in TimeStepCnP:" << std::endl;
-			for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
-				std::cout << (*cDp.GetGridFunction())(vi) << " ";
-			}
-		std::cout << std::endl;		
+		// std::cout << "cDp values in TimeStepCnP:" << std::endl;
+		// 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
+		// 		std::cout << (*cDp.GetGridFunction())(vi) << " ";
+		// 	}
+		// std::cout << std::endl;		
 		
 		// K matrix		
 		std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
@@ -691,14 +691,31 @@ for (int t = 0; t < 10 + 1; t++){
 
 
 		}
-		GridFunctionCoefficient cDe(&De) ;	
+		GridFunctionCoefficient cDe(&De) ;
+
+		// std::cout << "cDe values in Original CnE:" << std::endl;
+		// 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
+		// 		std::cout << (*cDe.GetGridFunction())(vi) << " ";
+		// 	}
+		// std::cout << std::endl;	
 		
-//  		// K matrix		
-// 		std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(&fespace)); 
-//    		Ke2->AddDomainIntegrator(new DiffusionIntegrator(cDe));
-//    		Ke2->Assemble();
-//    		Ke2->FormLinearSystem(boundary_dofs, CnE, Fet, Kmate, X1v, Feb);
-//    		Feb *= dt;		
+ 		// K matrix		
+		std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(&fespace)); 
+   		Ke2->AddDomainIntegrator(new DiffusionIntegrator(cDe));
+   		Ke2->Assemble();
+   		Ke2->FormLinearSystem(boundary_dofs, CnE, Fet, Kmate, X1v, Feb);
+   		Feb *= dt;	
+
+		// Get the local data of the HypreParVector
+		double *Feb_data = Feb.GetData();
+
+		// Print each value of the vector
+		int size1 = Feb.Size();
+		std::cout << "Feb values in original:" << std::endl;
+		for (int i = 0; i < size1; i++) {
+			std::cout << Feb_data[i] << " ";
+		}
+		std::cout << std::endl;
 		
 // 		// Crank-Nicolson matrices
 // 		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		

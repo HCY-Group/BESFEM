@@ -11,6 +11,7 @@ using namespace std;
 Concentrations::Concentrations(MeshHandler &mesh_handler)
     : mesh_handler(mesh_handler), fespace(mesh_handler.GetFESpace()), pmesh(mesh_handler.GetPmesh()), psi(*mesh_handler.GetPsi()), pse(*mesh_handler.GetPse()),
       EVol(mesh_handler.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), reaction(mesh_handler, *this), PeR(fespace.get()), matCoef_R(&PeR)
+
       
 {
 
@@ -30,30 +31,10 @@ Concentrations::Concentrations(MeshHandler &mesh_handler)
 
     X1v = HypreParVector(fespace.get());
     Fcb = HypreParVector(fespace.get());
+    Feb = HypreParVector(fespace.get());
 
     reaction.Initialize(); 
 }
-
-// Concentrations::Concentrations(MeshHandler &mesh_handler)
-//     : mesh_handler(mesh_handler), fespace(mesh_handler.GetFESpace()) {
-//     std::cout << "Concentrations - fespace pointer: " << fespace.get() << std::endl;
-
-//     mfem::ParGridFunction& myTestF = mesh_handler.GetTestF();
-//     std::cout << "First value of test_f in Concentrations: " << myTestF(0) << std::endl; 
-
-
-//     // ParGridFunction test_f(fespace.get());
-//     // std::cout << "Concentrations - Initial value of test_f: " << test_f(0) << std::endl;
-
-
-//     // Initialize ParGridFunction for CnP and CnE using the shared fespace
-//     // CnP = std::make_unique<ParGridFunction>(fespace.get());
-//     // CnE = std::make_unique<ParGridFunction>(fespace.get());
-
-//     // Rxc = std::make_unique<ParGridFunction>(fespace.get());
-//     // Rxe = std::make_unique<ParGridFunction>(fespace.get());
-
-// }
 
 
 void Concentrations::InitializeCnP(std::shared_ptr<ParFiniteElementSpace> fespace) {
@@ -92,23 +73,15 @@ void Concentrations::TimeStepCnP(std::shared_ptr<ParFiniteElementSpace> fespace)
     
     ConstantCoefficient dummy_coef(0.0);
 
-    ForceTerm(fespace, cAp, Fct, dummy_boundary, dummy_coef, false);
+    ForceTerm(fespace, cAp, Fct, dummy_boundary, dummy_coef, false); // false since not applying BCs
 
     // GridFunctionCoefficient cDp = Diffusivity(psi, *CnP, true);
-    std::shared_ptr<GridFunctionCoefficient> cDp = Diffusivity(psi, *CnP, true);
-
-
-    // std::cout << "cDp values in TimeStepCnP:" << std::endl;
-    // for (int vi = 0; vi < fespace->GetTrueVSize(); ++vi) {
-    //     std::cout << (*cDp->GetGridFunction())(vi) << " ";
-    // }
-    // std::cout << std::endl;
+    std::shared_ptr<GridFunctionCoefficient> cDp = Diffusivity(psi, *CnP, true); // true since using first equation
 
     std::cout << "fespace address in TimeStepCnP: " << fespace.get() << std::endl;
 
+    HypreParMatrix Kmatp;
     K_Matrix(boundary_dofs, *CnP, Fct, Kmatp, X1v, Fcb, cDp.get());
-
-
 
 }
 
@@ -121,14 +94,16 @@ void Concentrations::TimeStepCnE(std::shared_ptr<ParFiniteElementSpace> fespace)
     TotalReaction(*Rxe, eCrnt);
     ConstantCoefficient nbcCoef(-infx); // Neumann BC works with -infx
 
-    // PeR.Print(std::cout);
-
     ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
 
     ForceTerm(fespace, cAe, Fet, nbc_w_bdr, nbcCoef, true); // true since applying boundary conditions
 
-    std::shared_ptr<GridFunctionCoefficient> cDe = Diffusivity(pse, *CnE, true);
+    std::shared_ptr<GridFunctionCoefficient> cDe = Diffusivity(pse, *CnE, false); // false using other equation
 
+    std::cout << "fespace address in TimeStepCnE: " << fespace.get() << std::endl;
+
+    HypreParMatrix Kmate;
+    K_Matrix(boundary_dofs, *CnE, Fet, Kmate, X1v, Feb, cDe.get());
 
 }
 
@@ -215,7 +190,7 @@ void Concentrations::SetupBoundaryConditions(std::shared_ptr<ParFiniteElementSpa
     // Extract essential true DOFs (Dirichlet BCs) on the east boundary
     Array<int> ess_tdof_list_e(0);
     fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
-    
+
     // Dirichlet BC on the west boundary for CnE
     Array<int> dbc_w_bdr(pmesh->bdr_attributes.Max());
     dbc_w_bdr = 0; 
@@ -251,27 +226,16 @@ double value, GridFunctionCoefficient cAx) {
 
 void Concentrations::ForceTerm(std::shared_ptr<ParFiniteElementSpace> fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m, bool apply_boundary_conditions) {
 
-    // EnsureValidBoundaryAndFESpace();
-    // DebugBoundaryArray(boundary);
-
     std::unique_ptr<ParLinearForm> Bx2(new ParLinearForm(fespace.get()));	
 
     Bx2->AddDomainIntegrator(new DomainLFIntegrator(cXx));
-    // ConstantCoefficient temp_coef(1.0);
 
     if (apply_boundary_conditions) {
-
         Bx2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m), boundary);
-
     }
 
     Bx2->Assemble();
-
     Fxx = std::move(*Bx2);
-
-    // cout << "Printing Force Term" << endl;
-    // Fxx.Print(std::cout);
-
 
 }
 
@@ -295,18 +259,12 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
     MPI_Allreduce(&xCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     infx = geCrnt / (mesh_handler.L_w);
 
-    // cout << "infx: " << infx << std::endl;
-
 }
 
 
 std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
 
-    // std::shared_ptr<mfem::ParGridFunction> Dx = std::make_shared<mfem::ParGridFunction>(fespace.get());
     mfem::ParGridFunction* Dx = new mfem::ParGridFunction(fespace.get());
-
-    // mfem::ParGridFunction Dx(fespace.get());  // Create local ParGridFunction on the stack
-
 
     for (int vi = 0; vi < nV; vi++) {
         if (particle_electrolyte) {
@@ -319,35 +277,30 @@ std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem:
         }
     }
 
-    // return GridFunctionCoefficient(Dx.get());
-    // return GridFunctionCoefficient(&Dx);
-
     return std::make_shared<mfem::GridFunctionCoefficient>(Dx);
 
 }
 
-void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, HypreParMatrix &Kmatx, HypreParVector X1v, HypreParVector Fxb, GridFunctionCoefficient *cDx) {
+void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, HypreParMatrix &Kmatx, HypreParVector &X1v, HypreParVector &Fxb, GridFunctionCoefficient *cDx) {
 
 
-    std::cout << "Creating ParBilinearForm for fespace with size: " << fespace->GetTrueVSize() << std::endl;
-    std::cout << "Boundary DOFs size: " << boundary.Size() << std::endl;
+    // std::cout << "Creating ParBilinearForm for fespace with size: " << fespace->GetTrueVSize() << std::endl;
+    // std::cout << "Boundary DOFs size: " << boundary.Size() << std::endl;
 
     // SetupBoundaryConditions();
     std::unique_ptr<ParBilinearForm> Kx2(new ParBilinearForm(fespace.get()));
     std::cout << "fespace address in K_Matrix: " << fespace.get() << std::endl;
 
 
-    std::cout << "cDx values in K_Matrix:" << std::endl;
-    for (int vi = 0; vi < fespace->GetTrueVSize(); ++vi) {
-        std::cout << (*cDx->GetGridFunction())(vi) << " ";
-    }
-    std::cout << std::endl;
+    // std::cout << "cDx values in K_Matrix:" << std::endl;
+    // for (int vi = 0; vi < fespace->GetTrueVSize(); ++vi) {
+    //     std::cout << (*cDx->GetGridFunction())(vi) << " ";
+    // }
+    // std::cout << std::endl;
     
     Kx2->AddDomainIntegrator(new DiffusionIntegrator(*cDx));
-
     Kx2->Assemble();
-    
-    Kx2->FormLinearSystem(boundary, Cn, Fct, Kmatx, X1v, Fxb);
+    Kx2->FormLinearSystem(boundary, Cn, Fxx, Kmatx, X1v, Fxb);
 
     Fxb *= Constants::dt;
 
@@ -362,54 +315,6 @@ void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, Pa
     // }
     // std::cout << std::endl;
 
-
 }
 
-    // Verification failed: (GetLastOperation() == Mesh::REFINE) is false:
-    //  ... in function: const mfem::CoarseFineTransformations& mfem::Mesh::GetRefinementTransforms()
-    //  ... in file: mesh/mesh.cpp:9916
 
-// void Concentrations::TestFESpace(std::shared_ptr<ParFiniteElementSpace> fespace) {
-
-//     ParGridFunction test_f(fespace.get());
-
-//     // Check the value of test_f
-//     std::cout << "Concentrations - First value of test_f: " << test_f(0) << std::endl;
-// }
-
-// void Concentrations::DebugBoundaryArray(const Array<int> &boundary)
-// {
-//     std::cout << "Boundary array contents: ";
-//     for (int i = 0; i < boundary.Size(); i++)
-//     {
-//         std::cout << boundary[i] << " ";
-//     }
-//     std::cout << std::endl;
-// }
-
-// void Concentrations::EnsureValidBoundaryAndFESpace()
-// {
-//     // Check if the mesh has boundary attributes defined
-//     if (!pmesh->bdr_attributes.Size())
-//     {
-//         std::cerr << "Error: The mesh does not have any boundary attributes defined." << std::endl;
-//         return;
-//     }
-
-//     std::cout << "Mesh boundary attributes size: " << pmesh->bdr_attributes.Size() << std::endl;
-//     std::cout << "Boundary attributes: ";
-//     for (int i = 0; i < pmesh->bdr_attributes.Size(); i++)
-//     {
-//         std::cout << pmesh->bdr_attributes[i] << " ";
-//     }
-//     std::cout << std::endl;
-
-//     // Now check that the finite element space (fespace) is valid and initialized with the mesh
-//     if (fespace->GetMesh() == nullptr)
-//     {
-//         std::cerr << "Error: The finite element space is not associated with a mesh." << std::endl;
-//         return;
-//     }
-
-//     std::cout << "Finite element space associated with the mesh is valid." << std::endl;
-// }
