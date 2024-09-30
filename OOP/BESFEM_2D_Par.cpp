@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
 	Mp_solver.SetPreconditioner(Mp_prec);
 	Mp_solver.SetOperator(Mmatp);
 
-// 	HypreParMatrix *Tmatp;
+	HypreParMatrix *Tmatp;
 
 	// SBM stiffness matrix
 	ParGridFunction Dp(&fespace);		
@@ -580,20 +580,24 @@ for (int t = 0; t < 10 + 1; t++){
    		Kc2->FormLinearSystem(boundary_dofs, CnP, Fct, Kmatp, X1v, Fcb);
    		Fcb *= dt;
 
-		// Get the local data of the HypreParVector
-		double *Fxb_data = Fcb.GetData();
+		// // Get the local data of the HypreParVector
+		// double *Fxb_data = Fcb.GetData();
 
-		// Print each value of the vector
-		int size = Fcb.Size();
-		std::cout << "Fcb values in original:" << std::endl;
-		for (int i = 0; i < size; i++) {
-			std::cout << Fxb_data[i] << " ";
-		}
-		std::cout << std::endl;
+		// // Print each value of the vector
+		// int size = Fcb.Size();
+		// std::cout << "Fcb values in original:" << std::endl;
+		// for (int i = 0; i < size; i++) {
+		// 	std::cout << Fxb_data[i] << " ";
+		// }
+		// std::cout << std::endl;
+
+		// // Check the size of Mmatp and Kmatp
+		// std::cout << "Mmatp size: " << Mmatp.Height() << " x " << Mmatp.Width() << std::endl;
+		// std::cout << "Kmatp size: " << Kmatp.Height() << " x " << Kmatp.Width() << std::endl;
 
 	
-// 		// T matrix
-// 		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);
+		// T matrix
+		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);
 		
 // 		// vector of CnP				
 // 		CnP.GetTrueDofs(CpV0);
@@ -706,16 +710,16 @@ for (int t = 0; t < 10 + 1; t++){
    		Ke2->FormLinearSystem(boundary_dofs, CnE, Fet, Kmate, X1v, Feb);
    		Feb *= dt;	
 
-		// Get the local data of the HypreParVector
-		double *Feb_data = Feb.GetData();
+		// // Get the local data of the HypreParVector
+		// double *Feb_data = Feb.GetData();
 
-		// Print each value of the vector
-		int size1 = Feb.Size();
-		std::cout << "Feb values in original:" << std::endl;
-		for (int i = 0; i < size1; i++) {
-			std::cout << Feb_data[i] << " ";
-		}
-		std::cout << std::endl;
+		// // Print each value of the vector
+		// int size1 = Feb.Size();
+		// std::cout << "Feb values in original:" << std::endl;
+		// for (int i = 0; i < size1; i++) {
+		// 	std::cout << Feb_data[i] << " ";
+		// }
+		// std::cout << std::endl;
 		
 // 		// Crank-Nicolson matrices
 // 		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		

@@ -4,6 +4,11 @@
 #include <fstream>
 #include <iostream>
 
+#include <HYPRE.h>
+#include <HYPRE_utilities.h>
+#include "mfem.hpp"
+
+
 
 using namespace mfem;
 using namespace std;
@@ -78,10 +83,17 @@ void Concentrations::TimeStepCnP(std::shared_ptr<ParFiniteElementSpace> fespace)
     // GridFunctionCoefficient cDp = Diffusivity(psi, *CnP, true);
     std::shared_ptr<GridFunctionCoefficient> cDp = Diffusivity(psi, *CnP, true); // true since using first equation
 
-    std::cout << "fespace address in TimeStepCnP: " << fespace.get() << std::endl;
+    // std::cout << "fespace address in TimeStepCnP: " << fespace.get() << std::endl;
 
-    HypreParMatrix Kmatp;
+    mfem::HypreParMatrix Kmatp;
     K_Matrix(boundary_dofs, *CnP, Fct, Kmatp, X1v, Fcb, cDp.get());
+
+    // Create T Matrix
+    // Tmapt = 1.0 * Mmatp + dt * Kmatp
+    // Tmatp = Add(1.0, Mmatp, Constants::dt, Kmatp); // should be -dt;
+
+    // Degree of Lithiation
+    // LithiationCalculation(*CnP, fespace);
 
 }
 
@@ -100,7 +112,7 @@ void Concentrations::TimeStepCnE(std::shared_ptr<ParFiniteElementSpace> fespace)
 
     std::shared_ptr<GridFunctionCoefficient> cDe = Diffusivity(pse, *CnE, false); // false using other equation
 
-    std::cout << "fespace address in TimeStepCnE: " << fespace.get() << std::endl;
+    // std::cout << "fespace address in TimeStepCnE: " << fespace.get() << std::endl;
 
     HypreParMatrix Kmate;
     K_Matrix(boundary_dofs, *CnE, Fet, Kmate, X1v, Feb, cDe.get());
@@ -113,9 +125,9 @@ void Concentrations::CreateCnE(mfem::ParGridFunction &Cn, double initial_value) 
 
 }
 
-void Concentrations::Lithiation(mfem::ParGridFunction &Cn, double initial_value, std::shared_ptr<ParFiniteElementSpace> fespace) {
+void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, std::shared_ptr<ParFiniteElementSpace> fespace) {
 
-    Cn = initial_value;
+    // Cn = initial_value;
 
     ParGridFunction TmpF(fespace.get());
     TmpF = Cn;
@@ -140,6 +152,12 @@ void Concentrations::Lithiation(mfem::ParGridFunction &Cn, double initial_value,
 
     // cout << "gSum: " << gSum << std::endl;
 
+}
+
+void Concentrations::Lithiation(mfem::ParGridFunction &Cn, double initial_value, std::shared_ptr<ParFiniteElementSpace> fespace) {
+
+    Cn = initial_value;
+    LithiationCalculation(Cn, fespace);
 }
 
 void Concentrations::SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat, std::shared_ptr<ParFiniteElementSpace> fespace) {
@@ -289,7 +307,7 @@ void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, Pa
 
     // SetupBoundaryConditions();
     std::unique_ptr<ParBilinearForm> Kx2(new ParBilinearForm(fespace.get()));
-    std::cout << "fespace address in K_Matrix: " << fespace.get() << std::endl;
+    // std::cout << "fespace address in K_Matrix: " << fespace.get() << std::endl;
 
 
     // std::cout << "cDx values in K_Matrix:" << std::endl;
@@ -316,5 +334,4 @@ void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, Pa
     // std::cout << std::endl;
 
 }
-
 

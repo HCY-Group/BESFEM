@@ -43,6 +43,7 @@ private:
     // Internal methods for different operations
     void CreateCnE(mfem::ParGridFunction &Cn, double initial_value);
     void Lithiation(mfem::ParGridFunction &Cn, double initial_value, std::shared_ptr<ParFiniteElementSpace> fespace);
+    void LithiationCalculation(mfem::ParGridFunction &Cn, std::shared_ptr<ParFiniteElementSpace> fespace);
     void SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat, std::shared_ptr<ParFiniteElementSpace> fespace);
     void Solver(HypreParMatrix &Mmat, CGSolver &M_solver);
     void ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx);
@@ -53,7 +54,7 @@ private:
     void DebugBoundaryArray(const Array<int> &boundary);
     std::shared_ptr<mfem::GridFunctionCoefficient> Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte );
     void K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, HypreParMatrix &Kmatx, HypreParVector &X1v, HypreParVector &Fxb, GridFunctionCoefficient *cDx);
-
+    
     // Member variables
     // mfem::ParFiniteElementSpace* fespace;           // Finite element space
 
@@ -82,6 +83,8 @@ private:
 
     HypreParMatrix Mmatp;
     HypreParMatrix Mmate;
+
+    HypreParMatrix *Tmatp;
 
     // HypreParMatrix Kmatp;
     // HypreParMatrix Kmate;
