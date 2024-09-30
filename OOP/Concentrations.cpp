@@ -46,9 +46,13 @@ void Concentrations::InitializeCnP(std::shared_ptr<ParFiniteElementSpace> fespac
 
     Lithiation(*CnP, 0.3, fespace);
     // SetupBoundaryConditions();
+    // HypreParMatrix Mmatp;
+
     SBM_Matrix(psi, Mmatp, fespace);
-    CGSolver Mp_solver(MPI_COMM_WORLD);
-    Solver(Mmatp, Mp_solver); 
+
+    std::cout << "Mmatp Rows Init: " << Mmatp.GetGlobalNumRows() << std::endl;
+    std::cout << "Mmatp Columns Init: " << Mmatp.GetGlobalNumCols() << std::endl;
+    Solver(Mmatp);
 
     // CnP->Print(std::cout);
 
@@ -59,8 +63,7 @@ void Concentrations::InitializeCnE(std::shared_ptr<ParFiniteElementSpace> fespac
     CreateCnE(*CnE, 0.001);
     // SetupBoundaryConditions();
     SBM_Matrix(pse, Mmate, fespace);
-    CGSolver Me_solver(MPI_COMM_WORLD);
-    Solver(Mmate, Me_solver);
+    Solver(Mmate);
     ImposeNeumannBC(PeR, pse);
     // GridFunctionCoefficient matCoef_R(&PeR);
 
@@ -84,12 +87,19 @@ void Concentrations::TimeStepCnP(std::shared_ptr<ParFiniteElementSpace> fespace)
     std::shared_ptr<GridFunctionCoefficient> cDp = Diffusivity(psi, *CnP, true); // true since using first equation
 
     // std::cout << "fespace address in TimeStepCnP: " << fespace.get() << std::endl;
-
     mfem::HypreParMatrix Kmatp;
     K_Matrix(boundary_dofs, *CnP, Fct, Kmatp, X1v, Fcb, cDp.get());
 
+    // std::cout << "Mmatp Rows: " << Mmatp.GetGlobalNumRows() << std::endl;
+    // std::cout << "Kmatp Rows: " << Kmatp.GetGlobalNumRows() << std::endl;
+    // std::cout << "Mmatp Columns: " << Mmatp.GetGlobalNumCols() << std::endl;
+    // std::cout << "Kmatp Columns: " << Kmatp.GetGlobalNumCols() << std::endl;
+    
+    
+    // assert(Mmatp.GetGlobalNumRows() == Kmatp.GetGlobalNumRows());
+    // assert(Mmatp.GetGlobalNumCols() == Kmatp.GetGlobalNumCols());
     // Create T Matrix
-    // Tmapt = 1.0 * Mmatp + dt * Kmatp
+    // Tmatp = 1.0 * Mmatp + dt * Kmatp
     // Tmatp = Add(1.0, Mmatp, Constants::dt, Kmatp); // should be -dt;
 
     // Degree of Lithiation
@@ -171,11 +181,23 @@ void Concentrations::SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat
     
     M->FormSystemMatrix(boundary_dofs, Mmat); 
 
+
+    std::cout << "Mmatp Rows SBM: " << Mmat.GetGlobalNumRows() << std::endl;
+    std::cout << "Mmatp Columns SBM: " << Mmat.GetGlobalNumCols() << std::endl;
+
+
 }
 
-void Concentrations::Solver(HypreParMatrix &Mmat, CGSolver &M_solver) {
+// want to use the Mmatp here as was used in SBM function
+void Concentrations::Solver(HypreParMatrix &Mmat) {
     
     HypreSmoother M_prec;
+    CGSolver M_solver(MPI_COMM_WORLD);
+
+
+    std::cout << "Mmatp Rows Solver: " << Mmat.GetGlobalNumRows() << std::endl;
+    std::cout << "Mmatp Columns Solver: " << Mmat.GetGlobalNumCols() << std::endl;
+
 
     M_solver.iterative_mode = false;
     M_solver.SetRelTol(1e-7);

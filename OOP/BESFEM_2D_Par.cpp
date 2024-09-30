@@ -591,11 +591,6 @@ for (int t = 0; t < 10 + 1; t++){
 		// }
 		// std::cout << std::endl;
 
-		// // Check the size of Mmatp and Kmatp
-		// std::cout << "Mmatp size: " << Mmatp.Height() << " x " << Mmatp.Width() << std::endl;
-		// std::cout << "Kmatp size: " << Kmatp.Height() << " x " << Kmatp.Width() << std::endl;
-
-	
 		// T matrix
 		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);
 		
