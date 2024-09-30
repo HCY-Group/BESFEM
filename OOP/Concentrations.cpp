@@ -272,7 +272,8 @@ void Concentrations::ForceTerm(std::shared_ptr<ParFiniteElementSpace> fespace, G
 
     Fxx = std::move(*Bx2);
 
-    // Bx2->Print(std::cout);
+    // cout << "Printing Force Term" << endl;
+    // Fxx.Print(std::cout);
 
 
 }
@@ -304,7 +305,9 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
 
 std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
 
-    std::shared_ptr<mfem::ParGridFunction> Dx = std::make_shared<mfem::ParGridFunction>(fespace.get());
+    // std::shared_ptr<mfem::ParGridFunction> Dx = std::make_shared<mfem::ParGridFunction>(fespace.get());
+    mfem::ParGridFunction* Dx = new mfem::ParGridFunction(fespace.get());
+
     // mfem::ParGridFunction Dx(fespace.get());  // Create local ParGridFunction on the stack
 
 
@@ -322,7 +325,7 @@ std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem:
     // return GridFunctionCoefficient(Dx.get());
     // return GridFunctionCoefficient(&Dx);
 
-    return std::make_shared<mfem::GridFunctionCoefficient>(Dx.get());
+    return std::make_shared<mfem::GridFunctionCoefficient>(Dx);
 
 }
 
@@ -343,7 +346,7 @@ void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, Pa
     }
     std::cout << std::endl;
     
-    // Kx2->AddDomainIntegrator(new DiffusionIntegrator(cDx));
+    Kx2->AddDomainIntegrator(new DiffusionIntegrator(*cDx));
 
     // Kx2->Assemble();
     
