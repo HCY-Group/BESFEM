@@ -17,7 +17,6 @@ void MeshMaker::MakeGlobalMesh() {
 	double sz = nz;  //make dz = 1
 	bool generate_edges = false;
 	bool sfc_ordering = false;
-	//Mesh gmesh = new Mesh;
 	gmesh = new Mesh;
 	if (nz == 1) {
 		*gmesh = Mesh::MakeCartesian2D(nx-1, ny-1, Element::QUADRILATERAL, generate_edges, sx, sy, sfc_ordering);
@@ -27,28 +26,6 @@ void MeshMaker::MakeGlobalMesh() {
 	gmesh->EnsureNCMesh(true);
 
 	cout << "Mesh from MeshMaker " << gmesh << endl;
-	/*
-	// Create global FE space for Voxel Data
-	int order = 1;
-	H1_FECollection gFec(order, gmesh.Dimension());
-	FiniteElementSpace gFespace(&gmesh, &gFec);
-
-	// global grid function for voxel data
-	cout << "Defining Voxel GridFunction" << endl;
-	//GridFunction gVox(&gFespace);
-	gVox.SetSpace(&gFespace);
-	for (int k=0; k<nz; k++){
-		for (int j=0; j<ny; j++){
-			for (int i=0; i<nx; i++){
-				int idx = i + nx*j + nx*ny*k;
-				//cout << "idx = " << i+ny*j << endl;
-				//cout << "gVox[idx] = " << gVox[idx] << endl;
-				//cout << "data[i][j][0] = " << data[i][j][0] << endl;
-				gVox[idx] = data[k][j][i];
-			}
-		}
-	}
-	*/
 }
 
 void MeshMaker::MakeParallelMesh() {
