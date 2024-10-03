@@ -18,14 +18,15 @@ void MeshMaker::MakeGlobalMesh() {
 	bool generate_edges = false;
 	bool sfc_ordering = false;
 	//Mesh gmesh = new Mesh;
+	gmesh = new Mesh;
 	if (nz == 1) {
-		gmesh = Mesh::MakeCartesian2D(nx-1, ny-1, Element::QUADRILATERAL, generate_edges, sx, sy, sfc_ordering);
+		*gmesh = Mesh::MakeCartesian2D(nx-1, ny-1, Element::QUADRILATERAL, generate_edges, sx, sy, sfc_ordering);
 	} else {
-		gmesh = Mesh::MakeCartesian3D(nx-1, ny-1, nz-1, Element::HEXAHEDRON, sx, sy, sz, sfc_ordering);
+		*gmesh = Mesh::MakeCartesian3D(nx-1, ny-1, nz-1, Element::HEXAHEDRON, sx, sy, sz, sfc_ordering);
 	}
-	gmesh.EnsureNCMesh(true);
+	gmesh->EnsureNCMesh(true);
 
-	cout << "Mesh from MeshMaker " << &gmesh << endl;
+	cout << "Mesh from MeshMaker " << gmesh << endl;
 	/*
 	// Create global FE space for Voxel Data
 	int order = 1;
@@ -51,12 +52,12 @@ void MeshMaker::MakeGlobalMesh() {
 }
 
 void MeshMaker::MakeParallelMesh() {
-	pmesh = new ParMesh(MPI_COMM_WORLD, gmesh);
+	pmesh = new ParMesh(MPI_COMM_WORLD, *gmesh);
 }
 
 void MeshMaker::Make_H1_FESpace(int order) {
-	H1_FECollection gFec(order, gmesh.Dimension());
-	gFespace = new FiniteElementSpace(&gmesh, &gFec);
+	H1_FECollection gFec(order, gmesh->Dimension());
+	gFespace = new FiniteElementSpace(gmesh, &gFec);
 }	
 
 void MeshMaker::Make_H1_FESpace_Parallel(int order) {

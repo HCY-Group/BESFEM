@@ -14,7 +14,7 @@ public:
 	void Make_H1_FESpace_Parallel(int order = 1);
 	
 	//GridFunction* GetGlobalVox() {return gVox;}
-	Mesh* GetGlobalMesh() {return &gmesh;}
+	Mesh* GetGlobalMesh() {return gmesh;}
 	ParMesh* GetParallelMesh() {return pmesh;}
 	FiniteElementSpace* GetGlobalFESpace() {return gFespace;}
 	ParFiniteElementSpace* GetParallelFESpace() {return fespace;}
@@ -23,7 +23,7 @@ public:
 
 private:
 	std::vector<std::vector<std::vector<int>>> data;
-	Mesh gmesh;
+	Mesh *gmesh;
 	ParMesh *pmesh;
 	//GridFunction *gVox;
 	FiniteElementSpace *gFespace;
