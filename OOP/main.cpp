@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     concentrations.InitializeCnP(mesh_handler.GetFESpace());
     concentrations.InitializeCnE(mesh_handler.GetFESpace());  
 
-    // // Initialize Reaction
+    // Initialize Reaction
     Reaction reaction(mesh_handler, concentrations);
     reaction.Initialize(); 
 

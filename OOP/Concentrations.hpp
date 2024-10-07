@@ -28,8 +28,9 @@ public:
 
     Array<int> nbc_w_bdr;
 
-    mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
+    
 
+    mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
 
     // std::shared_ptr<ParFiniteElementSpace> fespace;
     // void TestFESpace(std::shared_ptr<ParFiniteElementSpace> fespace);
@@ -44,9 +45,9 @@ private:
     void CreateCnE(mfem::ParGridFunction &Cn, double initial_value);
     void Lithiation(mfem::ParGridFunction &Cn, double initial_value, std::shared_ptr<ParFiniteElementSpace> fespace);
     void LithiationCalculation(mfem::ParGridFunction &Cn, std::shared_ptr<ParFiniteElementSpace> fespace);
-    void SBM_Matrix(mfem::ParGridFunction &psx, HypreParMatrix &Mmat, std::shared_ptr<ParFiniteElementSpace> fespace);
+    void SBM_Matrix(mfem::ParGridFunction &psx, std::shared_ptr<HypreParMatrix> &Mmat, std::shared_ptr<ParFiniteElementSpace> fespace);
     // void Solver(HypreParMatrix &Mmat, CGSolver &M_solver);
-    void Solver(HypreParMatrix &Mmat);
+    void Solver(std::shared_ptr<HypreParMatrix> &Mmat);
     void ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx);
     void SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value, GridFunctionCoefficient cAx);
     void ForceTerm(std::shared_ptr<ParFiniteElementSpace> fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m, bool apply_boundary_conditions);
@@ -82,8 +83,12 @@ private:
     std::unique_ptr<mfem::ParGridFunction> CnP;     // Concentration CnP (ParGridFunction)
     std::unique_ptr<mfem::ParGridFunction> CnE;     // Concentration CnE (ParGridFunction)
 
-    mfem::HypreParMatrix Mmatp;
-    mfem::HypreParMatrix Mmate;
+    // mfem::HypreParMatrix *Mmatp;
+    // mfem::HypreParMatrix *Mmate;
+
+    std::shared_ptr<mfem::HypreParMatrix> Mmatp;
+    std::shared_ptr<mfem::HypreParMatrix> Mmate;
+
 
     mfem::HypreParMatrix *Tmatp;
 
