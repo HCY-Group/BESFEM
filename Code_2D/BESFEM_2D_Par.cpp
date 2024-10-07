@@ -276,6 +276,7 @@ int main(int argc, char *argv[])
 	MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
 	Xfr = gSum/gtPsi;	
 	
+	/*
 	// SBM mass matrix	
 	HypreParMatrix Mmatp;
  	GridFunctionCoefficient cPs(&psi) ;	
@@ -298,8 +299,9 @@ int main(int argc, char *argv[])
 	Mp_prec.SetType(HypreSmoother::Jacobi);
 	Mp_solver.SetPreconditioner(Mp_prec);
 	Mp_solver.SetOperator(Mmatp);
-
+	
 	HypreParMatrix *Tmatp;
+	*/
 
 	// SBM stiffness matrix
 	ParGridFunction Dp(&fespace);		
@@ -351,7 +353,7 @@ int main(int argc, char *argv[])
 	ParGridFunction CnE(&fespace);
 	double Ce0 = 0.001;						// initial value
 	CnE = Ce0;	
-
+	/*
 	// SBM mass matrix	
 	HypreParMatrix Mmate;	
 	GridFunctionCoefficient cPe(&pse) ;	
@@ -372,7 +374,7 @@ int main(int argc, char *argv[])
 	Me_solver.SetPreconditioner(Me_prec);
  	
 	HypreParMatrix *TmatL, *TmatR;			// matrices for CN scheme
-	
+	*/
 	
 	// stiffness matrix
 	ParGridFunction De(&fespace);				
@@ -631,7 +633,7 @@ int main(int argc, char *argv[])
 		MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
 		Xfr = gSum/gtPsi;	
 		
-		delete Tmatp;
+		//delete Tmatp;
 
 
 		// // ============================
@@ -753,8 +755,8 @@ int main(int argc, char *argv[])
 			MPI_Barrier(MPI_COMM_WORLD);
 		}	
 
-		delete TmatR;
-		delete TmatL;
+		//delete TmatR;
+		//delete TmatL;
 		
 		
 		// ==============================================
