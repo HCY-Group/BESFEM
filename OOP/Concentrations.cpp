@@ -69,9 +69,6 @@ void Concentrations::InitializeCnE(std::shared_ptr<ParFiniteElementSpace> fespac
 
     SBM_Matrix(pse, Mmate, fespace);
 
-    // std::cout << "Mmate Rows after SBM in Initialize: " << Mmate->GetGlobalNumRows() << std::endl;
-    // std::cout << "Mmate Columns after SBM in Initialize: " << Mmate->GetGlobalNumCols() << std::endl;
-
     Solver(Mmate);
     ImposeNeumannBC(PeR, pse);
     // GridFunctionCoefficient matCoef_R(&PeR);
@@ -95,23 +92,32 @@ void Concentrations::TimeStepCnP(std::shared_ptr<ParFiniteElementSpace> fespace)
     // GridFunctionCoefficient cDp = Diffusivity(psi, *CnP, true);
     std::shared_ptr<GridFunctionCoefficient> cDp = Diffusivity(psi, *CnP, true); // true since using first equation
 
-    // std::cout << "fespace address in TimeStepCnP: " << fespace.get() << std::endl;
-    mfem::HypreParMatrix Kmatp;
+    Kmatp = std::make_shared<mfem::HypreParMatrix>();
     K_Matrix(boundary_dofs, *CnP, Fct, Kmatp, X1v, Fcb, cDp.get());
 
-    // std::cout << "Mmatp Rows in Timestep: " << Mmatp->GetGlobalNumRows() << std::endl;
-    // // std::cout << "Kmatp Rows: " << Kmatp.GetGlobalNumRows() << std::endl;
-    // std::cout << "Mmatp Columns in Timestep: " << Mmatp->GetGlobalNumCols() << std::endl;
-    // // std::cout << "Kmatp Columns: " << Kmatp.GetGlobalNumCols() << std::endl;
-    
-    
-    // assert(Mmatp.GetGlobalNumRows() == Kmatp.GetGlobalNumRows());
-    // assert(Mmatp.GetGlobalNumCols() == Kmatp.GetGlobalNumCols());
     // Create T Matrix
-    // Tmatp = 1.0 * Mmatp + dt * Kmatp
-    // Tmatp = Add(1.0, Mmatp, Constants::dt, Kmatp); // should be -dt;
+    // Tmatp = 1.0 * Mmatp + Constants::dt * Kmatp
+    Tmatp = Add(1.0, *Mmatp, Constants::dt, *Kmatp); // should be -dt;
 
-    // Degree of Lithiation
+    HypreParVector CpV0(fespace.get());
+    CnP->GetTrueDofs(CpV0);
+
+    HypreParVector RHCp(fespace.get());
+    Tmatp->Mult(CpV0, RHCp);
+    RHCp += Fcb;
+
+    // // Get the local data of the HypreParVector
+    // double *RHCp_data = RHCp.GetData();
+
+    // // Print each value of the vector
+    // int size = Fcb.Size();
+    // std::cout << "Fcb values in original:" << std::endl;
+    // for (int i = 0; i < size; i++) {
+    //     std::cout << RHCp_data[i] << " ";
+    // }
+    // std::cout << std::endl;	
+
+    // // Degree of Lithiation
     // LithiationCalculation(*CnP, fespace);
 
 }
@@ -130,15 +136,9 @@ void Concentrations::TimeStepCnE(std::shared_ptr<ParFiniteElementSpace> fespace)
     ForceTerm(fespace, cAe, Fet, nbc_w_bdr, nbcCoef, true); // true since applying boundary conditions
 
     std::shared_ptr<GridFunctionCoefficient> cDe = Diffusivity(pse, *CnE, false); // false using other equation
-
-    // std::cout << "fespace address in TimeStepCnE: " << fespace.get() << std::endl;
-
-    HypreParMatrix Kmate;
+    
+    Kmate = std::make_shared<mfem::HypreParMatrix>();
     K_Matrix(boundary_dofs, *CnE, Fet, Kmate, X1v, Feb, cDe.get());
-
-    // std::cout << "Mmate Rows in Timestep: " << Mmate->GetGlobalNumRows() << std::endl;
-    // // std::cout << "Kmatp Rows: " << Kmatp.GetGlobalNumRows() << std::endl;
-    // std::cout << "Mmate Columns in Timestep: " << Mmate->GetGlobalNumCols() << std::endl;
 
 }
 
@@ -186,7 +186,7 @@ void Concentrations::Lithiation(mfem::ParGridFunction &Cn, double initial_value,
 void Concentrations::SBM_Matrix(mfem::ParGridFunction &psx, std::shared_ptr<HypreParMatrix> &Mmat, std::shared_ptr<ParFiniteElementSpace> fespace) {
 
     // SetupBoundaryConditions();
-    std::cout << "fespace address in SBM_Matrix: " << fespace.get() << std::endl;
+    // std::cout << "fespace address in SBM_Matrix: " << fespace.get() << std::endl;
 
 
     std::unique_ptr<ParBilinearForm> M(new ParBilinearForm(fespace.get()));
@@ -207,7 +207,7 @@ void Concentrations::SBM_Matrix(mfem::ParGridFunction &psx, std::shared_ptr<Hypr
 // want to use the Mmatp here as was used in SBM function
 void Concentrations::Solver(std::shared_ptr<HypreParMatrix> &Mmat) {
     
-    std::cout << "fespace address in Solver: " << fespace.get() << std::endl;
+    // std::cout << "fespace address in Solver: " << fespace.get() << std::endl;
 
     HypreSmoother M_prec;
     CGSolver M_solver(MPI_COMM_WORLD);
@@ -332,26 +332,18 @@ std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem:
 
 }
 
-void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, HypreParMatrix &Kmatx, HypreParVector &X1v, HypreParVector &Fxb, GridFunctionCoefficient *cDx) {
-
-
-    // std::cout << "Creating ParBilinearForm for fespace with size: " << fespace->GetTrueVSize() << std::endl;
-    // std::cout << "Boundary DOFs size: " << boundary.Size() << std::endl;
+void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, std::shared_ptr<HypreParMatrix> &Kmatx, HypreParVector &X1v, HypreParVector &Fxb, GridFunctionCoefficient *cDx) {
 
     // SetupBoundaryConditions();
     std::unique_ptr<ParBilinearForm> Kx2(new ParBilinearForm(fespace.get()));
-    // std::cout << "fespace address in K_Matrix: " << fespace.get() << std::endl;
 
-
-    // std::cout << "cDx values in K_Matrix:" << std::endl;
-    // for (int vi = 0; vi < fespace->GetTrueVSize(); ++vi) {
-    //     std::cout << (*cDx->GetGridFunction())(vi) << " ";
-    // }
-    // std::cout << std::endl;
+    HypreParMatrix Khpm;
     
     Kx2->AddDomainIntegrator(new DiffusionIntegrator(*cDx));
     Kx2->Assemble();
-    Kx2->FormLinearSystem(boundary, Cn, Fxx, Kmatx, X1v, Fxb);
+    Kx2->FormLinearSystem(boundary, Cn, Fxx, Khpm, X1v, Fxb);
+
+    Kmatx = std::make_shared<mfem::HypreParMatrix>(Khpm);
 
     Fxb *= Constants::dt;
 

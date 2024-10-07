@@ -55,7 +55,7 @@ private:
     void EnsureValidBoundaryAndFESpace();
     void DebugBoundaryArray(const Array<int> &boundary);
     std::shared_ptr<mfem::GridFunctionCoefficient> Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte );
-    void K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, HypreParMatrix &Kmatx, HypreParVector &X1v, HypreParVector &Fxb, GridFunctionCoefficient *cDx);
+    void K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, std::shared_ptr<HypreParMatrix> &Kmatx, HypreParVector &X1v, HypreParVector &Fxb, GridFunctionCoefficient *cDx);
     
     // Member variables
     // mfem::ParFiniteElementSpace* fespace;           // Finite element space
@@ -94,6 +94,9 @@ private:
 
     // HypreParMatrix Kmatp;
     // HypreParMatrix Kmate;
+
+    std::shared_ptr<mfem::HypreParMatrix> Kmatp;
+    std::shared_ptr<mfem::HypreParMatrix> Kmate;
 
     HypreParVector X1v;
     HypreParVector Fcb;

@@ -318,8 +318,8 @@ int main(int argc, char *argv[])
 	ParLinearForm Fct(&fespace);
 	HypreParVector Fcb(&fespace);	
 
-//  	// create a Vector for CnP
-// 	HypreParVector CpV0(&fespace), CpVn(&fespace), RHCp(&fespace);		
+ 	// create a Vector for CnP
+	HypreParVector CpV0(&fespace), CpVn(&fespace), RHCp(&fespace);		
 	
 // 	int nDof = CpV0.Size();	
 	
@@ -594,11 +594,22 @@ for (int t = 0; t < 10 + 1; t++){
 		// T matrix
 		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);
 		
-// 		// vector of CnP				
-// 		CnP.GetTrueDofs(CpV0);
+		// vector of CnP				
+		CnP.GetTrueDofs(CpV0);
 		
-// 		Tmatp->Mult(CpV0, RHCp);
-// 		RHCp += Fcb;		
+		Tmatp->Mult(CpV0, RHCp);
+		RHCp += Fcb;
+
+		// Get the local data of the HypreParVector
+		double *RHCp_data = RHCp.GetData();
+
+		// Print each value of the vector
+		int size = Fcb.Size();
+		std::cout << "Fcb values in original:" << std::endl;
+		for (int i = 0; i < size; i++) {
+			std::cout << RHCp_data[i] << " ";
+		}
+		std::cout << std::endl;		
 
 // 		// time stepping
 // 		Mp_solver.Mult(RHCp, CpVn) ;		
