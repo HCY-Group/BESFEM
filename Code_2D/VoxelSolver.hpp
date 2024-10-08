@@ -11,6 +11,8 @@ public:
 	void AssignGlobalValues(vector<vector<vector<int>>> data);
 	void ParaviewSave(string FileName, string VariableName, GridFunction* gf);
 	void MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh);
+	void InitStiffMatrix(Array<int> boundary_dofs, ParGridFunction Diff);
+	void InitTimeDepOper(ParGridFunction DomPar);
 	
 	GridFunction* GetGlobalVox() {return gVox;}
 	ParGridFunction* GetParallelVox() {return Vox;}
@@ -18,4 +20,6 @@ public:
 private:
 	GridFunction* gVox;
 	ParGridFunction* Vox;
+	HypreParMatrix Kmat;
+	HypreParVector Fcb;
 };

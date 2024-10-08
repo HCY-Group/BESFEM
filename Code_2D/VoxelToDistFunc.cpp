@@ -167,11 +167,15 @@ int main(int argc, char *argv[])
 	cout << "b max: " << Fct.Max() << endl;
 	cout << "B max: " << Fcb.Max() << endl;
 
+	solver.InitStiffMatrix(boundary_dofs, Mob);
+
 	// TimeDependentOperator and ODESolver
 	ConductionOperator oper(ones, Kmat, Fcb);
-	ODESolver *ode_solver = new ForwardEulerSolver;
-	//ODESolver *ode_solver = new BackwardEulerSolver;
+	//ODESolver *ode_solver = new ForwardEulerSolver;
+	ODESolver *ode_solver = new BackwardEulerSolver;
 	ode_solver->Init(oper);
+
+	solver.InitTimeDepOper(ones);
 	
 	// time step
 	ParGridFunction Pot(&fespace);
