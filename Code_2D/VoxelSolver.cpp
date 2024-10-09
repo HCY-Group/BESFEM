@@ -85,7 +85,7 @@ void VoxelSolver::MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh) {
 	*Vox = tmp_gf_par;
 
 }
-
+/*
 void VoxelSolver::InitStiffMatrix(Array<int> boundary_dofs, ParGridFunction Diff) {
 	
 	ParFiniteElementSpace fespace(*Diff.ParFESpace());
@@ -107,6 +107,36 @@ void VoxelSolver::InitStiffMatrix(Array<int> boundary_dofs, ParGridFunction Diff
 }
 
 void VoxelSolver::InitTimeDepOper(ParGridFunction DomPar) {
+	cout << "HERE A" << endl;
+	// TimeDependentOperator and ODESolver
+	cout << Fcb.Size() << endl;
+	//ConductionOperator oper(DomPar, Kmat, Fcb);
+	oper = new ConductionOperator(DomPar, Kmat, Fcb);
+	//ODESolver *ode_solver = new ForwardEulerSolver;
+	//ODESolver *ode_solver = new BackwardEulerSolver;
+	ode_solver = new BackwardEulerSolver;
+	ode_solver->Init(*oper);
+	cout << "HERE B" << endl;
+}
+*/
+void VoxelSolver::InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridFunction Diff, ParGridFunction DomPar) {
+	
+	ParFiniteElementSpace fespace(*Diff.ParFESpace());
+	
+	ParLinearForm Fct(&fespace);
+	HypreParVector Fcb(&fespace);
+	HypreParVector X1v(&fespace);
+	
+	Fcb = X1v.CreateCompatibleVector(); //needed so that Fcb is defined on a fespace?
+	
+	// stiffness matrix
+	HypreParMatrix Kmat;
+	GridFunctionCoefficient cMob(&Diff);
+	std::unique_ptr<ParBilinearForm> K(new ParBilinearForm(&fespace));
+	K->AddDomainIntegrator(new DiffusionIntegrator(cMob));
+	K->Assemble();
+	K->FormLinearSystem(boundary_dofs, *Vox, Fct, Kmat, X1v, Fcb);
+
 	cout << "HERE A" << endl;
 	// TimeDependentOperator and ODESolver
 	cout << Fcb.Size() << endl;
