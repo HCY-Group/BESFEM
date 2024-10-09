@@ -600,16 +600,16 @@ for (int t = 0; t < 10 + 1; t++){
 		Tmatp->Mult(CpV0, RHCp);
 		RHCp += Fcb;
 
-		// Get the local data of the HypreParVector
-		double *RHCp_data = RHCp.GetData();
+		// // Get the local data of the HypreParVector
+		// double *RHCp_data = RHCp.GetData();
 
-		// Print each value of the vector
-		int size = Fcb.Size();
-		std::cout << "Fcb values in original:" << std::endl;
-		for (int i = 0; i < size; i++) {
-			std::cout << RHCp_data[i] << " ";
-		}
-		std::cout << std::endl;		
+		// // Print each value of the vector
+		// int size = Fcb.Size();
+		// std::cout << "Fcb values in original:" << std::endl;
+		// for (int i = 0; i < size; i++) {
+		// 	std::cout << RHCp_data[i] << " ";
+		// }
+		// std::cout << std::endl;		
 
 // 		// time stepping
 // 		Mp_solver.Mult(RHCp, CpVn) ;		

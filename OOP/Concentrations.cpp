@@ -15,7 +15,7 @@ using namespace std;
 
 Concentrations::Concentrations(MeshHandler &mesh_handler)
     : mesh_handler(mesh_handler), fespace(mesh_handler.GetFESpace()), pmesh(mesh_handler.GetPmesh()), psi(*mesh_handler.GetPsi()), pse(*mesh_handler.GetPse()),
-      EVol(mesh_handler.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), reaction(mesh_handler, *this), PeR(fespace.get()), matCoef_R(&PeR)
+      EVol(mesh_handler.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), reaction(mesh_handler, *this), PeR(fespace.get()), matCoef_R(&PeR), Mp_solver(nullptr)
 
       
 {
@@ -53,7 +53,7 @@ void Concentrations::InitializeCnP(std::shared_ptr<ParFiniteElementSpace> fespac
 
     SBM_Matrix(psi, Mmatp, fespace);
 
-    Solver(Mmatp);
+    Solver(Mmatp, Mp_solver);
 
     // CnP->Print(std::cout);
 
@@ -69,7 +69,7 @@ void Concentrations::InitializeCnE(std::shared_ptr<ParFiniteElementSpace> fespac
 
     SBM_Matrix(pse, Mmate, fespace);
 
-    Solver(Mmate);
+    Solver(Mmate, Me_solver);
     ImposeNeumannBC(PeR, pse);
     // GridFunctionCoefficient matCoef_R(&PeR);
 
@@ -97,7 +97,7 @@ void Concentrations::TimeStepCnP(std::shared_ptr<ParFiniteElementSpace> fespace)
 
     // Create T Matrix
     // Tmatp = 1.0 * Mmatp + Constants::dt * Kmatp
-    Tmatp = Add(1.0, *Mmatp, Constants::dt, *Kmatp); // should be -dt;
+    Tmatp = Add(1.0, *Mmatp, -(Constants::dt), *Kmatp); // should be -dt;
 
     HypreParVector CpV0(fespace.get());
     CnP->GetTrueDofs(CpV0);
@@ -106,16 +106,8 @@ void Concentrations::TimeStepCnP(std::shared_ptr<ParFiniteElementSpace> fespace)
     Tmatp->Mult(CpV0, RHCp);
     RHCp += Fcb;
 
-    // // Get the local data of the HypreParVector
-    // double *RHCp_data = RHCp.GetData();
-
-    // // Print each value of the vector
-    // int size = Fcb.Size();
-    // std::cout << "Fcb values in original:" << std::endl;
-    // for (int i = 0; i < size; i++) {
-    //     std::cout << RHCp_data[i] << " ";
-    // }
-    // std::cout << std::endl;	
+    HypreParVector CpVn(fespace.get());
+    Mp_solver->Mult(RHCp, CpVn);
 
     // // Degree of Lithiation
     // LithiationCalculation(*CnP, fespace);
@@ -205,21 +197,23 @@ void Concentrations::SBM_Matrix(mfem::ParGridFunction &psx, std::shared_ptr<Hypr
 }
 
 // want to use the Mmatp here as was used in SBM function
-void Concentrations::Solver(std::shared_ptr<HypreParMatrix> &Mmat) {
+void Concentrations::Solver(std::shared_ptr<HypreParMatrix> &Mmat, std::shared_ptr<CGSolver> &solver) {
     
     // std::cout << "fespace address in Solver: " << fespace.get() << std::endl;
 
     HypreSmoother M_prec;
-    CGSolver M_solver(MPI_COMM_WORLD);
+    solver = std::make_shared<CGSolver>(MPI_COMM_WORLD);
 
-    M_solver.iterative_mode = false;
-    M_solver.SetRelTol(1e-7);
-    M_solver.SetAbsTol(0);
-    M_solver.SetMaxIter(102);
-    M_solver.SetPrintLevel(0);
+    solver->iterative_mode = false;
+    solver->SetRelTol(1e-7);
+    solver->SetAbsTol(0);
+    solver->SetMaxIter(102);
+    solver->SetPrintLevel(0);
+
     M_prec.SetType(HypreSmoother::Jacobi);
-    M_solver.SetPreconditioner(M_prec);
-    M_solver.SetOperator(*Mmat);
+
+    solver->SetPreconditioner(M_prec);
+    solver->SetOperator(*Mmat);
 
 
 }

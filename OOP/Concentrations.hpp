@@ -47,7 +47,7 @@ private:
     void LithiationCalculation(mfem::ParGridFunction &Cn, std::shared_ptr<ParFiniteElementSpace> fespace);
     void SBM_Matrix(mfem::ParGridFunction &psx, std::shared_ptr<HypreParMatrix> &Mmat, std::shared_ptr<ParFiniteElementSpace> fespace);
     // void Solver(HypreParMatrix &Mmat, CGSolver &M_solver);
-    void Solver(std::shared_ptr<HypreParMatrix> &Mmat);
+    void Solver(std::shared_ptr<HypreParMatrix> &Mmat, std::shared_ptr<CGSolver> &solver);
     void ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx);
     void SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value, GridFunctionCoefficient cAx);
     void ForceTerm(std::shared_ptr<ParFiniteElementSpace> fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m, bool apply_boundary_conditions);
@@ -77,8 +77,8 @@ private:
 
     Array<int> boundary_dofs;
 
-    CGSolver Mp_solver;
-    CGSolver Me_solver;
+    std::shared_ptr<CGSolver> Mp_solver;  // For particle solver
+    std::shared_ptr<CGSolver> Me_solver;
 
     std::unique_ptr<mfem::ParGridFunction> CnP;     // Concentration CnP (ParGridFunction)
     std::unique_ptr<mfem::ParGridFunction> CnE;     // Concentration CnE (ParGridFunction)
