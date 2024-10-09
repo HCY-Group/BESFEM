@@ -94,6 +94,8 @@ void VoxelSolver::InitStiffMatrix(Array<int> boundary_dofs, ParGridFunction Diff
 	//HypreParVector Fcb(&fespace);
 	HypreParVector X1v(&fespace);
 	
+	Fcb = X1v.CreateCompatibleVector(); //needed so that Fcb is defined on a fespace?
+	
 	// stiffness matrix
 	//HypreParMatrix Kmat;
 	GridFunctionCoefficient cMob(&Diff);
@@ -108,12 +110,12 @@ void VoxelSolver::InitTimeDepOper(ParGridFunction DomPar) {
 	cout << "HERE A" << endl;
 	// TimeDependentOperator and ODESolver
 	cout << Fcb.Size() << endl;
-	//Vector z;
-	//z = Fcb.CreateCompatibleVector();
-	ConductionOperator oper(DomPar, Kmat, Fcb);
+	//ConductionOperator oper(DomPar, Kmat, Fcb);
+	oper = new ConductionOperator(DomPar, Kmat, Fcb);
 	//ODESolver *ode_solver = new ForwardEulerSolver;
-	ODESolver *ode_solver = new BackwardEulerSolver;
-	ode_solver->Init(oper);
+	//ODESolver *ode_solver = new BackwardEulerSolver;
+	ode_solver = new BackwardEulerSolver;
+	ode_solver->Init(*oper);
 	cout << "HERE B" << endl;
 }
 

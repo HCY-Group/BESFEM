@@ -1,5 +1,6 @@
 
 #include "mfem.hpp"
+#include "TimeDepOpers.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -22,4 +23,6 @@ private:
 	ParGridFunction* Vox;
 	HypreParMatrix Kmat;
 	HypreParVector Fcb;
+	ConductionOperator* oper;
+	ODESolver* ode_solver;
 };
