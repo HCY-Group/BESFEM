@@ -123,7 +123,8 @@ void VoxelSolver::InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridF
 	
 	ParFiniteElementSpace fespace(*Diff.ParFESpace());
 	
-	ParLinearForm Fct(&fespace);
+	//ParLinearForm Fct(&fespace);
+	Fct = new ParLinearForm(&fespace);
 	HypreParVector Fcb(&fespace);
 	HypreParVector X1v(&fespace);
 	
@@ -132,12 +133,13 @@ void VoxelSolver::InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridF
 	// stiffness matrix
 	HypreParMatrix Kmat;
 	GridFunctionCoefficient cMob(&Diff);
-	std::unique_ptr<ParBilinearForm> K(new ParBilinearForm(&fespace));
+	//std::unique_ptr<ParBilinearForm> K(new ParBilinearForm(&fespace));
+	K = new ParBilinearForm(&fespace);
 	K->AddDomainIntegrator(new DiffusionIntegrator(cMob));
 	K->Assemble();
-	K->FormLinearSystem(boundary_dofs, *Vox, Fct, Kmat, X1v, Fcb);
+	K->FormLinearSystem(boundary_dofs, *Vox, *Fct, Kmat, X1v, Fcb);
 
-	cout << "HERE A" << endl;
+	//cout << "HERE A" << endl;
 	// TimeDependentOperator and ODESolver
 	cout << Fcb.Size() << endl;
 	//ConductionOperator oper(DomPar, Kmat, Fcb);
@@ -146,7 +148,65 @@ void VoxelSolver::InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridF
 	//ODESolver *ode_solver = new BackwardEulerSolver;
 	ode_solver = new BackwardEulerSolver;
 	ode_solver->Init(*oper);
+	//cout << "HERE B" << endl;
+}
+
+void VoxelSolver::UpdateLinearForm(ParGridFunction gf) {
+	
+	GridFunctionCoefficient coef(&gf);
+	//ParFiniteElementSpace fespace(*gf.ParFESpace());
+	/*
+	std::unique_ptr<ParLinearForm> Bc(new ParLinearForm(&fespace));
+	Bc->AddDomainIntegrator(new DomainLFIntegrator(coef));
+	Bc->Assemble();
+	*/
+	//ParLinearForm Bc(&fespace);
+	ParLinearForm Bc(gf.ParFESpace());
+	Bc.AddDomainIntegrator(new DomainLFIntegrator(coef));
+	Bc.Assemble();
+	//Fct = std::move(*Bc);
+	Fct = std::move(&Bc);
+}
+
+void VoxelSolver::UpdateLinearForm_DoubleWellPotential() {
+	/*
+	cout << "HERE A" << endl;
+	ParFiniteElementSpace *fes_p = Vox->ParFESpace();
+	cout << "fespace: " << fes_p << endl;
+	//ParFiniteElementSpace fespace(*Vox->ParFESpace());
+	ParFiniteElementSpace fespace(*fes_p);
 	cout << "HERE B" << endl;
+	ParMesh *pmesh = fespace.GetParMesh();
+	int nV = pmesh->GetNV();
+	*/
+
+	//ParGridFunction Pot(&fespace);
+	ParGridFunction Pot(Vox->ParFESpace());
+	ParGridFunction Vox2(*Vox);
+	int nV = Pot.Size();
+	
+	for (int vi = 0; vi < nV; vi++){
+		Pot(vi) = 2.0*Vox2(vi)*(1.0-Vox2(vi))*(1.0-2.0*Vox2(vi));
+	}
+	
+	UpdateLinearForm(Pot);
+	
+}
+
+void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, double dt) {
+	
+	ParFiniteElementSpace fespace(*Vox->ParFESpace());
+
+	HypreParVector Fcb(&fespace);
+	HypreParVector X1v(&fespace);
+	HypreParVector Vox0(&fespace);
+	HypreParMatrix Kmat;
+	
+	Vox->GetTrueDofs(Vox0);
+	K->FormLinearSystem(boundary_dofs, *Vox, *Fct, Kmat, X1v, Fcb);
+	oper->UpdateParams(Kmat, Fcb);
+	ode_solver->Step(Vox0, t_ode, dt);
+	Vox->Distribute(Vox0);
 }
 
 void VoxelSolver::ParaviewSave(string FileName, string VariableName, GridFunction* gf) {

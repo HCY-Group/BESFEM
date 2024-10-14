@@ -147,10 +147,12 @@ int main(int argc, char *argv[])
 	// Natural (Neumann) boundary conditions
 	Array<int> boundary_dofs;
 	
+	
 	ParLinearForm Fct(&fespace);
 	HypreParVector Fcb(&fespace);
 	HypreParVector X1v(&fespace);
 	
+
 	// mass matrix
 	ParGridFunction ones(&fespace);	
 	ones = 1.0;
@@ -194,6 +196,8 @@ int main(int argc, char *argv[])
 		Bc->AddDomainIntegrator(new DomainLFIntegrator(cPot));
 		Bc->Assemble();
 		Fct = std::move(*Bc);
+	
+		solver.UpdateLinearForm_DoubleWellPotential();
 
 		//Update Parameters and Solve
 		Vox.GetTrueDofs(Vox0);
@@ -202,6 +206,7 @@ int main(int argc, char *argv[])
 		ode_solver->Step(Vox0, t_ode, dt);
 		Vox.Distribute(Vox0);
 		
+		solver.UpdateSystemAndSolve(boundary_dofs, t_ode, dt);
 	}
 	//oper.~ConductionOperator();
 	
