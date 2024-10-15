@@ -17,7 +17,6 @@ MeshHandler::MeshHandler()
 void MeshHandler::LoadMesh() {
 
     InitializeMesh();
-
     PrintMeshInfo();
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -48,11 +47,11 @@ void MeshHandler::InitializeMesh() {
     L_w = Rmax(1) - Rmin(1);
 
     // local (parallel) mesh
-    pmesh = make_unique<ParMesh>(MPI_COMM_WORLD, gmesh);
+    pmesh0 = make_unique<ParMesh>(MPI_COMM_WORLD, gmesh);
 
-    nV = pmesh->GetNV();					// number of vertices
-	nE = pmesh->GetNE();					// number of elements
-	nC = pow(2, pmesh->Dimension());		// number of corner vertices
+    nV = pmesh0->GetNV();					// number of vertices
+	nE = pmesh0->GetNE();					// number of elements
+	nC = pow(2, pmesh0->Dimension());		// number of corner vertices
 
     Array<double> VtxVal(nC);
     Array<int> gVTX(nC);                    // global indices of corner vertices
@@ -63,11 +62,11 @@ void MeshHandler::InitializeMesh() {
     // // cout << "Size of EVol: " << EVol.Size() << endl; // Debug print to check size
 
     Vector EVolTemp;
-    CalculateElementVolume(nE, pmesh, EVolTemp);
+    CalculateElementVolume(nE, pmesh0, EVolTemp);
     EVol = EVolTemp;
 
     // Create Local FE Space
-    fespace = make_shared<ParFiniteElementSpace>(pmesh.get(), new H1_FECollection(order, pmesh->Dimension()));
+    fespace = make_shared<ParFiniteElementSpace>(pmesh0.get(), new H1_FECollection(order, pmesh0->Dimension()));
     // H1_FECollection fec(order, pmesh->Dimension());	
     // fespace = std::make_shared<mfem::ParFiniteElementSpace>(pmesh, fec);
 
@@ -78,21 +77,29 @@ void MeshHandler::InitializeMesh() {
 
     // Map local to global element indices
     Array<HYPRE_BigInt> E_L2G;
-    pmesh->GetGlobalElementIndices(E_L2G);
+    pmesh0->GetGlobalElementIndices(E_L2G);
 
     // Map local distance function from global one
     for (int ei = 0; ei < nE; ei++) {
         int gei = E_L2G[ei];
         gmesh.GetElementVertices(gei, gVTX);
-        pmesh->GetElementVertices(ei, VTX);
+        pmesh0->GetElementVertices(ei, VTX);
         for (int vi = 0; vi < nC; vi++) {
             (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]);
         }
     }
 
+    pmesh = std::move(pmesh0);
+
     InterpolateDomainParameters(nV, fespace);
     CalculateTotalPsi(nV, nE, nC, EVol);
     CalculateTotalPse(nV, nE, nC, EVol);
+    // SetupBoundaryConditions(pmesh.get(), fespace.get());
+}
+
+mfem::ParMesh MeshHandler::GetMesh() {
+    mfem::ParMesh tmpmesh(*pmesh);
+    return std::move(tmpmesh);
 }
 
 // Calculate Element Volume Function
@@ -186,6 +193,42 @@ void MeshHandler::PrintMeshInfo() {
     cout << "Total Pse: " << gtPse << endl;
     cout << "Target Current: " << gTrgI << endl;
 
+}
+
+void MeshHandler::SetupBoundaryConditions(mfem::ParMesh *pmesh, mfem::ParFiniteElementSpace *fespace) {
+    
+    Array<int> boundary_dofs;
+    
+    // Boundary attributes for Neumann BC on the west boundary
+    Array<int> nbc_w_bdr(pmesh->bdr_attributes.Max());
+    nbc_w_bdr = 0; 
+    nbc_w_bdr[0] = 1;  // Applying Neumann BC to the west boundary
+
+    // // Printing the values
+    // std::cout << "nbc_w_bdr values: ";
+    // for (int i = 0; i < nbc_w_bdr.Size(); i++) {
+    //     std::cout << nbc_w_bdr[i] << " ";
+    // }
+    // std::cout << std::endl;
+
+    // Dirichlet BC on the east boundary for CnP
+    Array<int> dbc_e_bdr(pmesh->bdr_attributes.Max());
+    dbc_e_bdr = 0; 
+    dbc_e_bdr[2] = 1;  // Applying Dirichlet BC to the east boundary
+
+    // Extract essential true DOFs (Dirichlet BCs) on the east boundary
+    Array<int> ess_tdof_list_e(0);
+    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+
+    // Dirichlet BC on the west boundary for CnE
+    Array<int> dbc_w_bdr(pmesh->bdr_attributes.Max());
+    dbc_w_bdr = 0; 
+    dbc_w_bdr[0] = 1;  // Applying Dirichlet BC to the west boundary
+
+    // Extract essential true DOFs (Dirichlet BCs) on the west boundary
+    Array<int> ess_tdof_list_w(0);
+    fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
+    
 }
 
 void MeshHandler::Save() {

@@ -31,32 +31,28 @@ int main(int argc, char *argv[]) {
     mesh_handler.LoadMesh();
     //mesh_handler.Save();
 
-    // mesh_handler.TestFESpace();
+    // Create pmesh & fespace to use for all 
+    ParMesh pmesh = mesh_handler.GetMesh();
+    H1_FECollection fec(Constants::order, pmesh.Dimension());	
+	ParFiniteElementSpace fespace(&pmesh, &fec);
+    mesh_handler.SetupBoundaryConditions(&pmesh, &fespace); 
 
     // Initialize CnP & CnE
-    Concentrations concentrations(mesh_handler);
-    // concentrations.TestFESpace(mesh_handler.GetFESpace());
+    Concentrations concentrations(&pmesh, &fespace, mesh_handler);
 
-    // MFEM_VERIFY(MeshHandler.GetFESpace()->GetMesh() == Concentrations.GetFESpace()->GetMesh(), "Mesh mismatch between modules!");
-
-
-    
-    concentrations.SetupBoundaryConditions(mesh_handler.GetFESpace());
-
-    concentrations.InitializeCnP(mesh_handler.GetFESpace());
-    concentrations.InitializeCnE(mesh_handler.GetFESpace());  
+    concentrations.InitializeCnP();
+    // concentrations.InitializeCnE(mesh_handler.GetFESpace());  
 
     // Initialize Reaction
-    Reaction reaction(mesh_handler, concentrations);
+    Reaction reaction(&fespace, mesh_handler, concentrations);
     reaction.Initialize(); 
 
     //Time-stepping loop
-    for (int t = 0; t < 10 + 1; ++t) {
-        concentrations.TimeStepCnP(mesh_handler.GetFESpace());
-        concentrations.TimeStepCnE(mesh_handler.GetFESpace());
+    // for (int t = 0; t < 10 + 1; ++t) {
+    //     concentrations.TimeStepCnP();
+    // //     concentrations.TimeStepCnE(mesh_handler.GetFESpace());
 
-
-    }
+    // }
 
     }
 

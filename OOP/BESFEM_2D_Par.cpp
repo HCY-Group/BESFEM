@@ -155,7 +155,11 @@ int main(int argc, char *argv[])
         
         if (psi(vi) < eps){psi(vi) = eps;}   
         if (pse(vi) < eps){pse(vi) = eps;}         
-    } 	
+    } 
+	
+	for (int i = 0; i < psi.Size(); ++i) {
+    cout << "psi[" << i << "] = " << psi(i) << std::endl;
+    }	
 	
 	ParGridFunction AvB(&fespace);
 	AvB = AvP;
@@ -208,17 +212,17 @@ int main(int argc, char *argv[])
 	// Some containers that will be used later.
 	Array<int> boundary_dofs;					// nature boundary
 	
-	// Neumann BC on the west boundary. CnE
+	// // Neumann BC on the west boundary. CnE
 	Array<int> nbc_w_bdr(pmesh.bdr_attributes.Max());
 	nbc_w_bdr = 0; 
 	nbc_w_bdr[0] = 1;
 
-    // Printing the values
-    std::cout << "nbc_w_bdr values: ";
-    for (int i = 0; i < nbc_w_bdr.Size(); i++) {
-        std::cout << nbc_w_bdr[i] << " ";
-    }
-    std::cout << std::endl;
+    // // Printing the values
+    // std::cout << "nbc_w_bdr values: ";
+    // for (int i = 0; i < nbc_w_bdr.Size(); i++) {
+    //     std::cout << nbc_w_bdr[i] << " ";
+    // }
+    // std::cout << std::endl;
 
 	// Dirichlet BC on the east boundary. phP
 	Array<int> dbc_e_bdr(pmesh.bdr_attributes.Max());
@@ -485,7 +489,7 @@ int main(int argc, char *argv[])
 	Rxn = 0.0;
 	Rxn = AvP; Rxn *= 1.0e-8;
 
-	// Rxn.Print(std::cout);	
+	Rxn.Print(std::cout);	
 	 
 // 	// rate constants
 // 	ParGridFunction dPHE(&fespace);		// voltage drop

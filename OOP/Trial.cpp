@@ -157,8 +157,12 @@ int main(int argc, char *argv[])
     } 
 
 	// Debugging: Print some psi values
-    for (int vi = 0; vi < nV; vi++) {
-        std::cout << "Vertex " << vi << " Psi: " << (psi)(vi) << std::endl;
+    // for (int vi = 0; vi < nV; vi++) {
+    //     std::cout << "Vertex " << vi << " Psi: " << (psi)(vi) << std::endl;
+    // }
+
+	for (int i = 0; i < psi.Size(); ++i) {
+    cout << "psi[" << i << "] = " << psi(i) << std::endl;
     }
 
 	// psi.Print(std::cout);	

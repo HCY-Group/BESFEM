@@ -15,11 +15,13 @@ class Concentrations; // Forward declaration
 
 class Reaction {
 public:
-    Reaction(MeshHandler &mesh_handler, Concentrations &concentrations); // Constructor
+    Reaction(mfem::ParFiniteElementSpace *fe, MeshHandler &mesh_handler, Concentrations &concentrations); // Constructor
 
     void Initialize(); // Method to initialize Rxn
 
-    std::unique_ptr<mfem::ParGridFunction> Rxn;     // Rxn (ParGridFunction)
+    // std::unique_ptr<mfem::ParGridFunction> Rxn;     // Rxn (ParGridFunction)
+
+    mfem::ParGridFunction *Rxn;
 
 private:
     
@@ -31,7 +33,16 @@ private:
     void SetAvP(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Av, double value);
 
     // mfem::ParFiniteElementSpace* fespace;           // Finite element space
-    std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
+    // std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
+
+    mfem::ParGridFunction *CnP;
+    mfem::ParFiniteElementSpace *fespace;
+
+    mfem::ParGridFunction AvP;
+    mfem::ParGridFunction *AvP_PGF;
+
+
+
 
 
     // std::unique_ptr<mfem::ParGridFunction> Rxn;     // Rxn (ParGridFunction)

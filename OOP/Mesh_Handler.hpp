@@ -15,6 +15,7 @@ public:
     // Public member functions
     void LoadMesh();
     void Save();
+    void SetupBoundaryConditions(mfem::ParMesh *pmesh, mfem::ParFiniteElementSpace *fespace);
     // void TestFESpace();
 
     // Functions to Get Values to Use Elsewhere
@@ -26,6 +27,9 @@ public:
     mfem::ParMesh* GetPmesh() const { return pmesh.get(); }
     mfem::ParGridFunction* GetPsi() const { return psi.get(); }
     mfem::ParGridFunction* GetPse() const { return pse.get(); }
+    mfem::ParGridFunction* GetAvP() const { return AvP.get(); }
+
+    mfem::ParMesh GetMesh();
     
 
     // const mfem::Vector& GetElementVolume() const {return EVol; }
@@ -44,6 +48,9 @@ public:
 
     Array<int> nbc_w_bdr;
     std::unique_ptr<ParMesh> pmesh;
+    std::unique_ptr<ParMesh> pmesh0;
+
+
 
 
 

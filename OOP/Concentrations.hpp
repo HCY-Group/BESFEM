@@ -10,13 +10,13 @@
 class Concentrations {
 public:
     // Constructor that takes a MeshHandler reference
-    Concentrations(MeshHandler &mesh_handler);
+    Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mesh_handler);
 
     // Initialization method
-    void InitializeCnP(std::shared_ptr<ParFiniteElementSpace> fespace);
+    void InitializeCnP();
     void InitializeCnE(std::shared_ptr<ParFiniteElementSpace> fespace);
 
-    void TimeStepCnP(std::shared_ptr<ParFiniteElementSpace> fespace);
+    void TimeStepCnP();
     void TimeStepCnE(std::shared_ptr<ParFiniteElementSpace> fespace);
 
     void SetupBoundaryConditions(std::shared_ptr<ParFiniteElementSpace> fespace);
@@ -30,7 +30,7 @@ public:
 
     
 
-    mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
+    // mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
 
     // std::shared_ptr<ParFiniteElementSpace> fespace;
     // void TestFESpace(std::shared_ptr<ParFiniteElementSpace> fespace);
@@ -41,11 +41,19 @@ private:
     MeshHandler &mesh_handler;
     Reaction reaction;
 
+    // std::shared_ptr<mfem::ParMesh> pmesh;
+    // std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
+
+    mfem::ParFiniteElementSpace *fespace;
+    mfem::ParMesh *pmesh;
+
+    // Reaction reaction;
+
     // Internal methods for different operations
     void CreateCnE(mfem::ParGridFunction &Cn, double initial_value);
-    void Lithiation(mfem::ParGridFunction &Cn, double initial_value, std::shared_ptr<ParFiniteElementSpace> fespace);
-    void LithiationCalculation(mfem::ParGridFunction &Cn, std::shared_ptr<ParFiniteElementSpace> fespace);
-    void SBM_Matrix(mfem::ParGridFunction &psx, std::shared_ptr<HypreParMatrix> &Mmat, std::shared_ptr<ParFiniteElementSpace> fespace);
+    void Lithiation(mfem::ParGridFunction &Cn, double initial_value);
+    void LithiationCalculation(mfem::ParGridFunction &Cn);
+    void SBM_Matrix(mfem::ParGridFunction &psx, std::shared_ptr<HypreParMatrix> &Mmat);
     // void Solver(HypreParMatrix &Mmat, CGSolver &M_solver);
     void Solver(std::shared_ptr<HypreParMatrix> &Mmat, std::shared_ptr<CGSolver> &solver);
     void ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx);
@@ -60,12 +68,12 @@ private:
     // Member variables
     // mfem::ParFiniteElementSpace* fespace;           // Finite element space
 
-    std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
+    // std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
 
     mfem::ParGridFunction psi;                     // Psi grid function from MeshHandler
     mfem::ParGridFunction pse;                     // Pse grid function from MeshHandler
     mfem::ParGridFunction TmpF;
-    mfem::ParMesh* pmesh;
+    // mfem::ParMesh* pmesh;
 
     const mfem::Vector& EVol;                       // Element volumes from MeshHandler
     double gtPsi;                                   // Total Psi from MeshHandler
@@ -79,9 +87,13 @@ private:
 
     std::shared_ptr<CGSolver> Mp_solver;  // For particle solver
     std::shared_ptr<CGSolver> Me_solver;
+    std::shared_ptr<CGSolver> solver;
 
-    std::unique_ptr<mfem::ParGridFunction> CnP;     // Concentration CnP (ParGridFunction)
+
+    // std::unique_ptr<mfem::ParGridFunction> CnP;     // Concentration CnP (ParGridFunction)
     std::unique_ptr<mfem::ParGridFunction> CnE;     // Concentration CnE (ParGridFunction)
+
+    mfem::ParGridFunction *CnP;
 
     // mfem::HypreParMatrix *Mmatp;
     // mfem::HypreParMatrix *Mmate;
@@ -122,6 +134,10 @@ private:
     // mfem::Array<int> nbc_w_bdr;       
 
     double eCrnt;
+
+    mfem::ParBilinearForm *M;
+    mfem::GridFunctionCoefficient *cP;
+    mfem::ParGridFunction *Ps_gf;
 
 };
 
