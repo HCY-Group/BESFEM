@@ -13,6 +13,11 @@ VoxelSolver::VoxelSolver(FiniteElementSpace *fes){
 VoxelSolver::VoxelSolver(FiniteElementSpace *gfes, ParFiniteElementSpace *fes){
 	gVox = new GridFunction(gfes);
 	Vox = new ParGridFunction(fes);
+	/*
+	cout << "fespace: " << Vox->ParFESpace() << endl;
+	cout << "fec:" << Vox->ParFESpace()->FEColl() << endl;
+	cout << "finiteelement: " << Vox->ParFESpace()->GetFE(0) << endl;
+	*/
 }
 	
 void VoxelSolver::AssignGlobalValues(vector<vector<vector<int>>> data) {
@@ -122,6 +127,9 @@ void VoxelSolver::InitTimeDepOper(ParGridFunction DomPar) {
 void VoxelSolver::InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridFunction Diff, ParGridFunction DomPar) {
 	
 	ParFiniteElementSpace fespace(*Diff.ParFESpace());
+	cout << "fespace: " << Diff.ParFESpace() << endl;
+	cout << "fec:" << Diff.ParFESpace()->FEColl() << endl;
+	cout << "finiteelement: " << Diff.ParFESpace()->GetFE(0) << endl;
 	
 	//ParLinearForm Fct(&fespace);
 	Fct = new ParLinearForm(&fespace);
@@ -169,16 +177,18 @@ void VoxelSolver::UpdateLinearForm(ParGridFunction gf) {
 }
 
 void VoxelSolver::UpdateLinearForm_DoubleWellPotential() {
-	/*
+	///*
 	cout << "HERE A" << endl;
-	ParFiniteElementSpace *fes_p = Vox->ParFESpace();
-	cout << "fespace: " << fes_p << endl;
+	cout << "fespace: " << Vox->ParFESpace() << endl;
+	cout << "fec:" << Vox->ParFESpace()->FEColl() << endl;
+	cout << "finiteelement: " << Vox->ParFESpace()->GetFE(0) << endl;
+	//cout << "finiteelement:" << Vox->ParFESpace()->FEColl()->GetFE() << endl;
 	//ParFiniteElementSpace fespace(*Vox->ParFESpace());
-	ParFiniteElementSpace fespace(*fes_p);
+	//ParFiniteElementSpace fespace(*fes_p);
 	cout << "HERE B" << endl;
-	ParMesh *pmesh = fespace.GetParMesh();
-	int nV = pmesh->GetNV();
-	*/
+	//ParMesh *pmesh = fespace.GetParMesh();
+	//int nV = pmesh->GetNV();
+	//*/
 
 	//ParGridFunction Pot(&fespace);
 	ParGridFunction Pot(Vox->ParFESpace());
