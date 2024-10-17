@@ -41,21 +41,20 @@ int main(int argc, char *argv[]) {
     Concentrations concentrations(&pmesh, &fespace, mesh_handler);
 
     concentrations.InitializeCnP();
-    // concentrations.InitializeCnE(mesh_handler.GetFESpace());  
+    concentrations.InitializeCnE();  
 
     // Initialize Reaction
-    Reaction reaction(&fespace, mesh_handler, concentrations);
-    reaction.Initialize(); 
+    // Reaction reaction(&fespace, mesh_handler, concentrations);
+    concentrations.reaction.Initialize(); 
 
-    //Time-stepping loop
-    // for (int t = 0; t < 10 + 1; ++t) {
-    //     concentrations.TimeStepCnP();
-    // //     concentrations.TimeStepCnE(mesh_handler.GetFESpace());
-
-    // }
+    // Time-stepping loop
+    for (int t = 0; t < 10 + 1; ++t) {
+        concentrations.TimeStepCnP();
+    //     concentrations.TimeStepCnE(mesh_handler.GetFESpace());
 
     }
 
+    }
 
 
 

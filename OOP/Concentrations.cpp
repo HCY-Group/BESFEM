@@ -13,12 +13,14 @@
 using namespace mfem;
 using namespace std;
 
-Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mesh_handler)
-    : mesh_handler(mesh_handler), fespace(fe), pmesh(pm), psi(*mesh_handler.GetPsi()), EVol(mesh_handler.GetElementVolume()), M(nullptr),
-    reaction(fe, mesh_handler, *this)
+Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
+    : mesh_handler(mh), fespace(fe), pmesh(pm), psi(*mh.GetPsi()), pse(*mh.GetPse()), EVol(mh.GetElementVolume()),
+    reaction(fe, mh, *this), Mmat(nullptr), Mmatp(nullptr), PeR(fe), matCoef_R(&PeR),
+    Mp_solver(std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD))
 
 
-    // , psi(*mesh_handler.GetPsi()), pse(*mesh_handler.GetPse()), , EVol(mesh_handler.GetElementVolume())
+
+    // , psi(*mesh_handler.GetPsi()), pse(*mesh_handler.GetPse()), , EVol(mesh_handler.GetElementVolume()),  M(nullptr), , solver(nullptr)
     //   EVol(mesh_handler.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), reaction(mesh_handler, *this), PeR(fe), matCoef_R(&PeR), Mp_solver(nullptr)
 
       
@@ -29,23 +31,24 @@ Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *f
 
     nE = mesh_handler.GetNE();
     nC = mesh_handler.GetNC();
-    // nV = mesh_handler.GetNV();
+    nV = mesh_handler.GetNV();
     
     // Initialize ParGridFunction for CnP and CnE
     CnP = new ParGridFunction(fespace);
-    // CnE = make_unique<ParGridFunction>(fespace.get());
+    CnE = new ParGridFunction(fespace);
 
-    // Rxc = make_unique<ParGridFunction>(fespace.get());
+    Rxc = new ParGridFunction(fespace);
     // Rxe = make_unique<ParGridFunction>(fespace.get());
 
     // X1v = HypreParVector(fespace.get());
-    // Fcb = HypreParVector(fespace.get());
+    Fcb = HypreParVector(fespace);
     // Feb = HypreParVector(fespace.get());
 
-    // // Mmatp = std::make_shared<mfem::HypreParMatrix>();
-    // // Mmate = std::make_shared<mfem::HypreParMatrix>();
-
     // reaction.Initialize(); 
+
+    // Mp_solver = new mfem::CGSolver(MPI_COMM_WORLD);
+    // Me_solver = mfem::CGSolver(MPI_COMM_WORLD);
+
 }
 
 
@@ -53,87 +56,71 @@ void Concentrations::InitializeCnP() {
 
     Lithiation(*CnP, 0.3);
 
-    Ps_gf = new ParGridFunction(fespace);	// fix this
-	*Ps_gf = psi; // fix this 
-
     Mmatp = std::make_shared<mfem::HypreParMatrix>();
-    SBM_Matrix(psi, Mmatp);
-    Solver(Mmatp, Mp_solver);
+    Mp_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
 
-    // CnP->Print(std::cout);
+    Solver(psi, Mmatp, *Mp_solver, Mp_prec);
+    
+    cout << "CnP in Initialize Step:" << endl;
+    CnP->Print(std::cout);
 
 }
 
-// void Concentrations::InitializeCnE(std::shared_ptr<ParFiniteElementSpace> fespace) {
 
-//     CreateCnE(*CnE, 0.001);
+void Concentrations::InitializeCnE() {
 
-//     // Mmate = new HypreParMatrix();
-//     // SetupBoundaryConditions();
-//     Mmate = std::make_shared<HypreParMatrix>();
+    CreateCnE(*CnE, 0.001);
 
-//     SBM_Matrix(pse, Mmate, fespace);
+    Mmate = std::make_shared<mfem::HypreParMatrix>();
+    Solver(pse, Mmate, Me_solver, Me_prec);
+    ImposeNeumannBC(PeR, pse);
 
-//     Solver(Mmate, Me_solver);
-//     ImposeNeumannBC(PeR, pse);
-//     // GridFunctionCoefficient matCoef_R(&PeR);
+    cout << "CnE in Initialize Step:" << endl;
+    CnE ->Print(std::cout);
 
-//     // PeR.Print(std::cout);
-
-// }
+}
 
 void Concentrations::TimeStepCnP() {
-
-//     // // this chunk is defined in solver
-//     // HypreSmoother M_prec;
-//     // Mp_solver = std::make_shared<CGSolver>(MPI_COMM_WORLD);
-
-//     // Mp_solver->iterative_mode = false;
-//     // Mp_solver->SetRelTol(1e-7);
-//     // Mp_solver->SetAbsTol(0);
-//     // Mp_solver->SetMaxIter(102);
-//     // Mp_solver->SetPrintLevel(0);
-
-//     // M_prec.SetType(HypreSmoother::Jacobi);
-
-//     // Mp_solver->SetPreconditioner(M_prec);
-//     // Mp_solver->SetOperator(*Mmatp);
-//     // // end of chunk defined in solver
-
-    // mfem::ParGridFunction &Rxn = *reaction.Rxn;
-    // GridFunctionCoefficient cAp(Rxc.get());
-//     SetupRx(Rxn, *Rxc, Constants::rho, cAp); // Rxn needs to come from Reacions.cpp
-
-//     Array<int> dummy_boundary;
     
-//     ConstantCoefficient dummy_coef(0.0);
+    mfem::ParGridFunction &Rxn = *reaction.Rxn;
+    // cout << "Rxn in Concentrations" << endl;
+    // Rxn.Print(std::cout);
+    mfem::GridFunctionCoefficient cAp(Rxc);
+    SetupRx(Rxn, *Rxc, Constants::rho, cAp); // Rxn needs to come from Reacions.cpp
 
-//     ForceTerm(fespace, cAp, Fct, dummy_boundary, dummy_coef, false); // false since not applying BCs
+    Array<int> dummy_boundary;
+    ConstantCoefficient dummy_coef(0.0);
 
-//     // GridFunctionCoefficient cDp = Diffusivity(psi, *CnP, true);
-//     std::shared_ptr<GridFunctionCoefficient> cDp = Diffusivity(psi, *CnP, true); // true since using first equation
+    ForceTerm(Fct, dummy_boundary, dummy_coef, false); // false since not applying BCs FIX THIS
 
-//     // Kmatp = std::make_shared<mfem::HypreParMatrix>();
-//     // K_Matrix(boundary_dofs, *CnP, Fct, Kmatp, X1v, Fcb, cDp.get());
+    // GridFunctionCoefficient cDp = Diffusivity(psi, *CnP, true);
+    std::shared_ptr<GridFunctionCoefficient> cDp = Diffusivity(psi, *CnP, true); // true since using first equation
 
-//     // Create T Matrix
-//     // Tmatp = 1.0 * Mmatp + Constants::dt * Kmatp
-//     // Tmatp = Add(1.0, *Mmatp, -(Constants::dt), *Kmatp); // should be -dt;
+    Kmatp = std::make_shared<mfem::HypreParMatrix>();
+    K_Matrix(boundary_dofs, *CnP, Fct, Kmatp, X1v, Fcb, cDp.get());
 
-//     // HypreParVector CpV0(fespace.get());
-//     // CnP->GetTrueDofs(CpV0);
+    // Create T Matrix
+    Tmatp = Add(1.0, *Mmatp, -(Constants::dt), *Kmatp);
 
-//     // HypreParVector RHCp(fespace.get());
-//     // Tmatp->Mult(CpV0, RHCp);
-//     // RHCp += Fcb;
+    HypreParVector CpV0(fespace);
+    // int nDof = CpVO.Size();
+    CnP->GetTrueDofs(CpV0);
 
-//     // HypreParVector CpVn(fespace.get());
-//     // Mp_solver->Mult(RHCp, CpVn);
+    HypreParVector RHCp(fespace);
+    Tmatp->Mult(CpV0, RHCp);
+    RHCp += Fcb;
 
-//     // CnP->Distribute(CpVn);
+    HypreParVector CpVn(fespace);
 
-//     // // Degree of Lithiation
-//     // LithiationCalculation(*CnP, fespace);
+    Mp_solver->Mult(RHCp, CpVn);
+
+    CnP->Distribute(CpVn);
+
+    // Degree of Lithiation
+    LithiationCalculation(*CnP);
+
+    std::cout << "Updated CnP values:" << std::endl;
+    CnP->Print(std::cout);
 
 }
 
@@ -157,11 +144,13 @@ void Concentrations::TimeStepCnP() {
 
 // }
 
-// void Concentrations::CreateCnE(mfem::ParGridFunction &Cn, double initial_value) {
+void Concentrations::CreateCnE(mfem::ParGridFunction &Cn, double initial_value) {
 
-//     Cn = initial_value;
+    for (int i = 0; i < Cn.Size(); ++i) {
+        Cn(i) = initial_value;  // Set all values of Cn to initial_value
+    }    
 
-// }
+}
 
 void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn) {
 
@@ -201,50 +190,74 @@ void Concentrations::Lithiation(mfem::ParGridFunction &Cn, double initial_value)
     LithiationCalculation(Cn);
 }
 
-void Concentrations::SBM_Matrix(mfem::ParGridFunction &psx, std::shared_ptr<HypreParMatrix> &Mmat) {
+// void Concentrations::SBM_Matrix(mfem::ParGridFunction &psx, std::shared_ptr<HypreParMatrix> &Mmat) {
 
-    // SetupBoundaryConditions();
-    // std::cout << "fespace address in SBM_Matrix: " << fespace.get() << std::endl;
+//     M = new ParBilinearForm(fespace);
+//     cP = new GridFunctionCoefficient(Ps_gf);
 
+//     M->AddDomainIntegrator(new MassIntegrator(*cP));
+//     M->Assemble();
+//     M->Finalize();
 
-    // std::unique_ptr<ParBilinearForm> M(new ParBilinearForm(fespace));
+//     HypreParMatrix HPM;
+//     M->FormSystemMatrix(boundary_dofs, HPM);
+//     Mmat = std::make_shared<mfem::HypreParMatrix>(HPM);
+
+// }
+
+// want to use the Mmatp here as was used in SBM function
+void Concentrations::Solver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother) {
+    
+    std::cout << "Entering Solver Function" << std::endl;
+
     M = new ParBilinearForm(fespace);
+    std::cout << "Created ParBilinearForm" << std::endl;
+
+
+    Ps_gf = new ParGridFunction(fespace);
+    std::cout << "Created ParGridFunction" << std::endl;
+
+    *Ps_gf = psx;
+    std::cout << "Assigned psx to Ps_gf" << std::endl;
+
+
     cP = new GridFunctionCoefficient(Ps_gf);
+    std::cout << "Created GridFunctionCoefficient" << std::endl;
+
 
     M->AddDomainIntegrator(new MassIntegrator(*cP));
+    std::cout << "Added MassIntegrator" << std::endl;
+
     M->Assemble();
+    std::cout << "Assembled M" << std::endl;
+
     M->Finalize();
+    std::cout << "Finalized M" << std::endl;
+
 
     HypreParMatrix HPM;
     M->FormSystemMatrix(boundary_dofs, HPM);
     Mmat = std::make_shared<mfem::HypreParMatrix>(HPM);
+    std::cout << "Formed System Matrix" << std::endl;
 
-    // std::cout << "Mmat Rows after assembly: " << Mmat->GetGlobalNumRows() << std::endl;
-    // std::cout << "Mmat Columns after assembly: " << Mmat->GetGlobalNumCols() << std::endl;
 
-}
+    // mfem::HypreSmoother M_prec;
+    smoother.SetType(mfem::HypreSmoother::Jacobi);
+    std::cout << "Set up Preconditioner" << std::endl;
 
-// want to use the Mmatp here as was used in SBM function
-void Concentrations::Solver(std::shared_ptr<HypreParMatrix> &Mmat, std::shared_ptr<CGSolver> &solver) {
-    
-    // std::cout << "fespace address in Solver: " << fespace.get() << std::endl;
 
-    HypreSmoother M_prec;
-    solver = std::make_shared<CGSolver>(MPI_COMM_WORLD);
-
-    solver->iterative_mode = false;
-    solver->SetRelTol(1e-7);
-    solver->SetAbsTol(0);
-    solver->SetMaxIter(102);
-    solver->SetPrintLevel(0);
-
-    M_prec.SetType(HypreSmoother::Jacobi);
-
-    solver->SetPreconditioner(M_prec);
-    solver->SetOperator(*Mmat);
+    m_solver.iterative_mode = false;
+    m_solver.SetRelTol(1e-7);
+    m_solver.SetAbsTol(0);
+    m_solver.SetMaxIter(102);
+    m_solver.SetPrintLevel(0);
+    m_solver.SetPreconditioner(smoother);
+    m_solver.SetOperator(*Mmat);
+    std::cout << "Solver configured" << std::endl;
 
 
 }
+
 
 // void Concentrations::SetupBoundaryConditions() {
     
@@ -275,42 +288,49 @@ void Concentrations::Solver(std::shared_ptr<HypreParMatrix> &Mmat, std::shared_p
     
 // }
 
-// void Concentrations::ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx) {
+void Concentrations::ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx) {
 
-//     PGF = psx;
-//     PGF.Neg();
+    PGF = psx;
+    PGF.Neg();
 
-// }
+}
 
-// void Concentrations::SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, 
-// double value, GridFunctionCoefficient cAx) {
+void Concentrations::SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, 
+double value, GridFunctionCoefficient cAx) {
 
-//     Rx2 = Rx1;
+    Rx2 = Rx1;
 
-//     if (&Rx2 == Rxc.get()) {
-//         Rx2 /= value; // this is needed for CnP & Rxc
-//     }
+    if (&Rx2 == Rxc) {
+        Rx2 /= value; // this is needed for CnP & Rxc
+    }
 
-//     if (&Rx2 == Rxe.get()) {
-//         Rx2 *= (-1.0 * value); // this is needed for CnE & Rxe
-//     }
+    if (&Rx2 == Rxe.get()) {
+        Rx2 *= (-1.0 * value); // this is needed for CnE & Rxe
+    }
+    
+    // Rx2.Print(std::cout);
 
-// }
+}
 
-// void Concentrations::ForceTerm(std::shared_ptr<ParFiniteElementSpace> fespace, GridFunctionCoefficient cXx, mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m, bool apply_boundary_conditions) {
+void Concentrations::ForceTerm(mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m, bool apply_boundary_conditions) {
 
-//     std::unique_ptr<ParLinearForm> Bx2(new ParLinearForm(fespace.get()));	
+    std::unique_ptr<ParLinearForm> Bx2(new ParLinearForm(fespace));	
+    // Bx2 = new ParLinearForm(fespace);
 
-//     Bx2->AddDomainIntegrator(new DomainLFIntegrator(cXx));
+    cXx = new GridFunctionCoefficient(Rxc);
+    Bx2->AddDomainIntegrator(new DomainLFIntegrator(*cXx));
 
-//     if (apply_boundary_conditions) {
-//         Bx2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m), boundary);
-//     }
+    if (apply_boundary_conditions) {
+        Bx2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m), boundary);
+    }
 
-//     Bx2->Assemble();
-//     Fxx = std::move(*Bx2);
+    Bx2->Assemble();
+    Fxx = std::move(*Bx2);
 
-// }
+    // cout << "Bx2 in Concentrations" << endl; // fix this
+    // Bx2->Print(std::cout);
+
+}
 
 
 // void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
@@ -335,50 +355,50 @@ void Concentrations::Solver(std::shared_ptr<HypreParMatrix> &Mmat, std::shared_p
 // }
 
 
-// std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
+std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
 
-//     mfem::ParGridFunction* Dx = new mfem::ParGridFunction(fespace.get());
+    mfem::ParGridFunction* Dx = new mfem::ParGridFunction(fespace);
 
-//     for (int vi = 0; vi < nV; vi++) {
-//         if (particle_electrolyte) {
-//             (*Dx)(vi) = psx(vi) * (0.0277 - 0.084 * Cn(vi) + 0.1003 * Cn(vi) * Cn(vi)) * 1.0e-8;
-//             if ((*Dx)(vi) > 4.6e-10) {
-//                 (*Dx)(vi) = 4.6e-10;
-//             }
-//         } else {
-//             (*Dx)(vi) = psx(vi) * Constants::D0 * exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi));
-//         }
-//     }
+    for (int vi = 0; vi < nV; vi++) {
+        if (particle_electrolyte) {
+            (*Dx)(vi) = psx(vi) * (0.0277 - 0.084 * Cn(vi) + 0.1003 * Cn(vi) * Cn(vi)) * 1.0e-8;
+            if ((*Dx)(vi) > 4.6e-10) {
+                (*Dx)(vi) = 4.6e-10;
+            }
+        } else {
+            (*Dx)(vi) = psx(vi) * Constants::D0 * exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi));
+        }
+    }
 
-//     return std::make_shared<mfem::GridFunctionCoefficient>(Dx);
+    return std::make_shared<mfem::GridFunctionCoefficient>(Dx);
 
-// }
+}
 
-// void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, std::shared_ptr<HypreParMatrix> &Kmatx, HypreParVector &X1v, HypreParVector &Fxb, GridFunctionCoefficient *cDx) {
+void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, std::shared_ptr<HypreParMatrix> &Kmatx, HypreParVector &X1v, HypreParVector &Fxb, GridFunctionCoefficient *cDx) {
 
-//     // SetupBoundaryConditions();
-//     std::unique_ptr<ParBilinearForm> Kx2(new ParBilinearForm(fespace.get()));
+    // SetupBoundaryConditions();
+    std::unique_ptr<ParBilinearForm> Kx2(new ParBilinearForm(fespace));
 
-//     HypreParMatrix Khpm;
+    HypreParMatrix Khpm;
     
-//     Kx2->AddDomainIntegrator(new DiffusionIntegrator(*cDx));
-//     Kx2->Assemble();
-//     Kx2->FormLinearSystem(boundary, Cn, Fxx, Khpm, X1v, Fxb);
+    Kx2->AddDomainIntegrator(new DiffusionIntegrator(*cDx));
+    Kx2->Assemble();
+    Kx2->FormLinearSystem(boundary, Cn, Fxx, Khpm, X1v, Fxb);
 
-//     Kmatx = std::make_shared<mfem::HypreParMatrix>(Khpm);
+    Kmatx = std::make_shared<mfem::HypreParMatrix>(Khpm);
 
-//     Fxb *= Constants::dt;
+    Fxb *= Constants::dt;
 
-//     // // Get the local data of the HypreParVector
-//     // double *Fxb_data = Fxb.GetData();
+    // // Get the local data of the HypreParVector
+    // double *Fxb_data = Fxb.GetData();
 
-//     // // Print each value of the vector
-//     // int size = Fxb.Size();
-//     // std::cout << "Fxb values:" << std::endl;
-//     // for (int i = 0; i < size; i++) {
-//     //     std::cout << Fxb_data[i] << " ";
-//     // }
-//     // std::cout << std::endl;
+    // // Print each value of the vector
+    // int size = Fxb.Size();
+    // std::cout << "Fxb values:" << std::endl;
+    // for (int i = 0; i < size; i++) {
+    //     std::cout << Fxb_data[i] << " ";
+    // }
+    // std::cout << std::endl;
 
-// }
+}
 

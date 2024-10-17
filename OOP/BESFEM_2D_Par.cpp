@@ -157,9 +157,9 @@ int main(int argc, char *argv[])
         if (pse(vi) < eps){pse(vi) = eps;}         
     } 
 	
-	for (int i = 0; i < psi.Size(); ++i) {
-    cout << "psi[" << i << "] = " << psi(i) << std::endl;
-    }	
+	// for (int i = 0; i < psi.Size(); ++i) {
+    // cout << "psi[" << i << "] = " << psi(i) << std::endl;
+    // }	
 	
 	ParGridFunction AvB(&fespace);
 	AvB = AvP;
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
  	// create a Vector for CnP
 	HypreParVector CpV0(&fespace), CpVn(&fespace), RHCp(&fespace);		
 	
-// 	int nDof = CpV0.Size();	
+	int nDof = CpV0.Size();	
 	
 // 	// Vector of psi
 	// HypreParVector PsVc(&fespace);
@@ -489,7 +489,7 @@ int main(int argc, char *argv[])
 	Rxn = 0.0;
 	Rxn = AvP; Rxn *= 1.0e-8;
 
-	Rxn.Print(std::cout);	
+	// Rxn.Print(std::cout);	
 	 
 // 	// rate constants
 // 	ParGridFunction dPHE(&fespace);		// voltage drop
@@ -543,7 +543,7 @@ for (int t = 0; t < 10 + 1; t++){
 // 		// // 	  \_____|_| |_|_|     
 // 		// // 	==============================
 	
-			
+		// Rxn.Print(std::cout);	
 		Rxc = Rxn;
 		Rxc /= rho;	
 		GridFunctionCoefficient cAp(&Rxc) ;	
@@ -557,7 +557,8 @@ for (int t = 0; t < 10 + 1; t++){
 		Bc2->Assemble();		
 		// Move the contents of Bc2 into Fct
 		Fct = std::move(*Bc2);
-
+    
+		// cout << "Bc2 in Original" << endl;
 		// Bc2->Print(std::cout);		
 
 
@@ -615,8 +616,8 @@ for (int t = 0; t < 10 + 1; t++){
 		// }
 		// std::cout << std::endl;		
 
-// 		// time stepping
-// 		Mp_solver.Mult(RHCp, CpVn) ;		
+		// time stepping
+		Mp_solver.Mult(RHCp, CpVn) ;		
 
 // 		// Update only the solid region
 // 		for (int p = 0; p < nDof; p++){
@@ -624,22 +625,25 @@ for (int t = 0; t < 10 + 1; t++){
 // 				CpVn(p) = Cp0;}
 // 		}
 		
-// 		// Recover the GridFunction from Vector.
-// 		CnP.Distribute(CpVn);
+		// Recover the GridFunction from Vector.
+		CnP.Distribute(CpVn);
 
-// 		// Degree of lithiation
-// 		TmpF = CnP;
-// 		TmpF *= psi;
-// 		lSum = 0.0;
-// 		for (int ei = 0; ei < nE; ei++){	  
-// 			TmpF.GetNodalValues(ei,VtxVal);
-// 			val = 0.0;
-// 			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 			EAvg(ei) = val/nC;		 		  
-// 			lSum += EAvg(ei)*EVol(ei);	
-// 		} 	
-// 		MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
-// 		Xfr = gSum/gtPsi;	
+		// Degree of lithiation
+		TmpF = CnP;
+		TmpF *= psi;
+		lSum = 0.0;
+		for (int ei = 0; ei < nE; ei++){	  
+			TmpF.GetNodalValues(ei,VtxVal);
+			val = 0.0;
+			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+			EAvg(ei) = val/nC;		 		  
+			lSum += EAvg(ei)*EVol(ei);	
+		} 	
+		MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
+		Xfr = gSum/gtPsi;	
+
+		std::cout << "Updated CnP values:" << std::endl;
+    	CnP.Print(std::cout);
 		
 // 		delete Tmatp;
 
@@ -1015,7 +1019,7 @@ for (int t = 0; t < 10 + 1; t++){
 		
 // 		tm = tm + dt;
 
-// 		t += 1;
+		// t += 1;
 
 // 		if ( Xfr > 0.3+cnt*0.005 ){
 // 			// output values to a text file

@@ -8,20 +8,21 @@
 using namespace mfem;
 using namespace std;
 
-Reaction::Reaction(mfem::ParFiniteElementSpace *fe, MeshHandler &mesh_handler, Concentrations &concentrations) 
-    : fespace(fe), mesh_handler(mesh_handler), concentrations(concentrations), AvP(*mesh_handler.GetAvP())
+Reaction::Reaction(mfem::ParFiniteElementSpace *fe, MeshHandler &mh, Concentrations &con) 
+    : fespace(fe), mesh_handler(mh), AvP(*mh.GetAvP()), concentrations(con)
+    
+    // , concentrations = con
 
 
 
 {
-    Rxn = new ParGridFunction(fespace);
+    Rxn = new mfem::ParGridFunction(fespace);
+    // concentrations = con
 
 }
 
 
 void Reaction::Initialize(){
-
-    // mfem::ParGridFunction &AvP = *mesh_handler.AvP;
 
     AvP_PGF = new ParGridFunction(fespace);	
 	*AvP_PGF = AvP;
@@ -29,6 +30,7 @@ void Reaction::Initialize(){
     CreateRx(*Rxn, 0.0);
     SetAvP(*Rxn, *AvP_PGF, 1.0e-08);
 
+    // cout << "Rxn in Reactions" << endl;
     // Rxn->Print(std::cout);
 
 }

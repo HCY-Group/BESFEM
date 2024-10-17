@@ -15,11 +15,13 @@ class Concentrations; // Forward declaration
 
 class Reaction {
 public:
-    Reaction(mfem::ParFiniteElementSpace *fe, MeshHandler &mesh_handler, Concentrations &concentrations); // Constructor
+    Reaction(mfem::ParFiniteElementSpace *fe, MeshHandler &mh, Concentrations &con); // Constructor
 
     void Initialize(); // Method to initialize Rxn
 
     // std::unique_ptr<mfem::ParGridFunction> Rxn;     // Rxn (ParGridFunction)
+
+    // mfem::ParGridFunction* GetRxn() const { return Rxn.get(); }
 
     mfem::ParGridFunction *Rxn;
 
