@@ -20,9 +20,9 @@ public:
 
 private:
 	std::vector<std::vector<std::vector<int>>> data;
-	Mesh *gmesh;
-	ParMesh *pmesh;
+	Mesh *gmesh = nullptr;
+	ParMesh *pmesh = nullptr;
 	//GridFunction *gVox;
-	FiniteElementSpace *gFespace;
-	ParFiniteElementSpace *fespace;
+	FiniteElementSpace *gFespace = nullptr;
+	ParFiniteElementSpace *fespace = nullptr;
 };
