@@ -17,18 +17,13 @@ public:
     void InitializeCnE();
 
     void TimeStepCnP();
-    void TimeStepCnE(std::shared_ptr<ParFiniteElementSpace> fespace);
+    void TimeStepCnE();
 
     void SetupBoundaryConditions(std::shared_ptr<ParFiniteElementSpace> fespace);
 
     // void TestFESpace(ParFiniteElementSpace *fespace);
 
-    mfem::ParGridFunction PeR;
-    mfem::GridFunctionCoefficient matCoef_R;
-
     Array<int> nbc_w_bdr;
-
-    bool is_solver_initialized = false;
 
     Reaction reaction;
 
@@ -55,11 +50,12 @@ private:
     void CreateCnE(mfem::ParGridFunction &Cn, double initial_value);
     void Lithiation(mfem::ParGridFunction &Cn, double initial_value);
     void LithiationCalculation(mfem::ParGridFunction &Cn);
-    void SBM_Matrix(mfem::ParGridFunction &psx, std::shared_ptr<HypreParMatrix> &Mmat);
     void Solver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother);
-    void ImposeNeumannBC(mfem::ParGridFunction &PGF, mfem::ParGridFunction &psx);
+    void ImposeNeumannBC(mfem::ParGridFunction &psx, mfem::ParGridFunction &PGF);
+    // std::shared_ptr<mfem::GridFunctionCoefficient> ImposeNeumannBC(mfem::ParGridFunction &psx);
+
     void SetupRx(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value, GridFunctionCoefficient cAx);
-    void ForceTerm(mfem::ParLinearForm &Fxx, Array<int> boundary, ConstantCoefficient m, bool apply_boundary_conditions);
+    void ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &Fxx, Array<int> boundary, ProductCoefficient m, bool apply_boundary_conditions);
     void TotalReaction(mfem::ParGridFunction &Rx, double xCrnt);
     void EnsureValidBoundaryAndFESpace();
     void DebugBoundaryArray(const Array<int> &boundary);
@@ -97,7 +93,7 @@ private:
     mfem::CGSolver *solver;
     // mfem::CGSolver *Mp_solver;
     std::shared_ptr<mfem::CGSolver> Mp_solver;
-    mfem::CGSolver Me_solver;
+    std::shared_ptr<mfem::CGSolver> Me_solver;
 
     mfem::ParGridFunction *CnP;
     mfem::ParGridFunction *CnE;
@@ -111,6 +107,8 @@ private:
     std::shared_ptr<mfem::HypreParMatrix> Mmate;    
     
     mfem::HypreParMatrix *Tmatp;
+    mfem::HypreParMatrix *TmatR;
+    mfem::HypreParMatrix *TmatL;
 
     // HypreParMatrix Kmatp;
     // HypreParMatrix Kmate;
@@ -127,11 +125,18 @@ private:
 
 
     // std::unique_ptr<mfem::ParGridFunction> Rxc;     
-    std::unique_ptr<mfem::ParGridFunction> Rxe;   
+    // std::unique_ptr<mfem::ParGridFunction> Rxe;   
     
     mfem::ParGridFunction *Rxn;
     mfem::ParGridFunction *Rxc; 
+    mfem::ParGridFunction *Rxe; 
+
+    mfem::ParGridFunction *PGF;
+    mfem::ParGridFunction *PeR;
+
     mfem::GridFunctionCoefficient *cXx;
+    mfem::GridFunctionCoefficient *matCoef_R;
+    std::shared_ptr<mfem::GridFunctionCoefficient> coef;
     
     // mfem::ParLinearForm *Bx2; 
 
@@ -155,6 +160,9 @@ private:
     mfem::ParBilinearForm *M = nullptr;
     mfem::GridFunctionCoefficient *cP;
     mfem::ParGridFunction *Ps_gf;
+    mfem::ParGridFunction *Rxx;
+
+    mfem::HypreParVector PsVc;
 
 };
 

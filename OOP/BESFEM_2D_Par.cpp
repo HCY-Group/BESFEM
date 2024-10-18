@@ -327,9 +327,9 @@ int main(int argc, char *argv[])
 	
 	int nDof = CpV0.Size();	
 	
-// 	// Vector of psi
-	// HypreParVector PsVc(&fespace);
-	// psi.GetTrueDofs(PsVc);		
+	// Vector of psi
+	HypreParVector PsVc(&fespace);
+	psi.GetTrueDofs(PsVc);		
 	
 	
 // 	// 	// ============================
@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
 	Me_prec.SetType(HypreSmoother::Jacobi);
 	Me_solver.SetPreconditioner(Me_prec);
  	
-// 	HypreParMatrix *TmatL, *TmatR;			// matrices for CN scheme
+	HypreParMatrix *TmatL, *TmatR;			// matrices for CN scheme
 	
 	
 	// stiffness matrix
@@ -381,10 +381,10 @@ int main(int argc, char *argv[])
 	ParLinearForm Fet(&fespace);		
 	HypreParVector Feb(&fespace);	
 	
-	// for imposing Neumann BC
+	// // for imposing Neumann BC
 	ParGridFunction PeR(&fespace);
 	PeR = pse;
-	PeR.Neg();	
+	PeR.Neg();
 	GridFunctionCoefficient matCoef_R(&PeR) ;
 
 	// PeR.Print(std::cout);
@@ -393,8 +393,8 @@ int main(int argc, char *argv[])
 
 
 	
-//  	// Vectors for CnE
-// 	HypreParVector CeV0(&fespace), CeVn(&fespace), RHSe(&fespace);	
+ 	// Vectors for CnE
+	HypreParVector CeV0(&fespace), CeVn(&fespace), RHSe(&fespace);	
 	
 	// parameters used in the calculations
 	double eCrnt = 0.0;
@@ -619,11 +619,11 @@ for (int t = 0; t < 10 + 1; t++){
 		// time stepping
 		Mp_solver.Mult(RHCp, CpVn) ;		
 
-// 		// Update only the solid region
-// 		for (int p = 0; p < nDof; p++){
-// 			if (PsVc(p) < 1.0e-5){
-// 				CpVn(p) = Cp0;}
-// 		}
+		// Update only the solid region
+		for (int p = 0; p < nDof; p++){
+			if (PsVc(p) < 1.0e-5){
+				CpVn(p) = Cp0;}
+		}
 		
 		// Recover the GridFunction from Vector.
 		CnP.Distribute(CpVn);
@@ -642,8 +642,8 @@ for (int t = 0; t < 10 + 1; t++){
 		MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
 		Xfr = gSum/gtPsi;	
 
-		std::cout << "Updated CnP values:" << std::endl;
-    	CnP.Print(std::cout);
+		// std::cout << "Updated CnP values:" << std::endl;
+    	// CnP.Print(std::cout);
 		
 // 		delete Tmatp;
 
@@ -735,24 +735,24 @@ for (int t = 0; t < 10 + 1; t++){
 		// }
 		// std::cout << std::endl;
 		
-// 		// Crank-Nicolson matrices
-// 		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
-// 		TmatL = Add(1.0, Mmate,  0.5*dt, Kmate);		
+		// Crank-Nicolson matrices
+		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
+		TmatL = Add(1.0, Mmate,  0.5*dt, Kmate);		
 		
-// 		// vector of CnE				
-// 		CnE.GetTrueDofs(CeV0);		
+		// vector of CnE				
+		CnE.GetTrueDofs(CeV0);		
 				
-//     	TmatR->Mult(CeV0, RHSe);
-//     	RHSe += Feb;
+    	TmatR->Mult(CeV0, RHSe);
+    	RHSe += Feb;
     	
-//     	// solver
-// 		Me_solver.SetOperator(*TmatL);    	
+    	// solver
+		Me_solver.SetOperator(*TmatL);    	
     	
-//     	// time stepping
-// 		Me_solver.Mult(RHSe, CeVn) ;
+    	// time stepping
+		Me_solver.Mult(RHSe, CeVn) ;
 		
-// 		// recover
-// 		CnE.Distribute(CeVn);    	
+		// recover
+		CnE.Distribute(CeVn);    	
 
 // 		// check conservation of salt
 // 		if (t%500 == 0 && t > 0){
@@ -777,6 +777,9 @@ for (int t = 0; t < 10 + 1; t++){
 
 // 		delete TmatR;
 // 		delete TmatL;
+
+		std::cout << "Updated CnE values:" << std::endl;
+    	CnE.Print(std::cout);
 		
 		
 // 		// ==============================================

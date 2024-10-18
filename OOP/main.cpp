@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     // Time-stepping loop
     for (int t = 0; t < 10 + 1; ++t) {
         concentrations.TimeStepCnP();
-    //     concentrations.TimeStepCnE(mesh_handler.GetFESpace());
+        concentrations.TimeStepCnE();
 
     }
 
