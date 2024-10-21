@@ -40,6 +40,7 @@ public:
 
     
     double GetTotalPsi() const { return gtPsi; }
+    double GetTotalPse() const { return gtPse; }
     int GetNE() const { return nE; }
     int GetNC() const { return nC; }
     int GetNV() const { return nV; }

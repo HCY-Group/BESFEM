@@ -8,22 +8,19 @@
 #include <HYPRE_utilities.h>
 #include "mfem.hpp"
 
-
+// Edits to make:
+// Combine lithiation and salt conservation functions
+// Decrease fespace creations in timestep
+// Combine common steps in timestep functions
 
 using namespace mfem;
 using namespace std;
 
 Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     : mesh_handler(mh), fespace(fe), pmesh(pm), psi(*mh.GetPsi()), pse(*mh.GetPse()), EVol(mh.GetElementVolume()),
-    reaction(fe, mh, *this), Mmat(nullptr), Mmatp(nullptr),
+    reaction(fe, mh, *this), Mmat(nullptr), Mmatp(nullptr), gtPsi(mesh_handler.GetTotalPsi()), gtPse(mesh_handler.GetTotalPse()),
     Mp_solver(std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD))
 
-
-
-    // , psi(*mesh_handler.GetPsi()), pse(*mesh_handler.GetPse()), , EVol(mesh_handler.GetElementVolume()),  M(nullptr), , solver(nullptr)
-    //   EVol(mesh_handler.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), reaction(mesh_handler, *this), PeR(fe), matCoef_R(&PeR), Mp_solver(nullptr)
-
-      
 {
 
     // nbc_w_bdr.SetSize(mesh_handler.pmesh->bdr_attributes.Max());
@@ -183,8 +180,9 @@ void Concentrations::TimeStepCnE() {
     Me_solver->SetOperator(*TmatL);
     Me_solver->Mult(RHCe, CeVn) ;
 
-	CnE->Distribute(CeVn);    	
+	CnE->Distribute(CeVn);    
 
+    SaltConservation(*CnE);	
 
     std::cout << "Updated CnE values:" << std::endl;
     CnE->Print(std::cout);
@@ -398,4 +396,71 @@ void Concentrations::K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, Pa
     // std::cout << std::endl;
 
 }
+
+void Concentrations::SaltConservation(mfem::ParGridFunction &Cn) {
+
+    CeC = 0.0;
+    ParGridFunction CeT(fespace);
+    Array<double> VtxVal(nC);
+    Vector EAvg(nE);
+
+
+    CeT = Cn;
+    CeT *= pse;
+
+    for (int ei = 0; ei < nE; ei++){
+        CeT.GetNodalValues(ei,VtxVal) ;
+        double val = 0.0;
+        for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+        EAvg(ei) = val/nC;	
+        CeC += EAvg(ei)*EVol(ei) ;
+    }
+
+    MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
+    
+    // average CnE throughout electrolyte
+    CeAvg = gCeC/gtPse;				
+    
+    // adjust CnE
+    *CnE -= (CeAvg-Ce0);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+}
+
+void Concentrations::SaveCnP() {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
+
+    std::string file_name = "CnP_solution." + std::to_string(rank) + ".gf";  // MFEM's GridFunction format (.gf)
+    
+    std::ofstream ofs(file_name.c_str());
+    if (ofs.is_open()) {
+        CnP->Save(ofs);  // Use '->' because CnE is a pointer
+        ofs.close();
+    } else {
+        mfem::mfem_error("Error opening file to save CnE.");
+    }
+}
+
+
+
+void Concentrations::SaveCnE() {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
+
+    std::string file_name = "CnE_solution." + std::to_string(rank) + ".gf";  // MFEM's GridFunction format (.gf)
+    
+    std::ofstream ofs(file_name.c_str());
+    if (ofs.is_open()) {
+        CnE->Save(ofs);  // Use '->' because CnE is a pointer
+        ofs.close();
+    } else {
+        mfem::mfem_error("Error opening file to save CnE.");
+    }
+}
+
+
+
+
+    
 

@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     // Create the MeshHandler object
     MeshHandler mesh_handler;       // define mesh and dsf file in Constants.cpp
     mesh_handler.LoadMesh();
-    //mesh_handler.Save();
+    // mesh_handler.Save();
 
     // Create pmesh & fespace to use for all 
     ParMesh pmesh = mesh_handler.GetMesh();
@@ -54,7 +54,11 @@ int main(int argc, char *argv[]) {
 
     }
 
+    // concentrations.SaveCnP();
+    // concentrations.SaveCnE();
+
     }
+
 
 
 

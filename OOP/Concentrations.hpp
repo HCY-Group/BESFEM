@@ -19,7 +19,11 @@ public:
     void TimeStepCnP();
     void TimeStepCnE();
 
-    void SetupBoundaryConditions(std::shared_ptr<ParFiniteElementSpace> fespace);
+    void SaveCnP();
+    void SaveCnE();
+
+
+    // void SetupBoundaryConditions(std::shared_ptr<ParFiniteElementSpace> fespace);
 
     // void TestFESpace(ParFiniteElementSpace *fespace);
 
@@ -61,7 +65,9 @@ private:
     void DebugBoundaryArray(const Array<int> &boundary);
     std::shared_ptr<mfem::GridFunctionCoefficient> Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte );
     void K_Matrix(Array<int> boundary, mfem::ParGridFunction &Cn, ParLinearForm &Fxx, std::shared_ptr<HypreParMatrix> &Kmatx, HypreParVector &X1v, HypreParVector &Fxb, GridFunctionCoefficient *cDx);
-    
+    void SaltConservation(mfem::ParGridFunction &Cn);
+
+
     // Member variables
     // mfem::ParFiniteElementSpace* fespace;           // Finite element space
 
@@ -74,6 +80,7 @@ private:
 
     const mfem::Vector& EVol;                       // Element volumes from MeshHandler
     double gtPsi;                                   // Total Psi from MeshHandler
+    double gtPse;                                   // Total Pse from MeshHandler
     double infx;
 
     int nE;                                         // Number of elements
@@ -156,6 +163,11 @@ private:
     // mfem::Array<int> nbc_w_bdr;       
 
     double eCrnt;
+
+    double Ce0 = 0.001;
+    double CeC = 0.0;
+    double gCeC = 0.0;
+    double CeAvg = 0.0;
 
     mfem::ParBilinearForm *M = nullptr;
     mfem::GridFunctionCoefficient *cP;

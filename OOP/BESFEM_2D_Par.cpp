@@ -401,10 +401,10 @@ int main(int argc, char *argv[])
 	double geCrnt = 0.0;
 	double infx = 0.0;
 	
-// 	ParGridFunction CeT(&fespace);
-// 	double CeC = 0.0;
-// 	double CeAvg = 0.0;
-// 	double gCeC = 0.0;			
+	ParGridFunction CeT(&fespace);
+	double CeC = 0.0;
+	double CeAvg = 0.0;
+	double gCeC = 0.0;			
 
 
 // 	// ========================================
@@ -754,29 +754,29 @@ for (int t = 0; t < 10 + 1; t++){
 		// recover
 		CnE.Distribute(CeVn);    	
 
-// 		// check conservation of salt
-// 		if (t%500 == 0 && t > 0){
-// 			CeC = 0.0;
-// 			CeT = CnE;
-// 			CeT *= pse;
-// 			for (int ei = 0; ei < nE; ei++){
-// 				CeT.GetNodalValues(ei,VtxVal) ;
-// 				val = 0.0;
-// 				for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 				EAvg(ei) = val/nC;	
-// 				CeC += EAvg(ei)*EVol(ei) ;
-// 			}
-// 			MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
-// 			// average CnE throughout electrolyte
-// 			CeAvg = gCeC/gtPse;				
+		// check conservation of salt
+		// if (t%500 == 0 && t > 0){
+			CeC = 0.0;
+			CeT = CnE;
+			CeT *= pse;
+			for (int ei = 0; ei < nE; ei++){
+				CeT.GetNodalValues(ei,VtxVal) ;
+				val = 0.0;
+				for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+				EAvg(ei) = val/nC;	
+				CeC += EAvg(ei)*EVol(ei) ;
+			}
+			MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
+			// average CnE throughout electrolyte
+			CeAvg = gCeC/gtPse;				
 			
-// 			// adjust CnE
-// 			CnE -= (CeAvg-Ce0);
-// 			MPI_Barrier(MPI_COMM_WORLD);
-// 		}	
+			// adjust CnE
+			CnE -= (CeAvg-Ce0);
+			MPI_Barrier(MPI_COMM_WORLD);
+		// }	
 
-// 		delete TmatR;
-// 		delete TmatL;
+		delete TmatR;
+		delete TmatL;
 
 		std::cout << "Updated CnE values:" << std::endl;
     	CnE.Print(std::cout);
@@ -1116,6 +1116,19 @@ for (int t = 0; t < 10 + 1; t++){
 	
 	
 //    return 0;
-	}	
+	}
+
+	// int rank;
+    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
+
+    // std::string file_name = "CnP_solution_original." + std::to_string(rank) + ".gf";  // MFEM's GridFunction format (.gf)
+    
+    // std::ofstream ofs(file_name.c_str());
+    // if (ofs.is_open()) {
+    //     CnP.Save(ofs);  // Use '->' because CnE is a pointer
+    //     ofs.close();
+    // } else {
+    //     mfem::mfem_error("Error opening file to save CnE.");
+    // }
 }
 
