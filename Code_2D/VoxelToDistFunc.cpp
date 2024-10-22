@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 	maker.Make_H1_FESpace();
 	maker.MakeParallelMesh();
 	maker.Make_H1_FESpace_Parallel();
-	//maker.TestGetFE();
+	maker.TestGetFE();
 	/*
 	ParFiniteElementSpace testfes(*maker.GetParallelFESpace(),
 					maker.GetParallelFESpace()->GetParMesh(),
