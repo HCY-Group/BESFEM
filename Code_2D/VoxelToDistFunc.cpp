@@ -62,11 +62,20 @@ int main(int argc, char *argv[])
 	maker.Make_H1_FESpace();
 	maker.MakeParallelMesh();
 	maker.Make_H1_FESpace_Parallel();
-	
+	/*
 	ParFiniteElementSpace testfes(*maker.GetParallelFESpace(),
 					maker.GetParallelFESpace()->GetParMesh(),
 					maker.GetParallelFESpace()->FEColl());
 	cout << "main test finiteelement: " << testfes.GetFE(0) << endl;
+	*/
+	ParFiniteElementSpace *testfes = maker.GetParallelFESpace();
+	cout << "main FESpace: " << testfes << endl;
+	cout << "main pmesh: " << testfes->GetParMesh() << endl;
+	cout << "main pmesh: " << (*testfes).GetParMesh() << endl;
+	cout << "main fec: " << testfes->FEColl() << endl;
+	cout << "main fec: " << (*testfes).FEColl() << endl;
+	//cout << "main finiteelement: " << testfes->GetFE(0) << endl;
+	//cout << "main finiteelement: " << (*testfes).GetFE(0) << endl;
 	
 	cout << "main FESpace: " << maker.GetParallelFESpace() << endl;
 	cout << "main pmesh: " << maker.GetParallelFESpace()->GetParMesh() << endl;

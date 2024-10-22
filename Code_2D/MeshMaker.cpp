@@ -42,5 +42,8 @@ void MeshMaker::Make_H1_FESpace_Parallel(int order) {
 	this->fespace = new ParFiniteElementSpace(this->pmesh, &fec);
 	
 	cout << "fespace: " << this->fespace << endl;
+	cout << "pmesh: " << this->fespace->GetParMesh() << endl;
+	cout << "fec: " << this->fespace->FEColl() << endl;
+	
 	cout << "finiteelement: " << this->fespace->GetFE(0) << endl;
 }
