@@ -1,8 +1,8 @@
 
 #include "mfem.hpp"
 
-using namespace std;
-using namespace mfem;
+//using namespace std;
+//using namespace mfem;
 
 class MeshMaker {
 public:
@@ -12,17 +12,18 @@ public:
 	void AssignGlobalValues();
 	void Make_H1_FESpace(int order=1);
 	void Make_H1_FESpace_Parallel(int order = 1);
+	void TestGetFE();
 	
-	Mesh* GetGlobalMesh() {return gmesh;}
-	ParMesh* GetParallelMesh() {return pmesh;}
-	FiniteElementSpace* GetGlobalFESpace() {return gFespace;}
-	ParFiniteElementSpace* GetParallelFESpace() {return fespace;}
+	mfem::Mesh* GetGlobalMesh() {return gmesh;}
+	mfem::ParMesh* GetParallelMesh() {return pmesh;}
+	mfem::FiniteElementSpace* GetGlobalFESpace() {return gFespace;}
+	mfem::ParFiniteElementSpace* GetParallelFESpace() {return fespace;}
 
 private:
 	std::vector<std::vector<std::vector<int>>> data;
-	Mesh *gmesh = nullptr;
-	ParMesh *pmesh = nullptr;
+	mfem::Mesh *gmesh = nullptr;
+	mfem::ParMesh *pmesh = nullptr;
 	//GridFunction *gVox;
-	FiniteElementSpace *gFespace = nullptr;
-	ParFiniteElementSpace *fespace = nullptr;
+	mfem::FiniteElementSpace *gFespace = nullptr;
+	mfem::ParFiniteElementSpace *fespace = nullptr;
 };
