@@ -114,7 +114,12 @@ int main(int argc, char *argv[])
 
 	// make variable names match from up above...
 	ParMesh pmesh(*maker.GetParallelMesh());
-	ParGridFunction Vox2(*solver.GetParallelVox());
+	//ParGridFunction Vox2(*solver.GetParallelVox());
+	ParGridFunction Vox(*solver.GetParallelVox());
+	// TODO: When we construct fespace, do we need to also copy ParMesh and FiniteElementCollection???
+	ParFiniteElementSpace fespace(*maker.GetParallelFESpace());
+	cout << fespace.GetFE(0) << endl;
+	
 	int order = 1;
 	int nV = pmesh.GetNV();			//number of vertices
 	
@@ -130,12 +135,13 @@ int main(int argc, char *argv[])
 	ParFiniteElementSpace fespace(*Vox.ParFESpace());
 	cout << "HERE after" << endl;
 	*/
+	/*
 	H1_FECollection fec(order, pmesh.Dimension());
 	ParFiniteElementSpace fespace(&pmesh, &fec);
 	ParGridFunction Vox(&fespace);
 
 	Vox = Vox2;
-	
+	*/
 
 
 

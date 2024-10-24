@@ -13,11 +13,6 @@ VoxelSolver::VoxelSolver(FiniteElementSpace *fes){
 VoxelSolver::VoxelSolver(FiniteElementSpace *gfes, ParFiniteElementSpace *fes){
 	gVox = new GridFunction(gfes);
 	Vox = new ParGridFunction(fes);
-	/*
-	cout << "fespace: " << Vox->ParFESpace() << endl;
-	cout << "fec:" << Vox->ParFESpace()->FEColl() << endl;
-	cout << "finiteelement: " << Vox->ParFESpace()->GetFE(0) << endl;
-	*/
 }
 	
 void VoxelSolver::AssignGlobalValues(vector<vector<vector<int>>> data) {
@@ -177,18 +172,6 @@ void VoxelSolver::UpdateLinearForm(ParGridFunction gf) {
 }
 
 void VoxelSolver::UpdateLinearForm_DoubleWellPotential() {
-	///*
-	cout << "HERE A" << endl;
-	cout << "fespace: " << Vox->ParFESpace() << endl;
-	cout << "fec:" << Vox->ParFESpace()->FEColl() << endl;
-	cout << "finiteelement: " << Vox->ParFESpace()->GetFE(0) << endl;
-	//cout << "finiteelement:" << Vox->ParFESpace()->FEColl()->GetFE() << endl;
-	//ParFiniteElementSpace fespace(*Vox->ParFESpace());
-	//ParFiniteElementSpace fespace(*fes_p);
-	cout << "HERE B" << endl;
-	//ParMesh *pmesh = fespace.GetParMesh();
-	//int nV = pmesh->GetNV();
-	//*/
 
 	//ParGridFunction Pot(&fespace);
 	ParGridFunction Pot(Vox->ParFESpace());
@@ -206,14 +189,20 @@ void VoxelSolver::UpdateLinearForm_DoubleWellPotential() {
 void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, double dt) {
 	
 	ParFiniteElementSpace fespace(*Vox->ParFESpace());
+	//cout << fespace.GetFE(0) << endl;
 
-	HypreParVector Fcb(&fespace);
-	HypreParVector X1v(&fespace);
-	HypreParVector Vox0(&fespace);
+	//HypreParVector Fcb(&fespace);
+	//HypreParVector X1v(&fespace);
+	//HypreParVector Vox0(&fespace);
+	HypreParVector Fcb(Vox->ParFESpace());
+	HypreParVector X1v(Vox->ParFESpace());
+	HypreParVector Vox0(Vox->ParFESpace());
 	HypreParMatrix Kmat;
 	
 	Vox->GetTrueDofs(Vox0);
+	cout << "HERE A" << endl;
 	K->FormLinearSystem(boundary_dofs, *Vox, *Fct, Kmat, X1v, Fcb);
+	cout << "HERE B" << endl;
 	oper->UpdateParams(Kmat, Fcb);
 	ode_solver->Step(Vox0, t_ode, dt);
 	Vox->Distribute(Vox0);
