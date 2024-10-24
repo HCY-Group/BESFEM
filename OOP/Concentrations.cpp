@@ -1,6 +1,7 @@
 #include "Mesh_Handler.hpp"
 #include "Constants.hpp"
 #include "Concentrations.hpp"
+#include "Potentials.hpp"
 #include <fstream>
 #include <iostream>
 
@@ -9,6 +10,7 @@
 #include "mfem.hpp"
 
 // Edits to make:
+// Create CnP separate from Lithiation
 // Combine lithiation and salt conservation functions
 // Decrease fespace creations in timestep
 // Combine common steps in timestep functions
@@ -18,7 +20,7 @@ using namespace std;
 
 Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     : mesh_handler(mh), fespace(fe), pmesh(pm), psi(*mh.GetPsi()), pse(*mh.GetPse()), EVol(mh.GetElementVolume()),
-    reaction(fe, mh, *this), Mmat(nullptr), Mmatp(nullptr), gtPsi(mesh_handler.GetTotalPsi()), gtPse(mesh_handler.GetTotalPse()),
+    reaction(fe, mh, *this), potentials(pm, fe, mh), Mmat(nullptr), Mmatp(nullptr), gtPsi(mesh_handler.GetTotalPsi()), gtPse(mesh_handler.GetTotalPse()),
     Mp_solver(std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD))
 
 {
@@ -48,6 +50,8 @@ Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *f
 
     // Mp_solver = new mfem::CGSolver(MPI_COMM_WORLD);
     // Me_solver = mfem::CGSolver(MPI_COMM_WORLD);
+
+    CeVn = new HypreParVector(fespace);
 
 }
 
@@ -85,8 +89,8 @@ void Concentrations::InitializeCnE() {
     // GridFunctionCoefficient matCoef_R(&PeR);
     ImposeNeumannBC(pse, *PeR);
 
-    cout << "CnE in Initialize Step:" << endl;
-    CnE ->Print(std::cout);
+    // cout << "CnE in Initialize Step:" << endl;
+    // CnE ->Print(std::cout);
 
 }
 
@@ -175,17 +179,17 @@ void Concentrations::TimeStepCnE() {
     TmatR->Mult(CeV0, RHCe);
     RHCe += Feb;
     
-    HypreParVector CeVn(fespace);
+    // HypreParVector CeVn(fespace);
 
     Me_solver->SetOperator(*TmatL);
-    Me_solver->Mult(RHCe, CeVn) ;
+    Me_solver->Mult(RHCe, *CeVn) ;
 
 	CnE->Distribute(CeVn);    
 
     SaltConservation(*CnE);	
 
-    std::cout << "Updated CnE values:" << std::endl;
-    CnE->Print(std::cout);
+    // std::cout << "Updated CnE values:" << std::endl;
+    // CnE->Print(std::cout);
 
 }
 

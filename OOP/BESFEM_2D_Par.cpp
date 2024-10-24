@@ -418,21 +418,21 @@ int main(int argc, char *argv[])
 // 	// //  |_|                       
 // 	// ========================================
 
-// 	ParGridFunction phP(&fespace);		// electropotential in particle
+	ParGridFunction phP(&fespace);		// electropotential in particle
 // 	ParGridFunction kap(&fespace);		// conductivity in particle
 // 	ParGridFunction RpP(&fespace);		// reaction 
 // 	ParGridFunction pP0(&fespace);		// values before iteration
 
-// 	double BvP = 2.9395;
-// // 	BvP = 1.0;
-// 	phP = BvP;	
+	double BvP = 2.9395;
+// 	BvP = 1.0;
+	phP = BvP;	
 
-// 	// stiffness matrix
-// 	HypreParMatrix KmP;	
+	// stiffness matrix
+	HypreParMatrix KmP;	
 
-// 	CGSolver cgPP(MPI_COMM_WORLD);
-// 	cgPP.SetRelTol(1e-7);
-// 	cgPP.SetMaxIter(82);
+	CGSolver cgPP(MPI_COMM_WORLD);
+	cgPP.SetRelTol(1e-7);
+	cgPP.SetMaxIter(82);
 
 // 	// force Vector
 // 	ParLinearForm Fpt(&fespace);	
@@ -454,30 +454,30 @@ int main(int argc, char *argv[])
 	
 // 	double tc1 =(2*t_minus-1.0)/(2*t_minus*(1.0-t_minus));
 // 	double tc2 = 1.0/(2*t_minus*(1.0-t_minus))*Cst1;
-// 	double dffe;
+	double dffe;
 
-// 	ParGridFunction phE(&fespace);		// electropot in electrolyte
+	ParGridFunction phE(&fespace);		// electropot in electrolyte
 // 	ParGridFunction Dmp(&fespace);		// D_minus_plus
 // 	ParGridFunction kpl(&fespace);		// electrolyte conductivity
 // 	ParGridFunction RpE(&fespace);		// reaction rate for electrolyte
 // 	ParGridFunction pE0(&fespace);		// values before iteration
 
-// 	double BvE = -1.0;
-// 	phE = BvE;
+	double BvE = -1.0;
+	phE = BvE;
 
-// 	// stiffness matrix
-// 	HypreParMatrix Kml;
+	// stiffness matrix
+	HypreParMatrix Kml;
 
-// 	CGSolver cgPE(MPI_COMM_WORLD);
-// 	cgPE.SetRelTol(1e-7);
-// 	cgPE.SetMaxIter(80);
+	CGSolver cgPE(MPI_COMM_WORLD);
+	cgPE.SetRelTol(1e-7);
+	cgPE.SetMaxIter(80);
 	 	
 // 	// force vector
 // 	ParLinearForm Flt(&fespace);
 // 	HypreParVector Flb(&fespace);	
 	
-// 	// Laplace matrix
-// 	HypreParMatrix Kdm;
+	// Laplace matrix
+	HypreParMatrix Kdm;
 
 // 	HypreParVector LpCe(&fespace), Xe0(&fespace);
 // 	HypreParVector RHSl(&fespace);
@@ -792,26 +792,26 @@ for (int t = 0; t < 10 + 1; t++){
 // 		// ==============================================	
  
 
-// 		// electrolyte conductivity and RHS	
-// 		for (int vi = 0; vi < nV; vi++){
-// 			dffe = exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
-// 			Dmp(vi) = pse(vi)*tc1*D0*dffe;
-// 			kpl(vi) = pse(vi)*tc2*D0*dffe*CnE(vi);
-// 		}
-// 		GridFunctionCoefficient cDm(&Dmp);
+		// electrolyte conductivity and RHS	
+		for (int vi = 0; vi < nV; vi++){
+			dffe = exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
+			Dmp(vi) = pse(vi)*tc1*D0*dffe;
+			kpl(vi) = pse(vi)*tc2*D0*dffe*CnE(vi);
+		}
+		GridFunctionCoefficient cDm(&Dmp);
 
-// 		// Laplace of CnE for the RHS
-// 		std::unique_ptr<ParBilinearForm> Kl1(new ParBilinearForm(&fespace));
-// 		Kl1->AddDomainIntegrator(new DiffusionIntegrator(cDm));
-// 		Kl1->Assemble();
-// 		Kl1->FormLinearSystem(boundary_dofs, phE, B1t, Kdm, X1v, B1v);		
+		// Laplace of CnE for the RHS
+		std::unique_ptr<ParBilinearForm> Kl1(new ParBilinearForm(&fespace));
+		Kl1->AddDomainIntegrator(new DiffusionIntegrator(cDm));
+		Kl1->Assemble();
+		Kl1->FormLinearSystem(boundary_dofs, phE, B1t, Kdm, X1v, B1v);		
 	
-// 		// Vector of CnE
-// 		CnE.GetTrueDofs(CeVn) ;
-// 		Kdm.Mult(CeVn, LpCe) ;
+		// Vector of CnE
+		CnE.GetTrueDofs(CeVn) ;
+		Kdm.Mult(CeVn, LpCe) ;
 
 // 		// electrolyte conductivity and RHS		
-// 		GridFunctionCoefficient cKe(&kpl) ;		
+		GridFunctionCoefficient cKe(&kpl) ;		
 // 		std::unique_ptr<ParBilinearForm> Kl2(new ParBilinearForm(&fespace)); 		
 // 		Kl2->AddDomainIntegrator(new DiffusionIntegrator(cKe));
 // 		Kl2->Assemble();	
@@ -1126,6 +1126,19 @@ for (int t = 0; t < 10 + 1; t++){
     // std::ofstream ofs(file_name.c_str());
     // if (ofs.is_open()) {
     //     CnP.Save(ofs);  // Use '->' because CnE is a pointer
+    //     ofs.close();
+    // } else {
+    //     mfem::mfem_error("Error opening file to save CnE.");
+    // }
+
+	// int rank;
+    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
+
+    // std::string file_name = "CnE_solution_original." + std::to_string(rank) + ".gf";  // MFEM's GridFunction format (.gf)
+    
+    // std::ofstream ofs(file_name.c_str());
+    // if (ofs.is_open()) {
+    //     CnE.Save(ofs);  // Use '->' because CnE is a pointer
     //     ofs.close();
     // } else {
     //     mfem::mfem_error("Error opening file to save CnE.");

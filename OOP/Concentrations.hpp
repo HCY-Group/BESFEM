@@ -5,12 +5,15 @@
 #include "Mesh_Handler.hpp"
 #include "Constants.hpp"
 #include "Reaction.hpp"
+#include "Potentials.hpp"
 #include <memory>
 
 class Concentrations {
 public:
     // Constructor that takes a MeshHandler reference
     Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh);
+    Reaction reaction;
+    Potentials potentials;
 
     // Initialization method
     void InitializeCnP();
@@ -29,7 +32,15 @@ public:
 
     Array<int> nbc_w_bdr;
 
-    Reaction reaction;
+    
+
+    mfem::ParGridFunction *CnP;
+    mfem::ParGridFunction *CnE;
+
+    mfem::ParGridFunction psi;                     // Psi grid function from MeshHandler
+    mfem::ParGridFunction pse;                     // Pse grid function from MeshHandler
+
+    mfem::HypreParVector *CeVn;
 
     // mfem::ParFiniteElementSpace* GetFESpace() const { return fespace.get(); }
 
@@ -73,8 +84,8 @@ private:
 
     // std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
 
-    mfem::ParGridFunction psi;                     // Psi grid function from MeshHandler
-    mfem::ParGridFunction pse;                     // Pse grid function from MeshHandler
+    // mfem::ParGridFunction psi;                     // Psi grid function from MeshHandler
+    // mfem::ParGridFunction pse;                     // Pse grid function from MeshHandler
     mfem::ParGridFunction TmpF;
     // mfem::ParMesh* pmesh;
 
@@ -102,8 +113,8 @@ private:
     std::shared_ptr<mfem::CGSolver> Mp_solver;
     std::shared_ptr<mfem::CGSolver> Me_solver;
 
-    mfem::ParGridFunction *CnP;
-    mfem::ParGridFunction *CnE;
+    // mfem::ParGridFunction *CnP;
+    // mfem::ParGridFunction *CnE;
 
     // mfem::HypreParMatrix *Mmatp;
     // mfem::HypreParMatrix *Mmate;

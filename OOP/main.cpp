@@ -12,6 +12,7 @@
 #include "Mesh_Handler.hpp"
 #include "Concentrations.hpp"
 #include "Reaction.hpp"
+#include "Potentials.hpp"
 
 #include <iostream>
 
@@ -39,7 +40,6 @@ int main(int argc, char *argv[]) {
 
     // Initialize CnP & CnE
     Concentrations concentrations(&pmesh, &fespace, mesh_handler);
-
     concentrations.InitializeCnP();
     concentrations.InitializeCnE();  
 
@@ -47,24 +47,31 @@ int main(int argc, char *argv[]) {
     // Reaction reaction(&fespace, mesh_handler, concentrations);
     concentrations.reaction.Initialize(); 
 
+    // Initialize PotP & PotE
+    // Potentials potentials(&pmesh, &fespace, mesh_handler);
+    concentrations.potentials.InitializePotP();
+    concentrations.potentials.InitializePotE();
+
     // Time-stepping loop
     for (int t = 0; t < 10 + 1; ++t) {
         concentrations.TimeStepCnP();
         concentrations.TimeStepCnE();
+        concentrations.reaction.TimeStep();
 
     }
 
+    // Save the Results
     // concentrations.SaveCnP();
     // concentrations.SaveCnE();
 
+
+
+
     }
 
 
 
 
-    // // Save the results
-    // cnp.Save();
-    // cne.Save();
 
 
     // Finalize MPI
