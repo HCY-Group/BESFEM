@@ -221,47 +221,16 @@ void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, d
 
 void VoxelSolver::ParaviewSave(string FileName, string VariableName, GridFunction* gf) {
 	
-	// weirdness to get ParaView save to work
-	// Can't just return the grid function
-	// We have to create the FiniteElementSpace again from scratch, starting with the FECollection
-	
 	int order = 1;
-
-	GridFunction gf3(*gf);
-	FiniteElementSpace* fes = gf->FESpace();
-	Mesh* mesh = fes->GetMesh();
-	cout << "MESH " << mesh << endl;
-	cout << "GF " << gf << endl;
-	//const FiniteElementCollection* gFec = fes->FEColl();
-	//cout << "gVox fec: " << gf->OwnFEC() << endl;
-	//cout << "fes fec: " << fes->FEColl() << endl;
-	
-	H1_FECollection fec2(order, mesh->Dimension());
-	FiniteElementSpace fes2(mesh, &fec2);
-	GridFunction gf2(&fes2);
-	
-	gf2 = gf3;
 	
 	ParaViewDataCollection *pd = NULL;
-	cout << "before" << endl;
-	//pd = new ParaViewDataCollection("gVoxelData", &gmesh2);
-	
-	
-	//gf->MakeOwner(fes->FEColl());
-	
-	pd = new ParaViewDataCollection(FileName, mesh);
-	//pd->RegisterField("gVox", &gVox);
-	//pd->RegisterField(VariableName, gf);
-	pd->RegisterField(VariableName, &gf2);
-	//pd->RegisterField(VariableName, gVox);
-	//pd->RegisterField("gVox", maker.GetGlobalVox());
+	pd = new ParaViewDataCollection(FileName, gf->FESpace()->GetMesh());
+	pd->RegisterField(VariableName, gf);
 	pd->SetLevelsOfDetail(order);
 	pd->SetDataFormat(VTKFormat::BINARY);
 	pd->SetHighOrderOutput(true);
 	pd->SetCycle(0);
 	pd->SetTime(0.0);
-	cout << "after" << endl;
 	pd->Save();
-	cout << "after" << endl;
 	delete pd;
 }

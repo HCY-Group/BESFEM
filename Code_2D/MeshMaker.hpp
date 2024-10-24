@@ -23,6 +23,8 @@ private:
 	std::vector<std::vector<std::vector<int>>> data;
 	mfem::Mesh *gmesh = nullptr;
 	mfem::ParMesh *pmesh = nullptr;
+	mfem::H1_FECollection *gFec = nullptr;
+	mfem::H1_FECollection *fec = nullptr;
 	//GridFunction *gVox;
 	mfem::FiniteElementSpace *gFespace = nullptr;
 	mfem::ParFiniteElementSpace *fespace = nullptr;

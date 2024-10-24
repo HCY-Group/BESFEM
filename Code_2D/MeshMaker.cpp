@@ -25,7 +25,7 @@ void MeshMaker::MakeGlobalMesh() {
 	}
 	this->gmesh->EnsureNCMesh(true);
 
-	std::cout << "Mesh from MeshMaker " << this->gmesh << std::endl;
+	//std::cout << "Mesh from MeshMaker " << this->gmesh << std::endl;
 }
 
 void MeshMaker::MakeParallelMesh() {
@@ -33,19 +33,22 @@ void MeshMaker::MakeParallelMesh() {
 }
 
 void MeshMaker::Make_H1_FESpace(int order) {
-	mfem::H1_FECollection gFec(order, this->gmesh->Dimension());
-	this->gFespace = new mfem::FiniteElementSpace(this->gmesh, &gFec);
+	//mfem::H1_FECollection gFec(order, this->gmesh->Dimension());
+	this->gFec = new mfem::H1_FECollection(order, this->gmesh->Dimension());
+	this->gFespace = new mfem::FiniteElementSpace(this->gmesh, this->gFec);
 }	
 
 void MeshMaker::Make_H1_FESpace_Parallel(int order) {
-	mfem::H1_FECollection fec(order, this->pmesh->Dimension());
-	this->fespace = new mfem::ParFiniteElementSpace(this->pmesh, &fec);
-	
+	//mfem::H1_FECollection fec(order, this->pmesh->Dimension());
+	this->fec = new mfem::H1_FECollection(order, this->pmesh->Dimension());
+	this->fespace = new mfem::ParFiniteElementSpace(this->pmesh, this->fec);
+	/*
 	std::cout << "fespace: " << this->fespace << std::endl;
 	std::cout << "pmesh: " << this->fespace->GetParMesh() << std::endl;
 	std::cout << "fec: " << this->fespace->FEColl() << std::endl;
 	
 	std::cout << "finiteelement: " << this->fespace->GetFE(0) << std::endl;
+	*/
 }
 
 void MeshMaker::TestGetFE() {
