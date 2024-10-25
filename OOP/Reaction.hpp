@@ -41,7 +41,8 @@ private:
     void KMatrix(mfem::ParBilinearForm &K, mfem::GridFunctionCoefficient &gfc, mfem::Array<int> boundary, mfem::ParGridFunction &potential, mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &hpv_X, mfem::HypreParVector &hpv_B);
     void PCG_Solver(mfem::HypreSmoother &smoother, mfem::CGSolver &cg, mfem::HypreParMatrix &KMatrix);
     void ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
-    void ExchangeCurrentDensity(mfem::ParGridFunction &Cn);
+    void ExchangeCurrentDensity(mfem::ParGridFunction &Av_pgf, mfem::ParGridFunction &Cn);
+    void SetZero(mfem::ParGridFunction &pgf);
 
     int nV;                                         // Number of vertices
     int val;
@@ -64,6 +65,8 @@ private:
 
     mfem::ParGridFunction AvP;
     mfem::ParGridFunction *AvP_PGF;
+    mfem::ParGridFunction AvB;
+    mfem::ParGridFunction *AvB_PGF;
 
     mfem::ParGridFunction *Dmp;
     mfem::ParGridFunction *kpl;
@@ -90,10 +93,11 @@ private:
     mfem::ParBilinearForm *Kp2;
     mfem::HypreParMatrix KmP;
 
-    OCV = 0.0;
-    i0C = 0.0;
-    Kfw = 0.0;
-    Kbw = 0.0;
+
+    mfem::ParGridFunction *i0C;
+    mfem::ParGridFunction *OCV;
+    mfem::ParGridFunction *Kfw;
+    mfem::ParGridFunction *Kbw;
 
 
 

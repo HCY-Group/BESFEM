@@ -28,6 +28,8 @@ public:
     mfem::ParGridFunction* GetPsi() const { return psi.get(); }
     mfem::ParGridFunction* GetPse() const { return pse.get(); }
     mfem::ParGridFunction* GetAvP() const { return AvP.get(); }
+    mfem::ParGridFunction* GetAvB() const { return AvB.get(); }
+
 
     mfem::ParMesh GetMesh();
     
@@ -37,6 +39,8 @@ public:
     const mfem::Vector& GetElementVolume() const;
 
     std::unique_ptr<ParGridFunction> AvP;
+    std::unique_ptr<ParGridFunction> AvB;
+
 
     
     double GetTotalPsi() const { return gtPsi; }
@@ -101,7 +105,7 @@ private:
     std::unique_ptr<ParGridFunction> psi;
     std::unique_ptr<ParGridFunction> pse;
     // std::unique_ptr<ParGridFunction> AvP;
-    std::unique_ptr<ParGridFunction> AvB;
+    // std::unique_ptr<ParGridFunction> AvB;
 
     // Other variables
     int nV; // Number of vertices

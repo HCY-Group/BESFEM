@@ -493,15 +493,15 @@ int main(int argc, char *argv[])
 	 
 // 	// rate constants
 // 	ParGridFunction dPHE(&fespace);		// voltage drop
-// 	ParGridFunction Kfw(&fespace);		// forward reaction constant
-// 	ParGridFunction Kbw(&fespace);		// backward rection constant
-// 	ParGridFunction OCV(&fespace);		// open circuit voltage
-// 	ParGridFunction i0C(&fespace);		// exchange current density	
+	ParGridFunction Kfw(&fespace);		// forward reaction constant
+	ParGridFunction Kbw(&fespace);		// backward rection constant
+	ParGridFunction OCV(&fespace);		// open circuit voltage
+	ParGridFunction i0C(&fespace);		// exchange current density	
 
-// 	OCV = 0.0;
-// 	i0C = 0.0;
-// 	Kfw = 0.0;
-// 	Kbw = 0.0;	
+	OCV = 0.0;
+	i0C = 0.0;
+	Kfw = 0.0;
+	Kbw = 0.0;	
 
 // 	double errP = 1.0;
 // 	double errE = 1.0;

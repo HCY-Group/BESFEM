@@ -9,7 +9,7 @@ using namespace mfem;
 using namespace std;
 
 Reaction::Reaction(mfem::ParFiniteElementSpace *fe, MeshHandler &mh, Concentrations &con) 
-    : fespace(fe), mesh_handler(mh), AvP(*mh.GetAvP()), concentrations(con)
+    : fespace(fe), mesh_handler(mh), AvP(*mh.GetAvP()), AvB(*mh.GetAvB()), concentrations(con)
     
 
 
@@ -35,7 +35,7 @@ Reaction::Reaction(mfem::ParFiniteElementSpace *fe, MeshHandler &mh, Concentrati
     Kp2 = new mfem::ParBilinearForm(fespace);
 
     i0C = new mfem::ParGridFunction(fespace);
-    OCv = new mfem::ParGridFunction(fespace);
+    OCV = new mfem::ParGridFunction(fespace);
     Kfw = new mfem::ParGridFunction(fespace);
     Kbw = new mfem::ParGridFunction(fespace);
 
@@ -48,8 +48,16 @@ void Reaction::Initialize(){
     AvP_PGF = new ParGridFunction(fespace);	
 	*AvP_PGF = AvP;
 
+    AvB_PGF = new ParGridFunction(fespace);	
+	*AvB_PGF = AvB;
+
     CreateRx(*Rxn, 0.0);
     SetAvP(*Rxn, *AvP_PGF, 1.0e-08);
+
+    SetZero(*i0C);
+    SetZero(*OCV);
+    SetZero(*Kfw);
+    SetZero(*Kbw);
 
 }
 
@@ -91,7 +99,7 @@ void Reaction::TimeStep() {
     mfem::CGSolver &cgPP_solver = *concentrations.potentials.cgPP_solver;
     PCG_Solver(Mpp, cgPP_solver, KmP);
 
-    ExchangeCurrentDensity(CnP);
+    ExchangeCurrentDensity(*AvB_PGF, CnP);
 
 
 }
@@ -140,18 +148,18 @@ void Reaction::ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunc
 
 }
 
-void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
+void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Av_pgf, mfem::ParGridFunction &Cn){
 
     for (int vi = 0; vi < nV; vi++){
 
         if(Av_pgf(vi) * Constants::dh > 0.0){
             val = -0.2 * (Cn(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn(vi) - 3.195);
-            i0C(vi) = pow(10.0, val) * 1.0e-3;
+            (*i0C)(vi) = pow(10.0, val) * 1.0e-3;
 
-            OCV(vi) = 1.095 * Cn(vi) * Cn(vi) - 8.324e-7 * exp(14.31 * Cn(vi)) + 4.692 * exp(-0.5389 * Cn(vi));
+            (*OCV)(vi) = 1.095 * Cn(vi) * Cn(vi) - 8.324e-7 * exp(14.31 * Cn(vi)) + 4.692 * exp(-0.5389 * Cn(vi));
 
-            Kfw(vi) = iOC(vi) / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * OCV(vi));
-            Kbw(vi) = iOC(vi) / (Constants::Frd * Cn(vi)) * exp(-Constants::alp * Constants::Cst1 * OCV(vi));
+            (*Kfw)(vi) = (*i0C)(vi) / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * (*OCV)(vi));
+            (*Kbw)(vi) = (*i0C)(vi) / (Constants::Frd * Cn(vi)) * exp(-Constants::alp * Constants::Cst1 * (*OCV)(vi));
 
         }
 
@@ -172,6 +180,13 @@ void Reaction::SetAvP(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Av, doub
     Rx = Av;
     Rx *= value;
     
+}
+
+void Reaction::SetZero(mfem::ParGridFunction &pgf){
+    
+    for (int i = 0; i < pgf.Size(); ++i) {
+        pgf(i) = 0.0; 
+    }
 }
 
 void Reaction::SetPotentials(Potentials *pot_) {
