@@ -39,9 +39,12 @@ private:
     void SetAvP(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Av, double value);
     void ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
     void KMatrix(mfem::ParBilinearForm &K, mfem::GridFunctionCoefficient &gfc, mfem::Array<int> boundary, mfem::ParGridFunction &potential, mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &hpv_X, mfem::HypreParVector &hpv_B);
-
+    void PCG_Solver(mfem::HypreSmoother &smoother, mfem::CGSolver &cg, mfem::HypreParMatrix &KMatrix);
+    void ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+    void ExchangeCurrentDensity(mfem::ParGridFunction &Cn);
 
     int nV;                                         // Number of vertices
+    int val;
 
     Array<int> boundary_dofs;
 
@@ -64,6 +67,8 @@ private:
 
     mfem::ParGridFunction *Dmp;
     mfem::ParGridFunction *kpl;
+    mfem::ParGridFunction *kap;
+
 
     mfem::ParBilinearForm *Kl1;
     mfem::ParLinearForm *B1t;
@@ -75,6 +80,20 @@ private:
     mfem::HypreParVector CeVn;
     mfem::HypreParVector *LpCe;
 
+    mfem::ParBilinearForm *Kl2;
+    mfem::HypreParMatrix KmE;
+
+    mfem::HypreSmoother Mpp;
+    mfem::HypreSmoother Mpe;
+
+
+    mfem::ParBilinearForm *Kp2;
+    mfem::HypreParMatrix KmP;
+
+    OCV = 0.0;
+    i0C = 0.0;
+    Kfw = 0.0;
+    Kbw = 0.0;
 
 
 

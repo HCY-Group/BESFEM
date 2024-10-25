@@ -28,6 +28,18 @@ Reaction::Reaction(mfem::ParFiniteElementSpace *fe, MeshHandler &mh, Concentrati
 
     LpCe = new mfem::HypreParVector(fespace);
 
+    Kl2 = new mfem::ParBilinearForm(fespace);
+
+    kap = new mfem::ParGridFunction(fespace); //conductivity in particle
+
+    Kp2 = new mfem::ParBilinearForm(fespace);
+
+    i0C = new mfem::ParGridFunction(fespace);
+    OCv = new mfem::ParGridFunction(fespace);
+    Kfw = new mfem::ParGridFunction(fespace);
+    Kbw = new mfem::ParGridFunction(fespace);
+
+
 }
 
 
@@ -43,21 +55,43 @@ void Reaction::Initialize(){
 
 void Reaction::TimeStep() {
 
+    mfem::ParGridFunction &CnP = *concentrations.CnP;
     mfem::ParGridFunction &CnE = *concentrations.CnE;
+
+    mfem::ParGridFunction &psi = concentrations.psi;
     mfem::ParGridFunction &pse = concentrations.pse;
+
     ElectrolyteConductivity(CnE, pse);
 
     mfem::GridFunctionCoefficient cDm(Dmp);
     mfem::GridFunctionCoefficient cKe(kpl);
 
+    mfem::ParGridFunction &phP = *concentrations.potentials.phP;
     mfem::ParGridFunction &phE = *concentrations.potentials.phE;
+
     KMatrix(*Kl1, cDm, boundary_dofs, phE, *B1t, Kdm, *X1v, *B1v);
 
     mfem::HypreParVector &CeVn = *concentrations.CeVn;
     CnE.GetTrueDofs(CeVn);
-    Kdm.Mult(CeVn, *LpCe); // seg fault
+    Kdm.Mult(CeVn, *LpCe);
 
+    mfem::Array<int> ess_tdof_list_w = mesh_handler.ess_tdof_list_w;
+    KMatrix(*Kl2, cKe, ess_tdof_list_w, phE, *B1t, KmE, *X1v, *B1v);
 
+    mfem::CGSolver &cgPE_solver = *concentrations.potentials.cgPE_solver;
+    PCG_Solver(Mpe, cgPE_solver, KmE);
+
+    ParticleConductivity(CnP, psi);
+
+    mfem::GridFunctionCoefficient cKp(kap);
+
+    mfem::Array<int> ess_tdof_list_e = mesh_handler.ess_tdof_list_e;
+    KMatrix(*Kp2, cKp, ess_tdof_list_e, phP, *B1t, KmP, *X1v, *B1v);
+
+    mfem::CGSolver &cgPP_solver = *concentrations.potentials.cgPP_solver;
+    PCG_Solver(Mpp, cgPP_solver, KmP);
+
+    ExchangeCurrentDensity(CnP);
 
 
 }
@@ -77,16 +111,55 @@ void Reaction::ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridF
 void Reaction::KMatrix(mfem::ParBilinearForm &K, mfem::GridFunctionCoefficient &gfc, mfem::Array<int> boundary, mfem::ParGridFunction &potential, 
 mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &hpv_X, mfem::HypreParVector &hpv_B){
 
-    HypreParMatrix Khpm;
-    Khpm = matrix;
+    // HypreParMatrix Khpm;
+    // Khpm = matrix;
 
     K.Update();
     K.AddDomainIntegrator(new DiffusionIntegrator(gfc));
     K.Assemble();
-    K.FormLinearSystem(boundary, potential, plf_B, Khpm, hpv_X, hpv_B);
+    K.FormLinearSystem(boundary, potential, plf_B, matrix, hpv_X, hpv_B);
 
 }
 
+void Reaction::PCG_Solver(mfem::HypreSmoother &smoother, mfem::CGSolver &cg, mfem::HypreParMatrix &KMatrix){
+
+    smoother.SetType(HypreSmoother::Jacobi);
+    cg.SetPreconditioner(smoother);
+    cg.SetOperator(KMatrix);
+
+
+}
+
+void Reaction::ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx){
+
+    for (int vi = 0; vi < nV; vi++){
+
+        (*kap)(vi) = psx(vi) * (0.01929 + 0.7045 * tanh(2.399 * Cn(vi)) - 0.7238 * tanh(2.412 * Cn(vi)) - 4.2106e-6);
+
+    }
+
+}
+
+void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
+
+    for (int vi = 0; vi < nV; vi++){
+
+        if(Av_pgf(vi) * Constants::dh > 0.0){
+            val = -0.2 * (Cn(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn(vi) - 3.195);
+            i0C(vi) = pow(10.0, val) * 1.0e-3;
+
+            OCV(vi) = 1.095 * Cn(vi) * Cn(vi) - 8.324e-7 * exp(14.31 * Cn(vi)) + 4.692 * exp(-0.5389 * Cn(vi));
+
+            Kfw(vi) = iOC(vi) / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * OCV(vi));
+            Kbw(vi) = iOC(vi) / (Constants::Frd * Cn(vi)) * exp(-Constants::alp * Constants::Cst1 * OCV(vi));
+
+        }
+
+
+    }
+
+
+}
 
 void Reaction::CreateRx(mfem::ParGridFunction &Rx, double initial_value) {
 

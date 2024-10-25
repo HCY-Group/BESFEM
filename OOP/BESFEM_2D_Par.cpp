@@ -419,7 +419,7 @@ int main(int argc, char *argv[])
 // 	// ========================================
 
 	ParGridFunction phP(&fespace);		// electropotential in particle
-// 	ParGridFunction kap(&fespace);		// conductivity in particle
+	ParGridFunction kap(&fespace);		// conductivity in particle
 // 	ParGridFunction RpP(&fespace);		// reaction 
 // 	ParGridFunction pP0(&fespace);		// values before iteration
 
@@ -812,23 +812,23 @@ for (int t = 0; t < 10 + 1; t++){
 
 // 		// electrolyte conductivity and RHS		
 		GridFunctionCoefficient cKe(&kpl) ;		
-// 		std::unique_ptr<ParBilinearForm> Kl2(new ParBilinearForm(&fespace)); 		
-// 		Kl2->AddDomainIntegrator(new DiffusionIntegrator(cKe));
-// 		Kl2->Assemble();	
+		std::unique_ptr<ParBilinearForm> Kl2(new ParBilinearForm(&fespace)); 		
+		Kl2->AddDomainIntegrator(new DiffusionIntegrator(cKe));
+		Kl2->Assemble();	
 
 // 		// assign known values to the DBC nodes	
 // 		ConstantCoefficient dbc_w_Coef(BvE);
 		
 // 		phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
-// 		Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);		
+		Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);		
 		
-// 		// Solve the system using PCG with hypre's BoomerAMG preconditioner.
-// 		//HypreBoomerAMG Mpe(Kml); //HypreBoomerAMG preconditioner causes memory leak issues
-// 		//Mpe.SetPrintLevel(0);
-// 		HypreSmoother Mpe;
-// 		Mpe.SetType(HypreSmoother::Jacobi);
-// 		cgPE.SetPreconditioner(Mpe);
-// 		cgPE.SetOperator(Kml);
+	// Solve the system using PCG with hypre's BoomerAMG preconditioner.
+		//HypreBoomerAMG Mpe(Kml); //HypreBoomerAMG preconditioner causes memory leak issues
+		//Mpe.SetPrintLevel(0);
+		HypreSmoother Mpe;
+		Mpe.SetType(HypreSmoother::Jacobi);
+		cgPE.SetPreconditioner(Mpe);
+		cgPE.SetOperator(Kml);
 					
 		
 // 		// assign known values to the DBC nodes	
