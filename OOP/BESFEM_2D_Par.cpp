@@ -452,13 +452,13 @@ int main(int argc, char *argv[])
 // 	// // 	 |_|                       
 // 	// ========================================
 	
-// 	double tc1 =(2*t_minus-1.0)/(2*t_minus*(1.0-t_minus));
-// 	double tc2 = 1.0/(2*t_minus*(1.0-t_minus))*Cst1;
+	double tc1 =(2*t_minus-1.0)/(2*t_minus*(1.0-t_minus));
+	double tc2 = 1.0/(2*t_minus*(1.0-t_minus))*Cst1;
 	double dffe;
 
 	ParGridFunction phE(&fespace);		// electropot in electrolyte
-// 	ParGridFunction Dmp(&fespace);		// D_minus_plus
-// 	ParGridFunction kpl(&fespace);		// electrolyte conductivity
+	ParGridFunction Dmp(&fespace);		// D_minus_plus
+	ParGridFunction kpl(&fespace);		// electrolyte conductivity
 // 	ParGridFunction RpE(&fespace);		// reaction rate for electrolyte
 // 	ParGridFunction pE0(&fespace);		// values before iteration
 
@@ -479,7 +479,7 @@ int main(int argc, char *argv[])
 	// Laplace matrix
 	HypreParMatrix Kdm;
 
-// 	HypreParVector LpCe(&fespace), Xe0(&fespace);
+	HypreParVector LpCe(&fespace), Xe0(&fespace);
 // 	HypreParVector RHSl(&fespace);
 	
 // 	double Vcell = BvP - BvE;
@@ -511,7 +511,7 @@ int main(int argc, char *argv[])
 
 // 	// containers used later.
 	HypreParVector X1v(&fespace), B1v(&fespace);
-// 	ParLinearForm B1t(&fespace);
+	ParLinearForm B1t(&fespace);
 
 // 	int cnt = 0;
 // 	string stri;
@@ -778,8 +778,8 @@ for (int t = 0; t < 10 + 1; t++){
 		delete TmatR;
 		delete TmatL;
 
-		std::cout << "Updated CnE values:" << std::endl;
-    	CnE.Print(std::cout);
+		// std::cout << "Updated CnE values:" << std::endl;
+    	// CnE.Print(std::cout);
 		
 		
 // 		// ==============================================
@@ -790,14 +790,17 @@ for (int t = 0; t < 10 + 1; t++){
 // 		// // 	 | | |  __/ (_| | (__| |_| | (_) | | | |
 // 		// // 	 |_|  \___|\__,_|\___|\__|_|\___/|_| |_|
 // 		// ==============================================	
- 
+
 
 		// electrolyte conductivity and RHS	
 		for (int vi = 0; vi < nV; vi++){
 			dffe = exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
 			Dmp(vi) = pse(vi)*tc1*D0*dffe;
 			kpl(vi) = pse(vi)*tc2*D0*dffe*CnE(vi);
+
 		}
+
+		// std::cout << "Dmp = " << Dmp << std::endl;
 		GridFunctionCoefficient cDm(&Dmp);
 
 		// Laplace of CnE for the RHS
@@ -831,47 +834,59 @@ for (int t = 0; t < 10 + 1; t++){
 		cgPE.SetOperator(Kml);
 					
 		
-// 		// assign known values to the DBC nodes	
-// 		ConstantCoefficient dbc_e_Coef(BvP);			
+		// assign known values to the DBC nodes	
+		// ConstantCoefficient dbc_e_Coef(BvP);			
 		
-// 		// particle conductivity
-// 		// appendix equation A-20
-// 		for (int vi = 0; vi < nV; vi++){
-// 			kap(vi) = psi(vi)*(0.01929 + 0.7045*tanh(2.399*CnP(vi)) - \
-// 				0.7238*tanh(2.412*CnP(vi)) - 4.2106e-6);
-// 		}	
-// 		GridFunctionCoefficient cKp(&kap) ;
-		
-// 		// stiffness matrix for phP
-// 		std::unique_ptr<ParBilinearForm> Kp2(new ParBilinearForm(&fespace));
-// 		Kp2->AddDomainIntegrator(new DiffusionIntegrator(cKp));
-// 		Kp2->Assemble();
-		
-// 		// project values to DBC nodes
-// 		phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
-// 		Kp2->FormLinearSystem(ess_tdof_list_e, phP, B1t, KmP, X1v, B1v);			
+		// particle conductivity
+		// appendix equation A-20
+		for (int vi = 0; vi < nV; vi++){
+			kap(vi) = psi(vi)*(0.01929 + 0.7045*tanh(2.399*CnP(vi)) - \
+				0.7238*tanh(2.412*CnP(vi)) - 4.2106e-6);
+		}	
 
-// 		// Solve the system using PCG with hypre's BoomerAMG preconditioner.
-// 		//HypreBoomerAMG Mpp(KmP);
-// 		//Mpp.SetPrintLevel(0);
-// 		HypreSmoother Mpp;
-// 		Mpp.SetType(HypreSmoother::Jacobi);
-// 		cgPP.SetPreconditioner(Mpp);
-// 		cgPP.SetOperator(KmP);
+    	// std::cout << "kap = " << kap << std::endl;
 
-// 		// rate constants and exchange current density at interface
-// 		for (int vi = 0; vi < nV; vi++){
-// 			if ( AvB(vi)*dh > 0.0 ){
-// 				val = -0.2*(CnP(vi)-0.37)-1.559-0.9376*tanh(8.961*CnP(vi)-3.195);
-// 				i0C(vi) = pow(10.0,val)*1.0e-3;
+
+		GridFunctionCoefficient cKp(&kap) ;
+		
+		// stiffness matrix for phP
+		std::unique_ptr<ParBilinearForm> Kp2(new ParBilinearForm(&fespace));
+		Kp2->AddDomainIntegrator(new DiffusionIntegrator(cKp));
+		Kp2->Assemble();
+		
+		// project values to DBC nodes
+		// phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
+		Kp2->FormLinearSystem(ess_tdof_list_e, phP, B1t, KmP, X1v, B1v);			
+
+		// Solve the system using PCG with hypre's BoomerAMG preconditioner.
+		//HypreBoomerAMG Mpp(KmP);
+		//Mpp.SetPrintLevel(0);
+		HypreSmoother Mpp;
+		Mpp.SetType(HypreSmoother::Jacobi);
+		cgPP.SetPreconditioner(Mpp);
+		cgPP.SetOperator(KmP);
+
+		// std::cout << "AvB: " << AvB << std::endl;
+		// std::cout << "CnP: " << CnP << std::endl;
+		
+		// rate constants and exchange current density at interface
+		for (int vi = 0; vi < nV; vi++){
+			if ( AvB(vi)*dh > 0.0 ){
+				val = -0.2*(CnP(vi)-0.37)-1.559-0.9376*tanh(8.961*CnP(vi)-3.195);
+				i0C(vi) = pow(10.0,val)*1.0e-3;
 				
-// 				OCV(vi) = 1.095*CnP(vi)*CnP(vi) - 8.324e-7*exp(14.31*CnP(vi)) + \
-// 					4.692*exp(-0.5389*CnP(vi));
+				OCV(vi) = 1.095*CnP(vi)*CnP(vi) - 8.324e-7*exp(14.31*CnP(vi)) + \
+					4.692*exp(-0.5389*CnP(vi));
 					
-// 				Kfw(vi) = i0C(vi)/(Frd*0.001  )*exp( alp*Cst1*OCV(vi)) ;	
-// 				Kbw(vi) = i0C(vi)/(Frd*CnP(vi))*exp(-alp*Cst1*OCV(vi)) ;
-// 			}
-// 		}	
+				Kfw(vi) = i0C(vi)/(Frd*0.001  )*exp( alp*Cst1*OCV(vi)) ;	
+				Kbw(vi) = i0C(vi)/(Frd*CnP(vi))*exp(-alp*Cst1*OCV(vi)) ;
+
+				// std::cout << "Kbw[" << vi << "] = " << Kbw(vi) << std::endl;
+
+			}
+		}
+
+		// std::cout << "Kbw = " << Kbw << std::endl;	
 
 
 // 		// convergence residuals
@@ -879,17 +894,17 @@ for (int t = 0; t < 10 + 1; t++){
 // 		gErrE = 1.0;
 // 		inlp = 0;	
 
-// 		// internal loop
-// 		while (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){
+		// // internal loop
+		// while (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){
 
-// 			// Butler-Volmer Equation for Reaction Rate
-// 			for (int vi = 0; vi < nV; vi++){
-// 				if ( AvB(vi)*dh > 0.0 ){
-// 					dPHE(vi) = phP(vi) - phE(vi);
-// 					Rxn(vi) = AvP(vi)*(Kfw(vi)*CnE(vi)*exp(-alp*Cst1*dPHE(vi)) - \
-// 					                   Kbw(vi)*CnP(vi)*exp( alp*Cst1*dPHE(vi)));
-// 				}
-// 			}
+		// 	// Butler-Volmer Equation for Reaction Rate
+		// 	for (int vi = 0; vi < nV; vi++){
+		// 		if ( AvB(vi)*dh > 0.0 ){
+		// 			dPHE(vi) = phP(vi) - phE(vi);
+		// 			Rxn(vi) = AvP(vi)*(Kfw(vi)*CnE(vi)*exp(-alp*Cst1*dPHE(vi)) - \
+		// 			                   Kbw(vi)*CnP(vi)*exp( alp*Cst1*dPHE(vi)));
+		// 		}
+		// 	}
 
 
 // 			// ========================================

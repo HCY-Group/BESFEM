@@ -46,12 +46,16 @@ private:
 
     int nV;                                         // Number of vertices
     int val;
+    int inlp = 0;
 
     Array<int> boundary_dofs;
 
     double dffe; 
     double tc1 =(2*Constants::t_minus-1.0)/(2*Constants::t_minus*(1.0-Constants::t_minus));
 	double tc2 = 1.0/(2*Constants::t_minus*(1.0-Constants::t_minus))*Constants::Cst1;
+
+    double gErrP = 1.0;
+    double gErrE = 1.0;
 
     mfem::ParGridFunction *CnP;
     mfem::ParGridFunction *CnE;

@@ -66,10 +66,15 @@ void Reaction::TimeStep() {
     mfem::ParGridFunction &CnP = *concentrations.CnP;
     mfem::ParGridFunction &CnE = *concentrations.CnE;
 
+    // std::cout << CnE << std::endl; // CnE is correct here
+
+
     mfem::ParGridFunction &psi = concentrations.psi;
     mfem::ParGridFunction &pse = concentrations.pse;
 
     ElectrolyteConductivity(CnE, pse);
+
+    // std::cout << "Dmp = " << (*Dmp) << std::endl;
 
     mfem::GridFunctionCoefficient cDm(Dmp);
     mfem::GridFunctionCoefficient cKe(kpl);
@@ -91,6 +96,8 @@ void Reaction::TimeStep() {
 
     ParticleConductivity(CnP, psi);
 
+    // std::cout << "kap = " << (*kap) << std::endl;
+
     mfem::GridFunctionCoefficient cKp(kap);
 
     mfem::Array<int> ess_tdof_list_e = mesh_handler.ess_tdof_list_e;
@@ -101,18 +108,22 @@ void Reaction::TimeStep() {
 
     ExchangeCurrentDensity(*AvB_PGF, CnP);
 
+    // std::cout << "Kbw = " << (*Kbw) << std::endl;
+
 
 }
 
 
 void Reaction::ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {
-
+    
     for (int vi = 0; vi < nV; vi++){
 
-        dffe = exp(-7.02 - 830 * Cn(vi) + 5000 * Cn(vi) * Cn(vi));
+        dffe = exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi));
         (*Dmp)(vi) = psx(vi) * tc1 * Constants::D0 * dffe;
         (*kpl)(vi) = psx(vi) * tc2 * Constants::D0 * dffe * Cn(vi);
+
     }
+
 
 }
 
@@ -150,6 +161,9 @@ void Reaction::ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunc
 
 void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Av_pgf, mfem::ParGridFunction &Cn){
 
+    // std::cout << "AvB: " << Av_pgf << std::endl; // AvB not coming in correctly
+    std::cout << "CnP: " << Cn << std::endl; // CnP coming in correctly
+
     for (int vi = 0; vi < nV; vi++){
 
         if(Av_pgf(vi) * Constants::dh > 0.0){
@@ -160,6 +174,8 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Av_pgf, mfem::ParGr
 
             (*Kfw)(vi) = (*i0C)(vi) / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * (*OCV)(vi));
             (*Kbw)(vi) = (*i0C)(vi) / (Constants::Frd * Cn(vi)) * exp(-Constants::alp * Constants::Cst1 * (*OCV)(vi));
+
+            // std::cout << "Kbw[" << vi << "] = " << (*Kbw)(vi) << std::endl;
 
         }
 
