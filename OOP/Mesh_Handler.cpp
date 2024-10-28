@@ -141,7 +141,7 @@ void MeshHandler::InterpolateDomainParameters(int nV, const std::shared_ptr<mfem
 
     for (int vi = 0; vi < nV; vi++) {
         if ((*AvP)(vi) * dh < 1.0e-3) { (*AvP)(vi) = 0.0; }
-        if ((*AvB)(vi) * dh < 1.0e-3) { (*AvB)(vi) = 0.0; }
+        if ((*AvB)(vi) * dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
     }
 }
 

@@ -63,14 +63,14 @@ void Reaction::Initialize(){
 
 void Reaction::TimeStep() {
 
-    mfem::ParGridFunction &CnP = *concentrations.CnP;
-    mfem::ParGridFunction &CnE = *concentrations.CnE;
+    mfem::ParGridFunction &CnP = *concentrations.CnP; // referencing CnP from concentrations class
+    mfem::ParGridFunction &CnE = *concentrations.CnE; // referencing CnE from concentrations class
 
     // std::cout << CnE << std::endl; // CnE is correct here
 
 
-    mfem::ParGridFunction &psi = concentrations.psi;
-    mfem::ParGridFunction &pse = concentrations.pse;
+    mfem::ParGridFunction &psi = concentrations.psi; // referencing psi from concentrations class
+    mfem::ParGridFunction &pse = concentrations.pse; // referencing pse from concentrations class
 
     ElectrolyteConductivity(CnE, pse);
 
@@ -79,8 +79,8 @@ void Reaction::TimeStep() {
     mfem::GridFunctionCoefficient cDm(Dmp);
     mfem::GridFunctionCoefficient cKe(kpl);
 
-    mfem::ParGridFunction &phP = *concentrations.potentials.phP;
-    mfem::ParGridFunction &phE = *concentrations.potentials.phE;
+    mfem::ParGridFunction &phP = *concentrations.potentials.phP; // referencing phP from potentials class
+    mfem::ParGridFunction &phE = *concentrations.potentials.phE; // referencing phE from potentials class
 
     KMatrix(*Kl1, cDm, boundary_dofs, phE, *B1t, Kdm, *X1v, *B1v);
 
@@ -130,9 +130,6 @@ void Reaction::ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridF
 void Reaction::KMatrix(mfem::ParBilinearForm &K, mfem::GridFunctionCoefficient &gfc, mfem::Array<int> boundary, mfem::ParGridFunction &potential, 
 mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &hpv_X, mfem::HypreParVector &hpv_B){
 
-    // HypreParMatrix Khpm;
-    // Khpm = matrix;
-
     K.Update();
     K.AddDomainIntegrator(new DiffusionIntegrator(gfc));
     K.Assemble();
@@ -161,13 +158,10 @@ void Reaction::ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunc
 
 void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Av_pgf, mfem::ParGridFunction &Cn){
 
-    // std::cout << "AvB: " << Av_pgf << std::endl; // AvB not coming in correctly
-    std::cout << "CnP: " << Cn << std::endl; // CnP coming in correctly
-
     for (int vi = 0; vi < nV; vi++){
 
         if(Av_pgf(vi) * Constants::dh > 0.0){
-            val = -0.2 * (Cn(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn(vi) - 3.195);
+            val = -0.2 * (Cn(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn(vi) - 3.195); // check on this!
             (*i0C)(vi) = pow(10.0, val) * 1.0e-3;
 
             (*OCV)(vi) = 1.095 * Cn(vi) * Cn(vi) - 8.324e-7 * exp(14.31 * Cn(vi)) + 4.692 * exp(-0.5389 * Cn(vi));
@@ -175,14 +169,8 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Av_pgf, mfem::ParGr
             (*Kfw)(vi) = (*i0C)(vi) / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * (*OCV)(vi));
             (*Kbw)(vi) = (*i0C)(vi) / (Constants::Frd * Cn(vi)) * exp(-Constants::alp * Constants::Cst1 * (*OCV)(vi));
 
-            // std::cout << "Kbw[" << vi << "] = " << (*Kbw)(vi) << std::endl;
-
         }
-
-
     }
-
-
 }
 
 void Reaction::CreateRx(mfem::ParGridFunction &Rx, double initial_value) {
