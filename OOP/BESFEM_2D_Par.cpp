@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
 	MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
 	Xfr = gSum/gtPsi;
 
-	// cout << "gSum: " << gSum << std::endl;
+	cout << "gSum: " << gSum << std::endl;
 	
 	
 	// SBM mass matrix	
@@ -873,8 +873,8 @@ for (int t = 0; t < 10 + 1; t++){
 		// rate constants and exchange current density at interface
 		for (int vi = 0; vi < nV; vi++){
 			if ( AvB(vi)*dh > 0.0 ){
-				double value = -0.2*(CnP(vi)-0.37)-1.559-0.9376*tanh(8.961*CnP(vi)-3.195); // check on this!
-				i0C(vi) = pow(10.0,value)*1.0e-3;
+				val = -0.2*(CnP(vi)-0.37)-1.559-0.9376*tanh(8.961*CnP(vi)-3.195); // check on this!
+				i0C(vi) = pow(10.0,val)*1.0e-3;
 				
 				OCV(vi) = 1.095*CnP(vi)*CnP(vi) - 8.324e-7*exp(14.31*CnP(vi)) + \
 					4.692*exp(-0.5389*CnP(vi));
@@ -887,7 +887,7 @@ for (int t = 0; t < 10 + 1; t++){
 			}
 		}
 
-		std::cout << "Kbw = " << Kbw << std::endl;
+		// std::cout << "Kbw = " << Kbw << std::endl;
 
 
 // 		// convergence residuals
