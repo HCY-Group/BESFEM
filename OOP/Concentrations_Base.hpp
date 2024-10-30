@@ -11,7 +11,7 @@ public:
     Concentrations(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
     virtual ~Concentrations() = default;
 
-    void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother, bool perform_lithiation);
+    void SetInitialValues(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, bool perform_lithiation);
 
     mfem::ParGridFunction psi;                     
     mfem::ParGridFunction pse; 
@@ -26,12 +26,9 @@ protected:
     std::shared_ptr<mfem::CGSolver> solver;
     mfem::HypreSmoother smoother;
 
-    void CreateCn(mfem::ParGridFunction &Cn, double initial_value, bool perform_lithiation, mfem::ParGridFunction &psx);
-    void Solver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother);
+    void SetInitialConcentration(mfem::ParGridFunction &Cn, double initial_value);
+    void SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother);
     void ImposeNeumannBC(mfem::ParGridFunction &psx, mfem::ParGridFunction &PGF);
-
-    // Virtual function for class-specific different tasks
-    virtual void Initialize_Differences(mfem::ParGridFunction &psx) {}
 
 private:
     MeshHandler &mesh_handler;

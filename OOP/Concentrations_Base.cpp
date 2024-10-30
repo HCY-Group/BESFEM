@@ -4,8 +4,8 @@
 
 
 Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : pmesh(pm), fespace(fe), mesh_handler(mh), Mmat(std::make_shared<mfem::HypreParMatrix>()), solver(std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD)),
-    EVol(mh.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), gtPse(mesh_handler.GetTotalPse())
+    : pmesh(pm), fespace(fe), mesh_handler(mh), EVol(mh.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), 
+      gtPse(mesh_handler.GetTotalPse())
 
 {
     
@@ -16,26 +16,26 @@ Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *f
 
 }
 
-void Concentrations::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother, bool perform_lithiation) {
+void Concentrations::SetInitialValues(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, bool perform_lithiation) {
     
     // Shared initialization tasks
-    CreateCn(Cn, initial_value, perform_lithiation, psx);
-    Solver(psx, Mmat, m_solver, smoother);
+    SetInitialConcentration(Cn, initial_value);
 
-    // Class-specific tasks defined in inherit classes
-    Initialize_Differences(psx);
-}
-
-void Concentrations::CreateCn(mfem::ParGridFunction &Cn, double initial_value, bool perform_lithiation, mfem::ParGridFunction &psx) {
-    for (int i = 0; i < Cn.Size(); ++i) {
-        Cn(i) = initial_value;
-    }
     if (perform_lithiation) {
         LithiationCalculation(Cn, psx);
     }
+
 }
 
-void Concentrations::Solver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother) {
+void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double initial_value) {
+    
+    for (int i = 0; i < Cn.Size(); ++i) {
+        Cn(i) = initial_value;
+    }
+
+}
+
+void Concentrations::SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother) {
     
     M = new mfem::ParBilinearForm(fespace);
 
@@ -49,7 +49,7 @@ void Concentrations::Solver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::Hy
     M->Finalize();
 
     mfem::HypreParMatrix HPM;
-    M->FormSystemMatrix(boundary_dofs, HPM);
+    M->FormSystemMatrix(boundary_dofs, HPM); // should be form linear system
     Mmat = std::make_shared<mfem::HypreParMatrix>(HPM);
 
     // mfem::HypreSmoother M_prec;
