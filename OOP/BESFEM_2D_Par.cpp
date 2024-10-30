@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
 	MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
 	Xfr = gSum/gtPsi;
 
-	cout << "gSum: " << gSum << std::endl;
+	// cout << "gSum: " << gSum << std::endl;
 	
 	
 	// SBM mass matrix	

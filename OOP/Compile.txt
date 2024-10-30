@@ -1,0 +1,12 @@
+mpicxx -g -O3 -std=c++14 -I../../.. -I../../../../hypre/src/hypre/include BESFEM_2D_Par.cpp -o original -L../../.. -lmfem -L../../../../hypre/src/hypre/lib -lHYPRE -L../../../../metis-4.0 -lmetis -lrt
+
+mpicxx -g -O3 -std=c++14 -I../../.. -I../../../../hypre/src/hypre/include main.cpp Constants.cpp Mesh_Handler.cpp Concentrations.cpp Reaction.cpp Potentials.cpp -o main -L../../.. -lmfem -L../../../../hypre/src/hypre/lib -lHYPRE -L../../../../metis-4.0 -lmetis -lrt
+
+
+To Open in GlVis: open on desktop computer - Documents/PhD/MFEM/glvis-4.2
+Save documents over here
+Run ./glvis -m Pmesh.000000 -g CnE_solution.0.gf 
+
+
+mpicxx -g -O3 -std=c++14 -I../../.. -I../../../../hypre/src/hypre/include simulation.cpp Constants.cpp Mesh_Handler.cpp Concentrations_Base.cpp CnP.cpp CnE.cpp -o simulation -L../../.. -lmfem -L../../../../hypre/src/hypre/lib -lHYPRE -L../../../../metis-4.0 -lmetis -lrt
+
