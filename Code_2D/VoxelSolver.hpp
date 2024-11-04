@@ -14,7 +14,7 @@ public:
 	void MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh);
 	//void InitStiffMatrix(Array<int> boundary_dofs, ParGridFunction Diff);
 	//void InitTimeDepOper(ParGridFunction DomPar);
-	void InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridFunction Diff, ParGridFunction DomPar);
+	void InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridFunction &Diff, ParGridFunction &DomPar);
 	void UpdateLinearForm(ParGridFunction gf);
 	void UpdateLinearForm_DoubleWellPotential();
 	void UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, double dt);
