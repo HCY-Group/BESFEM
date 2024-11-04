@@ -48,8 +48,8 @@ int main(int argc, char *argv[]) {
  
     // Time Step
     for (int t = 0; t < 10 + 1; ++t) {
-        particle_concentration.TimeStep(Rxn_gf);
-        electrolyte_concentration.TimeStep(Rxn_gf);
+        particle_concentration.TimeStep(Rxn_gf, CnP_gf, psi);
+        electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, pse);
 
 
     }

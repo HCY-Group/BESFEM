@@ -8,7 +8,7 @@ CnP::CnP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     {
 
     PsVc = mfem::HypreParVector(fespace); 
-    RxP = mfem::ParGridFunction(fespace);
+    RxP = new ParGridFunction(fespace);
 
     Mmatp = std::make_shared<mfem::HypreParMatrix>();
     Mp_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
@@ -27,11 +27,19 @@ void CnP::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
 }
 
 
-void CnP::TimeStep(mfem::ParGridFunction &Rx)
+void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
 {
 
-    Concentrations::CreateReaction(Rx, RxP, (1/Constants::rho));
+    Concentrations::CreateReaction(Rx, *RxP, (1/Constants::rho));
 
+    // Create dummy values to use Force Term Function 
+    Array<int> dummy_boundary;
+    mfem::ConstantCoefficient coef1(0.0);
+    mfem::ConstantCoefficient coef2(0.0);
+    mfem::ProductCoefficient dummy_coef(coef1, coef2);
+
+    Concentrations::ForceTerm(*RxP, ftP, dummy_boundary, dummy_coef, false); // false since not applying BCs
+    std::shared_ptr<GridFunctionCoefficient> cDp = Concentrations::Diffusivity(psx, Cn, true); // true since using first equation
 
 
 

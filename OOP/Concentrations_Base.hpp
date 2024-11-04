@@ -32,6 +32,10 @@ protected:
     void SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother);
     void ImposeNeumannBC(mfem::ParGridFunction &psx, mfem::ParGridFunction &PGF);
     void CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value);
+    void ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &Fxx, mfem::Array<int> boundary, mfem::ProductCoefficient m, bool apply_boundary_conditions);
+    void TotalReaction(mfem::ParGridFunction &Rx, double value);
+    std::shared_ptr<mfem::GridFunctionCoefficient> Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte );
+
 
 private:
     // MeshHandler &mesh_handler;
@@ -54,6 +58,10 @@ private:
     double gtPsi;                                   // Total Psi from MeshHandler
     double gtPse;                                   // Total Pse from MeshHandler
 
+    mfem::ParGridFunction *Rxx;
+    mfem::GridFunctionCoefficient *cXx;
+
+    double infx;
 
 
 

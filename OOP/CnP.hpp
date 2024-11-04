@@ -9,8 +9,9 @@ public:
     CnP(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
     void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, bool perform_lithiation);
 
-    void TimeStep(mfem::ParGridFunction &Rx);
+    void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
+    mfem::ParGridFunction *RxP;
 
     
 
@@ -22,7 +23,7 @@ private:
     std::shared_ptr<mfem::HypreParMatrix> Mmatp;
     mfem::HypreSmoother Mp_prec;
 
-    mfem::ParGridFunction RxP;
+    mfem::ParLinearForm ftP;
 
 
 };

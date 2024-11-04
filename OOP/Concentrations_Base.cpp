@@ -105,3 +105,63 @@ void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFun
     Rx2 *= value;
 
 }
+
+void Concentrations::ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &Fxx, mfem::Array<int> boundary, mfem::ProductCoefficient m, bool apply_boundary_conditions) {
+
+    std::unique_ptr<ParLinearForm> Bx2(new ParLinearForm(fespace));	
+
+    Rxx = new ParGridFunction(fespace);
+    *Rxx = gfc;
+
+    cXx = new GridFunctionCoefficient(Rxx);
+
+    Bx2->AddDomainIntegrator(new DomainLFIntegrator(*cXx));
+
+    if (apply_boundary_conditions) {
+        Bx2->AddBoundaryIntegrator(new BoundaryLFIntegrator(m), boundary);
+    }
+
+    Bx2->Assemble();
+    Fxx = std::move(*Bx2);
+
+}
+
+void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double value) {
+
+    value = 0.0;
+    Array<double> VtxVal(nC);
+    Vector EAvg(nE);
+    for (int ei = 0; ei < nE; ei++) {
+        Rx.GetNodalValues(ei, VtxVal);
+        double val = 0.0;
+        for (int vt = 0; vt < nC; vt++) {
+            val += VtxVal[vt];
+        }
+        EAvg(ei) = val / nC;
+        value += EAvg(ei) * EVol(ei);
+    }
+
+    double global_value;
+    MPI_Allreduce(&value, &global_value, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    infx = global_value / (mesh_handler.L_w);
+
+}
+
+std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
+
+    mfem::ParGridFunction *Dx = new mfem::ParGridFunction(fespace);
+
+    for (int vi = 0; vi < nV; vi++) {
+        if (particle_electrolyte) {
+            (*Dx)(vi) = psx(vi) * (0.0277 - 0.084 * Cn(vi) + 0.1003 * Cn(vi) * Cn(vi)) * 1.0e-8;
+            if ((*Dx)(vi) > 4.6e-10) {
+                (*Dx)(vi) = 4.6e-10;
+            }
+        } else {
+            (*Dx)(vi) = psx(vi) * Constants::D0 * exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi));
+        }
+    }
+
+    return std::make_shared<mfem::GridFunctionCoefficient>(Dx);
+
+}
