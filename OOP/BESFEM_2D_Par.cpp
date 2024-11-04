@@ -662,7 +662,7 @@ for (int t = 0; t < 10 + 1; t++){
 		Rxe *= (-1.0*t_minus);	
 		GridFunctionCoefficient cAe(&Rxe) ;
 
-		// Rxe.Print(std::cout);
+		Rxe.Print(std::cout);
 
 		
 		// total reaction

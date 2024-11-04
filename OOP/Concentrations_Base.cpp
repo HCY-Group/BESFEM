@@ -98,3 +98,10 @@ void Concentrations::ImposeNeumannBC(mfem::ParGridFunction &psx, mfem::ParGridFu
     PGF = psx;
     PGF.Neg();
 }
+
+void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value) {
+
+    Rx2 = Rx1;
+    Rx2 *= value;
+
+}

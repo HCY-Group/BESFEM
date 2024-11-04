@@ -6,6 +6,7 @@
 #include "Concentrations_Base.hpp"
 #include "CnP.hpp"
 #include "CnE.hpp"
+#include "Reaction.hpp"
 
 // #include "Reaction.hpp"
 // #include "Potentials.hpp"
@@ -39,6 +40,19 @@ int main(int argc, char *argv[]) {
     CnE electrolyte_concentration(&pmesh, &fespace, mesh_handler);
     mfem::ParGridFunction CnE_gf(&fespace);
     electrolyte_concentration.Initialize(CnE_gf, 0.001, pse, false); // false since not running lithiation calculation
+
+    // Initialize Reaction
+    Reaction reaction(&pmesh, &fespace, mesh_handler);
+    mfem::ParGridFunction Rxn_gf(&fespace);
+    reaction.Initialize(Rxn_gf, 0.0);
+ 
+    // Time Step
+    for (int t = 0; t < 10 + 1; ++t) {
+        particle_concentration.TimeStep(Rxn_gf);
+        electrolyte_concentration.TimeStep(Rxn_gf);
+
+
+    }
 
     Mpi::Finalize();
     return 0;

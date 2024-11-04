@@ -10,6 +10,8 @@ class Concentrations {
 public:
     Concentrations(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
     virtual ~Concentrations() = default;
+    MeshHandler &mesh_handler;
+
 
     void SetInitialValues(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, bool perform_lithiation);
 
@@ -29,9 +31,10 @@ protected:
     void SetInitialConcentration(mfem::ParGridFunction &Cn, double initial_value);
     void SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother);
     void ImposeNeumannBC(mfem::ParGridFunction &psx, mfem::ParGridFunction &PGF);
+    void CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value);
 
 private:
-    MeshHandler &mesh_handler;
+    // MeshHandler &mesh_handler;
 
     void LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
