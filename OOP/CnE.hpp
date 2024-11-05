@@ -30,6 +30,18 @@ private:
     mfem::Array<int> nbc_w_bdr;
     std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef;    
 
+    std::shared_ptr<mfem::HypreParMatrix> Kmate;
+
+    mfem::HypreParVector Feb;
+    mfem::Array<int> boundary_dofs;
+    mfem::HypreParVector X1v;
+
+    mfem::HypreParVector *CeV0;
+    mfem::HypreParVector *CeVn;
+    mfem::HypreParVector *RHCe;
+    mfem::HypreParMatrix *TmatR;
+    mfem::HypreParMatrix *TmatL;
+
 
 
 };

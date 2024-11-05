@@ -1,6 +1,11 @@
 #ifndef CONCENTRATIONS_HPP
 #define CONCENTRATIONS_HPP
 
+// Public: Members can be accessed from anywhere. This is the default access modifier. 
+// Protected: Members can be accessed within the class and by classes that inherit from that class. 
+// Private: Members can only be accessed within the class that defines them.
+
+
 #include "mfem.hpp"
 #include "Mesh_Handler.hpp"
 
@@ -35,6 +40,7 @@ protected:
     void ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &Fxx, mfem::Array<int> boundary, mfem::ProductCoefficient m, bool apply_boundary_conditions);
     void TotalReaction(mfem::ParGridFunction &Rx, double value);
     std::shared_ptr<mfem::GridFunctionCoefficient> Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte );
+    void KMatrix(mfem::Array<int> boundary, mfem::ParGridFunction &Cn, mfem::ParLinearForm &Fxx, std::shared_ptr<mfem::HypreParMatrix> &Kmatx, mfem::HypreParVector &X1v, mfem::HypreParVector &Fxb, mfem::GridFunctionCoefficient *cDx);
 
 
 private:

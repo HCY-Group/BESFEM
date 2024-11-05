@@ -3,7 +3,7 @@
 
 
 CnP::CnP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Concentrations(pm, fe, mh) 
+    : Concentrations(pm, fe, mh)
     
     {
 
@@ -14,6 +14,8 @@ CnP::CnP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     Mp_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
     Mp_prec.SetType(mfem::HypreSmoother::Jacobi);
 
+    Kmatp = std::make_shared<mfem::HypreParMatrix>();
+    Fcb = HypreParVector(fespace);
 
 
     }
@@ -39,8 +41,9 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     mfem::ProductCoefficient dummy_coef(coef1, coef2);
 
     Concentrations::ForceTerm(*RxP, ftP, dummy_boundary, dummy_coef, false); // false since not applying BCs
-    std::shared_ptr<GridFunctionCoefficient> cDp = Concentrations::Diffusivity(psx, Cn, true); // true since using first equation
 
+    std::shared_ptr<GridFunctionCoefficient> cDp = Concentrations::Diffusivity(psx, Cn, true); // true since using first equation
+    Concentrations::KMatrix(boundary_dofs, Cn, ftP, Kmatp, X1v, Fcb, cDp.get());
 
 
 

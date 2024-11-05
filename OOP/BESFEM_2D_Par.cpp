@@ -563,21 +563,21 @@ for (int t = 0; t < 10 + 1; t++){
 		// Bc2->Print(std::cout);		
 
 
-// 		// diffusivity in the particles
-// 		for (int vi = 0; vi < nV; vi++ ){
-// 			// appendix equation A-19
-// 			Dp(vi) = psi(vi)*(0.0277-0.084*CnP(vi) + 0.1003*CnP(vi)*CnP(vi))*1.0e-8;
-// 			if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
+		// diffusivity in the particles
+		for (int vi = 0; vi < nV; vi++ ){
+			// appendix equation A-19
+			Dp(vi) = psi(vi)*(0.0277-0.084*CnP(vi) + 0.1003*CnP(vi)*CnP(vi))*1.0e-8;
+			if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
 
-// 			// std::cout << "Dp[" << vi << "] = " << Dp(vi) << std::endl;
-// 		}	
-// 		GridFunctionCoefficient cDp(&Dp) ;	
+			// std::cout << "Dp[" << vi << "] = " << Dp(vi) << std::endl;
+		}	
+		GridFunctionCoefficient cDp(&Dp) ;	
 
-// 		// std::cout << "cDp values in TimeStepCnP:" << std::endl;
-// 		// 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
-// 		// 		std::cout << (*cDp.GetGridFunction())(vi) << " ";
-// 		// 	}
-// 		// std::cout << std::endl;		
+		// std::cout << "cDp values in TimeStepCnP:" << std::endl;
+		// 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
+		// 		std::cout << (*cDp.GetGridFunction())(vi) << " ";
+		// 	}
+		// std::cout << std::endl;		
 		
 // 		// K matrix		
 // 		std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
@@ -696,27 +696,27 @@ for (int t = 0; t < 10 + 1; t++){
 		// Be2.Print(std::cout);
 
 				
-// 		// salt diffusivity in the electrolyte					
-// 		for (int vi = 0; vi < nV; vi++){
-// 			// appendix equation A-21
-// 			De(vi) = pse(vi)*D0*exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
-// 			// std::cout << "De[" << vi << "] = " << De(vi) << std::endl;
+		// salt diffusivity in the electrolyte					
+		for (int vi = 0; vi < nV; vi++){
+			// appendix equation A-21
+			De(vi) = pse(vi)*D0*exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
+			// std::cout << "De[" << vi << "] = " << De(vi) << std::endl;
 
-// 			// std::cout << "De Diffusivity values in Original:" << std::endl;
-// 			// for (int vi = 0; vi < std::min(nV, 10); ++vi) {
-// 			// 	std::cout << De(vi) << " ";
-// 			// }
-//     		// std::cout << std::endl;
+			// std::cout << "De Diffusivity values in Original:" << std::endl;
+			// for (int vi = 0; vi < std::min(nV, 10); ++vi) {
+			// 	std::cout << De(vi) << " ";
+			// }
+    		// std::cout << std::endl;
 
 
-// 		}
-// 		GridFunctionCoefficient cDe(&De) ;
+		}
+		GridFunctionCoefficient cDe(&De) ;
 
-// 		// std::cout << "cDe values in Original CnE:" << std::endl;
-// 		// 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
-// 		// 		std::cout << (*cDe.GetGridFunction())(vi) << " ";
-// 		// 	}
-// 		// std::cout << std::endl;	
+		// std::cout << "cDe values in Original CnE:" << std::endl;
+		// 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
+		// 		std::cout << (*cDe.GetGridFunction())(vi) << " ";
+		// 	}
+		// std::cout << std::endl;	
 		
 //  		// K matrix		
 // 		std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(&fespace)); 

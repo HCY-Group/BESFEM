@@ -165,3 +165,20 @@ std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem:
     return std::make_shared<mfem::GridFunctionCoefficient>(Dx);
 
 }
+
+void Concentrations::KMatrix(mfem::Array<int> boundary, mfem::ParGridFunction &Cn, mfem::ParLinearForm &Fxx, std::shared_ptr<mfem::HypreParMatrix> &Kmatx, mfem::HypreParVector &X1v, mfem::HypreParVector &Fxb, mfem::GridFunctionCoefficient *cDx) {
+
+    std::unique_ptr<mfem::ParBilinearForm> Kx2(new mfem::ParBilinearForm(fespace));
+
+    mfem::HypreParMatrix Khpm;
+    
+    Kx2->AddDomainIntegrator(new DiffusionIntegrator(*cDx));
+    Kx2->Assemble();
+    Kx2->FormLinearSystem(boundary, Cn, Fxx, Khpm, X1v, Fxb);
+
+    Kmatx = std::make_shared<mfem::HypreParMatrix>(Khpm);
+
+    Fxb *= Constants::dt;
+
+
+}

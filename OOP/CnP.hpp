@@ -25,6 +25,11 @@ private:
 
     mfem::ParLinearForm ftP;
 
+    std::shared_ptr<mfem::HypreParMatrix> Kmatp;
+
+    mfem::HypreParVector Fcb;
+    mfem::Array<int> boundary_dofs;
+    mfem::HypreParVector X1v;
 
 };
 

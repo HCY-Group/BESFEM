@@ -7,13 +7,18 @@ CnE::CnE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     
     {
 
-    PeR = new ParGridFunction(fespace);
-    RxE = new ParGridFunction(fespace);
+    PeR = new mfem::ParGridFunction(fespace);
+    RxE = new mfem::ParGridFunction(fespace);
 
     Mmate = std::make_shared<mfem::HypreParMatrix>();
     Me_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
     Me_prec.SetType(mfem::HypreSmoother::Jacobi);
 
+    Kmate = std::make_shared<mfem::HypreParMatrix>();
+
+    CeV0 = new mfem::HypreParVector(fespace);
+    RHCe = new mfem::HypreParVector(fespace);
+    CeVn = new mfem::HypreParVector(fespace);
 
 
     }
@@ -42,10 +47,24 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 	nbc_w_bdr[0] = 1;
 
     Concentrations::ForceTerm(*RxE, ftE, nbc_w_bdr, m_nbcCoef, true); // true since applying BCs
-    std::shared_ptr<GridFunctionCoefficient> cDe = Diffusivity(psx, Cn, false); // false using other equation
+    std::shared_ptr<GridFunctionCoefficient> cDe = Concentrations::Diffusivity(psx, Cn, false); // false using other equation
+    Concentrations::KMatrix(boundary_dofs, Cn, ftE, Kmate, X1v, Feb, cDe.get());
 
 
+    // Crank-Nicolson matrices
+    TmatR = Add(1.0,*Mmate, -0.5*Constants::dt, *Kmate);		
+    TmatL = Add(1.0, *Mmate,  0.5*Constants::dt, *Kmate);	
+    
+    Cn.GetTrueDofs(*CeV0);		
 
+    // TmatR->Mult(CeV0, RHCe);
+    // RHCe += Feb;
+    
+    // Me_solver->SetOperator(*TmatL);
+    // Me_solver->Mult(RHCe, *CeVn) ;
 
+	// Cn->Distribute(CeVn);    
+
+    // SaltConservation(*CnE);	
 
 }
