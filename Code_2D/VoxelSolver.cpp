@@ -170,6 +170,8 @@ void VoxelSolver::UpdateLinearForm(ParGridFunction gf) {
 	Bc->AddDomainIntegrator(new DomainLFIntegrator(coef));
 	Bc->Assemble();
 	*/
+
+	/*
 	//ParLinearForm Bc(&fespace);
 	ParLinearForm Bc(gf.ParFESpace());
 	Bc.AddDomainIntegrator(new DomainLFIntegrator(coef));
@@ -179,6 +181,13 @@ void VoxelSolver::UpdateLinearForm(ParGridFunction gf) {
 	Fct = std::move(&Bc);
 	cout << Fct->ParFESpace() << endl;
 	cout << Fct->ParFESpace()->GetFE(0) << endl;
+	*/
+	
+	delete this->Fct;
+	this->Fct = new ParLinearForm(this->Vox->ParFESpace());
+	this->Fct->AddDomainIntegrator(new DomainLFIntegrator(coef));
+	this->Fct->Assemble();
+	
 }
 
 void VoxelSolver::UpdateLinearForm_DoubleWellPotential() {
