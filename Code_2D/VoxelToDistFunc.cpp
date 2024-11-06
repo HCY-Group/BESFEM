@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 	solver.ParaviewSave("pVoxelData","Vox",solver.GetParallelVox());
 	
 
-
+	/*
 	// make variable names match from up above...
 	ParMesh pmesh(*maker.GetParallelMesh());
 	//ParGridFunction Vox2(*solver.GetParallelVox());
@@ -122,7 +122,10 @@ int main(int argc, char *argv[])
 	
 	int order = 1;
 	int nV = pmesh.GetNV();			//number of vertices
+	*/
 	
+
+
 	// more MFEM weirdness...
 	// Can't just return fespace
 	// Have to make from scratch
@@ -155,20 +158,23 @@ int main(int argc, char *argv[])
 	// Natural (Neumann) boundary conditions
 	Array<int> boundary_dofs;
 	
+	// Domain Parameter
+	//ParGridFunction ones(&fespace);	
+	ParGridFunction ones(maker.GetParallelFESpace());
+	ones = 1.0;
 	
+	// Diffusion Coefficient
+	//ParGridFunction Mob(&fespace);
+	ParGridFunction Mob(maker.GetParallelFESpace());
+	Mob = 0.64;
+	
+	/*
 	ParLinearForm Fct(&fespace);
 	HypreParVector Fcb(&fespace);
 	HypreParVector X1v(&fespace);
-	
-
-	// mass matrix
-	ParGridFunction ones(&fespace);	
-	ones = 1.0;
 
 	// stiffness matrix
 	HypreParMatrix Kmat;
-	ParGridFunction Mob(&fespace);
-	Mob = 0.64;
 	GridFunctionCoefficient cMob(&Mob);
 	std::unique_ptr<ParBilinearForm> K(new ParBilinearForm(&fespace));
 	K->AddDomainIntegrator(new DiffusionIntegrator(cMob));
@@ -184,17 +190,18 @@ int main(int argc, char *argv[])
 	//ODESolver *ode_solver = new ForwardEulerSolver;
 	ODESolver *ode_solver = new BackwardEulerSolver;
 	ode_solver->Init(oper);
-
 	//solver.InitTimeDepOper(ones);
+	*/
+
 	solver.InitMatricesAndTimeDepOpers(boundary_dofs, Mob, ones);
 	
 	// time step
-	ParGridFunction Pot(&fespace);
-	HypreParVector Vox0(&fespace);
+	//ParGridFunction Pot(&fespace);
+	//HypreParVector Vox0(&fespace);
 	double t_ode = 0.0;
 	double dt = 0.05;
 	for (int t = 0; t < 20; t++){
-		
+		/*
 		//forcing function
 		for (int vi = 0; vi < nV; vi++){
 			Pot(vi) = 2.0*Vox(vi)*(1.0-Vox(vi))*(1.0-2.0*Vox(vi));
@@ -204,16 +211,19 @@ int main(int argc, char *argv[])
 		Bc->AddDomainIntegrator(new DomainLFIntegrator(cPot));
 		Bc->Assemble();
 		Fct = std::move(*Bc);
-	
-		solver.UpdateLinearForm_DoubleWellPotential();
+		*/
 
+		solver.UpdateLinearForm_DoubleWellPotential();
+		
+		/*
 		//Update Parameters and Solve
 		Vox.GetTrueDofs(Vox0);
 		K->FormLinearSystem(boundary_dofs, Vox, Fct, Kmat, X1v, Fcb);
 		oper.UpdateParams(Kmat, Fcb);
 		ode_solver->Step(Vox0, t_ode, dt);
 		Vox.Distribute(Vox0);
-		
+		*/
+
 		solver.UpdateSystemAndSolve(boundary_dofs, t_ode, dt);
 	}
 	//oper.~ConductionOperator();
@@ -234,6 +244,26 @@ int main(int argc, char *argv[])
 	pd->Save();
 	delete pd;
 	*/
+
+
+
+
+
+
+
+	// make variable names match from up above...
+	ParMesh pmesh(*maker.GetParallelMesh());
+	//ParGridFunction Vox2(*solver.GetParallelVox());
+	ParGridFunction Vox(*solver.GetParallelVox());
+	// TODO: When we construct fespace, do we need to also copy ParMesh and FiniteElementCollection???
+	ParFiniteElementSpace fespace(*maker.GetParallelFESpace());
+	cout << fespace.GetFE(0) << endl;
+	
+	int order = 1;
+	int nV = pmesh.GetNV();			//number of vertices
+
+
+
 
 
 	// ======================================
