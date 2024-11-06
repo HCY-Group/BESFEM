@@ -71,33 +71,6 @@ int main(int argc, char *argv[])
 	solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
 	
 	
-	/*
-	// glvis -m gmesh.mesh -g gvox.gf
-	gVox.Save("gvox.gf");
-	gmesh.Save("gmesh.mesh");
-	*/
-
-	/*
-	char vishost[] = "localhost";
- 	int  visport   = 19916;
-      	socketstream sol_sock(vishost, visport);
-      	sol_sock.precision(8);
-      	sol_sock << "solution\n" << gmesh << gVox << flush;
-	*/
-	/*
-
-	char vishost[] = "localhost";
- 	int  visport   = 19916;
-      	socketstream sol_sock(vishost, visport);
-      	sol_sock << "parallel " << Mpi::WorldSize() << " " << Mpi::WorldRank() << "\n";
-      	sol_sock.precision(8);
-      	sol_sock << "solution\n" << gmesh << gVox << flush;
-	*/
-
-
-
-
-
 
 
 
@@ -110,42 +83,6 @@ int main(int argc, char *argv[])
 	solver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
 	solver.ParaviewSave("pVoxelData","Vox",solver.GetParallelVox());
 	
-
-	/*
-	// make variable names match from up above...
-	ParMesh pmesh(*maker.GetParallelMesh());
-	//ParGridFunction Vox2(*solver.GetParallelVox());
-	ParGridFunction Vox(*solver.GetParallelVox());
-	// TODO: When we construct fespace, do we need to also copy ParMesh and FiniteElementCollection???
-	ParFiniteElementSpace fespace(*maker.GetParallelFESpace());
-	cout << fespace.GetFE(0) << endl;
-	
-	int order = 1;
-	int nV = pmesh.GetNV();			//number of vertices
-	*/
-	
-
-
-	// more MFEM weirdness...
-	// Can't just return fespace
-	// Have to make from scratch
-	// or just a coding error on my part...
-	/*
-	cout << "HERE before" << endl;
-	cout << maker.GetParallelFESpace() << endl;
-	cout << Vox.ParFESpace() << endl;;
-	ParFiniteElementSpace fespace(*maker.GetParallelFESpace());
-	ParFiniteElementSpace fespace(*Vox.ParFESpace());
-	cout << "HERE after" << endl;
-	*/
-	/*
-	H1_FECollection fec(order, pmesh.Dimension());
-	ParFiniteElementSpace fespace(&pmesh, &fec);
-	ParGridFunction Vox(&fespace);
-
-	Vox = Vox2;
-	*/
-
 
 
 
@@ -168,82 +105,28 @@ int main(int argc, char *argv[])
 	ParGridFunction Mob(maker.GetParallelFESpace());
 	Mob = 0.64;
 	
-	/*
-	ParLinearForm Fct(&fespace);
-	HypreParVector Fcb(&fespace);
-	HypreParVector X1v(&fespace);
-
-	// stiffness matrix
-	HypreParMatrix Kmat;
-	GridFunctionCoefficient cMob(&Mob);
-	std::unique_ptr<ParBilinearForm> K(new ParBilinearForm(&fespace));
-	K->AddDomainIntegrator(new DiffusionIntegrator(cMob));
-	K->Assemble();
-	K->FormLinearSystem(boundary_dofs, Vox, Fct, Kmat, X1v, Fcb);
-	cout << "b max: " << Fct.Max() << endl;
-	cout << "B max: " << Fcb.Max() << endl;
-
-	//solver.InitStiffMatrix(boundary_dofs, Mob);
-
-	// TimeDependentOperator and ODESolver
-	ConductionOperator oper(ones, Kmat, Fcb);
-	//ODESolver *ode_solver = new ForwardEulerSolver;
-	ODESolver *ode_solver = new BackwardEulerSolver;
-	ode_solver->Init(oper);
-	//solver.InitTimeDepOper(ones);
-	*/
 
 	solver.InitMatricesAndTimeDepOpers(boundary_dofs, Mob, ones);
 	
 	// time step
-	//ParGridFunction Pot(&fespace);
-	//HypreParVector Vox0(&fespace);
 	double t_ode = 0.0;
 	double dt = 0.05;
 	for (int t = 0; t < 20; t++){
-		/*
-		//forcing function
-		for (int vi = 0; vi < nV; vi++){
-			Pot(vi) = 2.0*Vox(vi)*(1.0-Vox(vi))*(1.0-2.0*Vox(vi));
-		}
-		GridFunctionCoefficient cPot(&Pot);
-		std::unique_ptr<ParLinearForm> Bc(new ParLinearForm(&fespace));
-		Bc->AddDomainIntegrator(new DomainLFIntegrator(cPot));
-		Bc->Assemble();
-		Fct = std::move(*Bc);
-		*/
 
 		solver.UpdateLinearForm_DoubleWellPotential();
 		
-		/*
-		//Update Parameters and Solve
-		Vox.GetTrueDofs(Vox0);
-		K->FormLinearSystem(boundary_dofs, Vox, Fct, Kmat, X1v, Fcb);
-		oper.UpdateParams(Kmat, Fcb);
-		ode_solver->Step(Vox0, t_ode, dt);
-		Vox.Distribute(Vox0);
-		*/
-
 		solver.UpdateSystemAndSolve(boundary_dofs, t_ode, dt);
 	}
 	//oper.~ConductionOperator();
 	
 	// Output Vox to Paraview
 	solver.ParaviewSave("SmoothVox","Vox",solver.GetGlobalVox());
-	/*
-	cout << "PRINTING OUT smoothed Vox" << endl;
-	ParaViewDataCollection *pd = NULL;
-	pd = NULL;
-	pd = new ParaViewDataCollection("SmoothVox", &pmesh);
-	pd->RegisterField("Vox", &Vox);
-	pd->SetLevelsOfDetail(order);
-	pd->SetDataFormat(VTKFormat::BINARY);
-	pd->SetHighOrderOutput(true);
-	pd->SetCycle(0);
-	pd->SetTime(0.0);
-	pd->Save();
-	delete pd;
-	*/
+
+
+
+
+
+
 
 
 

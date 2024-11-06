@@ -218,12 +218,13 @@ void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, d
 	HypreParMatrix Kmat;
 	
 	Vox->GetTrueDofs(Vox0);
-	cout << "HERE A" << endl;
-	cout << K->ParFESpace()->GetFE(0) << endl;
-	cout << Vox->ParFESpace()->GetFE(0) << endl;
-	cout << Fct->ParFESpace()->GetFE(0) << endl;
+	//cout << "HERE A" << endl;
+	//cout << K->ParFESpace()->GetFE(0) << endl;
+	//cout << Vox->ParFESpace()->GetFE(0) << endl;
+	//cout << Fct->ParFESpace()->GetFE(0) << endl;
+	cout << "Max Fct: " << Fct->Max() << ", Min Fct:  " << Fct->Min() << endl;
 	K->FormLinearSystem(boundary_dofs, *Vox, *Fct, Kmat, X1v, Fcb);
-	cout << "HERE B" << endl;
+	//cout << "HERE B" << endl;
 	oper->UpdateParams(Kmat, Fcb);
 	ode_solver->Step(Vox0, t_ode, dt);
 	Vox->Distribute(Vox0);
