@@ -10,8 +10,14 @@ public:
 
     void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
     mfem::ParGridFunction *RxE;
+    mfem::ParLinearForm ftE;
+    mfem::Array<int> nbc_w_bdr;
+    std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef; 
+    mfem::Array<int> boundary_dofs;
 
 
+
+    void Save(mfem::ParGridFunction &gf, const std::string &base_name);
 
 private:
 
@@ -24,16 +30,16 @@ private:
     // mfem::ParGridFunction RxE;
 
     double eCrnt;
-    double infx;
-    mfem::ParLinearForm ftE;
+    // double infx;
+    // mfem::ParLinearForm ftE;
 
-    mfem::Array<int> nbc_w_bdr;
-    std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef;    
+    // mfem::Array<int> nbc_w_bdr;
+    // std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef;    
 
     std::shared_ptr<mfem::HypreParMatrix> Kmate;
 
     mfem::HypreParVector Feb;
-    mfem::Array<int> boundary_dofs;
+    // mfem::Array<int> boundary_dofs;
     mfem::HypreParVector X1v;
 
     mfem::HypreParVector *CeV0;

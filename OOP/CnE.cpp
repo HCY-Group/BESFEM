@@ -29,6 +29,7 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     Concentrations::SetUpSolver(psx, Mmate, *Me_solver, Me_prec);
 
     ImposeNeumannBC(psx, *PeR);
+
 }
 
 void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
@@ -50,21 +51,28 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     std::shared_ptr<GridFunctionCoefficient> cDe = Concentrations::Diffusivity(psx, Cn, false); // false using other equation
     Concentrations::KMatrix(boundary_dofs, Cn, ftE, Kmate, X1v, Feb, cDe.get());
 
-
     // Crank-Nicolson matrices
     TmatR = Add(1.0,*Mmate, -0.5*Constants::dt, *Kmate);		
     TmatL = Add(1.0, *Mmate,  0.5*Constants::dt, *Kmate);	
     
-    Cn.GetTrueDofs(*CeV0);		
+    Cn.GetTrueDofs(*CeV0);	
 
-    // TmatR->Mult(CeV0, RHCe);
-    // RHCe += Feb;
+    TmatR->Mult(*CeV0, *RHCe);
+    *RHCe += Feb;
     
-    // Me_solver->SetOperator(*TmatL);
-    // Me_solver->Mult(RHCe, *CeVn) ;
+    Me_solver->SetOperator(*TmatL);
+    Me_solver->Mult(*RHCe, *CeVn) ;
 
-	// Cn->Distribute(CeVn);    
+	Cn.Distribute(CeVn);   
 
-    // SaltConservation(*CnE);	
+    Concentrations::SaltConservation(Cn, psx);	
+    // std::cout << "CnE: " << Cn << std::endl; 
+
+}
+
+void CnE::Save(mfem::ParGridFunction &gf, const std::string &base_name){
+
+    Concentrations::Save(gf, base_name);
+
 
 }

@@ -544,40 +544,40 @@ for (int t = 0; t < 10 + 1; t++){
 // 		// // 	  \_____|_| |_|_|     
 // 		// // 	==============================
 	
-		// Rxn.Print(std::cout);	
-		Rxc = Rxn;
-		Rxc /= rho;	
-		GridFunctionCoefficient cAp(&Rxc) ;	
+		// // Rxn.Print(std::cout);	
+		// Rxc = Rxn;
+		// Rxc /= rho;	
+		// GridFunctionCoefficient cAp(&Rxc) ;	
 
-		// Rxc.Print(std::cout);
+		// // Rxc.Print(std::cout);
 		
-		// force term
-		std::unique_ptr<ParLinearForm> Bc2(new ParLinearForm(&fespace));	
-		// Use update () instead 
-		Bc2->AddDomainIntegrator(new DomainLFIntegrator(cAp));	
-		Bc2->Assemble();		
-		// // Move the contents of Bc2 into Fct
-		Fct = std::move(*Bc2);
+		// // force term
+		// std::unique_ptr<ParLinearForm> Bc2(new ParLinearForm(&fespace));	
+		// // Use update () instead 
+		// Bc2->AddDomainIntegrator(new DomainLFIntegrator(cAp));	
+		// Bc2->Assemble();		
+		// // // Move the contents of Bc2 into Fct
+		// Fct = std::move(*Bc2);
     
-		// cout << "Bc2 in Original" << endl;
-		// Bc2->Print(std::cout);		
+		// // cout << "Bc2 in Original" << endl;
+		// // Bc2->Print(std::cout);		
 
 
-		// diffusivity in the particles
-		for (int vi = 0; vi < nV; vi++ ){
-			// appendix equation A-19
-			Dp(vi) = psi(vi)*(0.0277-0.084*CnP(vi) + 0.1003*CnP(vi)*CnP(vi))*1.0e-8;
-			if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
+		// // diffusivity in the particles
+		// for (int vi = 0; vi < nV; vi++ ){
+		// 	// appendix equation A-19
+		// 	Dp(vi) = psi(vi)*(0.0277-0.084*CnP(vi) + 0.1003*CnP(vi)*CnP(vi))*1.0e-8;
+		// 	if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
 
-			// std::cout << "Dp[" << vi << "] = " << Dp(vi) << std::endl;
-		}	
-		GridFunctionCoefficient cDp(&Dp) ;	
+		// 	// std::cout << "Dp[" << vi << "] = " << Dp(vi) << std::endl;
+		// }	
+		// GridFunctionCoefficient cDp(&Dp) ;	
 
-		// std::cout << "cDp values in TimeStepCnP:" << std::endl;
-		// 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
-		// 		std::cout << (*cDp.GetGridFunction())(vi) << " ";
-		// 	}
-		// std::cout << std::endl;		
+		// // std::cout << "cDp values in TimeStepCnP:" << std::endl;
+		// // 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
+		// // 		std::cout << (*cDp.GetGridFunction())(vi) << " ";
+		// // 	}
+		// // std::cout << std::endl;		
 		
 // 		// K matrix		
 // 		std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
@@ -657,12 +657,12 @@ for (int t = 0; t < 10 + 1; t++){
 // // 		// //  | |____| | | | |____ 
 // // 		// //   \_____|_| |_|______|
 // // 		// // ============================
-
+    
 		Rxe = Rxn;
 		Rxe *= (-1.0*t_minus);	
 		GridFunctionCoefficient cAe(&Rxe) ;
 
-// 		// Rxe.Print(std::cout);
+		// // Rxe.Print(std::cout);
 
 		
 		// total reaction
@@ -677,7 +677,8 @@ for (int t = 0; t < 10 + 1; t++){
 		MPI_Allreduce(&eCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 		infx = geCrnt/L_w;
 
-		// cout << "infx: " << infx << std::endl;
+		// // cout << "infx: " << infx << std::endl;
+		// // cout << "geCrnt: " << geCrnt << std::endl;
 		
 		
 		// Neumann BC
@@ -693,7 +694,7 @@ for (int t = 0; t < 10 + 1; t++){
 		// Move the contents of Be2 into Fet
 		Fet = std::move(*Be2);
 
-		// Be2.Print(std::cout);
+		// // Be2->Print(std::cout);
 
 				
 		// salt diffusivity in the electrolyte					
@@ -712,69 +713,108 @@ for (int t = 0; t < 10 + 1; t++){
 		}
 		GridFunctionCoefficient cDe(&De) ;
 
-		// std::cout << "cDe values in Original CnE:" << std::endl;
-		// 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
-		// 		std::cout << (*cDe.GetGridFunction())(vi) << " ";
-		// 	}
-		// std::cout << std::endl;	
+		// // std::cout << "cDe values in Original CnE:" << std::endl;
+		// // 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
+		// // 		std::cout << (*cDe.GetGridFunction())(vi) << " ";
+		// // 	}
+		// // std::cout << std::endl;	
 		
-//  		// K matrix		
-// 		std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(&fespace)); 
-//    		Ke2->AddDomainIntegrator(new DiffusionIntegrator(cDe));
-//    		Ke2->Assemble();
-//    		Ke2->FormLinearSystem(boundary_dofs, CnE, Fet, Kmate, X1v, Feb);
-//    		Feb *= dt;	
+ 		// K matrix		
+		std::unique_ptr<ParBilinearForm> Ke2(new ParBilinearForm(&fespace)); 
+   		Ke2->AddDomainIntegrator(new DiffusionIntegrator(cDe));
+   		Ke2->Assemble();
+   		Ke2->FormLinearSystem(boundary_dofs, CnE, Fet, Kmate, X1v, Feb);
+   		Feb *= dt;	
 
-// 		// // Get the local data of the HypreParVector
-// 		// double *Feb_data = Feb.GetData();
+		// std::cout << "CnE: " << CnE << std::endl;
 
-// 		// // Print each value of the vector
-// 		// int size1 = Feb.Size();
-// 		// std::cout << "Feb values in original:" << std::endl;
-// 		// for (int i = 0; i < size1; i++) {
-// 		// 	std::cout << Feb_data[i] << " ";
-// 		// }
-// 		// std::cout << std::endl;
+
+		// // // Get the local data of the HypreParVector
+		// // double *Feb_data = Feb.GetData();
+
+		// // // Print each value of the vector
+		// // int size1 = Feb.Size();
+		// // std::cout << "Feb values in original:" << std::endl;
+		// // for (int i = 0; i < size1; i++) {
+		// // 	std::cout << Feb_data[i] << " ";
+		// // }
+		// // std::cout << std::endl;
 		
-// 		// Crank-Nicolson matrices
-// 		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
-// 		TmatL = Add(1.0, Mmate,  0.5*dt, Kmate);		
+		// Crank-Nicolson matrices
+		TmatR = Add(1.0, Mmate, -0.5*dt, Kmate);		
+		TmatL = Add(1.0, Mmate,  0.5*dt, Kmate);		
 		
-// 		// vector of CnE				
-// 		CnE.GetTrueDofs(CeV0);		
+	    // std::cout << "CnE: " << CnE << std::endl;
+
+
+		// vector of CnE				
+		CnE.GetTrueDofs(CeV0);
+
+		// // Get the local data of the HypreParVector
+		// double *CeV0_data = CeV0.GetData();
+
+		// // Print each value of the vector
+		// int size1 = CeV0.Size();
+		// std::cout << "CeV0 values in original:" << std::endl;
+		// for (int i = 0; i < size1; i++) {
+		// 	std::cout << CeV0_data[i] << " ";
+		// }
+		// std::cout << std::endl;			
 				
-//     	TmatR->Mult(CeV0, RHSe);
-//     	RHSe += Feb;
-    	
-//     	// solver
-// 		Me_solver.SetOperator(*TmatL);    	
-    	
-//     	// time stepping
-// 		Me_solver.Mult(RHSe, CeVn) ;
-		
-// 		// recover
-// 		CnE.Distribute(CeVn);    	
+    	TmatR->Mult(CeV0, RHSe);
+    	RHSe += Feb;
 
-// 		// check conservation of salt
-// 		// if (t%500 == 0 && t > 0){
-// 			CeC = 0.0;
-// 			CeT = CnE;
-// 			CeT *= pse;
-// 			for (int ei = 0; ei < nE; ei++){
-// 				CeT.GetNodalValues(ei,VtxVal) ;
-// 				val = 0.0;
-// 				for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 				EAvg(ei) = val/nC;	
-// 				CeC += EAvg(ei)*EVol(ei) ;
-// 			}
-// 			MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
-// 			// average CnE throughout electrolyte
-// 			CeAvg = gCeC/gtPse;				
+		// // Get the local data of the HypreParVector
+		// double *RHSe_data = RHSe.GetData();
+
+		// // Print each value of the vector
+		// int size1 = RHSe.Size();
+		// std::cout << "RHSe values in original:" << std::endl;
+		// for (int i = 0; i < size1; i++) {
+		// 	std::cout << RHSe_data[i] << " ";
+		// }
+		// std::cout << std::endl;
+    	
+    	// solver
+		Me_solver.SetOperator(*TmatL);    	
+    	
+    	// time stepping
+		Me_solver.Mult(RHSe, CeVn) ;
+		
+		// recover
+		CnE.Distribute(CeVn); 
+		// std::cout << "CnE: " << CnE << std::endl;   	
+
+		// check conservation of salt
+		// if (t%500 == 0 && t > 0){
+			CeC = 0.0;
+			CeT = CnE;
+			CeT *= pse;
+			// std::cout << "CnE: " << CnE << std::endl;
+			// std::cout << "pse: " << pse << std::endl; 
+			// std::cout << "CeT: " << CeT << std::endl;
+
+			for (int ei = 0; ei < nE; ei++){
+				CeT.GetNodalValues(ei,VtxVal) ;
+				double val = 0.0;
+				for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+				EAvg(ei) = val/nC;	
+				CeC += EAvg(ei)*EVol(ei) ;
+			}
+			MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
+			// average CnE throughout electrolyte
+			CeAvg = gCeC/gtPse;
+			// std::cout << "CeC: " << CeC << std::endl;				
 			
-// 			// adjust CnE
-// 			CnE -= (CeAvg-Ce0);
-// 			MPI_Barrier(MPI_COMM_WORLD);
-// 		// }	
+			// adjust CnE
+			CnE -= (CeAvg-Ce0);
+			MPI_Barrier(MPI_COMM_WORLD);
+
+			// std::cout << "SaltConservation - CeC: " << CeC << ", gCeC: " << gCeC << ", CeAvg: " << CeAvg << std::endl;
+
+		// }
+
+	std::cout << "CnE: " << CnE << std::endl;	
 
 // 		delete TmatR;
 // 		delete TmatL;
@@ -1134,8 +1174,8 @@ for (int t = 0; t < 10 + 1; t++){
 //    return 0;
 	}
 
-	// int rank;
-    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
+	int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
 
     // std::string file_name = "CnP_solution_original." + std::to_string(rank) + ".gf";  // MFEM's GridFunction format (.gf)
     
@@ -1150,7 +1190,7 @@ for (int t = 0; t < 10 + 1; t++){
 	// int rank;
     // MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
 
-    // std::string file_name = "CnE_solution_original." + std::to_string(rank) + ".gf";  // MFEM's GridFunction format (.gf)
+    // std::string file_name = "CnE_solution2_original." + std::to_string(rank) + ".gf";  // MFEM's GridFunction format (.gf)
     
     // std::ofstream ofs(file_name.c_str());
     // if (ofs.is_open()) {

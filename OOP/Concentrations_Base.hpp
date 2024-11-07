@@ -23,6 +23,8 @@ public:
     mfem::ParGridFunction psi;                     
     mfem::ParGridFunction pse; 
 
+    mfem::ParGridFunction *CeT;
+
     // mfem::ParGridFunction *CnP;
     // mfem::ParGridFunction *CnE;
 
@@ -33,15 +35,23 @@ protected:
     std::shared_ptr<mfem::CGSolver> solver;
     mfem::HypreSmoother smoother;
 
+    double infx;
+    double CeC = 0.0;
+    double gCeC = 0.0;
+    double CeAvg = 0.0;
+    double Ce0 = 0.001;
+
+
     void SetInitialConcentration(mfem::ParGridFunction &Cn, double initial_value);
     void SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother);
     void ImposeNeumannBC(mfem::ParGridFunction &psx, mfem::ParGridFunction &PGF);
     void CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value);
     void ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &Fxx, mfem::Array<int> boundary, mfem::ProductCoefficient m, bool apply_boundary_conditions);
-    void TotalReaction(mfem::ParGridFunction &Rx, double value);
+    void TotalReaction(mfem::ParGridFunction &Rx, double xCrnt);
     std::shared_ptr<mfem::GridFunctionCoefficient> Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte );
     void KMatrix(mfem::Array<int> boundary, mfem::ParGridFunction &Cn, mfem::ParLinearForm &Fxx, std::shared_ptr<mfem::HypreParMatrix> &Kmatx, mfem::HypreParVector &X1v, mfem::HypreParVector &Fxb, mfem::GridFunctionCoefficient *cDx);
-
+    void SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+    void Save(mfem::ParGridFunction &gf, const std::string &base_name);
 
 private:
     // MeshHandler &mesh_handler;
@@ -67,7 +77,13 @@ private:
     mfem::ParGridFunction *Rxx;
     mfem::GridFunctionCoefficient *cXx;
 
-    double infx;
+    // double infx;
+    // double CeC = 0.0;
+    // double gCeC = 0.0;
+    // double CeAvg = 0.0;
+    // double Ce0 = 0.001;
+
+    double geCrnt;
 
 
 

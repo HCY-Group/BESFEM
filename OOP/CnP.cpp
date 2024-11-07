@@ -49,3 +49,9 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 
 
 }
+
+void CnP::Save(mfem::ParGridFunction &gf, const std::string &base_name){
+
+    Concentrations::Save(gf, base_name);
+
+}

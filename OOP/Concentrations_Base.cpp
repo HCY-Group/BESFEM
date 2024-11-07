@@ -13,6 +13,10 @@ Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *f
     nC = mesh_handler.GetNC();
     nV = mesh_handler.GetNV();
 
+    // mfem::ParGridFunction CeT(fespace); // I think this is the issue
+
+    // CeT = new mfem::ParGridFunction(fespace);
+
 
 }
 
@@ -104,6 +108,9 @@ void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFun
     Rx2 = Rx1;
     Rx2 *= value;
 
+    // std::cout << "Rxn in Create Reaction in Base Class" << std::endl;
+    // Rx2.Print(std::cout);
+
 }
 
 void Concentrations::ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &Fxx, mfem::Array<int> boundary, mfem::ProductCoefficient m, bool apply_boundary_conditions) {
@@ -124,11 +131,13 @@ void Concentrations::ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &
     Bx2->Assemble();
     Fxx = std::move(*Bx2);
 
+    // Bx2->Print(std::cout);
+
 }
 
-void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double value) {
-
-    value = 0.0;
+void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
+    
+    xCrnt = 0.0;
     Array<double> VtxVal(nC);
     Vector EAvg(nE);
     for (int ei = 0; ei < nE; ei++) {
@@ -138,12 +147,16 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double value) {
             val += VtxVal[vt];
         }
         EAvg(ei) = val / nC;
-        value += EAvg(ei) * EVol(ei);
+        xCrnt += EAvg(ei) * EVol(ei);
     }
 
-    double global_value;
-    MPI_Allreduce(&value, &global_value, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    infx = global_value / (mesh_handler.L_w);
+    MPI_Allreduce(&xCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    infx = geCrnt / (mesh_handler.L_w);
+
+    // std::cout << "geCrnt: " << geCrnt << std::endl;
+    // std::cout << "infx: " << infx << std::endl;
+
+
 
 }
 
@@ -181,4 +194,51 @@ void Concentrations::KMatrix(mfem::Array<int> boundary, mfem::ParGridFunction &C
     Fxb *= Constants::dt;
 
 
+}
+
+void Concentrations::SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {
+
+    CeC = 0.0;
+    mfem::ParGridFunction CeT(fespace);
+    Array<double> VtxVal(nC);
+    Vector EAvg(nE);
+
+
+    CeT = Cn;
+    CeT *= psx;
+
+    for (int ei = 0; ei < nE; ei++){
+        CeT.GetNodalValues(ei,VtxVal) ;
+        double val = 0.0;
+        for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+        EAvg(ei) = val/nC;	
+        CeC += EAvg(ei)*EVol(ei) ;
+    }
+
+    MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
+    
+    // average CnE throughout electrolyte
+    CeAvg = gCeC/gtPse;	
+    
+    // adjust CnE
+    Cn -= (CeAvg-Ce0);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+
+
+}
+
+void Concentrations::Save(mfem::ParGridFunction &gf, const std::string &base_name) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
+
+    std::string file_name = base_name + "." + std::to_string(rank) + ".gf";  // Use the dynamic base name
+
+    std::ofstream ofs(file_name.c_str());
+    if (ofs.is_open()) {
+        gf.Save(ofs);  
+        ofs.close();
+    } else {
+        mfem::mfem_error("Error opening file to save.");
+    }
 }

@@ -13,7 +13,7 @@ public:
 
     mfem::ParGridFunction *RxP;
 
-    
+    void Save(mfem::ParGridFunction &gf, const std::string &base_name);
 
 private:
 
