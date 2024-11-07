@@ -544,104 +544,104 @@ for (int t = 0; t < 10 + 1; t++){
 // 		// // 	  \_____|_| |_|_|     
 // 		// // 	==============================
 	
-		// // Rxn.Print(std::cout);	
-		// Rxc = Rxn;
-		// Rxc /= rho;	
-		// GridFunctionCoefficient cAp(&Rxc) ;	
+		// Rxn.Print(std::cout);	
+		Rxc = Rxn;
+		Rxc /= rho;	
+		GridFunctionCoefficient cAp(&Rxc) ;	
 
-		// // Rxc.Print(std::cout);
+		// Rxc.Print(std::cout);
 		
-		// // force term
-		// std::unique_ptr<ParLinearForm> Bc2(new ParLinearForm(&fespace));	
-		// // Use update () instead 
-		// Bc2->AddDomainIntegrator(new DomainLFIntegrator(cAp));	
-		// Bc2->Assemble();		
-		// // // Move the contents of Bc2 into Fct
-		// Fct = std::move(*Bc2);
+		// force term
+		std::unique_ptr<ParLinearForm> Bc2(new ParLinearForm(&fespace));	
+		// Use update () instead 
+		Bc2->AddDomainIntegrator(new DomainLFIntegrator(cAp));	
+		Bc2->Assemble();		
+		// // Move the contents of Bc2 into Fct
+		Fct = std::move(*Bc2);
     
-		// // cout << "Bc2 in Original" << endl;
-		// // Bc2->Print(std::cout);		
+		// cout << "Bc2 in Original" << endl;
+		// Bc2->Print(std::cout);		
 
 
-		// // diffusivity in the particles
-		// for (int vi = 0; vi < nV; vi++ ){
-		// 	// appendix equation A-19
-		// 	Dp(vi) = psi(vi)*(0.0277-0.084*CnP(vi) + 0.1003*CnP(vi)*CnP(vi))*1.0e-8;
-		// 	if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
+		// diffusivity in the particles
+		for (int vi = 0; vi < nV; vi++ ){
+			// appendix equation A-19
+			Dp(vi) = psi(vi)*(0.0277-0.084*CnP(vi) + 0.1003*CnP(vi)*CnP(vi))*1.0e-8;
+			if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
 
-		// 	// std::cout << "Dp[" << vi << "] = " << Dp(vi) << std::endl;
-		// }	
-		// GridFunctionCoefficient cDp(&Dp) ;	
+			// std::cout << "Dp[" << vi << "] = " << Dp(vi) << std::endl;
+		}	
+		GridFunctionCoefficient cDp(&Dp) ;	
 
-		// // std::cout << "cDp values in TimeStepCnP:" << std::endl;
-		// // 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
-		// // 		std::cout << (*cDp.GetGridFunction())(vi) << " ";
-		// // 	}
-		// // std::cout << std::endl;		
+		// std::cout << "cDp values in TimeStepCnP:" << std::endl;
+		// 	for (int vi = 0; vi < fespace.GetTrueVSize(); ++vi) {
+		// 		std::cout << (*cDp.GetGridFunction())(vi) << " ";
+		// 	}
+		// std::cout << std::endl;		
 		
-// 		// K matrix		
-// 		std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
-//    		Kc2->AddDomainIntegrator(new DiffusionIntegrator(cDp));
-//    		Kc2->Assemble();
-//    		Kc2->FormLinearSystem(boundary_dofs, CnP, Fct, Kmatp, X1v, Fcb);
-//    		Fcb *= dt;
+		// K matrix		
+		std::unique_ptr<ParBilinearForm> Kc2(new ParBilinearForm(&fespace)); 
+   		Kc2->AddDomainIntegrator(new DiffusionIntegrator(cDp));
+   		Kc2->Assemble();
+   		Kc2->FormLinearSystem(boundary_dofs, CnP, Fct, Kmatp, X1v, Fcb);
+   		Fcb *= dt;
 
-// 		// // Get the local data of the HypreParVector
-// 		// double *Fxb_data = Fcb.GetData();
+		// // Get the local data of the HypreParVector
+		// double *Fxb_data = Fcb.GetData();
 
-// 		// // Print each value of the vector
-// 		// int size = Fcb.Size();
-// 		// std::cout << "Fcb values in original:" << std::endl;
-// 		// for (int i = 0; i < size; i++) {
-// 		// 	std::cout << Fxb_data[i] << " ";
-// 		// }
-// 		// std::cout << std::endl;
+		// // Print each value of the vector
+		// int size = Fcb.Size();
+		// std::cout << "Fcb values in original:" << std::endl;
+		// for (int i = 0; i < size; i++) {
+		// 	std::cout << Fxb_data[i] << " ";
+		// }
+		// std::cout << std::endl;
 
-// 		// T matrix
-// 		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);
+		// T matrix
+		Tmatp = Add(1.0, Mmatp, -dt, Kmatp);
 		
-// 		// vector of CnP				
-// 		CnP.GetTrueDofs(CpV0);
+		// vector of CnP				
+		CnP.GetTrueDofs(CpV0);
 		
-// 		Tmatp->Mult(CpV0, RHCp);
-// 		RHCp += Fcb;
+		Tmatp->Mult(CpV0, RHCp);
+		RHCp += Fcb;
 
-// 		// // Get the local data of the HypreParVector
-// 		// double *RHCp_data = RHCp.GetData();
+		// // Get the local data of the HypreParVector
+		// double *RHCp_data = RHCp.GetData();
 
-// 		// // Print each value of the vector
-// 		// int size = Fcb.Size();
-// 		// std::cout << "Fcb values in original:" << std::endl;
-// 		// for (int i = 0; i < size; i++) {
-// 		// 	std::cout << RHCp_data[i] << " ";
-// 		// }
-// 		// std::cout << std::endl;		
+		// // Print each value of the vector
+		// int size = Fcb.Size();
+		// std::cout << "Fcb values in original:" << std::endl;
+		// for (int i = 0; i < size; i++) {
+		// 	std::cout << RHCp_data[i] << " ";
+		// }
+		// std::cout << std::endl;		
 
-// 		// time stepping
-// 		Mp_solver.Mult(RHCp, CpVn) ;		
+		// time stepping
+		Mp_solver.Mult(RHCp, CpVn) ;		
 
-// 		// Update only the solid region
-// 		for (int p = 0; p < nDof; p++){
-// 			if (PsVc(p) < 1.0e-5){
-// 				CpVn(p) = Cp0;}
-// 		}
+		// Update only the solid region
+		for (int p = 0; p < nDof; p++){
+			if (PsVc(p) < 1.0e-5){
+				CpVn(p) = Cp0;}
+		}
 		
-// 		// Recover the GridFunction from Vector.
-// 		CnP.Distribute(CpVn);
+		// Recover the GridFunction from Vector.
+		CnP.Distribute(CpVn);
 
-// 		// Degree of lithiation
-// 		TmpF = CnP;
-// 		TmpF *= psi;
-// 		lSum = 0.0;
-// 		for (int ei = 0; ei < nE; ei++){	  
-// 			TmpF.GetNodalValues(ei,VtxVal);
-// 			val = 0.0;
-// 			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 			EAvg(ei) = val/nC;		 		  
-// 			lSum += EAvg(ei)*EVol(ei);	
-// 		} 	
-// 		MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
-// 		Xfr = gSum/gtPsi;	
+		// Degree of lithiation
+		TmpF = CnP;
+		TmpF *= psi;
+		lSum = 0.0;
+		for (int ei = 0; ei < nE; ei++){	  
+			TmpF.GetNodalValues(ei,VtxVal);
+			val = 0.0;
+			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+			EAvg(ei) = val/nC;		 		  
+			lSum += EAvg(ei)*EVol(ei);	
+		} 	
+		MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
+		Xfr = gSum/gtPsi;	
 
 // 		// std::cout << "Updated CnP values:" << std::endl;
 //     	// CnP.Print(std::cout);

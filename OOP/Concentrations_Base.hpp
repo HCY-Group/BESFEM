@@ -52,11 +52,10 @@ protected:
     void KMatrix(mfem::Array<int> boundary, mfem::ParGridFunction &Cn, mfem::ParLinearForm &Fxx, std::shared_ptr<mfem::HypreParMatrix> &Kmatx, mfem::HypreParVector &X1v, mfem::HypreParVector &Fxb, mfem::GridFunctionCoefficient *cDx);
     void SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
     void Save(mfem::ParGridFunction &gf, const std::string &base_name);
+    void LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
 private:
     // MeshHandler &mesh_handler;
-
-    void LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
     mfem::ParBilinearForm *M = nullptr;
     mfem::ParGridFunction *Ps_gf;

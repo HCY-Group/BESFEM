@@ -31,6 +31,11 @@ private:
     mfem::Array<int> boundary_dofs;
     mfem::HypreParVector X1v;
 
+    mfem::HypreParVector *CpV0;
+    mfem::HypreParVector *CpVn;
+    mfem::HypreParVector *RHCp;
+    mfem::HypreParMatrix *Tmatp;
+
 };
 
 #endif // CNP_HPP
