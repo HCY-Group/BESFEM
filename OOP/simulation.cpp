@@ -4,8 +4,11 @@
 #include "Constants.hpp"
 #include "Mesh_Handler.hpp"
 #include "Concentrations_Base.hpp"
+#include "Potentials_Base.hpp"
 #include "CnP.hpp"
 #include "CnE.hpp"
+#include "PotP.hpp"
+#include "PotE.hpp"
 #include "Reaction.hpp"
 
 // #include "Reaction.hpp"
@@ -41,6 +44,15 @@ int main(int argc, char *argv[]) {
     mfem::ParGridFunction CnE_gf(&fespace);
     electrolyte_concentration.Initialize(CnE_gf, 0.001, pse, false); // false since not running lithiation calculation
 
+    // Initialize phP & phE
+    PotP particle_potential(&pmesh, &fespace, mesh_handler);
+    mfem::ParGridFunction phP_gf(&fespace);
+    particle_potential.Initialize(phP_gf, 2.9395);
+
+    PotE electrolyte_potential(&pmesh, &fespace, mesh_handler);
+    mfem::ParGridFunction phE_gf(&fespace);
+    electrolyte_potential.Initialize(phE_gf, -1.0);
+    
     // Initialize Reaction
     Reaction reaction(&pmesh, &fespace, mesh_handler);
     mfem::ParGridFunction Rxn_gf(&fespace);
@@ -50,12 +62,16 @@ int main(int argc, char *argv[]) {
     for (int t = 0; t < 10 + 1; ++t) {
         particle_concentration.TimeStep(Rxn_gf, CnP_gf, psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, pse);
-
+        reaction.TimeStep(Rxn_gf, CnP_gf, CnE_gf, psi, pse, phP_gf, phE_gf);
+        // while loop
+        // reaction.BV
+        // particle_potential
+        // electrolyte_potential
 
     }
 
-    particle_concentration.Save(CnP_gf, "CnP");
-    electrolyte_concentration.Save(CnE_gf, "CnE");
+    // particle_concentration.Save(CnP_gf, "CnP");
+    // electrolyte_concentration.Save(CnE_gf, "CnE");
 
     Mpi::Finalize();
     return 0;
