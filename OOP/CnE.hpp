@@ -15,11 +15,14 @@ public:
     std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef; 
     mfem::Array<int> boundary_dofs;
 
+    static mfem::HypreParVector *CeVn; // static variable to be used in reaction
+    static mfem::HypreParVector* GetCeVn() { return CeVn; } // static variable to be used in reaction
 
 
     void Save(mfem::ParGridFunction &gf, const std::string &base_name);
 
 private:
+
 
     mfem::ParGridFunction *PeR;
 
@@ -43,7 +46,6 @@ private:
     mfem::HypreParVector X1v;
 
     mfem::HypreParVector *CeV0;
-    mfem::HypreParVector *CeVn;
     mfem::HypreParVector *RHCe;
     mfem::HypreParMatrix *TmatR;
     mfem::HypreParMatrix *TmatL;

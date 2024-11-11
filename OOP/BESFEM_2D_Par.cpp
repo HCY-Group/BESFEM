@@ -493,7 +493,7 @@ int main(int argc, char *argv[])
 	// Rxn.Print(std::cout);	
 	 
 // 	// rate constants
-// 	ParGridFunction dPHE(&fespace);		// voltage drop
+	ParGridFunction dPHE(&fespace);		// voltage drop
 	ParGridFunction Kfw(&fespace);		// forward reaction constant
 	ParGridFunction Kbw(&fespace);		// backward rection constant
 	ParGridFunction OCV(&fespace);		// open circuit voltage
@@ -814,7 +814,7 @@ for (int t = 0; t < 10 + 1; t++){
 
 		// }
 
-	std::cout << "CnE: " << CnE << std::endl;	
+	// std::cout << "CnE: " << CnE << std::endl;	
 
 // 		delete TmatR;
 // 		delete TmatL;
@@ -833,119 +833,122 @@ for (int t = 0; t < 10 + 1; t++){
 // // 		// ==============================================	
 
 
-// 		// electrolyte conductivity and RHS	
-// 		for (int vi = 0; vi < nV; vi++){
-// 			dffe = exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
-// 			Dmp(vi) = pse(vi)*tc1*D0*dffe;
-// 			kpl(vi) = pse(vi)*tc2*D0*dffe*CnE(vi);
+		// electrolyte conductivity and RHS	
+		for (int vi = 0; vi < nV; vi++){
+			dffe = exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
+			Dmp(vi) = pse(vi)*tc1*D0*dffe;
+			kpl(vi) = pse(vi)*tc2*D0*dffe*CnE(vi);
 
-// 		}
+		}
 
 // 		// std::cout << "Dmp = " << Dmp << std::endl;
-// 		GridFunctionCoefficient cDm(&Dmp);
+		GridFunctionCoefficient cDm(&Dmp);
 
-// 		// Laplace of CnE for the RHS
-// 		std::unique_ptr<ParBilinearForm> Kl1(new ParBilinearForm(&fespace));
-// 		Kl1->AddDomainIntegrator(new DiffusionIntegrator(cDm));
-// 		Kl1->Assemble();
-// 		Kl1->FormLinearSystem(boundary_dofs, phE, B1t, Kdm, X1v, B1v);		
+		// Laplace of CnE for the RHS
+		std::unique_ptr<ParBilinearForm> Kl1(new ParBilinearForm(&fespace));
+		Kl1->AddDomainIntegrator(new DiffusionIntegrator(cDm));
+		Kl1->Assemble();
+		Kl1->FormLinearSystem(boundary_dofs, phE, B1t, Kdm, X1v, B1v);		
 	
-// 		// Vector of CnE
-// 		CnE.GetTrueDofs(CeVn) ;
-// 		Kdm.Mult(CeVn, LpCe) ;
+		// Vector of CnE
+		CnE.GetTrueDofs(CeVn) ;
+		Kdm.Mult(CeVn, LpCe) ;
 
-// // 		// electrolyte conductivity and RHS		
-// 		GridFunctionCoefficient cKe(&kpl) ;		
-// 		std::unique_ptr<ParBilinearForm> Kl2(new ParBilinearForm(&fespace)); 		
-// 		Kl2->AddDomainIntegrator(new DiffusionIntegrator(cKe));
-// 		Kl2->Assemble();	
+// 		// electrolyte conductivity and RHS		
+		GridFunctionCoefficient cKe(&kpl) ;		
+		std::unique_ptr<ParBilinearForm> Kl2(new ParBilinearForm(&fespace)); 		
+		Kl2->AddDomainIntegrator(new DiffusionIntegrator(cKe));
+		Kl2->Assemble();	
 
-// // 		// assign known values to the DBC nodes	
-// // 		ConstantCoefficient dbc_w_Coef(BvE);
-		
-// // 		phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
-// 		Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);		
-		
-// 	// Solve the system using PCG with hypre's BoomerAMG preconditioner.
-// 		//HypreBoomerAMG Mpe(Kml); //HypreBoomerAMG preconditioner causes memory leak issues
-// 		//Mpe.SetPrintLevel(0);
-// 		HypreSmoother Mpe;
-// 		Mpe.SetType(HypreSmoother::Jacobi);
-// 		cgPE.SetPreconditioner(Mpe);
-// 		cgPE.SetOperator(Kml);
-					
-		
 // 		// assign known values to the DBC nodes	
-// 		// ConstantCoefficient dbc_e_Coef(BvP);			
+// 		ConstantCoefficient dbc_w_Coef(BvE);
 		
-// 		// particle conductivity
-// 		// appendix equation A-20
-// 		for (int vi = 0; vi < nV; vi++){
-// 			kap(vi) = psi(vi)*(0.01929 + 0.7045*tanh(2.399*CnP(vi)) - \
-// 				0.7238*tanh(2.412*CnP(vi)) - 4.2106e-6);
-// 		}	
-
-//     	// std::cout << "kap = " << kap << std::endl;
-
-
-// 		GridFunctionCoefficient cKp(&kap) ;
+// 		phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
+		Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);		
 		
-// 		// stiffness matrix for phP
-// 		std::unique_ptr<ParBilinearForm> Kp2(new ParBilinearForm(&fespace));
-// 		Kp2->AddDomainIntegrator(new DiffusionIntegrator(cKp));
-// 		Kp2->Assemble();
-		
-// 		// project values to DBC nodes
-// 		// phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
-// 		Kp2->FormLinearSystem(ess_tdof_list_e, phP, B1t, KmP, X1v, B1v);			
-
-// 		// Solve the system using PCG with hypre's BoomerAMG preconditioner.
-// 		//HypreBoomerAMG Mpp(KmP);
-// 		//Mpp.SetPrintLevel(0);
-// 		HypreSmoother Mpp;
-// 		Mpp.SetType(HypreSmoother::Jacobi);
-// 		cgPP.SetPreconditioner(Mpp);
-// 		cgPP.SetOperator(KmP);
-
-// 		// std::cout << "AvB: " << AvB << std::endl;
-// 		// std::cout << "CnP: " << CnP << std::endl;
-		
-// 		// rate constants and exchange current density at interface
-// 		for (int vi = 0; vi < nV; vi++){
-// 			if ( AvB(vi)*dh > 0.0 ){
-// 				val = -0.2*(CnP(vi)-0.37)-1.559-0.9376*tanh(8.961*CnP(vi)-3.195); // check on this!
-// 				i0C(vi) = pow(10.0,val)*1.0e-3;
-				
-// 				OCV(vi) = 1.095*CnP(vi)*CnP(vi) - 8.324e-7*exp(14.31*CnP(vi)) + \
-// 					4.692*exp(-0.5389*CnP(vi));
+	// Solve the system using PCG with hypre's BoomerAMG preconditioner.
+		//HypreBoomerAMG Mpe(Kml); //HypreBoomerAMG preconditioner causes memory leak issues
+		//Mpe.SetPrintLevel(0);
+		HypreSmoother Mpe;
+		Mpe.SetType(HypreSmoother::Jacobi);
+		cgPE.SetPreconditioner(Mpe);
+		cgPE.SetOperator(Kml);
 					
-// 				Kfw(vi) = i0C(vi)/(Frd*0.001  )*exp( alp*Cst1*OCV(vi)) ;	
-// 				Kbw(vi) = i0C(vi)/(Frd*CnP(vi))*exp(-alp*Cst1*OCV(vi)) ;
+		
+		// assign known values to the DBC nodes	
+		// ConstantCoefficient dbc_e_Coef(BvP);			
+		
+		// particle conductivity
+		// appendix equation A-20
+		for (int vi = 0; vi < nV; vi++){
+			kap(vi) = psi(vi)*(0.01929 + 0.7045*tanh(2.399*CnP(vi)) - \
+				0.7238*tanh(2.412*CnP(vi)) - 4.2106e-6);
+		}	
 
-// 				// std::cout << "Kbw[" << vi << "] = " << Kbw(vi) << std::endl;
-
-// 			}
-// 		}
-
-// 		// std::cout << "Kbw = " << Kbw << std::endl;
+    	// std::cout << "kap = " << kap << std::endl;
 
 
-// // 		// convergence residuals
-// // 		gErrP = 1.0;
-// // 		gErrE = 1.0;
-// // 		inlp = 0;	
+		GridFunctionCoefficient cKp(&kap) ;
+		
+		// stiffness matrix for phP
+		std::unique_ptr<ParBilinearForm> Kp2(new ParBilinearForm(&fespace));
+		Kp2->AddDomainIntegrator(new DiffusionIntegrator(cKp));
+		Kp2->Assemble();
+		
+		// project values to DBC nodes
+		// phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
+		Kp2->FormLinearSystem(ess_tdof_list_e, phP, B1t, KmP, X1v, B1v);			
 
-// 		// //  beginning of internal loop
-// 		// while (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){
+		// Solve the system using PCG with hypre's BoomerAMG preconditioner.
+		//HypreBoomerAMG Mpp(KmP);
+		//Mpp.SetPrintLevel(0);
+		HypreSmoother Mpp;
+		Mpp.SetType(HypreSmoother::Jacobi);
+		cgPP.SetPreconditioner(Mpp);
+		cgPP.SetOperator(KmP);
 
-// 		// 	// Butler-Volmer Equation for Reaction Rate
-// 		// 	for (int vi = 0; vi < nV; vi++){
-// 		// 		if ( AvB(vi)*dh > 0.0 ){
-// 		// 			dPHE(vi) = phP(vi) - phE(vi);
-// 		// 			Rxn(vi) = AvP(vi)*(Kfw(vi)*CnE(vi)*exp(-alp*Cst1*dPHE(vi)) - \
-// 		// 			                   Kbw(vi)*CnP(vi)*exp( alp*Cst1*dPHE(vi)));
-// 		// 		}
-// 		// 	}
+		// std::cout << "AvB: " << AvB << std::endl;
+		// std::cout << "CnP: " << CnP << std::endl;
+		
+		// rate constants and exchange current density at interface
+		for (int vi = 0; vi < nV; vi++){
+			if ( AvB(vi)*dh > 0.0 ){
+				val = -0.2*(CnP(vi)-0.37)-1.559-0.9376*tanh(8.961*CnP(vi)-3.195); // check on this!
+				i0C(vi) = pow(10.0,val)*1.0e-3;
+				
+				OCV(vi) = 1.095*CnP(vi)*CnP(vi) - 8.324e-7*exp(14.31*CnP(vi)) + \
+					4.692*exp(-0.5389*CnP(vi));
+					
+				Kfw(vi) = i0C(vi)/(Frd*0.001  )*exp( alp*Cst1*OCV(vi)) ;	
+				Kbw(vi) = i0C(vi)/(Frd*CnP(vi))*exp(-alp*Cst1*OCV(vi)) ;
+
+				// std::cout << "Kbw[" << vi << "] = " << Kbw(vi) << std::endl;
+
+			}
+		}
+
+		// std::cout << "Kbw = " << Kbw << std::endl;
+
+
+// 		// convergence residuals
+// 		gErrP = 1.0;
+// 		gErrE = 1.0;
+// 		inlp = 0;	
+
+		// //  beginning of internal loop
+		// while (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){
+
+			// Butler-Volmer Equation for Reaction Rate
+			for (int vi = 0; vi < nV; vi++){
+				if ( AvB(vi)*dh > 0.0 ){
+					dPHE(vi) = phP(vi) - phE(vi);
+					Rxn(vi) = AvP(vi)*(Kfw(vi)*CnE(vi)*exp(-alp*Cst1*dPHE(vi)) - \
+					                   Kbw(vi)*CnP(vi)*exp( alp*Cst1*dPHE(vi)));
+				}
+			}
+
+			// std::cout << "Rxn: " << Rxn << std::endl;
+			// Rxn.Print(std::cout);
 
 
 // 			// ========================================

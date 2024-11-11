@@ -20,8 +20,10 @@ CnE::CnE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     RHCe = new mfem::HypreParVector(fespace);
     CeVn = new mfem::HypreParVector(fespace);
 
-
     }
+
+mfem::HypreParVector* CnE::CeVn = nullptr; // static variable to be used in reaction
+
 
 void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, bool perform_lithiation)
 {
@@ -63,7 +65,18 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     Me_solver->SetOperator(*TmatL);
     Me_solver->Mult(*RHCe, *CeVn) ;
 
-	Cn.Distribute(CeVn);   
+	Cn.Distribute(CeVn); 
+
+    // // Get the local data of the HypreParVector
+    // double *CeVn_data = CeVn->GetData();
+
+    // // Print each value of the vector
+    // int size1 = CeVn->Size();
+    // std::cout << "CeVn values in CnE:" << std::endl;
+    // for (int i = 0; i < size1; i++) {
+    // 	std::cout << CeVn_data[i] << " ";
+    // }
+    // std::cout << std::endl;  
 
     Concentrations::SaltConservation(Cn, psx);	
     // std::cout << "CnE: " << Cn << std::endl; 

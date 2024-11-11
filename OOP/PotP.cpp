@@ -12,6 +12,9 @@ PotP::PotP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
 
     }
 
+mfem::CGSolver* PotP::cgPP_solver = nullptr; // static variable to be used in reaction
+
+
 void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value)
 
 {

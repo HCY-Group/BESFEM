@@ -64,9 +64,9 @@ int main(int argc, char *argv[]) {
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, pse);
         reaction.TimeStep(Rxn_gf, CnP_gf, CnE_gf, psi, pse, phP_gf, phE_gf);
         // while loop
-        // reaction.BV
-        // particle_potential
-        // electrolyte_potential
+        reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
+        // std::cout << "Rxn: " << Rxn_gf << std::endl;
+        // Rxn_gf.Print(std::cout);
 
     }
 
