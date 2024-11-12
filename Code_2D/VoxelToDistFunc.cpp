@@ -291,32 +291,10 @@ int main(int argc, char *argv[])
 	
 	// Output Distance to Paraview
 	cout << "PRINTING OUT DistanceFunction" << endl;
-	ParaViewDataCollection *pd = NULL;
-	pd = NULL;
-	pd = new ParaViewDataCollection("DstFun", &pmesh);
-	pd->RegisterField("Dst", &d);
-	pd->SetLevelsOfDetail(order);
-	pd->SetDataFormat(VTKFormat::BINARY);
-	pd->SetHighOrderOutput(true);
-	pd->SetCycle(0);
-	pd->SetTime(0.0);
-	pd->Save();
-	delete pd;
+	solver.ParaviewSave("DstFun","Dst",&d);
 
 	// Output Advection Velocity to Paraview
-	//cout << "PRINTING OUT DistanceFunction" << endl;
-	//ParaViewDataCollection *pd = NULL;
-	pd = NULL;
-	pd = new ParaViewDataCollection("AdvVel", &pmesh);
-	pd->RegisterField("Vel", &c);
-	pd->SetLevelsOfDetail(order);
-	pd->SetDataFormat(VTKFormat::BINARY);
-	pd->SetHighOrderOutput(true);
-	pd->SetCycle(0);
-	pd->SetTime(0.0);
-	pd->Save();
-	delete pd;
-
+	solver.ParaviewSave("AdvVel","Vel",&c);
 
 
 
@@ -335,18 +313,8 @@ int main(int argc, char *argv[])
 
 	// Output psi to Paraview
 	cout << "PRINTING OUT Electrolyte Concentration" << endl;
-	//ParaViewDataCollection *pd = NULL;
-	pd = NULL;
-	pd = new ParaViewDataCollection("psi", &pmesh);
-	pd->RegisterField("psi", &psi);
-	pd->SetLevelsOfDetail(order);
-	pd->SetDataFormat(VTKFormat::BINARY);
-	pd->SetHighOrderOutput(true);
-	pd->SetCycle(0);
-	pd->SetTime(0.0);
-	pd->Save();
-	delete pd;
-
+	solver.ParaviewSave("psi","psi",&psi);
+	
 	for (int ConIter = 0; ConIter < 2; ConIter++){
 		if (ConIter==1){
 			psi.Neg();
@@ -430,22 +398,12 @@ int main(int argc, char *argv[])
 		// Output Cn to Paraview
 		cout << "PRINTING OUT Electrolyte Concentration" << endl;
 		//ParaViewDataCollection *pd = NULL;
-		pd = NULL;
+		//pd = NULL;
 		if (ConIter==0){
-			pd = new ParaViewDataCollection("Conc_p", &pmesh);
-			pd->RegisterField("Cn_p", &Cn);
+			solver.ParaviewSave("Conc_p","Cn_p",&Cn);
 		} else {
-			pd = new ParaViewDataCollection("Conc_e", &pmesh);
-			pd->RegisterField("Cn_e", &Cn);
+			solver.ParaviewSave("Conc_e","Cn_e",&Cn);
 		}
-		pd->RegisterField("psi", &psi);
-		pd->SetLevelsOfDetail(order);
-		pd->SetDataFormat(VTKFormat::BINARY);
-		pd->SetHighOrderOutput(true);
-		pd->SetCycle(0);
-		pd->SetTime(0.0);
-		pd->Save();
-		delete pd;
 	}
 
 
