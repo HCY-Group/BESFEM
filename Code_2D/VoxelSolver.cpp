@@ -64,8 +64,6 @@ void VoxelSolver::MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh) {
 	int gei;		//global element indices
 	int ei;			//local element indices
 	
-	GridFunction tmp_gf_glob(*this->gVox);	// Copy constructor (using to "dereference")
-	ParGridFunction tmp_gf_par(*this->Vox);	// Copy constructor (using to "dereference")
 	
 	for (ei=0; ei<nE; ei++){
 		gei = E_L2G[ei];
@@ -74,13 +72,10 @@ void VoxelSolver::MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh) {
 		pmesh->GetElementVertices(ei,VTX);
 	
 		for (int vi = 0; vi<nC; vi++){
-			//Vox(VTX[vi]) = gVox(gVTX[vi]);
-			tmp_gf_par(VTX[vi]) = tmp_gf_glob(gVTX[vi]);
+			(*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);
 		}
 	}
 	
-	*this->gVox = tmp_gf_glob;
-	*this->Vox = tmp_gf_par;
 
 }
 /*
