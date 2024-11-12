@@ -8,7 +8,9 @@ PotP::PotP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     {
 
     cgPP_solver = new mfem::CGSolver(MPI_COMM_WORLD);
+    RpP = new ParGridFunction(fespace); // reaction rate for particle;
 
+    Fpb = mfem::HypreParVector(fespace);
 
     }
 
@@ -24,3 +26,15 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value)
     
 }
 
+void PotP::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx) 
+
+{
+
+    Potentials::CreateReaction(Rx, *RpP, Constants::Frd);
+    Potentials::ForceTerm(*RpP, ftPotP);
+
+
+
+
+
+}

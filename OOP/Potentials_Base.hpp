@@ -19,6 +19,8 @@ public:
 
     void SetInitialPotentials(mfem::ParGridFunction &ph, double initial_value);
     void SetUpSolver(mfem::CGSolver &solver, double value_1, double value_2);
+    void CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value);
+    void ForceTerm(mfem::ParGridFunction &Rx2, mfem::ParLinearForm &Fxx);
 
     double BvP = 2.9395;
     double BvE = -1.0;
@@ -36,7 +38,8 @@ private:
     int nC;                                         // Number of corners (assuming this is number of corners)
     int nV;                                         // Number of vertices
 
-
+    mfem::ParGridFunction *Rxx;
+    mfem::GridFunctionCoefficient *cXx;
 
 };
 

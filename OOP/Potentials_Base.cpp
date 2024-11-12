@@ -32,3 +32,27 @@ void Potentials::SetUpSolver(mfem::CGSolver &solver, double value_1, double valu
     solver.SetMaxIter(value_2);
 
 }
+
+
+void Potentials::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value) {
+
+    Rx2 = Rx1;
+    Rx2 *= value;
+
+}
+
+void Potentials::ForceTerm(mfem::ParGridFunction &Rx2, mfem::ParLinearForm &Fxx) {
+
+    std::unique_ptr<ParLinearForm> Bx2(new ParLinearForm(fespace));	
+
+    Rxx = new ParGridFunction(fespace);
+    *Rxx = Rx2;
+    cXx = new GridFunctionCoefficient(Rxx);
+
+    Bx2->AddDomainIntegrator(new DomainLFIntegrator(*cXx));
+    Bx2->Assemble();
+    Fxx = std::move(*Bx2);
+
+    Bx2->Print(std::cout);
+
+}

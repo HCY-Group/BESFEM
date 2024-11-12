@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
         reaction.TimeStep(Rxn_gf, CnP_gf, CnE_gf, psi, pse, phP_gf, phE_gf);
         // while loop
         reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
+        particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, psi);
         // std::cout << "Rxn: " << Rxn_gf << std::endl;
         // Rxn_gf.Print(std::cout);
 

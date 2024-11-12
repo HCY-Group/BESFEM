@@ -421,7 +421,7 @@ int main(int argc, char *argv[])
 
 	ParGridFunction phP(&fespace);		// electropotential in particle
 	ParGridFunction kap(&fespace);		// conductivity in particle
-// 	ParGridFunction RpP(&fespace);		// reaction 
+	ParGridFunction RpP(&fespace);		// reaction rate for particle
 // 	ParGridFunction pP0(&fespace);		// values before iteration
 
 	double BvP = 2.9395;
@@ -436,8 +436,8 @@ int main(int argc, char *argv[])
 	cgPP.SetMaxIter(82);
 
 // 	// force Vector
-// 	ParLinearForm Fpt(&fespace);	
-// 	HypreParVector Fpb(&fespace);
+	ParLinearForm Fpt(&fespace);	
+	HypreParVector Fpb(&fespace);
 
 // 	HypreParVector Xs0(&fespace);
 
@@ -473,9 +473,9 @@ int main(int argc, char *argv[])
 	cgPE.SetRelTol(1e-7);
 	cgPE.SetMaxIter(80);
 	 	
-// 	// force vector
-// 	ParLinearForm Flt(&fespace);
-// 	HypreParVector Flb(&fespace);	
+	// force vector
+	ParLinearForm Flt(&fespace);
+	HypreParVector Flb(&fespace);	
 	
 	// Laplace matrix
 	HypreParMatrix Kdm;
@@ -963,15 +963,19 @@ for (int t = 0; t < 10 + 1; t++){
 // 			// ========================================		
 		
 		
-// 			// force vector
-// 			RpP = Rxn;
-// 			RpP *= Frd;	
-// 			GridFunctionCoefficient cRp(&RpP);
+			// force vector
+			RpP = Rxn;
+			RpP *= Frd;	
+			GridFunctionCoefficient cRp(&RpP);
+
+			// RpP.Print(std::cout);
 		
-// 			std::unique_ptr<ParLinearForm> Bp2(new ParLinearForm(&fespace));
-// 			Bp2->AddDomainIntegrator(new DomainLFIntegrator(cRp));	
-// 			Bp2->Assemble();		
-// 			Fpt = std::move(*Bp2);		// Move the contents of Bp2 into Fpt
+			std::unique_ptr<ParLinearForm> Bp2(new ParLinearForm(&fespace));
+			Bp2->AddDomainIntegrator(new DomainLFIntegrator(cRp));	
+			Bp2->Assemble();		
+			Fpt = std::move(*Bp2);		// Move the contents of Bp2 into Fpt
+
+			Bp2->Print(std::cout);
 
 // 			// project values to DBC nodes
 // 			phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	

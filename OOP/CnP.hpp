@@ -23,7 +23,7 @@ private:
     std::shared_ptr<mfem::HypreParMatrix> Mmatp;
     mfem::HypreSmoother Mp_prec;
 
-    mfem::ParLinearForm ftP;
+    mfem::ParLinearForm ftPC; // force term particle concentration
 
     std::shared_ptr<mfem::HypreParMatrix> Kmatp;
 

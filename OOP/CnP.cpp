@@ -44,10 +44,10 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     mfem::ConstantCoefficient coef2(0.0);
     mfem::ProductCoefficient dummy_coef(coef1, coef2);
 
-    Concentrations::ForceTerm(*RxP, ftP, dummy_boundary, dummy_coef, false); // false since not applying BCs
+    Concentrations::ForceTerm(*RxP, ftPC, dummy_boundary, dummy_coef, false); // false since not applying BCs
 
     std::shared_ptr<GridFunctionCoefficient> cDp = Concentrations::Diffusivity(psx, Cn, true); // true since using first equation
-    Concentrations::KMatrix(boundary_dofs, Cn, ftP, Kmatp, X1v, Fcb, cDp.get());
+    Concentrations::KMatrix(boundary_dofs, Cn, ftPC, Kmatp, X1v, Fcb, cDp.get());
 
     Tmatp = Add(1.0, *Mmatp, -(Constants::dt), *Kmatp);
 
