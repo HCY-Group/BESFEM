@@ -15,6 +15,10 @@ VoxelSolver::VoxelSolver(FiniteElementSpace *gfes, ParFiniteElementSpace *fes){
 	this->Vox = new ParGridFunction(fes);
 }
 	
+void VoxelSolver::AssignGlobalValues(double value){
+	*this->gVox = value;
+}
+
 void VoxelSolver::AssignGlobalValues(vector<vector<vector<int>>> data) {
 	// Create global FE space for Voxel Data
 	/*
@@ -78,6 +82,11 @@ void VoxelSolver::MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh) {
 	
 
 }
+
+void VoxelSolver::AssignDirichletBCs(GridFunctionCoefficient &Coef, Array<int> &bdr) {
+	this->Vox->ProjectBdrCoefficient(Coef, bdr);
+}
+
 /*
 void VoxelSolver::InitStiffMatrix(Array<int> boundary_dofs, ParGridFunction Diff) {
 	
@@ -148,7 +157,7 @@ void VoxelSolver::InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridF
 	// TimeDependentOperator and ODESolver
 	cout << Fcb.Size() << endl;
 	//ConductionOperator oper(DomPar, Kmat, Fcb);
-	oper = new ConductionOperator(DomPar, Kmat, Fcb);
+	oper = new ConductionOperator(DomPar, Kmat, Fcb, boundary_dofs);
 	//ODESolver *ode_solver = new ForwardEulerSolver;
 	//ODESolver *ode_solver = new BackwardEulerSolver;
 	ode_solver = new BackwardEulerSolver;
@@ -212,6 +221,7 @@ void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, d
 	HypreParVector Vox0(this->Vox->ParFESpace());
 	HypreParMatrix Kmat;
 	
+	/*
 	Vox->GetTrueDofs(Vox0);
 	//cout << "HERE A" << endl;
 	//cout << K->ParFESpace()->GetFE(0) << endl;
@@ -219,10 +229,29 @@ void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, d
 	//cout << Fct->ParFESpace()->GetFE(0) << endl;
 	cout << "Max Fct: " << Fct->Max() << ", Min Fct:  " << Fct->Min() << endl;
 	K->FormLinearSystem(boundary_dofs, *Vox, *Fct, Kmat, X1v, Fcb);
+	cout << "Size Fct: " << Fct->Size() << ", Size Vox0: " << Vox0.Size() << endl;
 	//cout << "HERE B" << endl;
 	oper->UpdateParams(Kmat, Fcb);
 	ode_solver->Step(Vox0, t_ode, dt);
+	cout << "Max Vox0: " << Vox0.Max() << ", Min Vox0:  " << Vox0.Min() << endl;
 	Vox->Distribute(Vox0);
+	*/
+
+	//Vox->GetTrueDofs(Vox0);
+	Vox->GetTrueDofs(X1v); //Set initial values
+	//cout << "HERE A" << endl;
+	//cout << K->ParFESpace()->GetFE(0) << endl;
+	//cout << Vox->ParFESpace()->GetFE(0) << endl;
+	//cout << Fct->ParFESpace()->GetFE(0) << endl;
+	cout << "Max Fct: " << Fct->Max() << ", Min Fct:  " << Fct->Min() << endl;
+	K->FormLinearSystem(boundary_dofs, *Vox, *Fct, Kmat, X1v, Fcb);
+	cout << "Size Fct: " << Fct->Size() << ", Size Vox0: " << Vox0.Size() << endl;
+	//cout << "HERE B" << endl;
+	oper->UpdateParams(Kmat, Fcb);
+	ode_solver->Step(X1v, t_ode, dt);
+	cout << "Max Vox0: " << X1v.Max() << ", Min Vox0:  " << X1v.Min() << endl;
+	//Vox->Distribute(Vox0);
+	K->RecoverFEMSolution(X1v, *Fct, *Vox);
 }
 
 void VoxelSolver::ParaviewSave(string FileName, string VariableName, GridFunction* gf) {

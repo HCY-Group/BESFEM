@@ -315,6 +315,11 @@ int main(int argc, char *argv[])
 	cout << "PRINTING OUT Electrolyte Concentration" << endl;
 	solver.ParaviewSave("psi","psi",&psi);
 	
+	VoxelSolver ConnectSolver(maker.GetGlobalFESpace(),maker.GetParallelFESpace());
+	ConnectSolver.AssignGlobalValues(0.0);
+	ConnectSolver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
+		
+
 	for (int ConIter = 0; ConIter < 2; ConIter++){
 		if (ConIter==1){
 			psi.Neg();
@@ -353,6 +358,9 @@ int main(int argc, char *argv[])
 		GridFunctionCoefficient dbcCoef(&dbcval);
 		Cn.ProjectBdrCoefficient(dbcCoef, dbc_bdr);
 		
+		ConnectSolver.AssignDirichletBCs(dbcCoef, dbc_bdr);
+		ConnectSolver.InitMatricesAndTimeDepOpers(ess_tdof_list, psi, psi);
+			
 		// Stiffness matrix
 		GridFunctionCoefficient psiCoef(&psi);
 		ParBilinearForm KCn(&fespace);

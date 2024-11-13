@@ -9,7 +9,9 @@ class VoxelSolver {
 public:
 	VoxelSolver(FiniteElementSpace *fes); //constructor
 	VoxelSolver(FiniteElementSpace *gfes, ParFiniteElementSpace *fes); //constructor with parallel
+	void AssignGlobalValues(double a);
 	void AssignGlobalValues(vector<vector<vector<int>>> data);
+	void AssignDirichletBCs(GridFunctionCoefficient &Coef, Array<int> &bdr);
 	void ParaviewSave(string FileName, string VariableName, GridFunction* gf);
 	void MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh);
 	//void InitStiffMatrix(Array<int> boundary_dofs, ParGridFunction Diff);
