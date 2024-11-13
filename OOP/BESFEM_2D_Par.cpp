@@ -861,10 +861,22 @@ for (int t = 0; t < 10 + 1; t++){
 		Kl2->Assemble();	
 
 // 		// assign known values to the DBC nodes	
-// 		ConstantCoefficient dbc_w_Coef(BvE);
+		ConstantCoefficient dbc_w_Coef(BvE);
 		
-// 		phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
-		Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);		
+		// std::cout << "phE before projection:" << std::endl;
+		// phE.Print(std::cout);
+
+		// project values to DBC nodes
+		// apply boundary projection on phE using dbc_Coef on boundary dbc_bdr
+		// sets the values of phE on the specified boundary dbc_bdr to the constant value provided by dbc_Coef
+		phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
+		Kl2->FormLinearSystem(ess_tdof_list_w, phE, B1t, Kml, X1v, B1v);
+
+		// std::cout << "phE after projection:" << std::endl;
+		// phE.Print(std::cout);
+	
+
+		// dbc_w_bdr.Print(std::cout);	
 		
 	// Solve the system using PCG with hypre's BoomerAMG preconditioner.
 		//HypreBoomerAMG Mpe(Kml); //HypreBoomerAMG preconditioner causes memory leak issues
@@ -876,7 +888,7 @@ for (int t = 0; t < 10 + 1; t++){
 					
 		
 		// assign known values to the DBC nodes	
-		// ConstantCoefficient dbc_e_Coef(BvP);			
+		ConstantCoefficient dbc_e_Coef(BvP);			
 		
 		// particle conductivity
 		// appendix equation A-20
@@ -895,9 +907,17 @@ for (int t = 0; t < 10 + 1; t++){
 		Kp2->AddDomainIntegrator(new DiffusionIntegrator(cKp));
 		Kp2->Assemble();
 		
+		// std::cout << "phP before projection:" << std::endl;
+		// phP.Print(std::cout);
+
+		// apply boundary projection on phP using dbc_Coef on boundary dbc_bdr
 		// project values to DBC nodes
-		// phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
-		Kp2->FormLinearSystem(ess_tdof_list_e, phP, B1t, KmP, X1v, B1v);			
+		// sets the values of phP on the specified boundary dbc_bdr to the constant value provided by dbc_Coef
+		phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
+		Kp2->FormLinearSystem(ess_tdof_list_e, phP, B1t, KmP, X1v, B1v);	
+
+		// std::cout << "phP after projection:" << std::endl;
+		// phP.Print(std::cout);		
 
 		// Solve the system using PCG with hypre's BoomerAMG preconditioner.
 		//HypreBoomerAMG Mpp(KmP);
@@ -947,8 +967,8 @@ for (int t = 0; t < 10 + 1; t++){
 				}
 			}
 
-			std::cout << "Rxn: " << Rxn << std::endl;
-			Rxn.Print(std::cout);
+			// std::cout << "Rxn: " << Rxn << std::endl;
+			// dPHE.Print(std::cout);
 
 
 // 			// ========================================

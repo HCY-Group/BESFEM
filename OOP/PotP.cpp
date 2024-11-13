@@ -44,6 +44,7 @@ void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     mfem::Array<int> ess_tdof_list_e = mesh_handler.ess_tdof_list_e;
 
+    //Potentials::ImplementBoundaryConditions();
     Potentials::KMatrix(*Kp2, cKp, ess_tdof_list_e, phx, *B1t, KmP, *X1v, *B1v);
     Potentials::PCG_Solver(Mpp, *cgPP_solver, KmP);
 

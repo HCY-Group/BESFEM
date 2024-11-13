@@ -73,8 +73,8 @@ int main(int argc, char *argv[]) {
         // while loop
         reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
         // particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, psi);
-        std::cout << "Rxn: " << Rxn_gf << std::endl;
-        Rxn_gf.Print(std::cout);
+        // std::cout << "Rxn: " << Rxn_gf << std::endl;
+        // Rxn_gf.Print(std::cout);
 
     }
 

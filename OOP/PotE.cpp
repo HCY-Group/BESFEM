@@ -56,6 +56,7 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
     Cn.GetTrueDofs(*CeVn); 
     Kdm.Mult(*CeVn, *LpCe);  
 
+    //Potentials::ImplementBoundaryConditions();
     mfem::Array<int> ess_tdof_list_w = mesh_handler.ess_tdof_list_w; 
     Potentials::KMatrix(*Kl2, cKe, ess_tdof_list_w, phx, *B1t, KmE, *X1v, *B1v); 
     Potentials::PCG_Solver(Mpe, *cgPE_solver, KmE); 
