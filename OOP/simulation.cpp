@@ -60,14 +60,21 @@ int main(int argc, char *argv[]) {
  
     // Time Step
     for (int t = 0; t < 10 + 1; ++t) {
+
         particle_concentration.TimeStep(Rxn_gf, CnP_gf, psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, pse);
-        reaction.TimeStep(Rxn_gf, CnP_gf, CnE_gf, psi, pse, phP_gf, phE_gf);
+        
+        particle_potential.TimeStep(CnP_gf, psi, phP_gf);
+        electrolyte_potential.TimeStep(CnE_gf, pse, phE_gf);
+
+        // rate constants and exchange current density at interface
+        reaction.ExchangeCurrentDensity(CnP_gf); // move to CnP? kfw and kbw used in reaction BV
+
         // while loop
         reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
-        particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, psi);
-        // std::cout << "Rxn: " << Rxn_gf << std::endl;
-        // Rxn_gf.Print(std::cout);
+        // particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, psi);
+        std::cout << "Rxn: " << Rxn_gf << std::endl;
+        Rxn_gf.Print(std::cout);
 
     }
 

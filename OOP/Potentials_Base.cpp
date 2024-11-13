@@ -34,6 +34,26 @@ void Potentials::SetUpSolver(mfem::CGSolver &solver, double value_1, double valu
 }
 
 
+void Potentials::KMatrix(mfem::ParBilinearForm &K, mfem::GridFunctionCoefficient &gfc, mfem::Array<int> boundary, mfem::ParGridFunction &potential, 
+mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &hpv_X, mfem::HypreParVector &hpv_B){
+
+    K.Update();
+    K.AddDomainIntegrator(new DiffusionIntegrator(gfc));
+    K.Assemble();
+    K.FormLinearSystem(boundary, potential, plf_B, matrix, hpv_X, hpv_B);
+
+}
+
+void Potentials::PCG_Solver(mfem::HypreSmoother &smoother, mfem::CGSolver &cg, mfem::HypreParMatrix &KMatrix){
+
+    smoother.SetType(HypreSmoother::Jacobi);
+    cg.SetPreconditioner(smoother);
+    cg.SetOperator(KMatrix);
+
+
+}
+
+
 void Potentials::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value) {
 
     Rx2 = Rx1;
@@ -53,6 +73,15 @@ void Potentials::ForceTerm(mfem::ParGridFunction &Rx2, mfem::ParLinearForm &Fxx)
     Bx2->Assemble();
     Fxx = std::move(*Bx2);
 
-    Bx2->Print(std::cout);
+    // Bx2->Print(std::cout);
+
+}
+
+
+void Potentials::ForceVector(mfem::ParBilinearForm &K, mfem::Array<int> boundary, mfem::ParGridFunction &potential, 
+mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &hpv_X, mfem::HypreParVector &hpv_B, mfem::ConstantCoefficient &Coef, mfem::Array<int> &bdr){
+
+    potential.ProjectBdrCoefficient(Coef, bdr);
+    K.FormLinearSystem(boundary, potential, plf_B, matrix, hpv_X, hpv_B);
 
 }
