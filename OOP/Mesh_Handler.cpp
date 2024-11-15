@@ -216,6 +216,9 @@ void MeshHandler::SetupBoundaryConditions(mfem::ParMesh *pmesh, mfem::ParFiniteE
     dbc_e_bdr = 0; 
     dbc_e_bdr[2] = 1;  // Applying Dirichlet BC to the east boundary
 
+    // std::cout << "dbc_e_bdr size in MeshHandler: " << dbc_e_bdr.Size() << std::endl;
+
+
     // Extract essential true DOFs (Dirichlet BCs) on the east boundary
     Array<int> ess_tdof_list_e(0);
     fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);

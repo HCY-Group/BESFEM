@@ -1,9 +1,10 @@
 #include "PotP.hpp"
 #include "mfem.hpp"
 
+double BvP = 0.0;
 
 PotP::PotP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Potentials(pm, fe, mh)
+    : Potentials(pm, fe, mh), dbc_e_bdr(pmesh->bdr_attributes.Max())
     
     {
 
@@ -12,11 +13,18 @@ PotP::PotP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
 
     Fpb = mfem::HypreParVector(fespace);
     kap = new mfem::ParGridFunction(fespace); // particle conductivity
-    Kp2 = new mfem::ParBilinearForm(fespace);
+    // Kp2 = new mfem::ParBilinearForm(fespace);
+    Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace); // Use make_unique
 
-    B1t = new mfem::ParLinearForm(fespace);
-    X1v = new mfem::HypreParVector(fespace);
-    B1v = new mfem::HypreParVector(fespace);
+    B1t = mfem::ParLinearForm(fespace);
+    X1v = mfem::HypreParVector(fespace);
+    B1v = mfem::HypreParVector(fespace);
+
+    dbc_e_bdr.SetSize(pmesh->bdr_attributes.Max());  // Resize based on the mesh
+    dbc_e_bdr = 0; // fix this
+    dbc_e_bdr[2] = 1; // Applying Dirichlet BC to the east boundary
+
+    mfem:: Array<int> ess_tdof_list_e(0);
 
 
     }
@@ -27,8 +35,16 @@ mfem::CGSolver* PotP::cgPP_solver = nullptr; // static variable to be used in re
 void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value)
 
 {
-    Potentials::SetInitialPotentials(ph, initial_value);
+    
+    BvP = initial_value;
+
+    // std::cout << BvP << std::endl;
+    
+    Potentials::SetInitialPotentials(ph, BvP);
     Potentials::SetUpSolver(*cgPP_solver, 1e-7, 82);
+
+    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e); // fix this 
+
 
     
 }
@@ -42,10 +58,11 @@ void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     mfem::GridFunctionCoefficient cKp(kap);
 
-    mfem::Array<int> ess_tdof_list_e = mesh_handler.ess_tdof_list_e;
+    Potentials::ImplementBoundaryConditions(dbc_e_Coef, BvP, phx, dbc_e_bdr);
 
-    //Potentials::ImplementBoundaryConditions();
-    Potentials::KMatrix(*Kp2, cKp, ess_tdof_list_e, phx, *B1t, KmP, *X1v, *B1v);
+    Kp2 = std::make_unique<ParBilinearForm>(fespace);  // Initialize as a member variable
+
+    Potentials::KMatrix(*Kp2, cKp, ess_tdof_list_e, phx, B1t, KmP, X1v, B1v);
     Potentials::PCG_Solver(Mpp, *cgPP_solver, KmP);
 
 }
@@ -68,10 +85,20 @@ void PotP::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction
 
     Potentials::CreateReaction(Rx, *RpP, Constants::Frd);
     Potentials::ForceTerm(*RpP, ftPotP);
-    // Potentials::ForceVector(Kp2, ess_tdof_list_e, phx, ftPotP, KmP, X1v, Fpb, dbc_e_Coef, dbc_e_bdr);
-
-
-
-
+    Potentials::ForceVector(*Kp2, ess_tdof_list_e, phx, ftPotP, KmP, X1v, Fpb, dbc_e_Coef, dbc_e_bdr);
 
 }
+
+
+
+    	// // Get the local data of the HypreParVector
+		// double *Fpb_data = Fpb.GetData();
+
+		// // Print each value of the vector
+		// int size1 = Fpb.Size();
+		// std::cout << "Fpb values in CGE:" << std::endl;
+		// for (int i = 0; i < size1; i++) {
+		// 	std::cout << Fpb_data[i] << " ";
+		// }
+		// std::cout << std::endl;
+

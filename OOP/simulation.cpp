@@ -57,6 +57,9 @@ int main(int argc, char *argv[]) {
     Reaction reaction(&pmesh, &fespace, mesh_handler);
     mfem::ParGridFunction Rxn_gf(&fespace);
     reaction.Initialize(Rxn_gf, 0.0);
+
+    double VCell = BvP - BvE;
+    std::cout << "VCell: " << VCell << std::endl;
  
     // Time Step
     for (int t = 0; t < 10 + 1; ++t) {
@@ -68,11 +71,13 @@ int main(int argc, char *argv[]) {
         electrolyte_potential.TimeStep(CnE_gf, pse, phE_gf);
 
         // rate constants and exchange current density at interface
-        reaction.ExchangeCurrentDensity(CnP_gf); // move to CnP? kfw and kbw used in reaction BV
+        reaction.ExchangeCurrentDensity(CnP_gf); 
 
         // while loop
         reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
-        // particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, psi);
+        particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, psi);
+        electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, pse);
+
         // std::cout << "Rxn: " << Rxn_gf << std::endl;
         // Rxn_gf.Print(std::cout);
 

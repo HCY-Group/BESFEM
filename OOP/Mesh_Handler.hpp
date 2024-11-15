@@ -54,6 +54,10 @@ public:
     Array<int> nbc_w_bdr;
     Array<int> ess_tdof_list_w;
     Array<int> ess_tdof_list_e;
+
+    Array<int> dbc_w_bdr;
+    Array<int> dbc_e_bdr;
+
     std::unique_ptr<ParMesh> pmesh;
     std::unique_ptr<ParMesh> pmesh0;
 

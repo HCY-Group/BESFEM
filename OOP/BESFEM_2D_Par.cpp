@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
 	ParGridFunction phE(&fespace);		// electropot in electrolyte
 	ParGridFunction Dmp(&fespace);		// D_minus_plus
 	ParGridFunction kpl(&fespace);		// electrolyte conductivity
-// 	ParGridFunction RpE(&fespace);		// reaction rate for electrolyte
+	ParGridFunction RpE(&fespace);		// reaction rate for electrolyte
 // 	ParGridFunction pE0(&fespace);		// values before iteration
 
 	double BvE = -1.0;
@@ -483,7 +483,9 @@ int main(int argc, char *argv[])
 	HypreParVector LpCe(&fespace), Xe0(&fespace);
 // 	HypreParVector RHSl(&fespace);
 	
-// 	double Vcell = BvP - BvE;
+	double VCell = BvP - BvE;
+	// std::cout << "VCell: " << VCell << std::endl;
+
 
 	// reaction term
 	ParGridFunction Rxn(&fespace);
@@ -901,6 +903,8 @@ for (int t = 0; t < 10 + 1; t++){
 
 
 		GridFunctionCoefficient cKp(&kap) ;
+		phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
+
 		
 		// stiffness matrix for phP
 		std::unique_ptr<ParBilinearForm> Kp2(new ParBilinearForm(&fespace));
@@ -909,12 +913,26 @@ for (int t = 0; t < 10 + 1; t++){
 		
 		// std::cout << "phP before projection:" << std::endl;
 		// phP.Print(std::cout);
+		
+    	// std::cout << "dbc_e_bdr size: " << dbc_e_bdr.Size() << std::endl;
+    	// std::cout << "KmP: " << KmP << std::endl;
 
 		// apply boundary projection on phP using dbc_Coef on boundary dbc_bdr
 		// project values to DBC nodes
 		// sets the values of phP on the specified boundary dbc_bdr to the constant value provided by dbc_Coef
-		phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
-		Kp2->FormLinearSystem(ess_tdof_list_e, phP, B1t, KmP, X1v, B1v);	
+		// phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
+		Kp2->FormLinearSystem(ess_tdof_list_e, phP, B1t, KmP, X1v, B1v);
+
+		// Get the local data of the HypreParVector
+		// double *B1v_data = B1v.GetData();
+
+		// // Print each value of the vector
+		// int size1 = B1v.Size();
+		// std::cout << "B1v values in original:" << std::endl;
+		// for (int i = 0; i < size1; i++) {
+		// 	std::cout << B1v_data[i] << " ";
+		// }
+		// std::cout << std::endl;	
 
 		// std::cout << "phP after projection:" << std::endl;
 		// phP.Print(std::cout);		
@@ -983,23 +1001,36 @@ for (int t = 0; t < 10 + 1; t++){
 // 			// ========================================		
 		
 		
-			// // force vector
-			// RpP = Rxn;
-			// RpP *= Frd;	
-			// GridFunctionCoefficient cRp(&RpP);
+			// force vector
+			RpP = Rxn;
+			RpP *= Frd;	
+			GridFunctionCoefficient cRp(&RpP);
 
-			// // RpP.Print(std::cout);
+			// RpP.Print(std::cout);
 		
-			// std::unique_ptr<ParLinearForm> Bp2(new ParLinearForm(&fespace));
-			// Bp2->AddDomainIntegrator(new DomainLFIntegrator(cRp));	
-			// Bp2->Assemble();		
-			// Fpt = std::move(*Bp2);		// Move the contents of Bp2 into Fpt
+			std::unique_ptr<ParLinearForm> Bp2(new ParLinearForm(&fespace));
+			Bp2->AddDomainIntegrator(new DomainLFIntegrator(cRp));	
+			Bp2->Assemble();		
+			Fpt = std::move(*Bp2);		// Move the contents of Bp2 into Fpt
 
 			// Bp2->Print(std::cout);
 
-// 			// project values to DBC nodes
-// 			phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
-// 			Kp2->FormLinearSystem(ess_tdof_list_e, phP, Fpt, KmP, X1v, Fpb);			
+			// project values to DBC nodes
+			phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
+			// std::cout << phP << std::endl;
+
+			Kp2->FormLinearSystem(ess_tdof_list_e, phP, Fpt, KmP, X1v, Fpb);	
+
+		// // Get the local data of the HypreParVector
+		// double *Fpb_data = Fpb.GetData();
+
+		// // Print each value of the vector
+		// int size1 = Fpb.Size();
+		// std::cout << "Fpb values in original:" << std::endl;
+		// for (int i = 0; i < size1; i++) {
+		// 	std::cout << Fpb_data[i] << " ";
+		// }
+		// std::cout << std::endl;		
 			
 // 			pP0 = phP;	
 // 			pP0.GetTrueDofs(Xs0);
@@ -1038,17 +1069,30 @@ for (int t = 0; t < 10 + 1; t++){
 // 			// ========================================
 		
 		
-// 			RpE = Rxn;
-// 			RpE.Neg();	
-// 			GridFunctionCoefficient cRe(&RpE) ;				
+			RpE = Rxn;
+			RpE.Neg();	
+			GridFunctionCoefficient cRe(&RpE) ;	
+
+			// RpE.Print(std::cout);			
 			
-// 			std::unique_ptr<ParLinearForm> Bl2(new ParLinearForm(&fespace));
-// 			Bl2->AddDomainIntegrator(new DomainLFIntegrator(cRe));	
-// 			Bl2->Assemble();		
-// 			Flt = std::move(*Bl2);		// Move the contents of Bl2 into Flt
+			std::unique_ptr<ParLinearForm> Bl2(new ParLinearForm(&fespace));
+			Bl2->AddDomainIntegrator(new DomainLFIntegrator(cRe));	
+			Bl2->Assemble();		
+			Flt = std::move(*Bl2);		// Move the contents of Bl2 into Flt
 		
-// 			phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
-// 			Kl2->FormLinearSystem(ess_tdof_list_w, phE, Flt, Kml, X1v, Flb);		
+			phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
+			Kl2->FormLinearSystem(ess_tdof_list_w, phE, Flt, Kml, X1v, Flb);
+
+		// // Get the local data of the HypreParVector
+		// double *Flb_data = Flb.GetData();
+
+		// // Print each value of the vector
+		// int size1 = Flb.Size();
+		// std::cout << "Flb values in original:" << std::endl;
+		// for (int i = 0; i < size1; i++) {
+		// 	std::cout << Flb_data[i] << " ";
+		// }
+		// std::cout << std::endl;		
 						
 // 			RHSl = Flb;
 // 			RHSl += LpCe;

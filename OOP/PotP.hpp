@@ -3,7 +3,13 @@
 
 #include "Potentials_Base.hpp"
 
+extern double BvP;
+
+
 class PotP : public Potentials {
+
+    std::unique_ptr<mfem::ParBilinearForm> Kp2; // Member variable
+
 
 public:
     PotP(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
@@ -15,6 +21,9 @@ public:
     static mfem::CGSolver *cgPP_solver; // static variable to be used in reaction
     static mfem::CGSolver *GetcgPPsolver() { return cgPP_solver; } // static variable to be used in reaction
 
+    mfem::Array<int> ess_tdof_list_e;
+    mfem::ConstantCoefficient dbc_e_Coef;
+    mfem::Array<int> dbc_e_bdr;
 
 
 private:
@@ -29,10 +38,10 @@ private:
     mfem::HypreParVector Fpb;
 
     mfem::ParGridFunction *kap;
-    mfem::ParBilinearForm *Kp2;
-    mfem::ParLinearForm *B1t;
-    mfem::HypreParVector *X1v;
-    mfem::HypreParVector *B1v;
+    // std::unique_ptr<mfem::ParBilinearForm> Kp2; // Change to unique_ptr
+    mfem::ParLinearForm B1t;
+    mfem::HypreParVector X1v;
+    mfem::HypreParVector B1v;
     mfem::HypreSmoother Mpp;
     mfem::HypreParMatrix KmP;
 
