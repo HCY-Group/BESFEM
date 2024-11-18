@@ -238,13 +238,14 @@ void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, d
 	*/
 
 	//Vox->GetTrueDofs(Vox0);
-	Vox->GetTrueDofs(X1v); //Set initial values
+	//Vox->GetTrueDofs(X1v); //Set initial values
 	//cout << "HERE A" << endl;
 	//cout << K->ParFESpace()->GetFE(0) << endl;
 	//cout << Vox->ParFESpace()->GetFE(0) << endl;
 	//cout << Fct->ParFESpace()->GetFE(0) << endl;
 	cout << "Max Fct: " << Fct->Max() << ", Min Fct:  " << Fct->Min() << endl;
 	K->FormLinearSystem(boundary_dofs, *Vox, *Fct, Kmat, X1v, Fcb);
+	Vox->GetTrueDofs(X1v); //Set initial values
 	cout << "Size Fct: " << Fct->Size() << ", Size Vox0: " << Vox0.Size() << endl;
 	//cout << "HERE B" << endl;
 	oper->UpdateParams(Kmat, Fcb);
