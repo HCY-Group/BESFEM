@@ -422,7 +422,7 @@ int main(int argc, char *argv[])
 	ParGridFunction phP(&fespace);		// electropotential in particle
 	ParGridFunction kap(&fespace);		// conductivity in particle
 	ParGridFunction RpP(&fespace);		// reaction rate for particle
-// 	ParGridFunction pP0(&fespace);		// values before iteration
+	ParGridFunction pP0(&fespace);		// values before iteration
 
 	double BvP = 2.9395;
 // 	BvP = 1.0;
@@ -439,7 +439,7 @@ int main(int argc, char *argv[])
 	ParLinearForm Fpt(&fespace);	
 	HypreParVector Fpb(&fespace);
 
-// 	HypreParVector Xs0(&fespace);
+	HypreParVector Xs0(&fespace);
 
 
 // 	// ========================================
@@ -461,7 +461,7 @@ int main(int argc, char *argv[])
 	ParGridFunction Dmp(&fespace);		// D_minus_plus
 	ParGridFunction kpl(&fespace);		// electrolyte conductivity
 	ParGridFunction RpE(&fespace);		// reaction rate for electrolyte
-// 	ParGridFunction pE0(&fespace);		// values before iteration
+	ParGridFunction pE0(&fespace);		// values before iteration
 
 	double BvE = -1.0;
 	phE = BvE;
@@ -481,7 +481,7 @@ int main(int argc, char *argv[])
 	HypreParMatrix Kdm;
 
 	HypreParVector LpCe(&fespace), Xe0(&fespace);
-// 	HypreParVector RHSl(&fespace);
+	HypreParVector RHSl(&fespace);
 	
 	double VCell = BvP - BvE;
 	// std::cout << "VCell: " << VCell << std::endl;
@@ -506,10 +506,10 @@ int main(int argc, char *argv[])
 	Kfw = 0.0;
 	Kbw = 0.0;	
 
-// 	double errP = 1.0;
-// 	double errE = 1.0;
-// 	int inlp = 0;
-// 	double gErrP, gErrE;
+	double errP = 1.0;
+	double errE = 1.0;
+	int inlp = 0;
+	double gErrP, gErrE;
 // 	double dV, sgn;
 
 // 	// containers used later.
@@ -532,7 +532,7 @@ int main(int argc, char *argv[])
 // 	//  ===================================================================   
 		
 // 	int t = 0;
-for (int t = 0; t < 10 + 1; t++){
+for (int t = 0; t < 20 + 1; t++){
 // 	while ( Vcell > Vcut){
 // //	while ( t<1 ){
 	
@@ -968,13 +968,13 @@ for (int t = 0; t < 10 + 1; t++){
 		// std::cout << "Kbw = " << Kbw << std::endl;
 
 
-// 		// convergence residuals
-// 		gErrP = 1.0;
-// 		gErrE = 1.0;
-// 		inlp = 0;	
+		// // convergence residuals
+		gErrP = 1.0;
+		gErrE = 1.0;
+		inlp = 0;	
 
 		// //  beginning of internal loop
-		// while (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){
+		while (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){
 
 			// Butler-Volmer Equation for Reaction Rate
 			for (int vi = 0; vi < nV; vi++){
@@ -1019,42 +1019,35 @@ for (int t = 0; t < 10 + 1; t++){
 			phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
 			// std::cout << phP << std::endl;
 
-			Kp2->FormLinearSystem(ess_tdof_list_e, phP, Fpt, KmP, X1v, Fpb);	
-
-		// // Get the local data of the HypreParVector
-		// double *Fpb_data = Fpb.GetData();
-
-		// // Print each value of the vector
-		// int size1 = Fpb.Size();
-		// std::cout << "Fpb values in original:" << std::endl;
-		// for (int i = 0; i < size1; i++) {
-		// 	std::cout << Fpb_data[i] << " ";
-		// }
-		// std::cout << std::endl;		
+			Kp2->FormLinearSystem(ess_tdof_list_e, phP, Fpt, KmP, X1v, Fpb);			
 			
-// 			pP0 = phP;	
-// 			pP0.GetTrueDofs(Xs0);
-// 			cgPP.Mult(Fpb, Xs0);	
+			pP0 = phP;	
+			pP0.GetTrueDofs(Xs0);
+			cgPP.Mult(Fpb, Xs0);	
 			
-// 			// recover
-// 			phP.Distribute(Xs0);   			
+			// recover
+			phP.Distribute(Xs0);   			
 
-// 			for (int vi = 0; vi < nV; vi++){
-// 				TmpF(vi) = pow(pP0(vi)-phP(vi),2)*psi(vi);
-// 			}	
+			for (int vi = 0; vi < nV; vi++){
+				TmpF(vi) = pow(pP0(vi)-phP(vi),2)*psi(vi);
+			}	
 				
-// 			errP = 0.0;
-// 			for (int ei = 0; ei < nE; ei++){
-// 				TmpF.GetNodalValues(ei,VtxVal) ;
-// 				val = 0.0;
-// 				for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 				EAvg(ei) = val/nC;						
-// 				errP += EAvg(ei)*EVol(ei) ;
-// 			}
-// 			MPI_Allreduce(&errP, &gErrP, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+			errP = 0.0;
+			for (int ei = 0; ei < nE; ei++){
+				TmpF.GetNodalValues(ei,VtxVal) ;
+				val = 0.0;
+				for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+				EAvg(ei) = val/nC;						
+				errP += EAvg(ei)*EVol(ei) ;
+			}
+			MPI_Allreduce(&errP, &gErrP, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-// 			gErrP /= gtPsi;
-// 			gErrP = pow(gErrP, 0.5);
+			gErrP /= gtPsi;
+			gErrP = pow(gErrP, 0.5);
+
+			// std::cout << "global error P: " << gErrP << std::endl;
+			// std::cout << " error P: " << errP << std::endl;
+
 			
 			
 // 			// ========================================
@@ -1081,49 +1074,45 @@ for (int t = 0; t < 10 + 1; t++){
 			Flt = std::move(*Bl2);		// Move the contents of Bl2 into Flt
 		
 			phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
-			Kl2->FormLinearSystem(ess_tdof_list_w, phE, Flt, Kml, X1v, Flb);
-
-		// // Get the local data of the HypreParVector
-		// double *Flb_data = Flb.GetData();
-
-		// // Print each value of the vector
-		// int size1 = Flb.Size();
-		// std::cout << "Flb values in original:" << std::endl;
-		// for (int i = 0; i < size1; i++) {
-		// 	std::cout << Flb_data[i] << " ";
-		// }
-		// std::cout << std::endl;		
+			Kl2->FormLinearSystem(ess_tdof_list_w, phE, Flt, Kml, X1v, Flb);		
 						
-// 			RHSl = Flb;
-// 			RHSl += LpCe;
+			RHSl = Flb;
+			RHSl += LpCe;
 
-// 			pE0 = phE;
-// 			pE0.GetTrueDofs(Xe0);
-// 			cgPE.Mult(RHSl, Xe0);   
+			pE0 = phE;
+			pE0.GetTrueDofs(Xe0);
+			cgPE.Mult(RHSl, Xe0);   
 			
-// 			// recover
-// 			phE.Distribute(Xe0);		
+			// recover
+			phE.Distribute(Xe0);		
 
-// 			for (int vi = 0; vi < nV; vi++){
-// 				TmpF(vi) = pow(pE0(vi)-phE(vi),2)*pse(vi);
-// 			}	
+			for (int vi = 0; vi < nV; vi++){
+				TmpF(vi) = pow(pE0(vi)-phE(vi),2)*pse(vi);
+			}	
 
-// 			errE = 0.0;	
-// 			for (int ei = 0; ei < nE; ei++){
-// 				TmpF.GetNodalValues(ei,VtxVal) ;
-// 				val = 0.0;
-// 				for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 				EAvg(ei) = val/nC;	
-// 				errE += EAvg(ei)*EVol(ei) ;					
-// 			}	
-// 			MPI_Allreduce(&errE, &gErrE, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+			errE = 0.0;	
+			for (int ei = 0; ei < nE; ei++){
+				TmpF.GetNodalValues(ei,VtxVal) ;
+				val = 0.0;
+				for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+				EAvg(ei) = val/nC;	
+				errE += EAvg(ei)*EVol(ei) ;					
+			}	
+			MPI_Allreduce(&errE, &gErrE, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 			
-// 			gErrE /= gtPse;
-// 			gErrE = pow(gErrE,0.5);
-			
-// 			inlp += 1;
+			gErrE /= gtPse;
+			gErrE = pow(gErrE,0.5);
 
-// 		} // end of internal loop
+			// std::cout << "global error E: " << gErrE << std::endl;
+			// std::cout << " error E: " << errE << std::endl;
+
+			std::cout << "global error P: " << gErrP <<  " global error E: " << gErrE << std::endl;
+
+			// inlp += 1;
+
+		} // end of internal loop
+
+		// std::cout << "inlp: " << inlp << std::endl;
 
 
 // 		// total reaction current

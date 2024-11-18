@@ -28,9 +28,8 @@ public:
     void CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value);
     void ForceTerm(mfem::ParGridFunction &Rx2, mfem::ParLinearForm &Fxx);
     void ForceVector(mfem::ParBilinearForm &K, mfem::Array<int> boundary, mfem::ParGridFunction &psx, mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &hpv_X, mfem::HypreParVector &hpv_B, mfem::ConstantCoefficient &Coef, mfem::Array<int> &bdr);
+    void ErrorCalculation(mfem::ParGridFunction &phx, mfem::CGSolver &cg_solver, mfem::HypreParVector &fterm, mfem::ParGridFunction &psx, double error_X, double &gerror, double gtPsx);
 
-    // double BvP = 2.9395;
-    // double BvE = -1.0;
     double Vcell;
 
     int nE;                                         // Number of elements
@@ -51,6 +50,16 @@ private:
 
     mfem::ParGridFunction *Rxx;
     mfem::GridFunctionCoefficient *cXx;
+
+    mfem::ParGridFunction *px0;
+    mfem::HypreParVector X0;
+
+    mfem::ParGridFunction TmpF;
+
+    const mfem::Vector& EVol;                       // Element volumes from MeshHandler
+
+
+
 
 };
 

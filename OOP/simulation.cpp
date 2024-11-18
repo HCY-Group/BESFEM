@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     std::cout << "VCell: " << VCell << std::endl;
  
     // Time Step
-    for (int t = 0; t < 10 + 1; ++t) {
+    for (int t = 0; t < 20 + 1; ++t) {
 
         particle_concentration.TimeStep(Rxn_gf, CnP_gf, psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, pse);
@@ -74,12 +74,19 @@ int main(int argc, char *argv[]) {
         reaction.ExchangeCurrentDensity(CnP_gf); 
 
         // while loop
-        reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
-        particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, psi);
-        electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, pse);
+        double globalerror_P = 1.0;
+		double globalerror_E = 1.0;
 
-        // std::cout << "Rxn: " << Rxn_gf << std::endl;
-        // Rxn_gf.Print(std::cout);
+        int inlp = 0;
+        while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
+            reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
+            particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, psi, globalerror_P);
+            electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, pse, globalerror_E);
+
+            // std::cout << "global error P: " << globalerror_P <<  " global error E: " << globalerror_E << std::endl;
+            // inlp += 1; 
+        }
+        // std::cout << "inlp: " << inlp << std::endl;
 
     }
 

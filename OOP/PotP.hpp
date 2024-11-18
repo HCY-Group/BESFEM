@@ -15,7 +15,7 @@ public:
     PotP(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
     void Initialize(mfem::ParGridFunction &Cn, double initial_value);
     void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &phx);
-    void CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx);
+    void CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
 
 
     static mfem::CGSolver *cgPP_solver; // static variable to be used in reaction
@@ -24,6 +24,11 @@ public:
     mfem::Array<int> ess_tdof_list_e;
     mfem::ConstantCoefficient dbc_e_Coef;
     mfem::Array<int> dbc_e_bdr;
+
+    double error_P = 1.0;
+
+    // double GetGlobalError() const { return globalerror_P; } // Accessor for external use
+
 
 
 private:
@@ -44,6 +49,13 @@ private:
     mfem::HypreParVector B1v;
     mfem::HypreSmoother Mpp;
     mfem::HypreParMatrix KmP;
+
+    double gtPsi;                                   // Total Psi from MeshHandler
+    // double error_P;
+    // double globalerror_P;
+
+    // double globalerror_P; // Member variable to store the global error for PotP
+
 
 
 };

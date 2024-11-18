@@ -5,7 +5,7 @@
 double BvE = 0.0;
 
 PotE::PotE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Potentials(pm, fe, mh), dbc_w_bdr(pmesh->bdr_attributes.Max())
+    : Potentials(pm, fe, mh), dbc_w_bdr(pmesh->bdr_attributes.Max()), gtPse(mesh_handler.GetTotalPse())
     
     {
 
@@ -23,6 +23,7 @@ PotE::PotE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     B1t = mfem::ParLinearForm(fespace);
     X1v = mfem::HypreParVector(fespace);
     B1v = mfem::HypreParVector(fespace);
+    RHSl = mfem::HypreParVector(fespace);
 
     LpCe = new mfem::HypreParVector(fespace);
     CeVn = new mfem::HypreParVector(fespace);
@@ -90,7 +91,7 @@ void PotE::ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunct
 
 }
 
-void PotE::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx) 
+void PotE::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror) 
 
 {
 
@@ -100,15 +101,10 @@ void PotE::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction
     Potentials::ForceTerm(*RpE, ftPotE);
     Potentials::ForceVector(*Kl2, ess_tdof_list_w, phx, ftPotE, KmE, X1v, Flb, dbc_w_Coef, dbc_w_bdr);
 
-        // 	// Get the local data of the HypreParVector
-		// double *Flb_data = Flb.GetData();
+    RHSl = Flb;
+    RHSl += *LpCe;
 
-		// // Print each value of the vector
-		// int size1 = Flb.Size();
-		// std::cout << "Flb values in CGE:" << std::endl;
-		// for (int i = 0; i < size1; i++) {
-		// 	std::cout << Flb_data[i] << " ";
-		// }
-		// std::cout << std::endl;
+
+    Potentials::ErrorCalculation(phx, *cgPE_solver, RHSl, psx, error_E, gerror, gtPse);
 
 }

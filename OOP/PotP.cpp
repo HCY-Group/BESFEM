@@ -4,7 +4,7 @@
 double BvP = 0.0;
 
 PotP::PotP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Potentials(pm, fe, mh), dbc_e_bdr(pmesh->bdr_attributes.Max())
+    : Potentials(pm, fe, mh), dbc_e_bdr(pmesh->bdr_attributes.Max()), gtPsi(mesh_handler.GetTotalPsi())
     
     {
 
@@ -79,13 +79,24 @@ void PotP::ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction
 
 }
 
-void PotP::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx) 
+void PotP::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror) 
 
 {
+    // std::cout << "Entering CalculateGlobalError for PotP" << std::endl;
 
     Potentials::CreateReaction(Rx, *RpP, Constants::Frd);
     Potentials::ForceTerm(*RpP, ftPotP);
     Potentials::ForceVector(*Kp2, ess_tdof_list_e, phx, ftPotP, KmP, X1v, Fpb, dbc_e_Coef, dbc_e_bdr);
+    
+    // double previous_globalerror = globalerror_P;
+
+    
+    
+    Potentials::ErrorCalculation(phx, *cgPP_solver, Fpb, psx, error_P, gerror, gtPsi);
+
+    // std::cout << "Previous globalerror_P: " << previous_globalerror
+    //           << ", Updated globalerror_P: " << globalerror_P << std::endl;
+
 
 }
 

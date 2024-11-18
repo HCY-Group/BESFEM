@@ -4,13 +4,18 @@
 
 
 Potentials::Potentials(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : pmesh(pm), fespace(fe), mesh_handler(mh)
+    : pmesh(pm), fespace(fe), mesh_handler(mh), EVol(mh.GetElementVolume())
 
 {
     
     nE = mesh_handler.GetNE();
     nC = mesh_handler.GetNC();
     nV = mesh_handler.GetNV();
+
+    px0 = new mfem::ParGridFunction(fespace); // values before iteration
+    X0 = mfem::HypreParVector(fespace);
+
+    // TmpF = mfem::ParGridFunction(fespace);
 
 
 
@@ -88,5 +93,47 @@ mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &
 
     phx.ProjectBdrCoefficient(Coef, bdr);
     K.FormLinearSystem(boundary, phx, plf_B, matrix, hpv_X, hpv_B);
+
+}
+
+
+void Potentials::ErrorCalculation(mfem::ParGridFunction &phx, mfem::CGSolver &cg_solver, mfem::HypreParVector &fterm, mfem::ParGridFunction &psx, double error_X, double &globalerror, double gtPsx){
+
+    *px0 = phx;
+    px0->GetTrueDofs(X0);
+    cg_solver.Mult(fterm, X0);
+
+    phx.Distribute(X0);
+    mfem::ParGridFunction TmpF(fespace);
+
+
+    for (int vi = 0; vi < nV; vi++){
+        TmpF(vi) = pow((*px0)(vi) - phx(vi),2) * psx(vi);
+    }
+
+    error_X = 0.0;
+    mfem::Array<double> VtxVal(nC);
+    mfem::Vector EAvg(nE);
+
+
+    for (int ei = 0; ei < nE; ei++){
+        TmpF.GetNodalValues(ei,VtxVal) ;
+        double val = 0.0;
+        for (int vt = 0; vt < nC; vt++){
+            val += VtxVal[vt];
+        }
+        EAvg(ei) = val/nC;	
+        error_X += EAvg(ei)*EVol(ei) ;					
+    }	
+	
+    MPI_Allreduce(&error_X, &globalerror, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+			
+    globalerror /= gtPsx;
+    globalerror = pow(globalerror, 0.5);
+
+    // std::cout << "global error: " << globalerror_X << std::endl;
+    // std::cout << " error: " << error_X << std::endl;
+
+
 
 }
