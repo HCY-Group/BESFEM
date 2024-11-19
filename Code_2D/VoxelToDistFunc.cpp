@@ -367,9 +367,9 @@ int main(int argc, char *argv[])
 		// Output Cn to Paraview
 		cout << "PRINTING OUT Electrolyte Concentration" << endl;
 		if (ConIter==0){
-			solver.ParaviewSave("Conc_p","Cn_p",ConnectSolver.GetParallelVox());
+			ConnectSolver.ParaviewSave("Conc_p","Cn_p",ConnectSolver.GetParallelVox());
 		} else {
-			solver.ParaviewSave("Conc_e","Cn_e",ConnectSolver.GetParallelVox());
+			ConnectSolver.ParaviewSave("Conc_e","Cn_e",ConnectSolver.GetParallelVox());
 		}
 	}
 
