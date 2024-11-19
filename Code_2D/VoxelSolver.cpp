@@ -255,6 +255,19 @@ void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, d
 	K->RecoverFEMSolution(X1v, *Fct, *Vox);
 }
 
+void VoxelSolver::AccelerateDiffusion(ParGridFunction &DomPar, GridFunctionCoefficient &Coef, Array<int> &bdr) {
+	//TODO: add check to see if DomPar and Vox are same size
+	
+	int nV = Vox->Size();
+	for (int vi = 0; vi < nV; vi++){
+		if ( (*Vox)(vi) > 1.0e-2 && DomPar(vi) > 0.6 ){
+			(*Vox)(vi) = 1.0; // Modify Vox
+		}
+	}
+	
+	AssignDirichletBCs(Coef, bdr);
+}
+
 void VoxelSolver::ParaviewSave(string FileName, string VariableName, GridFunction* gf) {
 	
 	int order = 1;

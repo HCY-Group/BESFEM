@@ -20,6 +20,7 @@ public:
 	void UpdateLinearForm(ParGridFunction gf);
 	void UpdateLinearForm_DoubleWellPotential();
 	void UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, double dt);
+	void AccelerateDiffusion(ParGridFunction &DomPar, GridFunctionCoefficient &Coef, Array<int> &bdr);
 	
 	GridFunction* GetGlobalVox() {return gVox;}
 	ParGridFunction* GetParallelVox() {return Vox;}

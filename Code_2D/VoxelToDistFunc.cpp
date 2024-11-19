@@ -316,11 +316,12 @@ int main(int argc, char *argv[])
 	solver.ParaviewSave("psi","psi",&psi);
 	
 	VoxelSolver ConnectSolver(maker.GetGlobalFESpace(),maker.GetParallelFESpace());
-	ConnectSolver.AssignGlobalValues(0.0);
-	ConnectSolver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
 		
 
 	for (int ConIter = 0; ConIter < 2; ConIter++){
+		ConnectSolver.AssignGlobalValues(0.0);
+		ConnectSolver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
+		
 		if (ConIter==1){
 			psi.Neg();
 			psi += 1.0;
@@ -397,7 +398,9 @@ int main(int argc, char *argv[])
 			Cn.ProjectBdrCoefficient(dbcCoef, dbc_bdr); //Reapply Dirichlet BCs
 			KCn.FormLinearSystem(ess_tdof_list, Cn, b, KmatCn, X, B, 1); //Cast Cn back onto X, making sure to copy interior
 			
-				
+			ConnectSolver.UpdateSystemAndSolve(ess_tdof_list, t_ode, dt);
+			ConnectSolver.AccelerateDiffusion(psi, dbcCoef, dbc_bdr);
+			
 			cout << "Max Cn: " << X.Max() << endl;
 			cout << "Min Cn: " << X.Min() << endl;
 		}
@@ -408,9 +411,11 @@ int main(int argc, char *argv[])
 		//ParaViewDataCollection *pd = NULL;
 		//pd = NULL;
 		if (ConIter==0){
-			solver.ParaviewSave("Conc_p","Cn_p",&Cn);
+			//solver.ParaviewSave("Conc_p","Cn_p",&Cn);
+			solver.ParaviewSave("Conc_p","Cn_p",ConnectSolver.GetParallelVox());
 		} else {
-			solver.ParaviewSave("Conc_e","Cn_e",&Cn);
+			//solver.ParaviewSave("Conc_e","Cn_e",&Cn);
+			solver.ParaviewSave("Conc_e","Cn_e",ConnectSolver.GetParallelVox());
 		}
 	}
 
