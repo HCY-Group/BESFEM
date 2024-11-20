@@ -19,7 +19,7 @@ namespace Constants {
     extern const double rho;
     extern const double Cr;
     extern const double Vsr;
-    extern const double Vcut;
+    extern const double VCut;
 }
 
 #endif // CONSTANTS_HPP

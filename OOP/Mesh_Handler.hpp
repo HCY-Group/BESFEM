@@ -7,7 +7,11 @@
 
 using namespace mfem;
 
+extern double gTrgI;
+
+
 class MeshHandler {
+
 public:
     // Constructor
     MeshHandler();
@@ -97,7 +101,7 @@ private:
     // Computed values
     double gtPsi;
     double gtPse;
-    double gTrgI;
+    // double gTrgI;
 
     // Mesh and FE space
     std::unique_ptr<Mesh> gmesh;

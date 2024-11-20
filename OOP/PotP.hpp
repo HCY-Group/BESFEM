@@ -27,8 +27,6 @@ public:
 
     double error_P = 1.0;
 
-    // double GetGlobalError() const { return globalerror_P; } // Accessor for external use
-
 
 
 private:

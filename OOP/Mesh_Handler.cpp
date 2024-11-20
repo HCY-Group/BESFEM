@@ -8,10 +8,14 @@
 using namespace mfem;
 using namespace std;
 
+double gTrgI = 0.0;
+
+
 MeshHandler::MeshHandler()
     : mesh_file(Constants::mesh_file), dsF_file(Constants::dsF_file), order(Constants::order), dh(Constants::dh), 
       zeta(Constants::zeta), eps(Constants::eps), rho(Constants::rho), Cr(Constants::Cr),
-      gtPsi(0.0), gtPse(0.0), gTrgI(0.0) {}
+      gtPsi(0.0), gtPse(0.0){}
+
 
 // Function to Initialize and Print Mesh Information
 void MeshHandler::LoadMesh() {

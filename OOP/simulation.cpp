@@ -10,9 +10,8 @@
 #include "PotP.hpp"
 #include "PotE.hpp"
 #include "Reaction.hpp"
+#include "Current.hpp"
 
-// #include "Reaction.hpp"
-// #include "Potentials.hpp"
 
 #include <iostream>
 
@@ -58,11 +57,18 @@ int main(int argc, char *argv[]) {
     mfem::ParGridFunction Rxn_gf(&fespace);
     reaction.Initialize(Rxn_gf, 0.0);
 
+    // Create Current Class
+    Current current(&pmesh, &fespace, mesh_handler);
+
+    double global_current = 0.0;
     double VCell = BvP - BvE;
-    std::cout << "VCell: " << VCell << std::endl;
+    std::cout << "VCell Initial: " << VCell << std::endl;
+
+    std::cout << "VCut: " << Constants::VCut << std::endl;
  
     // Time Step
-    for (int t = 0; t < 20 + 1; ++t) {
+    // for (int t = 0; t < 20 + 1; ++t) {
+    while ( VCell > Constants::VCut) {
 
         particle_concentration.TimeStep(Rxn_gf, CnP_gf, psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, pse);
@@ -77,16 +83,20 @@ int main(int argc, char *argv[]) {
         double globalerror_P = 1.0;
 		double globalerror_E = 1.0;
 
-        int inlp = 0;
+        // int inlp = 0;
         while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
             reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
             particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, psi, globalerror_P);
             electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, pse, globalerror_E);
-
-            // std::cout << "global error P: " << globalerror_P <<  " global error E: " << globalerror_E << std::endl;
-            // inlp += 1; 
         }
-        // std::cout << "inlp: " << inlp << std::endl;
+
+        // total reaction current
+        reaction.TotalReactionCurrent(Rxn_gf, global_current);
+        current.Constant(phP_gf, global_current);
+
+        VCell = BvP - BvE;
+        std::cout << "VCell: " << VCell << std::endl;
+
 
     }
 

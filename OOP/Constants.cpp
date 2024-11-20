@@ -18,5 +18,5 @@ namespace Constants {
     const double rho = 0.0501;                                    // Li site density
     const double Cr = 3.0;                                        // C-rate
     const double Vsr = 0.2;                                       // Voltage scanning rate
-    const double Vcut = 2.7;                                      // Cut-off voltage
+    const double VCut = 2.7;                                      // Cut-off voltage
 }   

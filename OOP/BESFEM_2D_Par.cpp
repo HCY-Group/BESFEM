@@ -207,8 +207,8 @@ int main(int argc, char *argv[])
 	double gTrgI = 0.0;
 	MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	
-// 	double sCrnt = 0.0;	
-// 	double gCrnt = 0.0;	
+	double sCrnt = 0.0;	
+	double gCrnt = 0.0;	
 		
 	// Some containers that will be used later.
 	Array<int> boundary_dofs;					// nature boundary
@@ -510,7 +510,7 @@ int main(int argc, char *argv[])
 	double errE = 1.0;
 	int inlp = 0;
 	double gErrP, gErrE;
-// 	double dV, sgn;
+	double dV, sgn;
 
 // 	// containers used later.
 	HypreParVector X1v(&fespace), B1v(&fespace);
@@ -1106,7 +1106,7 @@ for (int t = 0; t < 20 + 1; t++){
 			// std::cout << "global error E: " << gErrE << std::endl;
 			// std::cout << " error E: " << errE << std::endl;
 
-			std::cout << "global error P: " << gErrP <<  " global error E: " << gErrE << std::endl;
+			// std::cout << "global error P: " << gErrP <<  " global error E: " << gErrE << std::endl;
 
 			// inlp += 1;
 
@@ -1115,24 +1115,31 @@ for (int t = 0; t < 20 + 1; t++){
 		// std::cout << "inlp: " << inlp << std::endl;
 
 
-// 		// total reaction current
-// 		sCrnt = 0.0;
-// 		for (int ei = 0; ei < nE; ei++){
-// 			Rxn.GetNodalValues(ei,VtxVal) ;
-// 			val = 0.0;
-// 			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-// 			EAvg(ei) = val/nC;
-// 			sCrnt += EAvg(ei)*EVol(ei) ;
-// 		} 			
-// 		MPI_Allreduce(&sCrnt, &gCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		// total reaction current
+		sCrnt = 0.0;
+		for (int ei = 0; ei < nE; ei++){
+			Rxn.GetNodalValues(ei,VtxVal) ;
+			val = 0.0;
+			for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+			EAvg(ei) = val/nC;
+			sCrnt += EAvg(ei)*EVol(ei) ;
+		} 			
+		MPI_Allreduce(&sCrnt, &gCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+		// std::cout << "local current: " << sCrnt << std::endl;
+
 					
-// 		// adjust BvP for constant C rate loading
-// 		sgn = copysign(1, gTrgI - gCrnt);
-// 		dV = dt*Vsr*sgn;
-// 		BvP -= dV;
-// 		phP -= dV;
+		// adjust BvP for constant C rate loading
+		sgn = copysign(1, gTrgI - gCrnt);
+		dV = dt*Vsr*sgn;
+		BvP -= dV;
+		phP -= dV;
+
+		// std::cout << "BvP: " << BvP << std::endl;
 		
-// 		Vcell = BvP - BvE;
+		VCell = BvP - BvE;
+		std::cout << "VCell: " << VCell << std::endl;
+
 
 // // // 		cout << myid << " " << sgn << " " << gTrgI-gCrnt << endl;
 		
@@ -1210,7 +1217,7 @@ for (int t = 0; t < 20 + 1; t++){
 // 		Vcell << endl;}
 // // 	if (myid == 1 ){cout << t << "  " << Xfr << "  " << tm << "  " << Vcell << endl;}
 		
-// 	} // time iteration loop
+	} // time iteration loop
 
 
 // // 	fname = "Output/CnP_80x90_P09_" + stri;			
@@ -1232,7 +1239,7 @@ for (int t = 0; t < 20 + 1; t++){
 	
 	
 //    return 0;
-	}
+	// }
 
 	int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
