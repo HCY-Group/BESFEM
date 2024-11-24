@@ -2,6 +2,8 @@
 #include <fstream>
 #include <iostream>
 #include "mpi.h"
+#include <chrono>
+
 
 #include <cmath>
 
@@ -12,6 +14,9 @@ using namespace mfem;
 
 int main(int argc, char *argv[])
 {
+
+	using namespace std::chrono;
+    auto program_start = high_resolution_clock::now();
 
    // 1. Initialize MPI and HYPRE.
    Mpi::Init(argc, argv);
@@ -532,8 +537,8 @@ int main(int argc, char *argv[])
 // 	//  ===================================================================   
 		
 // 	int t = 0;
-for (int t = 0; t < 20 + 1; t++){
-// 	while ( Vcell > Vcut){
+// for (int t = 0; t < 20 + 1; t++){
+	while ( VCell > Vcut){
 // //	while ( t<1 ){
 	
 	
@@ -1266,5 +1271,12 @@ for (int t = 0; t < 20 + 1; t++){
     // } else {
     //     mfem::mfem_error("Error opening file to save CnE.");
     // }
+
+
+	// End timing the entire program
+    auto program_end = high_resolution_clock::now();
+    std::cout << "Total Program Time: " 
+              << duration_cast<seconds>(program_end - program_start).count() 
+              << " seconds" << std::endl;
 }
 

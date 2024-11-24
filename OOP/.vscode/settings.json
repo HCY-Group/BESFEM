@@ -49,7 +49,8 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "cstring": "cpp"
+        "cstring": "cpp",
+        "chrono": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
