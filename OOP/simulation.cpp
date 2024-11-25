@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
     // Create the MeshHandler object
     MeshHandler mesh_handler;
     mesh_handler.LoadMesh();
-    mesh_handler.Save(); // save pmesh
+    // mesh_handler.Save(); // save pmesh
 
     // Create pmesh & fespace to use for all 
     ParMesh pmesh = mesh_handler.GetMesh();
@@ -73,8 +73,8 @@ int main(int argc, char *argv[]) {
     std::cout << "VCut: " << Constants::VCut << std::endl;
  
     // Time Step
-    for (int t = 0; t < 20 + 1; ++t) {
-    // while ( VCell > Constants::VCut) {
+    // for (int t = 0; t < 20 + 1; ++t) {
+    while ( VCell > Constants::VCut) {
 
         particle_concentration.TimeStep(Rxn_gf, CnP_gf, psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, pse);
@@ -109,9 +109,11 @@ int main(int argc, char *argv[]) {
     // particle_concentration.Save(CnP_gf, "CnP");
     // electrolyte_concentration.Save(CnE_gf, "CnE");
 
-    pmesh.Save("mesh");
+    pmesh.Save("pmesh");
     CnP_gf.Save("CnP");
     CnE_gf.Save("CnE");
+    phP_gf.Save("phP");
+    phE_gf.Save("phE");
 
     Mpi::Finalize();
 

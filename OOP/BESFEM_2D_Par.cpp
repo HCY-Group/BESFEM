@@ -1249,6 +1249,12 @@ int main(int argc, char *argv[])
 	int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
 
+	pmesh.Save("pmesh");
+    CnP.Save("CnP");
+    CnE.Save("CnE");
+    phP.Save("phP");
+    phE.Save("phE");
+
     // std::string file_name = "CnP_solution_original." + std::to_string(rank) + ".gf";  // MFEM's GridFunction format (.gf)
     
     // std::ofstream ofs(file_name.c_str());
