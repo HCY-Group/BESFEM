@@ -24,9 +24,10 @@ CnP::CnP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
 
     }
 
-void CnP::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, bool perform_lithiation)
+void CnP::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
-    Concentrations::SetInitialValues(Cn, initial_value, psx, perform_lithiation);
+    Concentrations::SetInitialConcentration(Cn, initial_value);
+    Concentrations::LithiationCalculation(Cn, psx);
     Concentrations::SetUpSolver(psx, Mmatp, *Mp_solver, Mp_prec);
 
     psx.GetTrueDofs(PsVc);
@@ -74,8 +75,3 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 
 }
 
-void CnP::Save(mfem::ParGridFunction &gf, const std::string &base_name){
-
-    Concentrations::Save(gf, base_name);
-
-}

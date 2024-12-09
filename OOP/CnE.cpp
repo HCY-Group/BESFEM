@@ -25,9 +25,9 @@ CnE::CnE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
 mfem::HypreParVector* CnE::CeVn = nullptr; // static variable to be used in reaction
 
 
-void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, bool perform_lithiation)
+void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
-    Concentrations::SetInitialValues(Cn, initial_value, psx, perform_lithiation);
+    Concentrations::SetInitialConcentration(Cn, initial_value);
     Concentrations::SetUpSolver(psx, Mmate, *Me_solver, Me_prec);
 
     ImposeNeumannBC(psx, *PeR);
@@ -80,12 +80,5 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 
     Concentrations::SaltConservation(Cn, psx);	
     // std::cout << "CnE: " << Cn << std::endl; 
-
-}
-
-void CnE::Save(mfem::ParGridFunction &gf, const std::string &base_name){
-
-    Concentrations::Save(gf, base_name);
-
 
 }

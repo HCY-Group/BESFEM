@@ -6,7 +6,7 @@
 class CnE : public Concentrations {
 public:
     CnE(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
-    void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, bool perform_lithiation);
+    void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
 
     void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
     mfem::ParGridFunction *RxE;
@@ -17,9 +17,6 @@ public:
 
     static mfem::HypreParVector *CeVn; // static variable to be used in reaction
     static mfem::HypreParVector* GetCeVn() { return CeVn; } // static variable to be used in reaction
-
-
-    void Save(mfem::ParGridFunction &gf, const std::string &base_name);
 
 private:
 

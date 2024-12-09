@@ -7,13 +7,12 @@ class CnP : public Concentrations {
 
 public:
     CnP(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
-    void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, bool perform_lithiation);
+    void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
 
     void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
     mfem::ParGridFunction *RxP;
 
-    void Save(mfem::ParGridFunction &gf, const std::string &base_name);
 
 private:
 
