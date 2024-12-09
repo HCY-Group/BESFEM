@@ -68,9 +68,9 @@ int main(int argc, char *argv[]) {
 
     double global_current = 0.0;
     double VCell = BvP - BvE;
-    std::cout << "VCell Initial: " << VCell << std::endl;
+    // std::cout << "VCell Initial: " << VCell << std::endl;
 
-    std::cout << "VCut: " << Constants::VCut << std::endl;
+    // std::cout << "VCut: " << Constants::VCut << std::endl;
  
     // Time Step
     // for (int t = 0; t < 20 + 1; ++t) {
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
         current.Constant(phP_gf, global_current);
 
         VCell = BvP - BvE;
-        std::cout << "VCell: " << VCell << std::endl;
+        // std::cout << "VCell: " << VCell << std::endl;
 
 
     }
@@ -109,11 +109,11 @@ int main(int argc, char *argv[]) {
     // particle_concentration.Save(CnP_gf, "CnP");
     // electrolyte_concentration.Save(CnE_gf, "CnE");
 
-    pmesh.Save("pmesh");
-    CnP_gf.Save("CnP");
-    CnE_gf.Save("CnE");
-    phP_gf.Save("phP");
-    phE_gf.Save("phE");
+    // pmesh.Save("pmesh");
+    // CnP_gf.Save("CnP");
+    // CnE_gf.Save("CnE");
+    // phP_gf.Save("phP");
+    // phE_gf.Save("phE");
 
     Mpi::Finalize();
 
