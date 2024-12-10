@@ -7,6 +7,7 @@
 #include "readtiff.h"
 #include "MeshMaker.hpp"
 #include "VoxelSolver.hpp"
+#include "VoxelSolver_DG.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -159,6 +160,8 @@ int main(int argc, char *argv[])
 	ParFiniteElementSpace fespace_dg(&pmesh, &fec_dg);
 	ParFiniteElementSpace dfespace_dg(&pmesh, &fec_dg, pmesh.Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
 	maker.Make_DG_FESpace_Parallel();
+
+	VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace());
 
 	// Define new grid functions
 	ParGridFunction d(&fespace_dg);

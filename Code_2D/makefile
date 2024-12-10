@@ -5,7 +5,7 @@ include $(CONFIG_MK)
 
 
 LDFLAGS = -ltiff
-SOURCECODE = TimeDepOpers.cpp readtiff.cpp MeshMaker.cpp VoxelSolver.cpp
+SOURCECODE = TimeDepOpers.cpp readtiff.cpp MeshMaker.cpp VoxelSolver.cpp VoxelSolver_DG.cpp
 
 
 
