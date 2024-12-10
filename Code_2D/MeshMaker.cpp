@@ -51,6 +51,14 @@ void MeshMaker::Make_H1_FESpace_Parallel(int order) {
 	*/
 }
 
+void MeshMaker::Make_DG_FESpace_Parallel(int order) {
+	
+	this->fec_dg = new mfem::DG_FECollection(order, this->pmesh->Dimension(), mfem::BasisType::GaussLobatto);
+	this->fespace_dg = new mfem::ParFiniteElementSpace(this->pmesh, this->fec_dg);
+	this->dimfespace_dg = new mfem::ParFiniteElementSpace(this->pmesh, this->fec_dg, this->pmesh->Dimension(), mfem::Ordering::byNODES);
+	
+}
+
 void MeshMaker::TestGetFE() {
 	std::cout << "TestGetFE" << std::endl;
 	std::cout << "fespace: " << this->fespace << std::endl;
