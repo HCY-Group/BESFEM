@@ -1,9 +1,0 @@
-<map id="files/Mesh_Handler.hpp" name="files/Mesh_Handler.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="97,5,254,31"/>
-<area shape="rect" id="Node000002" href="$_constants_8hpp.html" title=" " alt="" coords="5,79,112,105"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="157,34,93,73,90,68,155,29"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="136,79,216,105"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="178,31,178,63,173,63,173,31"/>
-<area shape="rect" id="Node000004" title=" " alt="" coords="239,79,307,105"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="194,29,246,68,243,72,191,34"/>
-</map>

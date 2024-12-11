@@ -1,9 +1,0 @@
-<map id="Potentials::Potentials" name="Potentials::Potentials">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,55,151,80"/>
-<area shape="rect" id="Node000002" href="$class_mesh_handler.html#ae31f9b30003754e4f894f1595d4ba42d" title=" " alt="" coords="199,5,346,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="131,51,203,33,205,38,132,57"/>
-<area shape="rect" id="Node000003" href="$class_mesh_handler.html#a824bd458a87b886464a75e1a3b912f8c" title=" " alt="" coords="199,55,346,80"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="151,65,184,65,184,70,151,70"/>
-<area shape="rect" id="Node000004" href="$class_mesh_handler.html#a75c31c7e9003389554fc7dc8a5fffc6f" title=" " alt="" coords="199,104,346,130"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="132,78,205,97,203,102,131,84"/>
-</map>

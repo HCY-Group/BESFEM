@@ -1,63 +1,39 @@
 #include "CnE.hpp"
 #include "mfem.hpp"
 
-/**
- * @class CnE
- * @brief Manages electrolyte concentration calculations.
- * 
- * This class is derived from `Concentrations` and includes functionality for:
- * - Setting initial values.
- * - Time-stepping methods using Crank-Nicolson.
- */
+
 CnE::CnE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     : Concentrations(pm, fe, mh) 
     
     {
 
-    PeR = new mfem::ParGridFunction(fespace); ///< Grid function for reaction potential.
-    RxE = new mfem::ParGridFunction(fespace); ///< Grid function for reaction rate.
+    PeR = new mfem::ParGridFunction(fespace);
+    RxE = new mfem::ParGridFunction(fespace);
 
-    Mmate = std::make_shared<mfem::HypreParMatrix>(); ///< Mass matrix for electrolyte.
-    Me_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD); ///< Conjugate gradient solver.
-    Me_prec.SetType(mfem::HypreSmoother::Jacobi); ///< Preconditioner for CG solver. 
+    Mmate = std::make_shared<mfem::HypreParMatrix>();
+    Me_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
+    Me_prec.SetType(mfem::HypreSmoother::Jacobi);
 
-    Kmate = std::make_shared<mfem::HypreParMatrix>(); ///< Stiffness matrix for electrolyte.
+    Kmate = std::make_shared<mfem::HypreParMatrix>();
 
-    CeV0 = new mfem::HypreParVector(fespace); ///< Initial electrolyte concentration vector.
-    RHCe = new mfem::HypreParVector(fespace); ///< Right-hand side vector for concentration updates.
-    CeVn = new mfem::HypreParVector(fespace); ///< Updated electrolyte concentration vector.
- 
+    CeV0 = new mfem::HypreParVector(fespace);
+    RHCe = new mfem::HypreParVector(fespace);
+    CeVn = new mfem::HypreParVector(fespace);
+
     }
 
 mfem::HypreParVector* CnE::CeVn = nullptr; // static variable to be used in reaction
 
-/**
- * @brief Initializes the electrolyte concentration and solver setup.
- * 
- * @param Cn Grid function representing the initial concentration.
- * @param initial_value The initial value to set for concentration.
- * @param psx The grid function for psi related to the electrolyte concentration.
- * @param perform_lithiation Flag indicating whether to perform lithiation calculations.
- */
-void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, bool perform_lithiation)
+
+void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
-    Concentrations::SetInitialValues(Cn, initial_value, psx, perform_lithiation);
+    Concentrations::SetInitialConcentration(Cn, initial_value);
     Concentrations::SetUpSolver(psx, Mmate, *Me_solver, Me_prec);
 
     ImposeNeumannBC(psx, *PeR);
 
 }
 
-/**
- * @brief Performs a time step for electrolyte concentration calculations.
- * 
- * Updates the concentration using Crank-Nicolson integration, including reaction
- * and diffusion terms.
- * 
- * @param Rx Reaction rate grid function.
- * @param Cn Concentration grid function.
- * @param psx Psi grid function.
- */
 void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
 {
 
@@ -91,7 +67,18 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 
 	Cn.Distribute(CeVn); 
 
-    Concentrations::SaltConservation(Cn, psx);	
+    // // Get the local data of the HypreParVector
+    // double *CeVn_data = CeVn->GetData();
 
+    // // Print each value of the vector
+    // int size1 = CeVn->Size();
+    // std::cout << "CeVn values in CnE:" << std::endl;
+    // for (int i = 0; i < size1; i++) {
+    // 	std::cout << CeVn_data[i] << " ";
+    // }
+    // std::cout << std::endl;  
+
+    Concentrations::SaltConservation(Cn, psx);	
+    // std::cout << "CnE: " << Cn << std::endl; 
 
 }

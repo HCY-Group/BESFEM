@@ -28,7 +28,6 @@ int main(int argc, char *argv[]) {
     // Create the MeshHandler object
     MeshHandler mesh_handler;
     mesh_handler.LoadMesh();
-    // mesh_handler.Save(); // save pmesh
 
     // Create pmesh & fespace to use for all 
     ParMesh pmesh = mesh_handler.GetMesh();
@@ -43,11 +42,11 @@ int main(int argc, char *argv[]) {
     // Initialize CnP & CnE
     CnP particle_concentration(&pmesh, &fespace, mesh_handler);
     mfem::ParGridFunction CnP_gf(&fespace);
-    particle_concentration.Initialize(CnP_gf, 0.3, psi, true); // true to run lithiation calculation
+    particle_concentration.Initialize(CnP_gf, 0.3, psi); 
 
     CnE electrolyte_concentration(&pmesh, &fespace, mesh_handler);
     mfem::ParGridFunction CnE_gf(&fespace);
-    electrolyte_concentration.Initialize(CnE_gf, 0.001, pse, false); // false since not running lithiation calculation
+    electrolyte_concentration.Initialize(CnE_gf, 0.001, pse); 
 
     // Initialize phP & phE
     PotP particle_potential(&pmesh, &fespace, mesh_handler);
@@ -73,8 +72,8 @@ int main(int argc, char *argv[]) {
     // std::cout << "VCut: " << Constants::VCut << std::endl;
  
     // Time Step
-    // for (int t = 0; t < 20 + 1; ++t) {
-    while ( VCell > Constants::VCut) {
+    for (int t = 0; t < 20 + 1; ++t) {
+    // while ( VCell > Constants::VCut) {
 
         particle_concentration.TimeStep(Rxn_gf, CnP_gf, psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, pse);
@@ -105,9 +104,6 @@ int main(int argc, char *argv[]) {
 
 
     }
-
-    // particle_concentration.Save(CnP_gf, "CnP");
-    // electrolyte_concentration.Save(CnE_gf, "CnE");
 
     // pmesh.Save("pmesh");
     // CnP_gf.Save("CnP");
