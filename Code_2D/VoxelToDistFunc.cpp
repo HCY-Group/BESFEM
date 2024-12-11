@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 	ParFiniteElementSpace dfespace_dg(&pmesh, &fec_dg, pmesh.Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
 	maker.Make_DG_FESpace_Parallel();
 
-	VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace());
+	VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
 
 	// Define new grid functions
 	ParGridFunction d(&fespace_dg);

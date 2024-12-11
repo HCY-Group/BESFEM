@@ -1,3 +1,5 @@
+#ifndef VOXELSOLVER_HPP
+#define VOXELSOLVER_HPP
 
 #include "mfem.hpp"
 #include "TimeDepOpers.hpp"
@@ -37,3 +39,5 @@ private:
 	ConductionOperator* oper;
 	ODESolver* ode_solver;
 };
+
+#endif

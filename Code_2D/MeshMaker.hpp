@@ -19,6 +19,8 @@ public:
 	mfem::ParMesh* GetParallelMesh() {return pmesh;}
 	mfem::FiniteElementSpace* GetGlobalFESpace() {return gFespace;}
 	mfem::ParFiniteElementSpace* GetParallelFESpace() {return fespace;}
+	mfem::ParFiniteElementSpace* GetParallelFESpace_DG() {return fespace_dg;}
+	mfem::ParFiniteElementSpace* GetParallelFESpace_DGdim() {return dimfespace_dg;}
 
 private:
 	std::vector<std::vector<std::vector<int>>> data;
