@@ -1,0 +1,17 @@
+<map id="files/Concentrations_Base.cpp" name="files/Concentrations_Base.cpp">
+<area shape="rect" id="Node000001" title="Implementation of the Concentrations class methods for battery simulations." alt="" coords="55,5,205,45"/>
+<area shape="rect" id="Node000002" href="$Concentrations__Base_8hpp.html" title=" " alt="" coords="37,93,223,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="133,46,133,79,127,79,127,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,240,95,265"/>
+<area shape="poly" id="edge9_Node000001_Node000003" title=" " alt="" coords="81,48,51,67,27,95,17,128,19,164,28,198,40,227,35,229,23,200,14,165,12,128,22,92,47,63,78,43"/>
+<area shape="rect" id="Node000004" href="$Mesh__Handler_8hpp.html" title=" " alt="" coords="168,167,311,192"/>
+<area shape="poly" id="edge8_Node000001_Node000004" title=" " alt="" coords="181,43,212,63,238,92,247,123,247,153,241,153,242,123,233,95,209,67,178,48"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="126,120,65,229,61,227,121,118"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="149,116,211,157,208,161,146,121"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="119,240,197,265"/>
+<area shape="poly" id="edge7_Node000002_Node000006" title=" " alt="" coords="135,119,156,226,151,227,130,120"/>
+<area shape="poly" id="edge5_Node000004_Node000003" title=" " alt="" coords="210,195,95,237,93,232,208,190"/>
+<area shape="rect" id="Node000005" href="$Constants_8hpp.html" title=" " alt="" coords="221,240,335,265"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="248,191,268,227,263,229,243,194"/>
+<area shape="poly" id="edge6_Node000004_Node000006" title=" " alt="" coords="228,194,183,233,180,229,225,190"/>
+</map>
