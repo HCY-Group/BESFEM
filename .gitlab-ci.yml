@@ -1,0 +1,12 @@
+stages:
+  - deploy  # Define the deployment stage
+
+deploy_pages:
+  stage: deploy
+  script:
+    - mv public/ /public   # This moves your generated files to the 'public' folder
+  artifacts:
+    paths:
+      - public  # GitLab needs to know to deploy the files in the 'public' folder
+  only:
+    - doxygen  # This means this will only run on the 'doxygen' branch
