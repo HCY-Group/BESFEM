@@ -1,0 +1,10 @@
+<map id="Potentials::ErrorCalculation" name="Potentials::ErrorCalculation">
+<area shape="rect" id="Node000001" title=" " alt="" coords="329,31,509,56"/>
+<area shape="rect" id="Node000002" href="$class_pot_e.html#a4b142fb37f94296f082dd2b6eceac4d2" title=" " alt="" coords="103,5,281,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="313,34,281,31,282,25,314,29"/>
+<area shape="rect" id="Node000004" href="$class_pot_p.html#a7dfb2f066b32f0aa261c07e7572d4e33" title=" " alt="" coords="103,55,281,80"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="314,57,282,61,281,55,313,52"/>
+<area shape="rect" id="Node000003" href="$simulation_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title=" " alt="" coords="5,31,55,56"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="91,37,55,42,55,37,91,31"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="87,55,54,50,55,44,88,49"/>
+</map>

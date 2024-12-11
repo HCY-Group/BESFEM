@@ -1,0 +1,7 @@
+<map id="Potentials" name="Potentials">
+<area shape="rect" id="Node000001" title=" " alt="" coords="76,5,286,519"/>
+<area shape="rect" id="Node000002" href="$class_pot_e.html" title=" " alt="" coords="5,567,172,1040"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="137,534,132,568,126,567,132,533"/>
+<area shape="rect" id="Node000003" href="$class_pot_p.html" title=" " alt="" coords="197,567,349,1040"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="230,533,235,567,230,568,224,534"/>
+</map>
