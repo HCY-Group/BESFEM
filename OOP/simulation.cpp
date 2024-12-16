@@ -17,103 +17,125 @@
 
 int main(int argc, char *argv[]) {
 
+    // Start measuring the program execution time.
     using namespace std::chrono;
     auto program_start = high_resolution_clock::now();
 
-
-    // Initialize MPI and HYPRE
+    // Initialize MPI for parallel processing and HYPRE for solver setup.
     Mpi::Init(argc, argv);
     Hypre::Init();
 
-    // Create the MeshHandler object
+    // Create the MeshHandler object and load the mesh.
     MeshHandler mesh_handler;
     mesh_handler.LoadMesh();
 
-    // Create pmesh & fespace to use for all 
+    // Create a parallel mesh and finite element space to use across the simulation. 
     ParMesh pmesh = mesh_handler.GetMesh();
     H1_FECollection fec(Constants::order, pmesh.Dimension());
     ParFiniteElementSpace fespace(&pmesh, &fec);
+
+    // Setup boundary conditions for the mesh using the MeshHandler.
     mesh_handler.SetupBoundaryConditions(&pmesh, &fespace);
 
-    // Retrieve psi & pse from mesh_handler
+    // Retrieve psi (particle phase potential) and pse (electrolyte phase potential) from the MeshHandler.
     mfem::ParGridFunction &psi = *mesh_handler.GetPsi();
     mfem::ParGridFunction &pse = *mesh_handler.GetPse();
 
-    // Initialize CnP & CnE
+    // **Initialize Concentration Classes**
+
+    // Particle concentration initialization with a grid function and initial value.
     CnP particle_concentration(&pmesh, &fespace, mesh_handler);
     mfem::ParGridFunction CnP_gf(&fespace);
     particle_concentration.Initialize(CnP_gf, 0.3, psi); 
 
+    // Electrolyte concentration initialization with a grid function and initial value.
     CnE electrolyte_concentration(&pmesh, &fespace, mesh_handler);
     mfem::ParGridFunction CnE_gf(&fespace);
     electrolyte_concentration.Initialize(CnE_gf, 0.001, pse); 
 
-    // Initialize phP & phE
+    // **Initialize Potential Classes**
+
+    // Particle potential initialization with a grid function and initial value.
     PotP particle_potential(&pmesh, &fespace, mesh_handler);
     mfem::ParGridFunction phP_gf(&fespace);
     particle_potential.Initialize(phP_gf, 2.9395);
 
+    // Electrolyte potential initialization with a grid function and initial value.
     PotE electrolyte_potential(&pmesh, &fespace, mesh_handler);
     mfem::ParGridFunction phE_gf(&fespace);
     electrolyte_potential.Initialize(phE_gf, -1.0);
     
-    // Initialize Reaction
+    // **Initialize Reaction Class**
+
+    // Initialize the reaction with an empty reaction grid function and initial value.
     Reaction reaction(&pmesh, &fespace, mesh_handler);
     mfem::ParGridFunction Rxn_gf(&fespace);
     reaction.Initialize(Rxn_gf, 0.0);
 
-    // Create Current Class
+    // **Initialize Current Class**
+
+    // Create the Current class to control current based on particle potential.
     Current current(&pmesh, &fespace, mesh_handler);
 
+    // Set initial global current and cell voltage values.  
     double global_current = 0.0;
     double VCell = BvP - BvE;
-    // std::cout << "VCell Initial: " << VCell << std::endl;
 
-    // std::cout << "VCut: " << Constants::VCut << std::endl;
+    // **Main Simulation Loop**
  
-    // Time Step
+    // Perform simulation over time steps.
     for (int t = 0; t < 20 + 1; ++t) {
     // while ( VCell > Constants::VCut) {
 
+        // Step 1: Update concentrations for both particle and electrolyte phases.
         particle_concentration.TimeStep(Rxn_gf, CnP_gf, psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, pse);
         
+        // Step 2: Update potentials for both particle and electrolyte phases.
         particle_potential.TimeStep(CnP_gf, psi, phP_gf);
         electrolyte_potential.TimeStep(CnE_gf, pse, phE_gf);
 
-        // rate constants and exchange current density at interface
+        // Step 3: Compute rate constants and exchange current density at the interface.        
         reaction.ExchangeCurrentDensity(CnP_gf); 
 
-        // while loop
-        double globalerror_P = 1.0;
-		double globalerror_E = 1.0;
+        // Step 4: Iteratively solve for global reaction rates using Butler-Volmer kinetics.
+        double globalerror_P = 1.0; // Error for particle potential.
+		double globalerror_E = 1.0; // Error for electrolyte potential.
 
         // int inlp = 0;
         while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
+
+            // Update reaction rates using the Butler-Volmer equation.
             reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
+
+            // Calculate global errors for particle and electrolyte potentials.
             particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, psi, globalerror_P);
             electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, pse, globalerror_E);
         }
 
-        // total reaction current
+        // Step 5: Compute the total reaction current.
         reaction.TotalReactionCurrent(Rxn_gf, global_current);
+
+        // Step 6: Adjust the particle potential based on the target constant current.
         current.Constant(phP_gf, global_current);
 
+        // Step 7: Update the cell voltage based on the particle and electrolyte potentials.
         VCell = BvP - BvE;
-        // std::cout << "VCell: " << VCell << std::endl;
-
 
     }
 
+    // **Optional: Save Simulation Outputs**
+    // Save mesh and solution fields (if needed).
     // pmesh.Save("pmesh");
     // CnP_gf.Save("CnP");
     // CnE_gf.Save("CnE");
     // phP_gf.Save("phP");
     // phE_gf.Save("phE");
 
+    // Finalize MPI processing.
     Mpi::Finalize();
 
-    // End timing the entire program
+    // End timing and output the total program execution time.
     auto program_end = high_resolution_clock::now();
     std::cout << "Total Program Time: " 
               << duration_cast<seconds>(program_end - program_start).count() 
