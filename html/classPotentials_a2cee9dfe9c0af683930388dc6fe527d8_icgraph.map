@@ -1,0 +1,10 @@
+<map id="Potentials::ForceTerm" name="Potentials::ForceTerm">
+<area shape="rect" id="Node000001" title="Constructs the force term for the right&#45;hand side of the system." alt="" coords="349,31,512,56"/>
+<area shape="rect" id="Node000002" href="$classPotE.html#a4b142fb37f94296f082dd2b6eceac4d2" title="Calculates the global error in the electrolyte potential solution." alt="" coords="108,5,301,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="335,35,301,31,302,26,335,30"/>
+<area shape="rect" id="Node000004" href="$classPotP.html#a7dfb2f066b32f0aa261c07e7572d4e33" title="Calculates the global error in the particle potential solution." alt="" coords="108,55,301,80"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="335,56,302,60,301,54,335,51"/>
+<area shape="rect" id="Node000003" href="$simulation_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title=" " alt="" coords="5,31,60,56"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="105,35,61,42,60,37,104,30"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="100,55,60,50,60,44,101,50"/>
+</map>

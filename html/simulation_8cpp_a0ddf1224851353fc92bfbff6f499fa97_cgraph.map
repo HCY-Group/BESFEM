@@ -1,0 +1,118 @@
+<map id="main" name="main">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,491,60,516"/>
+<area shape="rect" id="Node000002" href="$classReaction.html#a7701d34a373955a91da590c4645e6b2c" title="Applies the Butler&#45;Volmer equation to calculate reaction rates." alt="" coords="133,5,305,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="32,490,35,401,45,266,54,195,67,130,84,77,106,40,119,30,123,34,110,44,89,79,72,132,60,196,50,266,40,401,37,490"/>
+<area shape="rect" id="Node000003" href="$classPotE.html#a4b142fb37f94296f082dd2b6eceac4d2" title="Calculates the global error in the electrolyte potential solution." alt="" coords="123,55,316,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="32,490,36,410,48,289,58,227,70,169,86,122,106,90,109,86,113,90,110,93,91,124,75,171,63,228,53,290,42,410,37,491"/>
+<area shape="rect" id="Node000008" href="$classPotP.html#a7dfb2f066b32f0aa261c07e7572d4e33" title="Calculates the global error in the particle potential solution." alt="" coords="123,104,316,129"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="32,490,38,418,51,313,73,208,88,167,106,139,110,135,114,139,110,142,93,169,78,210,56,313,43,419,37,491"/>
+<area shape="rect" id="Node000009" href="$classCurrent.html#abfbab744dc1f3952fdd67f5d9e25a3bc" title="Adjusts the particle potential to maintain the constant target global current." alt="" coords="151,153,287,179"/>
+<area shape="poly" id="edge12_Node000001_Node000009" title=" " alt="" coords="33,490,40,427,55,337,76,248,90,213,106,190,121,178,137,171,139,176,123,183,110,193,95,216,81,250,60,338,45,428,38,491"/>
+<area shape="rect" id="Node000010" href="$classReaction.html#af5135fffb4ad421e36d31cda54be4f78" title="Computes the exchange current density and rate constants at the interface." alt="" coords="120,203,319,243"/>
+<area shape="poly" id="edge13_Node000001_Node000010" title=" " alt="" coords="31,490,33,446,43,382,52,348,65,314,83,282,106,254,111,249,114,253,110,257,88,285,70,316,57,349,48,383,39,446,36,491"/>
+<area shape="rect" id="Node000011" href="$classMeshHandler.html#a086129bedf7020e0335c7bb48d6c4763" title=" " alt="" coords="132,268,307,293"/>
+<area shape="poly" id="edge14_Node000001_Node000011" title=" " alt="" coords="32,490,37,453,48,402,70,349,86,324,106,303,118,294,121,299,110,307,90,327,75,351,53,404,42,454,37,491"/>
+<area shape="rect" id="Node000012" href="$classMeshHandler.html#a4877e264bfd112fc9be05b1563fe5ffd" title=" " alt="" coords="138,317,301,343"/>
+<area shape="poly" id="edge15_Node000001_Node000012" title=" " alt="" coords="34,490,41,461,55,424,76,385,106,352,124,341,126,346,110,356,81,388,60,426,46,463,39,491"/>
+<area shape="rect" id="Node000013" href="$classMeshHandler.html#a22289849e2d9992b8c972486ab3193ea" title=" " alt="" coords="140,367,299,392"/>
+<area shape="poly" id="edge16_Node000001_Node000013" title=" " alt="" coords="37,489,63,446,82,421,107,401,125,391,128,396,109,406,86,425,67,449,42,492"/>
+<area shape="rect" id="Node000014" href="$classPotE.html#a0a6cbfc84814da787447d94a3e730182" title="Initializes the electrolyte potential field and solver." alt="" coords="162,416,277,441"/>
+<area shape="poly" id="edge17_Node000001_Node000014" title=" " alt="" coords="47,488,74,469,107,450,148,437,150,442,109,455,77,473,50,493"/>
+<area shape="rect" id="Node000017" href="$classPotP.html#a206525aa03526304b482e4d5c6d30a33" title="Initializes the particle potential field and solver." alt="" coords="162,465,277,491"/>
+<area shape="poly" id="edge20_Node000001_Node000017" title=" " alt="" coords="60,497,148,485,149,490,61,502"/>
+<area shape="rect" id="Node000018" href="$classCnE.html#a54d470eceba15bb1db20fee2df06e557" title="Initializes electrolyte concentration values and solver components." alt="" coords="164,515,275,540"/>
+<area shape="poly" id="edge23_Node000001_Node000018" title=" " alt="" coords="61,504,150,516,150,521,60,509"/>
+<area shape="rect" id="Node000022" href="$classCnP.html#af69a6555927b24f185dfaeb3e3e853b6" title="Initializes particle concentration values and solver components." alt="" coords="164,564,275,589"/>
+<area shape="poly" id="edge27_Node000001_Node000022" title=" " alt="" coords="52,514,78,532,109,549,151,563,150,568,107,554,75,537,49,518"/>
+<area shape="rect" id="Node000024" href="$classReaction.html#a623fbbe750b0191ebe25315e094c78de" title="Initializes the reaction field with a given initial value." alt="" coords="148,813,291,839"/>
+<area shape="poly" id="edge31_Node000001_Node000024" title=" " alt="" coords="37,516,41,561,51,625,73,696,90,730,110,762,138,787,170,806,167,810,135,791,106,765,85,733,68,698,46,626,35,561,32,516"/>
+<area shape="rect" id="Node000026" href="$classMeshHandler.html#a65bbeb464d5458fe3d039b8df1a66b08" title=" " alt="" coords="128,936,311,961"/>
+<area shape="poly" id="edge33_Node000001_Node000026" title=" " alt="" coords="37,516,39,572,49,657,71,755,88,803,110,849,127,872,146,893,187,926,184,930,143,897,123,875,106,851,83,805,66,756,43,658,34,573,31,516"/>
+<area shape="rect" id="Node000036" href="$classMeshHandler.html#a969c812c43d9209e2b261e92f9cbc55c" title=" " alt="" coords="112,986,327,1026"/>
+<area shape="poly" id="edge41_Node000001_Node000036" title=" " alt="" coords="37,516,40,606,51,743,61,815,73,880,90,934,110,971,114,975,110,979,106,974,85,937,68,882,55,816,46,744,35,607,32,517"/>
+<area shape="rect" id="Node000037" href="$classPotE.html#a6839753dc9f3b5222a917ed8dba4d5ba" title="Performs time&#45;stepping for the electrolyte potential." alt="" coords="159,1123,280,1148"/>
+<area shape="poly" id="edge42_Node000001_Node000037" title=" " alt="" coords="37,516,43,615,56,768,78,926,93,991,110,1037,126,1060,145,1080,186,1113,183,1117,141,1084,122,1063,106,1039,88,992,73,927,51,769,38,615,32,516"/>
+<area shape="rect" id="Node000042" href="$classPotP.html#a4185882594b00fec095f76a819eb9212" title="Performs time&#45;stepping for the particle potential." alt="" coords="159,1208,280,1233"/>
+<area shape="poly" id="edge48_Node000001_Node000042" title=" " alt="" coords="37,516,38,635,46,827,55,928,68,1023,86,1102,97,1134,110,1158,134,1183,164,1200,162,1205,131,1187,106,1161,93,1136,81,1104,63,1024,49,929,40,827,32,636,31,516"/>
+<area shape="rect" id="Node000044" href="$classCnE.html#a06f95407ed9641dd1adbe4105cff3c18" title="Performs a single time step for electrolyte concentration updates." alt="" coords="161,727,278,752"/>
+<area shape="poly" id="edge53_Node000001_Node000044" title=" " alt="" coords="38,516,45,550,58,595,79,644,110,688,132,706,158,719,155,724,129,710,106,692,74,647,53,597,40,551,33,517"/>
+<area shape="rect" id="Node000051" href="$classCnP.html#a40b3c683bfe14eb9a0091f596e0f1962" title="Performs a single time step for particle concentration updates." alt="" coords="161,653,278,679"/>
+<area shape="poly" id="edge60_Node000001_Node000051" title=" " alt="" coords="44,515,71,555,110,599,144,624,179,645,177,649,141,629,106,603,67,558,40,518"/>
+<area shape="rect" id="Node000052" href="$classReaction.html#a3248650e9e395512b45c2ba60162656c" title="Computes the total reaction current over the domain." alt="" coords="108,1257,331,1283"/>
+<area shape="poly" id="edge66_Node000001_Node000052" title=" " alt="" coords="37,516,43,662,56,894,66,1014,78,1120,93,1200,101,1227,110,1243,114,1247,110,1251,106,1246,96,1229,88,1201,73,1120,61,1014,51,895,37,662,32,516"/>
+<area shape="rect" id="Node000004" href="$classPotentials.html#a288b952461ccf2f5f6dc8de65a41ce98" title="Creates a reaction field by scaling an input field with a factor." alt="" coords="410,55,605,80"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="316,65,396,65,396,70,316,70"/>
+<area shape="rect" id="Node000005" href="$classPotentials.html#a5104d8df4c5e5db6b9fb9f6e2cc876bf" title="Calculates the error in the potential solution." alt="" coords="408,104,607,129"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="295,77,419,99,419,104,294,83"/>
+<area shape="rect" id="Node000006" href="$classPotentials.html#a2cee9dfe9c0af683930388dc6fe527d8" title="Constructs the force term for the right&#45;hand side of the system." alt="" coords="426,153,589,179"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="305,78,332,89,348,101,357,115,366,127,380,138,414,152,412,157,377,143,362,131,352,118,344,105,329,94,303,83"/>
+<area shape="rect" id="Node000007" href="$classPotentials.html#a5e42a376a976e6e1aaac0a0ed7df2d7c" title="Sets up the linear system considering boundary conditions." alt="" coords="422,5,593,31"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="294,52,419,30,419,36,295,57"/>
+<area shape="poly" id="edge8_Node000008_Node000004" title=" " alt="" coords="294,101,419,80,419,85,295,107"/>
+<area shape="poly" id="edge9_Node000008_Node000005" title=" " alt="" coords="316,114,394,114,394,119,316,119"/>
+<area shape="poly" id="edge10_Node000008_Node000006" title=" " alt="" coords="295,127,419,148,419,154,294,132"/>
+<area shape="poly" id="edge11_Node000008_Node000007" title=" " alt="" coords="300,101,329,89,344,78,352,65,362,52,377,40,408,27,410,32,380,44,365,56,357,68,348,81,332,94,302,106"/>
+<area shape="rect" id="Node000015" href="$classPotentials.html#a94432b61fee6a01f069e1e378928479a" title="Initializes the potentials to a specified initial value." alt="" coords="398,351,617,376"/>
+<area shape="poly" id="edge18_Node000014_Node000015" title=" " alt="" coords="276,414,330,401,378,385,416,376,417,381,379,390,331,406,278,419"/>
+<area shape="rect" id="Node000016" href="$classPotentials.html#a2ce365ce06334a10085011c8376a0800" title="Configures the solver with given tolerance and iteration limits." alt="" coords="420,301,595,327"/>
+<area shape="poly" id="edge19_Node000014_Node000016" title=" " alt="" coords="276,421,304,414,329,401,344,386,352,369,360,352,377,336,405,323,407,328,380,340,365,355,357,372,349,389,332,406,306,419,278,426"/>
+<area shape="poly" id="edge21_Node000017_Node000015" title=" " alt="" coords="276,470,304,463,329,450,344,435,352,419,360,401,377,385,388,379,390,384,380,389,365,404,357,421,349,438,332,455,306,468,278,475"/>
+<area shape="poly" id="edge22_Node000017_Node000016" title=" " alt="" coords="276,473,304,465,329,451,341,437,347,424,352,395,356,365,364,350,377,336,405,320,408,325,380,340,368,353,362,366,357,395,352,425,345,440,332,455,306,470,277,478"/>
+<area shape="rect" id="Node000019" href="$classConcentrations.html#a1db217476e31d28223632093e78ddbed" title="Applies a Neumann boundary condition by negating a potential field." alt="" coords="379,400,636,425"/>
+<area shape="poly" id="edge24_Node000018_Node000019" title=" " alt="" coords="275,520,303,512,329,500,344,485,352,468,360,451,377,435,388,429,390,433,380,439,365,454,357,470,349,488,332,504,305,517,276,525"/>
+<area shape="rect" id="Node000020" href="$classConcentrations.html#a984be132b61b50c531cf44c021356720" title="Sets the initial concentration values across the domain." alt="" coords="414,499,601,539"/>
+<area shape="poly" id="edge25_Node000018_Node000020" title=" " alt="" coords="275,523,400,520,400,525,275,528"/>
+<area shape="rect" id="Node000021" href="$classConcentrations.html#aec317b727ea6b82003d477f4b42122f4" title="Sets up the solver for the mass matrix computation." alt="" coords="403,449,611,475"/>
+<area shape="poly" id="edge26_Node000018_Node000021" title=" " alt="" coords="274,513,330,499,378,485,422,475,423,480,379,490,331,505,276,518"/>
+<area shape="poly" id="edge29_Node000022_Node000020" title=" " alt="" coords="274,563,400,538,401,543,275,568"/>
+<area shape="poly" id="edge30_Node000022_Node000021" title=" " alt="" coords="274,569,303,562,329,549,344,534,352,518,361,501,377,485,392,477,394,482,380,489,365,504,357,520,349,537,332,554,305,567,276,574"/>
+<area shape="rect" id="Node000023" href="$classConcentrations.html#abb0c7b79080574f1121fde9a80b20f61" title="Calculates the degree of lithiation." alt="" coords="413,563,602,603"/>
+<area shape="poly" id="edge28_Node000022_Node000023" title=" " alt="" coords="275,575,399,578,399,583,275,581"/>
+<area shape="rect" id="Node000025" href="$classReaction.html#ad6500e78346642ecce8416d144184daa" title="Sets an initial reaction rate for the reaction field." alt="" coords="406,924,609,949"/>
+<area shape="poly" id="edge32_Node000024_Node000025" title=" " alt="" coords="241,836,301,873,380,909,411,918,409,923,378,914,299,877,238,841"/>
+<area shape="rect" id="Node000027" href="$classMeshHandler.html#ae659928b1e9c7c6852856b1fd3dcc86c" title=" " alt="" coords="404,1023,611,1048"/>
+<area shape="poly" id="edge34_Node000026_Node000027" title=" " alt="" coords="296,959,332,972,347,981,356,990,366,999,380,1008,404,1016,402,1021,378,1012,363,1003,353,994,343,985,330,976,295,964"/>
+<area shape="rect" id="Node000035" href="$classMeshHandler.html#aeea528742700c97310d2fd243cf38cbe" title=" " alt="" coords="404,973,611,999"/>
+<area shape="poly" id="edge40_Node000026_Node000035" title=" " alt="" coords="311,958,396,969,395,974,311,963"/>
+<area shape="rect" id="Node000028" href="$classMeshHandler.html#a16151a660b5d837354ffd057437e611e" title=" " alt="" coords="693,1079,923,1119"/>
+<area shape="poly" id="edge35_Node000027_Node000028" title=" " alt="" coords="580,1045,637,1057,712,1074,711,1079,635,1062,579,1051"/>
+<area shape="rect" id="Node000029" href="$classMeshHandler.html#a83eebb266aca469348fd11a47da3df0d" title=" " alt="" coords="693,1144,923,1169"/>
+<area shape="poly" id="edge36_Node000027_Node000029" title=" " alt="" coords="612,1045,638,1057,655,1075,663,1094,670,1113,686,1129,698,1136,695,1141,682,1133,665,1115,658,1096,650,1078,634,1061,610,1049"/>
+<area shape="rect" id="Node000031" href="$classMeshHandler.html#ae367915dd586943f0d4d34d5c92fd3fa" title=" " alt="" coords="695,901,921,927"/>
+<area shape="poly" id="edge37_Node000027_Node000031" title=" " alt="" coords="610,1020,634,1008,650,992,658,974,665,955,682,937,695,930,698,935,686,941,670,958,662,976,655,995,638,1012,612,1025"/>
+<area shape="rect" id="Node000033" href="$classMeshHandler.html#adfd5c63a0f1c0f381e8ce666116f4b47" title=" " alt="" coords="715,951,901,991"/>
+<area shape="poly" id="edge38_Node000027_Node000033" title=" " alt="" coords="574,1020,635,1007,706,992,707,997,637,1013,575,1025"/>
+<area shape="rect" id="Node000034" href="$classMeshHandler.html#ac7bcbf1bdf9b04e80b09ba2e2eff635c" title=" " alt="" coords="684,1015,932,1055"/>
+<area shape="poly" id="edge39_Node000027_Node000034" title=" " alt="" coords="611,1033,670,1033,670,1038,611,1038"/>
+<area shape="rect" id="Node000038" href="$classPotE.html#a47bcf8b59e5a508c093392d1f8d79368" title="Computes electrolyte conductivity and diffusivity." alt="" coords="402,1072,613,1097"/>
+<area shape="poly" id="edge43_Node000037_Node000038" title=" " alt="" coords="280,1122,421,1097,422,1102,281,1127"/>
+<area shape="rect" id="Node000039" href="$classPotentials.html#a104f14eb7e487fb1b117a9c81015ca6b" title="Applies Dirichlet boundary conditions to the potential field." alt="" coords="393,1173,621,1213"/>
+<area shape="poly" id="edge44_Node000037_Node000039" title=" " alt="" coords="281,1145,393,1167,392,1173,280,1150"/>
+<area shape="rect" id="Node000040" href="$classPotentials.html#a596a026299cf930e10b1f2b75d6f4b08" title="Assembles the stiffness matrix and system for a given potential field." alt="" coords="735,1237,881,1263"/>
+<area shape="poly" id="edge45_Node000037_Node000040" title=" " alt="" coords="280,1129,353,1127,443,1129,540,1138,637,1158,701,1187,775,1228,772,1233,698,1192,635,1163,540,1144,442,1134,353,1132,280,1134"/>
+<area shape="rect" id="Node000041" href="$classPotentials.html#aebbb55715cfb7a80c8b2f3a1dbc3eb2c" title="Configures and attaches a preconditioner to the conjugate gradient solver." alt="" coords="422,1237,593,1263"/>
+<area shape="poly" id="edge46_Node000037_Node000041" title=" " alt="" coords="246,1146,332,1193,355,1209,380,1222,410,1232,408,1237,378,1227,353,1214,329,1198,244,1150"/>
+<area shape="poly" id="edge47_Node000041_Node000040" title=" " alt="" coords="593,1247,721,1247,721,1253,593,1253"/>
+<area shape="poly" id="edge49_Node000042_Node000039" title=" " alt="" coords="280,1212,379,1202,380,1208,280,1217"/>
+<area shape="poly" id="edge50_Node000042_Node000040" title=" " alt="" coords="281,1227,332,1242,356,1258,366,1266,379,1271,428,1282,477,1288,577,1288,669,1277,744,1263,745,1269,670,1283,577,1293,477,1293,427,1287,378,1277,363,1270,353,1262,330,1247,280,1233"/>
+<area shape="poly" id="edge52_Node000042_Node000041" title=" " alt="" coords="280,1224,408,1237,408,1243,280,1229"/>
+<area shape="rect" id="Node000043" href="$classPotP.html#a076720f42d3390504b893f3daadad764" title="Computes particle conductivity." alt="" coords="413,1339,602,1364"/>
+<area shape="poly" id="edge51_Node000042_Node000043" title=" " alt="" coords="281,1222,307,1230,332,1243,350,1261,357,1281,364,1300,380,1317,406,1331,404,1336,377,1321,360,1303,352,1283,345,1264,329,1247,305,1235,279,1228"/>
+<area shape="rect" id="Node000045" href="$classConcentrations.html#a2870792cec656892131c8a4bc6f18636" title="Creates a scaled reaction field based on an input reaction field." alt="" coords="393,677,621,703"/>
+<area shape="poly" id="edge54_Node000044_Node000045" title=" " alt="" coords="278,727,419,702,420,708,279,732"/>
+<area shape="rect" id="Node000046" href="$classConcentrations.html#a2d56d3334517ec19c82bff144740986d" title="Computes the diffusivity field for the particle or electrolyte." alt="" coords="410,727,605,752"/>
+<area shape="poly" id="edge55_Node000044_Node000046" title=" " alt="" coords="278,737,396,737,396,742,278,742"/>
+<area shape="rect" id="Node000047" href="$classConcentrations.html#afaf5b2e4ee405ac42aeb68dc190d1062" title="Constructs a force term for the system based on a given field and boundary conditions." alt="" coords="410,776,605,801"/>
+<area shape="poly" id="edge56_Node000044_Node000047" title=" " alt="" coords="279,747,420,771,419,776,278,752"/>
+<area shape="rect" id="Node000048" href="$classConcentrations.html#a1f04f5fa4b7bf13721a3f73ef37a4839" title="Assembles the stiffness matrix and linear system for diffusion&#45;based problems." alt="" coords="418,628,597,653"/>
+<area shape="poly" id="edge57_Node000044_Node000048" title=" " alt="" coords="249,724,329,688,353,674,378,662,406,654,407,659,380,667,356,679,332,692,251,729"/>
+<area shape="rect" id="Node000049" href="$classConcentrations.html#a38f994e0b94576bd43b50b8dbe02fa80" title="Computes and conserves the salt concentration in the system." alt="" coords="388,875,627,900"/>
+<area shape="poly" id="edge58_Node000044_Node000049" title=" " alt="" coords="252,750,292,770,332,799,347,816,356,832,364,846,380,860,394,867,392,872,377,864,360,850,351,834,343,819,329,803,289,775,249,754"/>
+<area shape="rect" id="Node000050" href="$classConcentrations.html#a29d086b72798fb98001d8e48df5d4cb6" title="Calculates the total reaction and the reaction current density." alt="" coords="399,825,615,851"/>
+<area shape="poly" id="edge59_Node000044_Node000050" title=" " alt="" coords="245,750,305,780,380,810,414,820,413,825,378,815,303,785,242,754"/>
+<area shape="poly" id="edge65_Node000051_Node000023" title=" " alt="" coords="257,651,378,613,409,604,410,609,379,618,259,656"/>
+<area shape="poly" id="edge61_Node000051_Node000045" title=" " alt="" coords="278,668,380,677,380,682,278,673"/>
+<area shape="poly" id="edge62_Node000051_Node000046" title=" " alt="" coords="259,676,379,711,423,721,422,727,378,717,258,681"/>
+<area shape="poly" id="edge63_Node000051_Node000047" title=" " alt="" coords="261,676,296,691,332,712,347,725,356,738,365,750,380,761,398,769,396,774,377,766,361,754,352,741,343,729,329,716,294,696,259,681"/>
+<area shape="poly" id="edge64_Node000051_Node000048" title=" " alt="" coords="278,658,404,647,404,652,278,664"/>
+</map>

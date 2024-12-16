@@ -1,0 +1,5 @@
+<map id="Reaction::Initialize" name="Reaction::Initialize">
+<area shape="rect" id="Node000001" title="Initializes the reaction field with a given initial value." alt="" coords="5,5,148,31"/>
+<area shape="rect" id="Node000002" href="$classReaction.html#ad6500e78346642ecce8416d144184daa" title="Sets an initial reaction rate for the reaction field." alt="" coords="196,5,399,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,15,182,15,182,21,148,21"/>
+</map>
