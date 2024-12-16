@@ -1,0 +1,29 @@
+<map id="files/Concentrations_Base.hpp" name="files/Concentrations_Base.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="524,5,675,45"/>
+<area shape="rect" id="Node000002" href="$CnE_8hpp.html" title=" " alt="" coords="290,101,397,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="531,52,378,103,377,98,529,47"/>
+<area shape="rect" id="Node000007" href="$simulation_8cpp.html" title=" " alt="" coords="583,181,733,207"/>
+<area shape="poly" id="edge16_Node000001_Node000007" title=" " alt="" coords="607,59,615,95,627,132,653,180,648,183,622,134,610,96,602,60"/>
+<area shape="rect" id="Node000008" href="$CnP_8hpp.html" title=" " alt="" coords="637,101,741,126"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="631,53,678,98,674,102,627,57"/>
+<area shape="rect" id="Node000010" href="$Concentrations__Base_8cpp.html" title="Implementation of the Concentrations class methods for battery simulations." alt="" coords="765,93,916,133"/>
+<area shape="poly" id="edge11_Node000001_Node000010" title=" " alt="" coords="666,47,789,91,787,96,664,52"/>
+<area shape="rect" id="Node000011" href="$Reaction_8hpp.html" title=" " alt="" coords="423,101,562,126"/>
+<area shape="poly" id="edge12_Node000001_Node000011" title=" " alt="" coords="566,56,509,102,506,98,563,52"/>
+<area shape="rect" id="Node000003" href="$CnE_8cpp.html" title=" " alt="" coords="5,181,111,207"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="290,132,100,184,99,179,288,127"/>
+<area shape="rect" id="Node000004" href="$Current_8cpp.html" title=" " alt="" coords="431,181,559,207"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="379,130,474,179,472,183,377,135"/>
+<area shape="rect" id="Node000005" href="$PotE_8cpp.html" title="Implementation of the potential class for electrolyte potential simulations." alt="" coords="135,181,245,207"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="310,135,214,183,212,179,307,130"/>
+<area shape="rect" id="Node000006" href="$Reaction_8cpp.html" title=" " alt="" coords="269,181,407,207"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="344,140,341,181,336,181,339,140"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="397,127,412,131,609,179,608,184,411,136,396,132"/>
+<area shape="poly" id="edge9_Node000008_Node000004" title=" " alt="" coords="649,133,524,184,522,179,647,129"/>
+<area shape="poly" id="edge10_Node000008_Node000007" title=" " alt="" coords="682,140,665,182,660,180,677,138"/>
+<area shape="rect" id="Node000009" href="$CnP_8cpp.html" title="Implementation of the electrolyte concentration class for battery simulations." alt="" coords="757,181,860,207"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="720,132,792,179,789,183,717,136"/>
+<area shape="poly" id="edge13_Node000011_Node000004" title=" " alt="" coords="496,140,498,181,492,181,491,140"/>
+<area shape="poly" id="edge14_Node000011_Node000006" title=" " alt="" coords="459,135,362,183,360,179,456,130"/>
+<area shape="poly" id="edge15_Node000011_Node000007" title=" " alt="" coords="530,129,635,179,633,184,528,134"/>
+</map>
