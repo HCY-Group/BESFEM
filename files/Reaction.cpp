@@ -1,3 +1,8 @@
+/**
+ * @file Reaction.cpp
+ * @brief Implementation of the Reaction class for electrochemical reaction modeling in batteries.
+ */
+
 #include "Reaction.hpp"
 #include "Mesh_Handler.hpp"
 #include "mfem.hpp"
@@ -11,9 +16,9 @@ Reaction::Reaction(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandl
 
 {
     
-    nE = mesh_handler.GetNE();
-    nC = mesh_handler.GetNC();
-    nV = mesh_handler.GetNV();
+    nE = mesh_handler.GetNE(); // Number of elements.
+    nC = mesh_handler.GetNC(); // Number of corners.
+    nV = mesh_handler.GetNV(); // Number of vertices.
 
     i0C = new mfem::ParGridFunction(fespace); // exchange current density
     OCV = new mfem::ParGridFunction(fespace); // open circuit voltage
@@ -29,11 +34,8 @@ Reaction::Reaction(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandl
 void Reaction::Initialize(mfem::ParGridFunction &Rx, double initial_value) {
 
     SetInitialReaction(Rx, initial_value);
-    Rx = AvP;
-    Rx *= 1.0e-8;
-
-    // Rx.Print();
-
+    Rx = AvP; // Scale by active particle surface area.
+    Rx *= 1.0e-8; // Apply a scaling factor.
 
 }
 
@@ -48,9 +50,9 @@ void Reaction::SetInitialReaction(mfem::ParGridFunction &Rx, double initial_valu
 void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2){
 
     for (int vi = 0; vi < nV; vi++){
-        if ( AvB(vi) * Constants::dh > 0.0 ){
+        if ( AvB(vi) * Constants::dh > 0.0 ){ // Check for interface presence.
 
-            (*dPHE)(vi) = phx1(vi) - phx2(vi);
+            (*dPHE)(vi) = phx1(vi) - phx2(vi); // Voltage drop across the interface.
             Rx(vi) = AvP(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
 					                   (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
 
@@ -64,9 +66,9 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
 
     for (int vi = 0; vi < nV; vi++){
 
-        if(AvB(vi) * Constants::dh > 0.0){
-            double val = -0.2 * (Cn(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn(vi) - 3.195); // check on this!
-            (*i0C)(vi) = pow(10.0, val) * 1.0e-3;
+        if(AvB(vi) * Constants::dh > 0.0){ 
+            double val = -0.2 * (Cn(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn(vi) - 3.195);
+            (*i0C)(vi) = pow(10.0, val) * 1.0e-3; // Exchange current density.
 
             (*OCV)(vi) = 1.095 * Cn(vi) * Cn(vi) - 8.324e-7 * exp(14.31 * Cn(vi)) + 4.692 * exp(-0.5389 * Cn(vi));
 
@@ -84,17 +86,18 @@ void Reaction::TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_cu
     mfem::Array<double> VtxVal(nC);
     mfem::Vector EAvg(nE);
 
-
+    // Loop over all elements to calculate local reaction current.
     for (int ei = 0; ei < nE; ei++){
         Rx.GetNodalValues(ei,VtxVal) ;
         double val = 0.0;
         for (int vt = 0; vt < nC; vt++){
             val += VtxVal[vt];
         }
-        EAvg(ei) = val/nC;	
-        local_current += EAvg(ei)*EVol(ei) ;					
+        EAvg(ei) = val/nC;	// Average reaction rate for the element.
+        local_current += EAvg(ei)*EVol(ei) ; // Accumulate local current.		 			
     }
-
+    
+    // Perform global reduction to compute the total current.
     MPI_Allreduce(&local_current, &global_current, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
 }

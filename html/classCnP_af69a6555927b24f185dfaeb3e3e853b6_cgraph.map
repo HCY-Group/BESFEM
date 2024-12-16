@@ -1,9 +1,0 @@
-<map id="CnP::Initialize" name="CnP::Initialize">
-<area shape="rect" id="Node000001" title="Initializes particle concentration values and solver components." alt="" coords="5,77,116,102"/>
-<area shape="rect" id="Node000002" href="$classConcentrations.html#abb0c7b79080574f1121fde9a80b20f61" title="Calculates the degree of lithiation." alt="" coords="173,5,363,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="102,74,163,55,188,47,190,52,165,60,103,79"/>
-<area shape="rect" id="Node000003" href="$classConcentrations.html#a984be132b61b50c531cf44c021356720" title="Sets the initial concentration values across the domain." alt="" coords="175,69,361,109"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="116,87,161,87,161,92,116,92"/>
-<area shape="rect" id="Node000004" href="$classConcentrations.html#aec317b727ea6b82003d477f4b42122f4" title="Sets up the solver for the mass matrix computation." alt="" coords="164,134,372,159"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="101,100,165,119,200,128,198,133,163,124,100,105"/>
-</map>

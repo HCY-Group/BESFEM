@@ -1,9 +1,0 @@
-<map id="CnE::Initialize" name="CnE::Initialize">
-<area shape="rect" id="Node000001" title="Initializes electrolyte concentration values and solver components." alt="" coords="5,63,116,88"/>
-<area shape="rect" id="Node000002" href="$classConcentrations.html#a1db217476e31d28223632093e78ddbed" title="Applies a Neumann boundary condition by negating a potential field." alt="" coords="164,5,421,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,60,163,41,207,31,208,36,165,46,100,65"/>
-<area shape="rect" id="Node000003" href="$classConcentrations.html#a984be132b61b50c531cf44c021356720" title="Sets the initial concentration values across the domain." alt="" coords="199,55,386,95"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="116,73,186,73,186,78,116,78"/>
-<area shape="rect" id="Node000004" href="$classConcentrations.html#aec317b727ea6b82003d477f4b42122f4" title="Sets up the solver for the mass matrix computation." alt="" coords="189,120,397,145"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="100,85,165,105,208,115,207,120,163,110,98,91"/>
-</map>

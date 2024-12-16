@@ -1,5 +1,0 @@
-<map id="Potentials::PCG_Solver" name="Potentials::PCG_Solver">
-<area shape="rect" id="Node000001" title="Configures and attaches a preconditioner to the conjugate gradient solver." alt="" coords="5,5,176,31"/>
-<area shape="rect" id="Node000002" href="$classPotentials.html#a596a026299cf930e10b1f2b75d6f4b08" title="Assembles the stiffness matrix and system for a given potential field." alt="" coords="224,5,371,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="176,15,210,15,210,21,176,21"/>
-</map>
