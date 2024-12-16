@@ -1,3 +1,8 @@
+/**
+ * @file CnP.cpp
+ * @brief Implementation of the electrolyte concentration class for battery simulations.
+ */
+
 #include "CnE.hpp"
 #include "mfem.hpp"
 
@@ -30,35 +35,41 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     Concentrations::SetInitialConcentration(Cn, initial_value);
     Concentrations::SetUpSolver(psx, Mmate, *Me_solver, Me_prec);
 
+    // Apply Neumann boundary conditions to the reaction potential field.
     ImposeNeumannBC(psx, *PeR);
 
 }
 
 void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
 {
-
+    
+    // Scale the reaction field by the transference number.
     Concentrations::CreateReaction(Rx, *RxE, (-1.0 * Constants::t_minus));
     Concentrations::TotalReaction(*RxE, eCrnt);
 
-    // Values used in Force Term Function
+    // Set up coefficients for Neumann boundary conditions.
     mfem::ConstantCoefficient nbcCoef(infx); 
     mfem::GridFunctionCoefficient matCoef_R(PeR);
     mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
-
+    
+    // Apply Neumann boundary conditions to the first boundary attribute.
     mfem::Array<int> nbc_w_bdr(pmesh->bdr_attributes.Max());
 	nbc_w_bdr = 0; 
 	nbc_w_bdr[0] = 1;
-
+    
+    // Assemble the force term with boundary conditions applied.
     Concentrations::ForceTerm(*RxE, ftE, nbc_w_bdr, m_nbcCoef, true); // true since applying BCs
+    
+    // Compute the diffusivity coefficient and stiffness matrix.
     std::shared_ptr<GridFunctionCoefficient> cDe = Concentrations::Diffusivity(psx, Cn, false); // false using other equation
     Concentrations::KMatrix(boundary_dofs, Cn, ftE, Kmate, X1v, Feb, cDe.get());
 
-    // Crank-Nicolson matrices
+    // Form Crank-Nicolson system matrices.
     TmatR = Add(1.0,*Mmate, -0.5*Constants::dt, *Kmate);		
     TmatL = Add(1.0, *Mmate,  0.5*Constants::dt, *Kmate);	
     
+    // Solve for the next time step concentration.
     Cn.GetTrueDofs(*CeV0);	
-
     TmatR->Mult(*CeV0, *RHCe);
     *RHCe += Feb;
     
@@ -66,19 +77,7 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     Me_solver->Mult(*RHCe, *CeVn) ;
 
 	Cn.Distribute(CeVn); 
-
-    // // Get the local data of the HypreParVector
-    // double *CeVn_data = CeVn->GetData();
-
-    // // Print each value of the vector
-    // int size1 = CeVn->Size();
-    // std::cout << "CeVn values in CnE:" << std::endl;
-    // for (int i = 0; i < size1; i++) {
-    // 	std::cout << CeVn_data[i] << " ";
-    // }
-    // std::cout << std::endl;  
-
+ 
+    // Update the total electrolyte salt conservation.
     Concentrations::SaltConservation(Cn, psx);	
-    // std::cout << "CnE: " << Cn << std::endl; 
-
 }
