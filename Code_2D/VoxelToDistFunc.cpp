@@ -272,9 +272,12 @@ int main(int argc, char *argv[])
    		m->Finalize();
    		k->Finalize(skip_zeros);
 
+		solver_dg.FormMatrices();
+
    		HypreParVector *B = b->ParallelAssemble();
 		
 		// TimeDependentOperator and ODESolver
+		//TODO do this a better way so you don't have to initialize every time
 		FE_Evolution adv(*m, *k, *B);
 		double t_ode = 0.0;
 		double dt = 0.1;

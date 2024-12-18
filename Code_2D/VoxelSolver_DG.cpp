@@ -51,3 +51,40 @@ void VoxelSolver_DG::CalcLevelSetVel() {
 	}
 		
 }
+
+void VoxelSolver_DG::FormMatrices() {
+
+	//calculate M matrix
+	this->m = new ParBilinearForm(this->d->ParFESpace());
+	this->m->AddDomainIntegrator(new MassIntegrator);
+	
+	//calculate K matrix
+	real_t alpha = -1.0;
+	this->k = new ParBilinearForm(this->d->ParFESpace());
+	VectorGridFunctionCoefficient cCoef(this->c);
+   	this->k->AddDomainIntegrator(new ConvectionIntegrator(cCoef, alpha));
+  	this->k->AddInteriorFaceIntegrator(
+      		new NonconservativeDGTraceIntegrator(cCoef, alpha));
+		
+	//Add a (small) diffusive term to allow Neumann BCs to be enforced weakly by FEM
+	ConstantCoefficient diffCoef(1e-8);
+	this->k->AddDomainIntegrator(new DiffusionIntegrator(diffCoef));
+	this->k->AddBdrFaceIntegrator(
+		new DGDiffusionIntegrator(diffCoef,-1,-1));
+	this->k->AddInteriorFaceIntegrator(
+		new DGDiffusionIntegrator(diffCoef,-1,-1));
+
+	//Form b vector
+	this->b = new ParLinearForm(this->d->ParFESpace());
+	GridFunctionCoefficient sgnCoef(this->sgn);
+	this->b->AddDomainIntegrator(new DomainLFIntegrator(sgnCoef));
+
+	//Assemble matrices and vectors
+   	int skip_zeros = 0;
+   	this->m->Assemble();
+   	this->k->Assemble(skip_zeros);
+   	this->b->Assemble();
+   	this->m->Finalize();
+   	this->k->Finalize(skip_zeros);
+
+}
