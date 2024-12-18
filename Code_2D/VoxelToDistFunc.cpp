@@ -161,8 +161,6 @@ int main(int argc, char *argv[])
 	ParFiniteElementSpace dfespace_dg(&pmesh, &fec_dg, pmesh.Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
 	maker.Make_DG_FESpace_Parallel();
 
-	VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
-
 	// Define new grid functions
 	ParGridFunction d(&fespace_dg);
 	ParGridFunction c(&dfespace_dg);
@@ -172,9 +170,12 @@ int main(int argc, char *argv[])
 	cout << "size of c: " << c.Size() << endl;
 	cout << "size of Vox: " << Vox.Size() << endl;
 	
+	VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
+	
 	// Set d equal to Vox for initial conditions.
 	// Since they are on different FESpaces, we use ProjectGridFunction()
 	d.ProjectGridFunction(Vox);
+	solver_dg.ProjectVals(solver.GetParallelVox());
 	// Sign function
 	ParGridFunction sgn(&fespace_dg);
 	for (int vi = 0; vi < sgn.Size(); vi++){
@@ -202,6 +203,7 @@ int main(int argc, char *argv[])
 			c(vi+mgGd.Size()) = sgn(vi)*gdY(vi)/mgGd(vi);
 			cy(vi) = c(vi+mgGd.Size());
 		}
+		solver_dg.CalcLevelSetVel();
 		
 		//calculate M and K matrices and b vector
 		real_t alpha = -1.0;
