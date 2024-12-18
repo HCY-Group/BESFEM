@@ -53,7 +53,7 @@ private:
 
     mfem::ParLinearForm ftPC; ///< Linear form for the force term related to particle concentration.
 
-    std::shared_ptr<mfem::HypreParMatrix> ///< Stiffness matrix for diffusion calculations. 
+    std::shared_ptr<mfem::HypreParMatrix> Kmatp; ///< Stiffness matrix for diffusion calculations. 
 
     mfem::HypreParVector Fcb; ///< Right-hand-side vector for the system of equations.
     mfem::Array<int> boundary_dofs; ///< Array to store boundary degrees of freedom.

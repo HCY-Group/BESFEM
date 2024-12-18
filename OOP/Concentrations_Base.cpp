@@ -8,14 +8,13 @@
 #include "mfem.hpp"
 
 Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : pmesh(pm), fespace(fe), mesh_handler(mh), EVol(mh.GetElementVolume()), gtPsi(mesh_handler.GetTotalPsi()), 
-      gtPse(mesh_handler.GetTotalPse())
+    : pmesh(pm), fespace(fe), mesh_handler(mh), EVol(mh.EVol), gtPsi(mh.gtPsi), gtPse(mh.gtPse)
 
 {
     
-    nE = mesh_handler.GetNE(); 
-    nC = mesh_handler.GetNC(); 
-    nV = mesh_handler.GetNV(); 
+    nE = mesh_handler.nE; 
+    nC = mesh_handler.nC; 
+    nV = mesh_handler.nV; 
 
 
 }

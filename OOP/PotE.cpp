@@ -10,7 +10,7 @@
 double BvE = 0.0; ///< Global variable for the boundary value of electrolyte potential.
 
 PotE::PotE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Potentials(pm, fe, mh), dbc_w_bdr(pmesh->bdr_attributes.Max()), gtPse(mesh_handler.GetTotalPse())
+    : Potentials(pm, fe, mh), dbc_w_bdr(pmesh->bdr_attributes.Max()), gtPse(mh.gtPse)
     
     {
 

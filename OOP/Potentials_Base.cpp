@@ -11,13 +11,13 @@
  * @brief Constructor: Initializes the Potentials object.
  */
 Potentials::Potentials(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : pmesh(pm), fespace(fe), mesh_handler(mh), EVol(mh.GetElementVolume())
+    : pmesh(pm), fespace(fe), mesh_handler(mh), EVol(mh.EVol)
 
 {
     
-    nE = mesh_handler.GetNE(); // Number of elements.
-    nC = mesh_handler.GetNC(); // Number of nodes (corners) per element.
-    nV = mesh_handler.GetNV(); // Number of vertices in the mesh.
+    nE = mesh_handler.nE; 
+    nC = mesh_handler.nC; 
+    nV = mesh_handler.nV; 
 
     px0 = new mfem::ParGridFunction(fespace); // Potential values before iteration.
     X0 = mfem::HypreParVector(fespace); // Hypre vector for solving linear systems.
@@ -97,7 +97,6 @@ mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &
     K.FormLinearSystem(boundary, phx, plf_B, matrix, hpv_X, hpv_B); // Form the linear system.
 }
 
-}
 
 
 void Potentials::ErrorCalculation(mfem::ParGridFunction &phx, mfem::CGSolver &cg_solver, mfem::HypreParVector &fterm, mfem::ParGridFunction &psx, double error_X, double &globalerror, double gtPsx){

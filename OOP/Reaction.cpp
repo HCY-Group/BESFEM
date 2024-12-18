@@ -12,13 +12,13 @@
 
 
 Reaction::Reaction(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : pmesh(pm), fespace(fe), mesh_handler(mh), AvP(*mh.GetAvP()), AvB(*mh.GetAvB()), EVol(mh.GetElementVolume())
+    : pmesh(pm), fespace(fe), mesh_handler(mh), AvP(*mh.AvP), AvB(*mh.AvB), EVol(mh.EVol)
 
 {
     
-    nE = mesh_handler.GetNE(); // Number of elements.
-    nC = mesh_handler.GetNC(); // Number of corners.
-    nV = mesh_handler.GetNV(); // Number of vertices.
+    nE = mesh_handler.nE; 
+    nC = mesh_handler.nC; 
+    nV = mesh_handler.nV; 
 
     i0C = new mfem::ParGridFunction(fespace); // exchange current density
     OCV = new mfem::ParGridFunction(fespace); // open circuit voltage

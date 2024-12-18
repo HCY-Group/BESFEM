@@ -30,16 +30,18 @@ int main(int argc, char *argv[]) {
     mesh_handler.LoadMesh();
 
     // Create a parallel mesh and finite element space to use across the simulation. 
-    ParMesh pmesh = mesh_handler.GetMesh();
-    H1_FECollection fec(Constants::order, pmesh.Dimension());
+    mfem::ParMesh &pmesh = *mesh_handler.pmesh.get();
+    mfem::H1_FECollection fec(Constants::order, pmesh.Dimension());
     ParFiniteElementSpace fespace(&pmesh, &fec);
 
     // Setup boundary conditions for the mesh using the MeshHandler.
     mesh_handler.SetupBoundaryConditions(&pmesh, &fespace);
 
     // Retrieve psi (particle phase potential) and pse (electrolyte phase potential) from the MeshHandler.
-    mfem::ParGridFunction &psi = *mesh_handler.GetPsi();
-    mfem::ParGridFunction &pse = *mesh_handler.GetPse();
+    // mfem::ParGridFunction &psi = *mesh_handler.GetPsi();
+    // mfem::ParGridFunction &pse = *mesh_handler.GetPse();
+    mfem::ParGridFunction &psi = *mesh_handler.psi;
+    mfem::ParGridFunction &pse = *mesh_handler.pse;
 
     // **Initialize Concentration Classes**
 
@@ -84,7 +86,7 @@ int main(int argc, char *argv[]) {
     // **Main Simulation Loop**
  
     // Perform simulation over time steps.
-    for (int t = 0; t < 20 + 1; ++t) {
+    for (int t = 0; t < 200 + 1; ++t) {
     // while ( VCell > Constants::VCut) {
 
         // Step 1: Update concentrations for both particle and electrolyte phases.
@@ -121,6 +123,8 @@ int main(int argc, char *argv[]) {
 
         // Step 7: Update the cell voltage based on the particle and electrolyte potentials.
         VCell = BvP - BvE;
+        
+        std::cout << "VCell: " << VCell << std::endl;
 
     }
 
