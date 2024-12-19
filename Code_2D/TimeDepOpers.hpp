@@ -72,6 +72,38 @@ public:
 
 
 
+class AdvectionOperator : public TimeDependentOperator
+{
+protected:
+   //ParFiniteElementSpace &fespace;
+   Array<int> ess_tdof_list; // this list remains empty for pure Neumann b.c.
+
+   ParBilinearForm *M;
+   ParBilinearForm *K;
+
+   HypreParVector b;
+
+   HypreParMatrix Mmat;
+   HypreParMatrix Kmat;
+
+   CGSolver M_solver;    // Krylov solver for inverting the mass matrix M
+   HypreSmoother M_prec; // Preconditioner for the mass matrix M
+
+
+   mutable HypreParVector z; // auxiliary vector
+
+public:
+   AdvectionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb);
+   AdvectionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb, Array<int> &ess_list);
+
+   virtual void Mult(const Vector &u, Vector &du_dt) const;
+   
+   //Update K matrix and b vector
+   void UpdateParams(const HypreParMatrix &K, const HypreParVector &Fb);
+
+   virtual ~AdvectionOperator();
+};
+
 
 
 

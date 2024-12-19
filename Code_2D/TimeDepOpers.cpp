@@ -174,6 +174,65 @@ ConductionOperator::~ConductionOperator()
 
 
 
+
+// Advection Operator
+AdvectionOperator::AdvectionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb)
+   : TimeDependentOperator(K.Height(), K.Width(), (double) 0.0),
+     M_solver(K.GetComm()), T_solver(K.GetComm())
+{
+   const double rel_tol = 1e-8;
+
+   Kmat = K;
+   b = Fb;
+   z = Fb.CreateCompatibleVector();
+   
+   GridFunctionCoefficient cp(&ps);
+   
+   M = new ParBilinearForm(ps.ParFESpace());
+   M->AddDomainIntegrator(new MassIntegrator);
+   M->Assemble(); // keep sparsity pattern of M and K the same
+   M->FormSystemMatrix(ess_tdof_list, Mmat);
+   
+   M_solver.iterative_mode = false;
+   M_solver.SetRelTol(rel_tol);
+   M_solver.SetAbsTol(0.0);
+   M_solver.SetMaxIter(100);
+   M_solver.SetPrintLevel(0);
+   M_prec.SetType(HypreSmoother::Jacobi);
+   M_solver.SetPreconditioner(M_prec);
+   M_solver.SetOperator(Mmat);
+
+}
+
+void AdvectionOperator::Mult(const Vector &u, Vector &du_dt) const
+{
+   // Compute:
+   //    du_dt = M^{-1} (Ku + b)
+   // for du_dt, where K is linearized by using u from the previous timestep
+   Kmat.Mult(u, z);
+   z += b;
+   M_solver.Mult(z, du_dt);
+}
+
+
+
+void AdvectionOperator::UpdateParams(const HypreParMatrix &K, const HypreParVector &Fb)
+{
+   Kmat = K;
+   b = Fb;
+}
+
+
+AdvectionOperator::~AdvectionOperator()
+{
+   delete M;
+}
+
+
+
+
+
+
 // Implementation of class FE_Evolution
 FE_Evolution::FE_Evolution(ParBilinearForm &M_, ParBilinearForm &K_,
                            const Vector &b_)
