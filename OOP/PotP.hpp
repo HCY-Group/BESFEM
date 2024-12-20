@@ -65,10 +65,6 @@ public:
      */
     static mfem::CGSolver *GetcgPPsolver() { return cgPP_solver; }
 
-    mfem::Array<int> ess_tdof_list_e; ///< List of essential true degrees of freedom for Dirichlet boundary conditions.
-    mfem::ConstantCoefficient dbc_e_Coef; ///< Coefficient for Dirichlet boundary conditions.
-    mfem::Array<int> dbc_e_bdr; ///< Array marking Dirichlet boundary attributes.
-
     double error_P = 1.0; ///< Local error in the particle potential solution.
 
 
@@ -89,6 +85,11 @@ private:
     mfem::HypreParMatrix KmP; ///< Stiffness matrix for conductivity.
 
     double gtPsi; ///< Total Psi from MeshHandler.
+
+    mfem::Array<int> ess_tdof_list_e; ///< List of essential true degrees of freedom for Dirichlet boundary conditions.
+    mfem::ConstantCoefficient dbc_e_Coef; ///< Coefficient for Dirichlet boundary conditions.
+    mfem::Array<int> dbc_e_bdr; ///< Array marking Dirichlet boundary attributes.
+
 
 };
 

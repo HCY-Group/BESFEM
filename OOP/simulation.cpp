@@ -38,8 +38,6 @@ int main(int argc, char *argv[]) {
     mesh_handler.SetupBoundaryConditions(&pmesh, &fespace);
 
     // Retrieve psi (particle phase potential) and pse (electrolyte phase potential) from the MeshHandler.
-    // mfem::ParGridFunction &psi = *mesh_handler.GetPsi();
-    // mfem::ParGridFunction &pse = *mesh_handler.GetPse();
     mfem::ParGridFunction &psi = *mesh_handler.psi;
     mfem::ParGridFunction &pse = *mesh_handler.pse;
 
@@ -86,8 +84,8 @@ int main(int argc, char *argv[]) {
     // **Main Simulation Loop**
  
     // Perform simulation over time steps.
-    for (int t = 0; t < 200 + 1; ++t) {
-    // while ( VCell > Constants::VCut) {
+    // for (int t = 0; t < 200 + 1; ++t) {
+    while ( VCell > Constants::VCut) {
 
         // Step 1: Update concentrations for both particle and electrolyte phases.
         particle_concentration.TimeStep(Rxn_gf, CnP_gf, psi);
@@ -130,11 +128,11 @@ int main(int argc, char *argv[]) {
 
     // **Optional: Save Simulation Outputs**
     // Save mesh and solution fields (if needed).
-    // pmesh.Save("pmesh");
-    // CnP_gf.Save("CnP");
-    // CnE_gf.Save("CnE");
-    // phP_gf.Save("phP");
-    // phE_gf.Save("phE");
+    pmesh.Save("Results/pmesh");
+    CnP_gf.Save("Results/CnP");
+    CnE_gf.Save("Results/CnE");
+    phP_gf.Save("Results/phP");
+    phE_gf.Save("Results/phE");
 
     // Finalize MPI processing.
     Mpi::Finalize();

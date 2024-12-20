@@ -9,7 +9,7 @@
 double BvP = 0.0; ///< Global variable for the boundary value of particle potential.
 
 PotP::PotP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Potentials(pm, fe, mh), dbc_e_bdr(pmesh->bdr_attributes.Max()), gtPsi(mh.gtPsi)
+    : Potentials(pm, fe, mh), dbc_e_bdr(mh.dbc_e_bdr), gtPsi(mh.gtPsi), ess_tdof_list_e(mh.ess_tdof_list_e)
     
     {
 
@@ -24,11 +24,11 @@ PotP::PotP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     X1v = mfem::HypreParVector(fespace);
     B1v = mfem::HypreParVector(fespace);
 
-    dbc_e_bdr.SetSize(pmesh->bdr_attributes.Max());  // Resize based on mesh attributes.
-    dbc_e_bdr = 0; // fix this
-    dbc_e_bdr[2] = 1; // Applying Dirichlet BC to the east boundary
+    // dbc_e_bdr.SetSize(pmesh->bdr_attributes.Max());  // Resize based on mesh attributes.
+    // dbc_e_bdr = 0; // fix this
+    // dbc_e_bdr[2] = 1; // Applying Dirichlet BC to the east boundary
 
-    mfem:: Array<int> ess_tdof_list_e(0); // Initialize essential DoF list.
+    // mfem:: Array<int> ess_tdof_list_e(0); // Initialize essential DoF list.
 
 
     }

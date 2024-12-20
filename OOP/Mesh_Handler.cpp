@@ -12,9 +12,7 @@ double gTrgI = 0.0;
 MeshHandler::MeshHandler()
     : mesh_file(Constants::mesh_file), dsF_file(Constants::dsF_file), order(Constants::order), dh(Constants::dh), 
       zeta(Constants::zeta), eps(Constants::eps), rho(Constants::rho), Cr(Constants::Cr),
-      gtPsi(0.0), gtPse(0.0){
-
-      }
+      gtPsi(0.0), gtPse(0.0){}
 
 
 // Function to Initialize and Print Mesh Information
@@ -22,7 +20,6 @@ void MeshHandler::LoadMesh() {
 
     InitializeMesh();
     PrintMeshInfo();
-
     MPI_Barrier(MPI_COMM_WORLD);
 
 }
@@ -96,7 +93,7 @@ void MeshHandler::CalculateElementVolume(const std::unique_ptr<mfem::ParMesh>& p
 
 // Read global distance function
 void MeshHandler::ReadGlobalDistanceFunction(const std::unique_ptr<mfem::FiniteElementSpace>& fespace) {
-    gDsF = make_unique<GridFunction>(fespace.get());
+    gDsF = make_unique<mfem::GridFunction>(fespace.get());
     Onm = gDsF->Size();
     ifstream myfile(dsF_file);
     for (int gi = 0; gi < Onm; gi++) {
@@ -106,10 +103,10 @@ void MeshHandler::ReadGlobalDistanceFunction(const std::unique_ptr<mfem::FiniteE
 }
 
 void MeshHandler::InitializeGridFunctions(const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace) {
-    psi = make_unique<ParGridFunction>(fespace.get());
-    pse = make_unique<ParGridFunction>(fespace.get());
-    AvP = make_unique<ParGridFunction>(fespace.get());
-    AvB = make_unique<ParGridFunction>(fespace.get());
+    psi = make_unique<mfem::ParGridFunction>(fespace.get());
+    pse = make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP = make_unique<mfem::ParGridFunction>(fespace.get());
+    AvB = make_unique<mfem::ParGridFunction>(fespace.get());
 }
 
 void MeshHandler::InterpolateDomainParameters(const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace) {
@@ -200,30 +197,28 @@ void MeshHandler::PrintMeshInfo() {
 }
 
 void MeshHandler::SetupBoundaryConditions(mfem::ParMesh *pmesh, mfem::ParFiniteElementSpace *fespace) {
-    
-    mfem::Array<int> boundary_dofs;
-    
+        
     // Boundary attributes for Neumann BC on the west boundary
-    mfem::Array<int> nbc_w_bdr(pmesh->bdr_attributes.Max());
+    nbc_w_bdr.SetSize(pmesh->bdr_attributes.Max());
     nbc_w_bdr = 0; 
     nbc_w_bdr[0] = 1;  // Applying Neumann BC to the west boundary
 
     // Dirichlet BC on the east boundary for CnP
-    mfem::Array<int> dbc_e_bdr(pmesh->bdr_attributes.Max());
+    dbc_e_bdr.SetSize(pmesh->bdr_attributes.Max());
     dbc_e_bdr = 0; 
     dbc_e_bdr[2] = 1;  // Applying Dirichlet BC to the east boundary
 
     // Extract essential true DOFs (Dirichlet BCs) on the east boundary
-    mfem::Array<int> ess_tdof_list_e(0);
+    // mfem::Array<int> ess_tdof_list_e(0);
     fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
 
     // Dirichlet BC on the west boundary for CnE
-    mfem::Array<int> dbc_w_bdr(pmesh->bdr_attributes.Max());
+    dbc_w_bdr.SetSize(pmesh->bdr_attributes.Max());
     dbc_w_bdr = 0; 
     dbc_w_bdr[0] = 1;  // Applying Dirichlet BC to the west boundary
 
     // Extract essential true DOFs (Dirichlet BCs) on the west boundary
-    mfem::Array<int> ess_tdof_list_w(0);
+    // mfem::Array<int> ess_tdof_list_w(0);
     fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
     
 }

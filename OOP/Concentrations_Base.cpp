@@ -110,14 +110,14 @@ void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFun
 void Concentrations::ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &Fxx, mfem::Array<int> boundary, mfem::ProductCoefficient m, bool apply_boundary_conditions) {
     
     // Create a unique pointer to a parallel linear form associated with the finite element space.
-    std::unique_ptr<ParLinearForm> Bx2(new ParLinearForm(fespace));	
+    std::unique_ptr<mfem::ParLinearForm> Bx2(new mfem::ParLinearForm(fespace));	
     
     // Initialize a new ParGridFunction to hold the input field and copy values from gfc.
-    Rxx = new ParGridFunction(fespace);
+    Rxx = new mfem::ParGridFunction(fespace);
     *Rxx = gfc;
     
     // Create a GridFunctionCoefficient from the ParGridFunction for use in integrators.
-    cXx = new GridFunctionCoefficient(Rxx);
+    cXx = new mfem::GridFunctionCoefficient(Rxx);
 
     // Add a domain integrator to compute contributions from the entire domain.
     Bx2->AddDomainIntegrator(new DomainLFIntegrator(*cXx));

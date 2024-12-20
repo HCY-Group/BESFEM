@@ -10,7 +10,7 @@
 double BvE = 0.0; ///< Global variable for the boundary value of electrolyte potential.
 
 PotE::PotE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Potentials(pm, fe, mh), dbc_w_bdr(pmesh->bdr_attributes.Max()), gtPse(mh.gtPse)
+    : Potentials(pm, fe, mh), dbc_w_bdr(mh.dbc_w_bdr), gtPse(mh.gtPse), ess_tdof_list_w(mh.ess_tdof_list_w)
     
     {
 
@@ -33,11 +33,11 @@ PotE::PotE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     LpCe = new mfem::HypreParVector(fespace);
     CeVn = new mfem::HypreParVector(fespace);
 
-    dbc_w_bdr.SetSize(pmesh->bdr_attributes.Max());  // Resize based on the mesh
-    dbc_w_bdr = 0; // fix this
-    dbc_w_bdr[0] = 1; // Apply Dirichlet BC on the first boundary attribute.
+    // dbc_w_bdr.SetSize(pmesh->bdr_attributes.Max());  // Resize based on the mesh
+    // dbc_w_bdr = 0; // fix this
+    // dbc_w_bdr[0] = 1; // Apply Dirichlet BC on the first boundary attribute.
 
-    Array<int> ess_tdof_list_w(0); // Essential true DoF list initialization.
+    // Array<int> ess_tdof_list_w(0); // Essential true DoF list initialization.
 
     }
 

@@ -8,7 +8,7 @@
 
 
 CnE::CnE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Concentrations(pm, fe, mh) 
+    : Concentrations(pm, fe, mh), nbc_w_bdr(mh.nbc_w_bdr)
     
     {
 
@@ -52,10 +52,10 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     mfem::GridFunctionCoefficient matCoef_R(PeR);
     mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
     
-    // Apply Neumann boundary conditions to the first boundary attribute.
-    mfem::Array<int> nbc_w_bdr(pmesh->bdr_attributes.Max());
-	nbc_w_bdr = 0; 
-	nbc_w_bdr[0] = 1;
+    // // Apply Neumann boundary conditions to the first boundary attribute.
+    // mfem::Array<int> nbc_w_bdr(pmesh->bdr_attributes.Max());
+	// nbc_w_bdr = 0; 
+	// nbc_w_bdr[0] = 1;
     
     // Assemble the force term with boundary conditions applied.
     Concentrations::ForceTerm(*RxE, ftE, nbc_w_bdr, m_nbcCoef, true); // true since applying BCs
