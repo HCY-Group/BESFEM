@@ -9,7 +9,8 @@ public:
 	VoxelSolver_DG(FiniteElementSpace *gfes, ParFiniteElementSpace *fes_h1, ParFiniteElementSpace *fes_dg, ParFiniteElementSpace *dimfes_dg); //constructor with parallel
 	void ProjectVals(ParGridFunction *gf);
 	void CalcLevelSetVel();
-	void FormMatrices();
+	void FormMatrices(Array<int> ess_tdof_list);
+	void UpdateMatricesAndSolve(Array<int> ess_tdof_list, double t_ode, double dt);
 
 private:
 	ParGridFunction *d = nullptr;
@@ -21,6 +22,8 @@ private:
 	ParBilinearForm *m = nullptr;
 	ParBilinearForm *k = nullptr;
 	ParLinearForm *b = nullptr;
+	
+	AdvectionOperator* advec = nullptr;
 };
 
 #endif

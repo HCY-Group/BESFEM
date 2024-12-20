@@ -26,6 +26,9 @@ public:
 	
 	GridFunction* GetGlobalVox() {return gVox;}
 	ParGridFunction* GetParallelVox() {return Vox;}
+
+protected:
+	ODESolver* ode_solver;
 	
 private:
 	GridFunction* gVox;
@@ -37,7 +40,6 @@ private:
 	//HypreParVector Fcb;
 	
 	ConductionOperator* oper;
-	ODESolver* ode_solver;
 };
 
 #endif

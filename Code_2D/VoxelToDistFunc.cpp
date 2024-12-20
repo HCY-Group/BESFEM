@@ -182,7 +182,8 @@ int main(int argc, char *argv[])
 		sgn(vi) = (d(vi)<0.5) ? -1 : 1;
 	}
 	
-	HypreParVector *D = d.GetTrueDofs();
+	HypreParVector *D;
+	D = d.GetTrueDofs();
 		//gradient of d
 		ParGridFunction gdX(&fespace_dg);
 		ParGridFunction gdY(&fespace_dg);
@@ -195,12 +196,29 @@ int main(int argc, char *argv[])
 			// magnitude of gradient
 			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
 			// c_x
+			cx(vi) = sgn(vi)*gdX(vi)/mgGd(vi);
+			// c_y
+			cy(vi) = sgn(vi)*gdY(vi)/mgGd(vi);
+			if (mgGd(vi) < 1e-3){
+				cx(vi) = 0.0;
+				cy(vi) = 0.0;
+			}
+			c(vi) = cx(vi);
+			c(vi+mgGd.Size()) = cy(vi);
+		}
+		/*
+		ParGridFunction mgGd(&fespace_dg);
+		for (int vi = 0; vi < mgGd.Size(); vi++){
+			// magnitude of gradient
+			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
+			// c_x
 			c(vi) = sgn(vi)*gdX(vi)/mgGd(vi);
 			cx(vi) = c(vi);
 			// c_y
 			c(vi+mgGd.Size()) = sgn(vi)*gdY(vi)/mgGd(vi);
 			cy(vi) = c(vi+mgGd.Size());
 		}
+		*/
 		solver_dg.CalcLevelSetVel();
 		
 		//calculate M and K matrices and b vector
@@ -243,8 +261,12 @@ int main(int argc, char *argv[])
 		
 		ODESolver *ode_solver_dg2 = new ForwardEulerSolver;
 		ode_solver_dg2->Init(advec);
+		
+		solver_dg.FormMatrices(ess_tdof_list);
 	// Time Stepping
-	for (int t = 0; t < 10; t++){
+	for (int t = 0; t < 50; t++){
+		D = d.GetTrueDofs();
+		
 		//gradient of d
 		ParGridFunction gdX(&fespace_dg);
 		ParGridFunction gdY(&fespace_dg);
@@ -257,11 +279,15 @@ int main(int argc, char *argv[])
 			// magnitude of gradient
 			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
 			// c_x
-			c(vi) = sgn(vi)*gdX(vi)/mgGd(vi);
-			cx(vi) = c(vi);
+			cx(vi) = sgn(vi)*gdX(vi)/mgGd(vi);
 			// c_y
-			c(vi+mgGd.Size()) = sgn(vi)*gdY(vi)/mgGd(vi);
-			cy(vi) = c(vi+mgGd.Size());
+			cy(vi) = sgn(vi)*gdY(vi)/mgGd(vi);
+			if (mgGd(vi) < 1e-3){
+				cx(vi) = 0.0;
+				cy(vi) = 0.0;
+			}
+			c(vi) = cx(vi);
+			c(vi+mgGd.Size()) = cy(vi);
 		}
 		solver_dg.CalcLevelSetVel();
 		
@@ -332,13 +358,12 @@ int main(int argc, char *argv[])
    		m->Finalize();
    		k->Finalize(skip_zeros);
 
-		solver_dg.FormMatrices();
 
    		HypreParVector *B = b->ParallelAssemble();
 		
 		// TimeDependentOperator and ODESolver
 		//TODO do this a better way so you don't have to initialize every time
-		FE_Evolution adv(*m, *k, *B);
+		//FE_Evolution adv(*m, *k, *B);
 		double t_ode = 0.0;
 		double dt = 0.1;
 		//ODESolver *ode_solver_dg = new ForwardEulerSolver;
@@ -351,15 +376,18 @@ int main(int argc, char *argv[])
 		cout << "iter: " << t << " max distance: " << D->Max() << endl;
 		cout << "iter: " << t << " min distance: " << D->Min() << endl;
 		
+		solver_dg.UpdateMatricesAndSolve(ess_tdof_list, t_ode, dt);
+		
 		//free memory
 		delete m;
 		delete k;
 		delete b;
 		delete B;
 		//delete ode_solver_dg;
-	
+		
+		d.Distribute(D);
 	}
-	d.Distribute(D);
+	//d.Distribute(D);
 	
 	
 	// Output Distance to Paraview
