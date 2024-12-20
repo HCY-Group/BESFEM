@@ -183,6 +183,66 @@ int main(int argc, char *argv[])
 	}
 	
 	HypreParVector *D = d.GetTrueDofs();
+		//gradient of d
+		ParGridFunction gdX(&fespace_dg);
+		ParGridFunction gdY(&fespace_dg);
+		d.GetDerivative(1,0,gdX);
+		d.GetDerivative(1,1,gdY);
+		
+		//calculate c ("velocity")
+		ParGridFunction mgGd(&fespace_dg);
+		for (int vi = 0; vi < mgGd.Size(); vi++){
+			// magnitude of gradient
+			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
+			// c_x
+			c(vi) = sgn(vi)*gdX(vi)/mgGd(vi);
+			cx(vi) = c(vi);
+			// c_y
+			c(vi+mgGd.Size()) = sgn(vi)*gdY(vi)/mgGd(vi);
+			cy(vi) = c(vi+mgGd.Size());
+		}
+		solver_dg.CalcLevelSetVel();
+		
+		//calculate M and K matrices and b vector
+		real_t alpha = -1.0;
+		ParBilinearForm *m = new ParBilinearForm(&fespace_dg);
+		m->AddDomainIntegrator(new MassIntegrator);
+		
+		ParBilinearForm *k = new ParBilinearForm(&fespace_dg);
+		VectorGridFunctionCoefficient cCoef(&c);
+   		k->AddDomainIntegrator(new ConvectionIntegrator(cCoef, alpha));
+  		k->AddInteriorFaceIntegrator(
+      			new NonconservativeDGTraceIntegrator(cCoef, alpha));
+   		//k->AddBdrFaceIntegrator(
+      		//	new NonconservativeDGTraceIntegrator(cCoef, alpha));
+		
+		//Add a (small) diffusive term to allow Neumann BCs to be enforced weakly by FEM
+		ConstantCoefficient diffCoef(1e-8);
+		k->AddDomainIntegrator(new DiffusionIntegrator(diffCoef));
+		k->AddBdrFaceIntegrator(
+			new DGDiffusionIntegrator(diffCoef,-1,-1));
+		k->AddInteriorFaceIntegrator(
+			new DGDiffusionIntegrator(diffCoef,-1,-1));
+	
+		ParLinearForm *b = new ParLinearForm(&fespace_dg);
+		GridFunctionCoefficient sgnCoef(&sgn);
+		b->AddDomainIntegrator(new DomainLFIntegrator(sgnCoef));
+	
+   		int skip_zeros = 0;
+   		m->Assemble();
+   		k->Assemble(skip_zeros);
+   		b->Assemble();
+   		m->Finalize();
+   		k->Finalize(skip_zeros);
+		
+   		HypreParVector *B = b->ParallelAssemble();
+		Array<int> ess_tdof_list(0);
+		HypreParMatrix Kmat;
+		k->FormSystemMatrix(ess_tdof_list, Kmat);
+		AdvectionOperator advec(d, Kmat, *B);
+		
+		ODESolver *ode_solver_dg2 = new ForwardEulerSolver;
+		ode_solver_dg2->Init(advec);
 	// Time Stepping
 	for (int t = 0; t < 10; t++){
 		//gradient of d
@@ -281,9 +341,13 @@ int main(int argc, char *argv[])
 		FE_Evolution adv(*m, *k, *B);
 		double t_ode = 0.0;
 		double dt = 0.1;
-		ODESolver *ode_solver_dg = new ForwardEulerSolver;
-		ode_solver_dg->Init(adv);
-		ode_solver_dg->Step(*D, t_ode, dt);
+		//ODESolver *ode_solver_dg = new ForwardEulerSolver;
+		//ode_solver_dg->Init(adv);
+		//ode_solver_dg->Step(*D, t_ode, dt);
+		
+		k->FormSystemMatrix(ess_tdof_list, Kmat);
+		advec.UpdateParams(Kmat, *B);
+		ode_solver_dg2->Step(*D, t_ode, dt);
 		cout << "iter: " << t << " max distance: " << D->Max() << endl;
 		cout << "iter: " << t << " min distance: " << D->Min() << endl;
 		
@@ -292,7 +356,7 @@ int main(int argc, char *argv[])
 		delete k;
 		delete b;
 		delete B;
-		delete ode_solver_dg;
+		//delete ode_solver_dg;
 	
 	}
 	d.Distribute(D);

@@ -178,7 +178,7 @@ ConductionOperator::~ConductionOperator()
 // Advection Operator
 AdvectionOperator::AdvectionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb)
    : TimeDependentOperator(K.Height(), K.Width(), (double) 0.0),
-     M_solver(K.GetComm()), T_solver(K.GetComm())
+     M_solver(K.GetComm())
 {
    const double rel_tol = 1e-8;
 
