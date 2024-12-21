@@ -162,6 +162,7 @@ int main(int argc, char *argv[])
 	maker.Make_DG_FESpace_Parallel();
 
 	// Define new grid functions
+	/*
 	ParGridFunction d(&fespace_dg);
 	ParGridFunction c(&dfespace_dg);
 	ParGridFunction cx(&fespace_dg);
@@ -169,19 +170,21 @@ int main(int argc, char *argv[])
 	cout << "size of d: " << d.Size() << endl;
 	cout << "size of c: " << c.Size() << endl;
 	cout << "size of Vox: " << Vox.Size() << endl;
-	
+	*/
 	VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
 	
 	// Set d equal to Vox for initial conditions.
 	// Since they are on different FESpaces, we use ProjectGridFunction()
+	/*
 	d.ProjectGridFunction(Vox);
-	solver_dg.ProjectVals(solver.GetParallelVox());
 	// Sign function
 	ParGridFunction sgn(&fespace_dg);
 	for (int vi = 0; vi < sgn.Size(); vi++){
 		sgn(vi) = (d(vi)<0.5) ? -1 : 1;
 	}
-	
+	*/
+	solver_dg.ProjectVals(solver.GetParallelVox());
+	/*
 	HypreParVector *D;
 	D = d.GetTrueDofs();
 		//gradient of d
@@ -206,6 +209,7 @@ int main(int argc, char *argv[])
 			c(vi) = cx(vi);
 			c(vi+mgGd.Size()) = cy(vi);
 		}
+		*/
 		/*
 		ParGridFunction mgGd(&fespace_dg);
 		for (int vi = 0; vi < mgGd.Size(); vi++){
@@ -395,14 +399,14 @@ int main(int argc, char *argv[])
 	
 	
 	// Output Distance to Paraview
-	ParGridFunction d2(*solver_dg.GetDistFunc());
-	d = d2;
+	ParGridFunction d(*solver_dg.GetDistFunc());
+	//d = d2;
 	cout << "PRINTING OUT DistanceFunction" << endl;
 	solver.ParaviewSave("DstFun","Dst",&d);
 
 	// Output Advection Velocity to Paraview
-	ParGridFunction c2(*solver_dg.GetAdvVel());
-	c = c2;
+	ParGridFunction c(*solver_dg.GetAdvVel());
+	//c = c2;
 	solver.ParaviewSave("AdvVel","Vel",&c);
 
 
