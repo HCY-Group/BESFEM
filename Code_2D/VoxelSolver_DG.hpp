@@ -12,6 +12,9 @@ public:
 	void FormMatrices(Array<int> ess_tdof_list);
 	void UpdateMatricesAndSolve(Array<int> ess_tdof_list, double t_ode, double dt);
 
+	ParGridFunction* GetDistFunc() {return d;}
+	ParGridFunction* GetAdvVel() {return c;}
+	
 private:
 	ParGridFunction *d = nullptr;
 	ParGridFunction *c = nullptr;

@@ -222,6 +222,7 @@ int main(int argc, char *argv[])
 		solver_dg.CalcLevelSetVel();
 		
 		//calculate M and K matrices and b vector
+		/*
 		real_t alpha = -1.0;
 		ParBilinearForm *m = new ParBilinearForm(&fespace_dg);
 		m->AddDomainIntegrator(new MassIntegrator);
@@ -252,19 +253,20 @@ int main(int argc, char *argv[])
    		b->Assemble();
    		m->Finalize();
    		k->Finalize(skip_zeros);
-		
-   		HypreParVector *B = b->ParallelAssemble();
-		Array<int> ess_tdof_list(0);
-		HypreParMatrix Kmat;
-		k->FormSystemMatrix(ess_tdof_list, Kmat);
-		AdvectionOperator advec(d, Kmat, *B);
+		*/
+   		//HypreParVector *B = b->ParallelAssemble();
+		//Array<int> ess_tdof_list(0);
+		//HypreParMatrix Kmat;
+		//k->FormSystemMatrix(ess_tdof_list, Kmat);
+		//AdvectionOperator advec(d, Kmat, *B);
 		
 		ODESolver *ode_solver_dg2 = new ForwardEulerSolver;
-		ode_solver_dg2->Init(advec);
+		//ode_solver_dg2->Init(advec);
 		
-		solver_dg.FormMatrices(ess_tdof_list);
+		solver_dg.FormMatrices(boundary_dofs);
 	// Time Stepping
 	for (int t = 0; t < 50; t++){
+		/*
 		D = d.GetTrueDofs();
 		
 		//gradient of d
@@ -289,8 +291,9 @@ int main(int argc, char *argv[])
 			c(vi) = cx(vi);
 			c(vi+mgGd.Size()) = cy(vi);
 		}
+		*/
 		solver_dg.CalcLevelSetVel();
-		
+		/*
 		//calculate M and K matrices and b vector
 		real_t alpha = -1.0;
 		ParBilinearForm *m = new ParBilinearForm(&fespace_dg);
@@ -315,7 +318,7 @@ int main(int argc, char *argv[])
 		//	new DiffusionIntegrator);
 		//k->AddBoundaryIntegrator(
 		//	new DiffusionIntegrator);
-
+		*/
 		/*
 		cx.Neg();
 		GridFunctionCoefficient c_cx(&cx);
@@ -325,9 +328,9 @@ int main(int argc, char *argv[])
 			new BoundaryMassIntegrator(c_cx));
 		*/
 
-		ParLinearForm *b = new ParLinearForm(&fespace_dg);
-		GridFunctionCoefficient sgnCoef(&sgn);
-		b->AddDomainIntegrator(new DomainLFIntegrator(sgnCoef));
+		//ParLinearForm *b = new ParLinearForm(&fespace_dg);
+		//GridFunctionCoefficient sgnCoef(&sgn);
+		//b->AddDomainIntegrator(new DomainLFIntegrator(sgnCoef));
 		
 		//ParGridFunction zeros(&fespace_dg);
 		//zeros = 5.0;
@@ -350,17 +353,17 @@ int main(int argc, char *argv[])
 			new BoundaryFlowIntegrator(c_cy, cCoef, alpha), nsbdr);
 		//b->AddBdrFaceIntegrator(new BoundaryLFIntegrator(inflow));
 		*/
-
+		/*
    		int skip_zeros = 0;
    		m->Assemble();
    		k->Assemble(skip_zeros);
    		b->Assemble();
    		m->Finalize();
    		k->Finalize(skip_zeros);
-
+		
 
    		HypreParVector *B = b->ParallelAssemble();
-		
+		*/
 		// TimeDependentOperator and ODESolver
 		//TODO do this a better way so you don't have to initialize every time
 		//FE_Evolution adv(*m, *k, *B);
@@ -369,15 +372,15 @@ int main(int argc, char *argv[])
 		//ODESolver *ode_solver_dg = new ForwardEulerSolver;
 		//ode_solver_dg->Init(adv);
 		//ode_solver_dg->Step(*D, t_ode, dt);
-		
+		/*	
 		k->FormSystemMatrix(ess_tdof_list, Kmat);
 		advec.UpdateParams(Kmat, *B);
 		ode_solver_dg2->Step(*D, t_ode, dt);
 		cout << "iter: " << t << " max distance: " << D->Max() << endl;
 		cout << "iter: " << t << " min distance: " << D->Min() << endl;
-		
-		solver_dg.UpdateMatricesAndSolve(ess_tdof_list, t_ode, dt);
-		
+		*/
+		solver_dg.UpdateMatricesAndSolve(boundary_dofs, t_ode, dt);
+		/*
 		//free memory
 		delete m;
 		delete k;
@@ -386,15 +389,20 @@ int main(int argc, char *argv[])
 		//delete ode_solver_dg;
 		
 		d.Distribute(D);
+		*/
 	}
 	//d.Distribute(D);
 	
 	
 	// Output Distance to Paraview
+	ParGridFunction d2(*solver_dg.GetDistFunc());
+	d = d2;
 	cout << "PRINTING OUT DistanceFunction" << endl;
 	solver.ParaviewSave("DstFun","Dst",&d);
 
 	// Output Advection Velocity to Paraview
+	ParGridFunction c2(*solver_dg.GetAdvVel());
+	c = c2;
 	solver.ParaviewSave("AdvVel","Vel",&c);
 
 
