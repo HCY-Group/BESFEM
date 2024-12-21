@@ -161,241 +161,24 @@ int main(int argc, char *argv[])
 	ParFiniteElementSpace dfespace_dg(&pmesh, &fec_dg, pmesh.Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
 	maker.Make_DG_FESpace_Parallel();
 
-	// Define new grid functions
-	/*
-	ParGridFunction d(&fespace_dg);
-	ParGridFunction c(&dfespace_dg);
-	ParGridFunction cx(&fespace_dg);
-	ParGridFunction cy(&fespace_dg);
-	cout << "size of d: " << d.Size() << endl;
-	cout << "size of c: " << c.Size() << endl;
-	cout << "size of Vox: " << Vox.Size() << endl;
-	*/
+	
 	VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
 	
-	// Set d equal to Vox for initial conditions.
-	// Since they are on different FESpaces, we use ProjectGridFunction()
-	/*
-	d.ProjectGridFunction(Vox);
-	// Sign function
-	ParGridFunction sgn(&fespace_dg);
-	for (int vi = 0; vi < sgn.Size(); vi++){
-		sgn(vi) = (d(vi)<0.5) ? -1 : 1;
-	}
-	*/
 	solver_dg.ProjectVals(solver.GetParallelVox());
-	/*
-	HypreParVector *D;
-	D = d.GetTrueDofs();
-		//gradient of d
-		ParGridFunction gdX(&fespace_dg);
-		ParGridFunction gdY(&fespace_dg);
-		d.GetDerivative(1,0,gdX);
-		d.GetDerivative(1,1,gdY);
+	solver_dg.CalcLevelSetVel();
 		
-		//calculate c ("velocity")
-		ParGridFunction mgGd(&fespace_dg);
-		for (int vi = 0; vi < mgGd.Size(); vi++){
-			// magnitude of gradient
-			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
-			// c_x
-			cx(vi) = sgn(vi)*gdX(vi)/mgGd(vi);
-			// c_y
-			cy(vi) = sgn(vi)*gdY(vi)/mgGd(vi);
-			if (mgGd(vi) < 1e-3){
-				cx(vi) = 0.0;
-				cy(vi) = 0.0;
-			}
-			c(vi) = cx(vi);
-			c(vi+mgGd.Size()) = cy(vi);
-		}
-		*/
-		/*
-		ParGridFunction mgGd(&fespace_dg);
-		for (int vi = 0; vi < mgGd.Size(); vi++){
-			// magnitude of gradient
-			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
-			// c_x
-			c(vi) = sgn(vi)*gdX(vi)/mgGd(vi);
-			cx(vi) = c(vi);
-			// c_y
-			c(vi+mgGd.Size()) = sgn(vi)*gdY(vi)/mgGd(vi);
-			cy(vi) = c(vi+mgGd.Size());
-		}
-		*/
-		solver_dg.CalcLevelSetVel();
+	ODESolver *ode_solver_dg2 = new ForwardEulerSolver; // WHY IS THIS LINE NECESSARY???
 		
-		//calculate M and K matrices and b vector
-		/*
-		real_t alpha = -1.0;
-		ParBilinearForm *m = new ParBilinearForm(&fespace_dg);
-		m->AddDomainIntegrator(new MassIntegrator);
-		
-		ParBilinearForm *k = new ParBilinearForm(&fespace_dg);
-		VectorGridFunctionCoefficient cCoef(&c);
-   		k->AddDomainIntegrator(new ConvectionIntegrator(cCoef, alpha));
-  		k->AddInteriorFaceIntegrator(
-      			new NonconservativeDGTraceIntegrator(cCoef, alpha));
-   		//k->AddBdrFaceIntegrator(
-      		//	new NonconservativeDGTraceIntegrator(cCoef, alpha));
-		
-		//Add a (small) diffusive term to allow Neumann BCs to be enforced weakly by FEM
-		ConstantCoefficient diffCoef(1e-8);
-		k->AddDomainIntegrator(new DiffusionIntegrator(diffCoef));
-		k->AddBdrFaceIntegrator(
-			new DGDiffusionIntegrator(diffCoef,-1,-1));
-		k->AddInteriorFaceIntegrator(
-			new DGDiffusionIntegrator(diffCoef,-1,-1));
-	
-		ParLinearForm *b = new ParLinearForm(&fespace_dg);
-		GridFunctionCoefficient sgnCoef(&sgn);
-		b->AddDomainIntegrator(new DomainLFIntegrator(sgnCoef));
-	
-   		int skip_zeros = 0;
-   		m->Assemble();
-   		k->Assemble(skip_zeros);
-   		b->Assemble();
-   		m->Finalize();
-   		k->Finalize(skip_zeros);
-		*/
-   		//HypreParVector *B = b->ParallelAssemble();
-		//Array<int> ess_tdof_list(0);
-		//HypreParMatrix Kmat;
-		//k->FormSystemMatrix(ess_tdof_list, Kmat);
-		//AdvectionOperator advec(d, Kmat, *B);
-		
-		ODESolver *ode_solver_dg2 = new ForwardEulerSolver;
-		//ode_solver_dg2->Init(advec);
-		
-		solver_dg.FormMatrices(boundary_dofs);
+	solver_dg.FormMatrices(boundary_dofs);
 	// Time Stepping
+	t_ode = 0.0;
+	dt = 0.1;
 	for (int t = 0; t < 50; t++){
-		/*
-		D = d.GetTrueDofs();
-		
-		//gradient of d
-		ParGridFunction gdX(&fespace_dg);
-		ParGridFunction gdY(&fespace_dg);
-		d.GetDerivative(1,0,gdX);
-		d.GetDerivative(1,1,gdY);
-		
-		//calculate c ("velocity")
-		ParGridFunction mgGd(&fespace_dg);
-		for (int vi = 0; vi < mgGd.Size(); vi++){
-			// magnitude of gradient
-			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
-			// c_x
-			cx(vi) = sgn(vi)*gdX(vi)/mgGd(vi);
-			// c_y
-			cy(vi) = sgn(vi)*gdY(vi)/mgGd(vi);
-			if (mgGd(vi) < 1e-3){
-				cx(vi) = 0.0;
-				cy(vi) = 0.0;
-			}
-			c(vi) = cx(vi);
-			c(vi+mgGd.Size()) = cy(vi);
-		}
-		*/
 		solver_dg.CalcLevelSetVel();
-		/*
-		//calculate M and K matrices and b vector
-		real_t alpha = -1.0;
-		ParBilinearForm *m = new ParBilinearForm(&fespace_dg);
-		m->AddDomainIntegrator(new MassIntegrator);
 		
-		ParBilinearForm *k = new ParBilinearForm(&fespace_dg);
-		VectorGridFunctionCoefficient cCoef(&c);
-   		k->AddDomainIntegrator(new ConvectionIntegrator(cCoef, alpha));
-  		k->AddInteriorFaceIntegrator(
-      			new NonconservativeDGTraceIntegrator(cCoef, alpha));
-   		//k->AddBdrFaceIntegrator(
-      		//	new NonconservativeDGTraceIntegrator(cCoef, alpha));
 		
-		//Add a (small) diffusive term to allow Neumann BCs to be enforced weakly by FEM
-		ConstantCoefficient diffCoef(1e-8);
-		k->AddDomainIntegrator(new DiffusionIntegrator(diffCoef));
-		k->AddBdrFaceIntegrator(
-			new DGDiffusionIntegrator(diffCoef,-1,-1));
-		k->AddInteriorFaceIntegrator(
-			new DGDiffusionIntegrator(diffCoef,-1,-1));
-		//k->AddBdrFaceIntegrator(
-		//	new DiffusionIntegrator);
-		//k->AddBoundaryIntegrator(
-		//	new DiffusionIntegrator);
-		*/
-		/*
-		cx.Neg();
-		GridFunctionCoefficient c_cx(&cx);
-		cy.Neg();
-		GridFunctionCoefficient c_cy(&cy);
-		k->AddBdrFaceIntegrator(
-			new BoundaryMassIntegrator(c_cx));
-		*/
-
-		//ParLinearForm *b = new ParLinearForm(&fespace_dg);
-		//GridFunctionCoefficient sgnCoef(&sgn);
-		//b->AddDomainIntegrator(new DomainLFIntegrator(sgnCoef));
-		
-		//ParGridFunction zeros(&fespace_dg);
-		//zeros = 5.0;
-		//GridFunctionCoefficient inflow(&cy);
-		//b->AddBdrFaceIntegrator(
-		//	new BoundaryFlowIntegrator(inflow, cCoef, alpha));
-		
-		/*
-		Array<int> ewbdr(pmesh.bdr_attributes.Max());
-		ewbdr = 0; ewbdr[0]=1; ewbdr[2]=1;
-		Array<int> nsbdr(pmesh.bdr_attributes.Max());
-		nsbdr = 0; nsbdr[1]=1; nsbdr[3]=1;
-		//cx.Neg();
-		GridFunctionCoefficient c_cx(&cx);
-		//cy.Neg();
-		GridFunctionCoefficient c_cy(&cy);
-		b->AddBdrFaceIntegrator(
-			new BoundaryFlowIntegrator(c_cx, cCoef, alpha), ewbdr);
-		b->AddBdrFaceIntegrator(
-			new BoundaryFlowIntegrator(c_cy, cCoef, alpha), nsbdr);
-		//b->AddBdrFaceIntegrator(new BoundaryLFIntegrator(inflow));
-		*/
-		/*
-   		int skip_zeros = 0;
-   		m->Assemble();
-   		k->Assemble(skip_zeros);
-   		b->Assemble();
-   		m->Finalize();
-   		k->Finalize(skip_zeros);
-		
-
-   		HypreParVector *B = b->ParallelAssemble();
-		*/
-		// TimeDependentOperator and ODESolver
-		//TODO do this a better way so you don't have to initialize every time
-		//FE_Evolution adv(*m, *k, *B);
-		double t_ode = 0.0;
-		double dt = 0.1;
-		//ODESolver *ode_solver_dg = new ForwardEulerSolver;
-		//ode_solver_dg->Init(adv);
-		//ode_solver_dg->Step(*D, t_ode, dt);
-		/*	
-		k->FormSystemMatrix(ess_tdof_list, Kmat);
-		advec.UpdateParams(Kmat, *B);
-		ode_solver_dg2->Step(*D, t_ode, dt);
-		cout << "iter: " << t << " max distance: " << D->Max() << endl;
-		cout << "iter: " << t << " min distance: " << D->Min() << endl;
-		*/
 		solver_dg.UpdateMatricesAndSolve(boundary_dofs, t_ode, dt);
-		/*
-		//free memory
-		delete m;
-		delete k;
-		delete b;
-		delete B;
-		//delete ode_solver_dg;
-		
-		d.Distribute(D);
-		*/
 	}
-	//d.Distribute(D);
 	
 	
 	// Output Distance to Paraview
