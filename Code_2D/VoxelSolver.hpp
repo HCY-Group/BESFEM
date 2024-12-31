@@ -23,6 +23,8 @@ public:
 	void UpdateLinearForm_DoubleWellPotential();
 	void UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, double dt);
 	void AccelerateDiffusion(ParGridFunction &DomPar, GridFunctionCoefficient &Coef, Array<int> &bdr);
+	void NorthDirichletBCs(Mesh *mesh);
+	void DetermineConnectivityBCs(ParGridFunction &DomPar);
 	
 	GridFunction* GetGlobalVox() {return gVox;}
 	ParGridFunction* GetParallelVox() {return Vox;}
@@ -30,6 +32,11 @@ public:
 protected:
 	ODESolver* ode_solver;
 	
+	Array<int> *ess_tdof_list = nullptr;	
+	Array<int> *dbc_bdr = nullptr;
+	ParGridFunction *dbcval = nullptr;
+	GridFunctionCoefficient *dbcCoef = nullptr;
+
 private:
 	GridFunction* gVox;
 	ParGridFunction* Vox;

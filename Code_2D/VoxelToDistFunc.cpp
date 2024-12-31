@@ -251,6 +251,10 @@ int main(int argc, char *argv[])
 		GridFunctionCoefficient dbcCoef(&dbcval);
 		
 		ConnectSolver.AssignDirichletBCs(dbcCoef, dbc_bdr);
+		
+		//ConnectSolver.NorthDirichletBCs(maker.GetParallelMesh());
+		//ConnectSolver.DetermineConnectivityBCs(psi);
+		
 		ConnectSolver.InitMatricesAndTimeDepOpers(ess_tdof_list, psi, psi);
 		
 		t_ode = 0.0;
