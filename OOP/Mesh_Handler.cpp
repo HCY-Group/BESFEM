@@ -1,3 +1,11 @@
+/**
+ * @file Mesh_Handler.cpp
+ * @brief Implementation of the MeshHandler class, responsible for handling mesh operations, and finite element spaces.
+ * 
+ * This file includes methods for initializing, processing, and extracting information from meshes.
+ * It supports parallel computations and integrates with MPI.
+ */
+
 #include "Mesh_Handler.hpp"
 #include "Constants.hpp"
 #include <fstream>
@@ -6,6 +14,7 @@
 using namespace mfem;
 using namespace std;
 
+// Global variable for the target current (MPI reduced value)
 double gTrgI = 0.0;
 
 
@@ -27,8 +36,8 @@ void MeshHandler::LoadMesh() {
 // Function to Initialize Mesh 
 void MeshHandler::InitializeMesh() {
     
-    Mesh gmesh(mesh_file);
-    gmesh.EnsureNCMesh(true);
+    Mesh gmesh(mesh_file); // loads the mesh from Constants file
+    gmesh.EnsureNCMesh(true); // ensures the mesh is non-conforming 
 
     // Create global FE space for distance function.
     mfem::H1_FECollection gFec(order, gmesh.Dimension());
@@ -36,7 +45,7 @@ void MeshHandler::InitializeMesh() {
 
     ReadGlobalDistanceFunction(gFespace); 
 
-    // west boundary size
+    // calculate the west boundary size
     mfem::Vector Rmin, Rmax;
     gmesh.GetBoundingBox(Rmin, Rmax);
     L_w = Rmax(1) - Rmin(1);
@@ -52,6 +61,7 @@ void MeshHandler::InitializeMesh() {
     mfem::Array<int> gVTX(nC);                    // global indices of corner vertices
     mfem::Array<int> VTX(nC);                     // local indices of corner vertices
 
+    // calculate element volumes
     mfem::Vector EVolTemp;
     CalculateElementVolume(pmesh0, EVolTemp);
     EVol = EVolTemp;
