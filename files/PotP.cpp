@@ -6,30 +6,23 @@
 #include "PotP.hpp"
 #include "mfem.hpp"
 
-double BvP = 0.0; ///< Global variable for the boundary value of particle potential.
+double BvP = 0.0; ///< Global variable for the boundary value of particle potential
 
 PotP::PotP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Potentials(pm, fe, mh), dbc_e_bdr(pmesh->bdr_attributes.Max()), gtPsi(mesh_handler.GetTotalPsi())
+    : Potentials(pm, fe, mh), dbc_e_bdr(mh.dbc_e_bdr), gtPsi(mh.gtPsi), ess_tdof_list_e(mh.ess_tdof_list_e)
     
     {
 
     cgPP_solver = new mfem::CGSolver(MPI_COMM_WORLD);
-    RpP = new ParGridFunction(fespace); // Initialize reaction rate grid function.
+    RpP = new ParGridFunction(fespace); // Initialize reaction rate grid function
 
-    Fpb = mfem::HypreParVector(fespace); // Initialize force term vector.
-    kap = new mfem::ParGridFunction(fespace); // Initialize conductivity field.
-    Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace); // Initialize bilinear form.
+    Fpb = mfem::HypreParVector(fespace); // Initialize force term vector
+    kap = new mfem::ParGridFunction(fespace); // Initialize conductivity field
+    Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace); // Initialize bilinear form
 
     B1t = mfem::ParLinearForm(fespace);
     X1v = mfem::HypreParVector(fespace);
     B1v = mfem::HypreParVector(fespace);
-
-    dbc_e_bdr.SetSize(pmesh->bdr_attributes.Max());  // Resize based on mesh attributes.
-    dbc_e_bdr = 0; // fix this
-    dbc_e_bdr[2] = 1; // Applying Dirichlet BC to the east boundary
-
-    mfem:: Array<int> ess_tdof_list_e(0); // Initialize essential DoF list.
-
 
     }
 
@@ -40,12 +33,12 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value)
 
 {
     
-    BvP = initial_value; // Set the boundary value.
+    BvP = initial_value; // Set the boundary value
     
-    Potentials::SetInitialPotentials(ph, BvP); // Initialize potentials.
-    Potentials::SetUpSolver(*cgPP_solver, 1e-7, 82); // Configure the solver.
+    Potentials::SetInitialPotentials(ph, BvP); // Initialize potentials
+    Potentials::SetUpSolver(*cgPP_solver, 1e-7, 82); // Configure the solver
 
-    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e); // Identify essential DoFs.
+    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e); // Identify essential DoFs
 
 
     
@@ -56,16 +49,16 @@ void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
 
 {
-    ParticleConductivity(Cn, psx); // Update conductivity.
+    ParticleConductivity(Cn, psx); // Update conductivity
 
-    mfem::GridFunctionCoefficient cKp(kap); // Wrap conductivity as a coefficient.
+    mfem::GridFunctionCoefficient cKp(kap); // Wrap conductivity as a coefficient
 
-    Potentials::ImplementBoundaryConditions(dbc_e_Coef, BvP, phx, dbc_e_bdr); // Apply BCs.
+    Potentials::ImplementBoundaryConditions(dbc_e_Coef, BvP, phx, dbc_e_bdr); // Apply BCs
 
     Kp2 = std::make_unique<ParBilinearForm>(fespace);  // Initialize as a member variable
 
-    Potentials::KMatrix(*Kp2, cKp, ess_tdof_list_e, phx, B1t, KmP, X1v, B1v); // Assemble system matrix.
-    Potentials::PCG_Solver(Mpp, *cgPP_solver, KmP); // Solve the system.
+    Potentials::KMatrix(*Kp2, cKp, ess_tdof_list_e, phx, B1t, KmP, X1v, B1v); // Assemble system matrix
+    Potentials::PCG_Solver(Mpp, *cgPP_solver, KmP); // Solve the system
 
 }
 
@@ -85,11 +78,11 @@ void PotP::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction
 
 {
 
-    Potentials::CreateReaction(Rx, *RpP, Constants::Frd); // Create reaction field.
-    Potentials::ForceTerm(*RpP, ftPotP); // Assemble the force term.
-    Potentials::ForceVector(*Kp2, ess_tdof_list_e, phx, ftPotP, KmP, X1v, Fpb, dbc_e_Coef, dbc_e_bdr); // Force vector.
-    
-    Potentials::ErrorCalculation(phx, *cgPP_solver, Fpb, psx, error_P, gerror, gtPsi); // Compute global error.
+    Potentials::CreateReaction(Rx, *RpP, Constants::Frd); // Create reaction field
+    Potentials::ForceTerm(*RpP, ftPotP); // Assemble the force term
+    Potentials::ForceVector(*Kp2, ess_tdof_list_e, phx, ftPotP, KmP, X1v, Fpb, dbc_e_Coef, dbc_e_bdr); // Force vector
+
+    Potentials::ErrorCalculation(phx, *cgPP_solver, Fpb, psx, error_P, gerror, gtPsi); // Compute global error
 
 
 }

@@ -1,19 +1,6 @@
 var searchData=
 [
-  ['getavb_0',['GetAvB',['../classMeshHandler.html#a156cb643a45efcfd1adf355fcccbd881',1,'MeshHandler']]],
-  ['getavp_1',['GetAvP',['../classMeshHandler.html#a9ac8f6a1b74417e7f858817a3437c36f',1,'MeshHandler']]],
-  ['getcevn_2',['GetCeVn',['../classCnE.html#a2ce2e38726a5fba954550bf1c5e2eb21',1,'CnE']]],
-  ['getcgpesolver_3',['GetcgPEsolver',['../classPotE.html#ad288d87413a718d753cd15f30cca3143',1,'PotE']]],
-  ['getcgppsolver_4',['GetcgPPsolver',['../classPotP.html#afc6917c60ab429d44e0330d3868549b5',1,'PotP']]],
-  ['getelementvolume_5',['GetElementVolume',['../classMeshHandler.html#a7f8b0d872e73866b6b1d399555ccb55c',1,'MeshHandler']]],
-  ['getfespace_6',['GetFESpace',['../classMeshHandler.html#a239300e57a32556f31384e52d8065e70',1,'MeshHandler']]],
-  ['getmesh_7',['GetMesh',['../classMeshHandler.html#a086129bedf7020e0335c7bb48d6c4763',1,'MeshHandler']]],
-  ['getnc_8',['GetNC',['../classMeshHandler.html#ae31f9b30003754e4f894f1595d4ba42d',1,'MeshHandler']]],
-  ['getne_9',['GetNE',['../classMeshHandler.html#a824bd458a87b886464a75e1a3b912f8c',1,'MeshHandler']]],
-  ['getnv_10',['GetNV',['../classMeshHandler.html#a75c31c7e9003389554fc7dc8a5fffc6f',1,'MeshHandler']]],
-  ['getpmesh_11',['GetPmesh',['../classMeshHandler.html#ae5d2fd8f5e4744bcff201e38eb77c0e1',1,'MeshHandler']]],
-  ['getpse_12',['GetPse',['../classMeshHandler.html#a4877e264bfd112fc9be05b1563fe5ffd',1,'MeshHandler']]],
-  ['getpsi_13',['GetPsi',['../classMeshHandler.html#a22289849e2d9992b8c972486ab3193ea',1,'MeshHandler']]],
-  ['gettotalpse_14',['GetTotalPse',['../classMeshHandler.html#a078fdc880a6b121bf8a7c2f83e175dc0',1,'MeshHandler']]],
-  ['gettotalpsi_15',['GetTotalPsi',['../classMeshHandler.html#a2a95e12b88a01462dfdb25ceacbbf0eb',1,'MeshHandler']]]
+  ['getcevn_0',['GetCeVn',['../classCnE.html#a2ce2e38726a5fba954550bf1c5e2eb21',1,'CnE']]],
+  ['getcgpesolver_1',['GetcgPEsolver',['../classPotE.html#ad288d87413a718d753cd15f30cca3143',1,'PotE']]],
+  ['getcgppsolver_2',['GetcgPPsolver',['../classPotP.html#afc6917c60ab429d44e0330d3868549b5',1,'PotP']]]
 ];

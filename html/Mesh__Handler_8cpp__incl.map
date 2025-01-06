@@ -1,6 +1,6 @@
 <map id="files/Mesh_Handler.cpp" name="files/Mesh_Handler.cpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="163,5,335,31"/>
-<area shape="rect" id="Node000002" href="$Mesh__Handler_8hpp.html" title=" " alt="" coords="113,79,255,104"/>
+<area shape="rect" id="Node000001" title="Implementation of the MeshHandler class, responsible for handling mesh operations,..." alt="" coords="163,5,335,31"/>
+<area shape="rect" id="Node000002" href="$Mesh__Handler_8hpp.html" title="Header file for the MeshHandler class, which manages mesh operations, finite element spaces,..." alt="" coords="113,79,255,104"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="241,33,206,70,202,67,237,29"/>
 <area shape="rect" id="Node000003" href="$Constants_8hpp.html" title=" " alt="" coords="5,152,120,177"/>
 <area shape="poly" id="edge5_Node000001_Node000003" title=" " alt="" coords="195,33,147,51,124,64,103,81,83,109,71,140,66,138,78,106,99,77,121,60,145,46,193,28"/>

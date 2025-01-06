@@ -8,7 +8,7 @@
 
 
 CnE::CnE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Concentrations(pm, fe, mh) 
+    : Concentrations(pm, fe, mh), nbc_w_bdr(mh.nbc_w_bdr)
     
     {
 
@@ -35,7 +35,7 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     Concentrations::SetInitialConcentration(Cn, initial_value);
     Concentrations::SetUpSolver(psx, Mmate, *Me_solver, Me_prec);
 
-    // Apply Neumann boundary conditions to the reaction potential field.
+    // Apply Neumann boundary conditions to the reaction potential field
     ImposeNeumannBC(psx, *PeR);
 
 }
@@ -43,32 +43,27 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
 void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
 {
     
-    // Scale the reaction field by the transference number.
+    // Scale the reaction field by the transference number
     Concentrations::CreateReaction(Rx, *RxE, (-1.0 * Constants::t_minus));
     Concentrations::TotalReaction(*RxE, eCrnt);
 
-    // Set up coefficients for Neumann boundary conditions.
+    // Set up coefficients for Neumann boundary conditions
     mfem::ConstantCoefficient nbcCoef(infx); 
     mfem::GridFunctionCoefficient matCoef_R(PeR);
     mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
     
-    // Apply Neumann boundary conditions to the first boundary attribute.
-    mfem::Array<int> nbc_w_bdr(pmesh->bdr_attributes.Max());
-	nbc_w_bdr = 0; 
-	nbc_w_bdr[0] = 1;
-    
-    // Assemble the force term with boundary conditions applied.
+    // Assemble the force term with boundary conditions applied
     Concentrations::ForceTerm(*RxE, ftE, nbc_w_bdr, m_nbcCoef, true); // true since applying BCs
     
-    // Compute the diffusivity coefficient and stiffness matrix.
+    // Compute the diffusivity coefficient and stiffness matrix
     std::shared_ptr<GridFunctionCoefficient> cDe = Concentrations::Diffusivity(psx, Cn, false); // false using other equation
     Concentrations::KMatrix(boundary_dofs, Cn, ftE, Kmate, X1v, Feb, cDe.get());
 
-    // Form Crank-Nicolson system matrices.
+    // Form Crank-Nicolson system matrices
     TmatR = Add(1.0,*Mmate, -0.5*Constants::dt, *Kmate);		
     TmatL = Add(1.0, *Mmate,  0.5*Constants::dt, *Kmate);	
     
-    // Solve for the next time step concentration.
+    // Solve for the next time step concentration
     Cn.GetTrueDofs(*CeV0);	
     TmatR->Mult(*CeV0, *RHCe);
     *RHCe += Feb;
@@ -78,6 +73,6 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 
 	Cn.Distribute(CeVn); 
  
-    // Update the total electrolyte salt conservation.
+    // Update the total electrolyte salt conservation
     Concentrations::SaltConservation(Cn, psx);	
 }

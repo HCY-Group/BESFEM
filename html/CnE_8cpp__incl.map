@@ -7,7 +7,7 @@
 <area shape="rect" id="Node000003" href="$Concentrations__Base_8hpp.html" title=" " alt="" coords="83,152,269,177"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="214,106,192,142,188,139,209,103"/>
 <area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="195,176,221,197,247,224,268,254,283,284,278,287,263,257,243,227,217,200,191,180"/>
-<area shape="rect" id="Node000005" href="$Mesh__Handler_8hpp.html" title=" " alt="" coords="90,225,233,251"/>
+<area shape="rect" id="Node000005" href="$Mesh__Handler_8hpp.html" title="Header file for the MeshHandler class, which manages mesh operations, finite element spaces,..." alt="" coords="90,225,233,251"/>
 <area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="176,178,169,212,164,211,171,177"/>
 <area shape="rect" id="Node000007" title=" " alt="" coords="5,299,83,324"/>
 <area shape="poly" id="edge8_Node000003_Node000007" title=" " alt="" coords="149,180,114,199,81,227,63,256,52,286,47,285,58,254,77,224,110,195,146,175"/>

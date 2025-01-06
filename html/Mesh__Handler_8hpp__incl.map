@@ -1,5 +1,5 @@
 <map id="files/Mesh_Handler.hpp" name="files/Mesh_Handler.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="103,5,276,31"/>
+<area shape="rect" id="Node000001" title="Header file for the MeshHandler class, which manages mesh operations, finite element spaces,..." alt="" coords="103,5,276,31"/>
 <area shape="rect" id="Node000002" href="$Constants_8hpp.html" title=" " alt="" coords="5,79,120,104"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="170,33,97,74,94,69,168,28"/>
 <area shape="rect" id="Node000003" title=" " alt="" coords="145,79,234,104"/>

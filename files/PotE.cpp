@@ -7,10 +7,10 @@
 #include "mfem.hpp"
 #include "CnE.hpp"
 
-double BvE = 0.0; ///< Global variable for the boundary value of electrolyte potential.
+double BvE = 0.0; ///< Global variable for the boundary value of electrolyte potential
 
 PotE::PotE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Potentials(pm, fe, mh), dbc_w_bdr(pmesh->bdr_attributes.Max()), gtPse(mesh_handler.GetTotalPse())
+    : Potentials(pm, fe, mh), dbc_w_bdr(mh.dbc_w_bdr), gtPse(mh.gtPse), ess_tdof_list_w(mh.ess_tdof_list_w)
     
     {
 
@@ -33,12 +33,6 @@ PotE::PotE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     LpCe = new mfem::HypreParVector(fespace);
     CeVn = new mfem::HypreParVector(fespace);
 
-    dbc_w_bdr.SetSize(pmesh->bdr_attributes.Max());  // Resize based on the mesh
-    dbc_w_bdr = 0; // fix this
-    dbc_w_bdr[0] = 1; // Apply Dirichlet BC on the first boundary attribute.
-
-    Array<int> ess_tdof_list_w(0); // Essential true DoF list initialization.
-
     }
 
 mfem::CGSolver* PotE::cgPE_solver = nullptr; // static variable to be used in reaction
@@ -49,8 +43,8 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value)
 {
     BvE = initial_value; // Set the boundary value.
 
-    Potentials::SetInitialPotentials(ph, BvE); // Initialize potentials.
-    Potentials::SetUpSolver(*cgPE_solver, 1e-7, 80); // Configure the solver.
+    Potentials::SetInitialPotentials(ph, BvE); // Initialize potentials
+    Potentials::SetUpSolver(*cgPE_solver, 1e-7, 80); // Configure the solver
 
     fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w); // fix this 
 
@@ -61,23 +55,23 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
 
 {
-    ElectrolyteConductivity(Cn, psx); // Update conductivity and diffusivity.
+    ElectrolyteConductivity(Cn, psx); // Update conductivity and diffusivity
 
     mfem::GridFunctionCoefficient cDm(Dmp); 
     mfem::GridFunctionCoefficient cKe(kpl); 
     
     Kl1 = std::make_unique<ParBilinearForm>(fespace);  // Initialize as a member variable
 
-    Potentials::KMatrix(*Kl1, cDm, boundary_dofs, phx, B1t, Kdm, X1v, B1v); // Diffusivity matrix.
+    Potentials::KMatrix(*Kl1, cDm, boundary_dofs, phx, B1t, Kdm, X1v, B1v); // Diffusivity matrix
 
     Cn.GetTrueDofs(*CeVn); 
-    Kdm.Mult(*CeVn, *LpCe); // Multiply concentration by diffusivity matrix.
+    Kdm.Mult(*CeVn, *LpCe); // Multiply concentration by diffusivity matrix
 
     Kl2 = std::make_unique<ParBilinearForm>(fespace);  // Initialize as a member variable
 
-    Potentials::ImplementBoundaryConditions(dbc_w_Coef, BvE, phx, dbc_w_bdr); // Apply boundary conditions.
-    Potentials::KMatrix(*Kl2, cKe, ess_tdof_list_w, phx, B1t, KmE, X1v, B1v); // Conductivity matrix.
-    Potentials::PCG_Solver(Mpe, *cgPE_solver, KmE); // Solve the system.
+    Potentials::ImplementBoundaryConditions(dbc_w_Coef, BvE, phx, dbc_w_bdr); // Apply boundary conditions
+    Potentials::KMatrix(*Kl2, cKe, ess_tdof_list_w, phx, B1t, KmE, X1v, B1v); // Conductivity matrix
+    Potentials::PCG_Solver(Mpe, *cgPE_solver, KmE); // Solve the system
 
 }
 
@@ -85,9 +79,9 @@ void PotE::ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunct
     
     for (int vi = 0; vi < nV; vi++){
 
-        dffe = exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi)); // Compute diffusivity factor.
-        (*Dmp)(vi) = psx(vi) * tc1 * Constants::D0 * dffe; // Update diffusivity.
-        (*kpl)(vi) = psx(vi) * tc2 * Constants::D0 * dffe * Cn(vi); // Update conductivity.
+        dffe = exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi)); // Compute diffusivity factor
+        (*Dmp)(vi) = psx(vi) * tc1 * Constants::D0 * dffe; // Update diffusivity
+        (*kpl)(vi) = psx(vi) * tc2 * Constants::D0 * dffe * Cn(vi); // Update conductivity
 
     }
 
@@ -97,15 +91,15 @@ void PotE::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction
 
 {
 
-    Potentials::CreateReaction(Rx, *RpE, -1.0); // Create reaction field.
+    Potentials::CreateReaction(Rx, *RpE, -1.0); // Create reaction field
 
-    Potentials::ForceTerm(*RpE, ftPotE);  // Assemble the force term.
-    Potentials::ForceVector(*Kl2, ess_tdof_list_w, phx, ftPotE, KmE, X1v, Flb, dbc_w_Coef, dbc_w_bdr); // Force vector.
+    Potentials::ForceTerm(*RpE, ftPotE);  // Assemble the force term
+    Potentials::ForceVector(*Kl2, ess_tdof_list_w, phx, ftPotE, KmE, X1v, Flb, dbc_w_Coef, dbc_w_bdr); // Force vector
 
     RHSl = Flb;
     RHSl += *LpCe;
 
 
-    Potentials::ErrorCalculation(phx, *cgPE_solver, RHSl, psx, error_E, gerror, gtPse); // Compute global error.
+    Potentials::ErrorCalculation(phx, *cgPE_solver, RHSl, psx, error_E, gerror, gtPse); // Compute global error
 
 }

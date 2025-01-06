@@ -1,11 +1,11 @@
 var searchData=
 [
-  ['calculateelementvolume_0',['CalculateElementVolume',['../classMeshHandler.html#a16151a660b5d837354ffd057437e611e',1,'MeshHandler']]],
+  ['calculateelementvolume_0',['CalculateElementVolume',['../classMeshHandler.html#adb885343736dfdcc8c5606de072cd4fc',1,'MeshHandler']]],
   ['calculateglobalerror_1',['CalculateGlobalError',['../classPotE.html#a4b142fb37f94296f082dd2b6eceac4d2',1,'PotE::CalculateGlobalError()'],['../classPotP.html#a7dfb2f066b32f0aa261c07e7572d4e33',1,'PotP::CalculateGlobalError()']]],
-  ['calculatetargetcurrent_2',['CalculateTargetCurrent',['../classMeshHandler.html#a2594d271f63aa209ccb76f55f5261812',1,'MeshHandler']]],
-  ['calculatetotalpse_3',['CalculateTotalPse',['../classMeshHandler.html#a83eebb266aca469348fd11a47da3df0d',1,'MeshHandler']]],
-  ['calculatetotalpsi_4',['CalculateTotalPsi',['../classMeshHandler.html#ae367915dd586943f0d4d34d5c92fd3fa',1,'MeshHandler']]],
-  ['calculatetotals_5',['CalculateTotals',['../classMeshHandler.html#abe722f70500818cf11be6abafaa64c31',1,'MeshHandler']]],
+  ['calculatephasepotentialsandtargetcurrent_2',['CalculatePhasePotentialsAndTargetCurrent',['../classMeshHandler.html#af8a2b718de1d559cb10fdd75d1712448',1,'MeshHandler']]],
+  ['calculatetargetcurrent_3',['CalculateTargetCurrent',['../classMeshHandler.html#a2431057f15a164c90859c744d846b3ce',1,'MeshHandler']]],
+  ['calculatetotalphasefield_4',['CalculateTotalPhaseField',['../classMeshHandler.html#a175ca0782afa488b1d25222d0c8ca837',1,'MeshHandler']]],
+  ['calculatetotals_5',['CalculateTotals',['../classMeshHandler.html#a5e19a1ccf15ee8b5cef97a014bf4521f',1,'MeshHandler']]],
   ['cne_6',['CnE',['../classCnE.html#a9dfdaa6f1c7808060547b1b7c72d9bd5',1,'CnE']]],
   ['cnp_7',['CnP',['../classCnP.html#a9b0917b40c0d9d4e46d4257762d2d4f0',1,'CnP']]],
   ['concentrations_8',['Concentrations',['../classConcentrations.html#aea4c448ae00c2e23b741d82d88f61120',1,'Concentrations']]],

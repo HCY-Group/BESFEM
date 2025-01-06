@@ -1,9 +1,0 @@
-<map id="MeshHandler::CalculateTotalPsi" name="MeshHandler::CalculateTotalPsi">
-<area shape="rect" id="Node000001" title=" " alt="" coords="593,5,820,31"/>
-<area shape="rect" id="Node000002" href="$classMeshHandler.html#ae659928b1e9c7c6852856b1fd3dcc86c" title=" " alt="" coords="339,5,545,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="580,21,545,21,545,15,580,15"/>
-<area shape="rect" id="Node000003" href="$classMeshHandler.html#a65bbeb464d5458fe3d039b8df1a66b08" title=" " alt="" coords="108,5,291,31"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="325,21,291,21,291,15,325,15"/>
-<area shape="rect" id="Node000004" href="$simulation_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title=" " alt="" coords="5,5,60,31"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="94,21,60,21,60,15,94,15"/>
-</map>

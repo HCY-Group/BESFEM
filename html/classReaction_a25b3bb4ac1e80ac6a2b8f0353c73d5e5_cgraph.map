@@ -1,9 +1,0 @@
-<map id="Reaction::Reaction" name="Reaction::Reaction">
-<area shape="rect" id="Node000001" title="Constructor for the Reaction class." alt="" coords="5,55,149,80"/>
-<area shape="rect" id="Node000002" href="$classMeshHandler.html#ae31f9b30003754e4f894f1595d4ba42d" title=" " alt="" coords="197,5,356,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="129,52,211,31,212,37,130,57"/>
-<area shape="rect" id="Node000003" href="$classMeshHandler.html#a824bd458a87b886464a75e1a3b912f8c" title=" " alt="" coords="198,55,355,80"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="150,65,184,65,184,70,150,70"/>
-<area shape="rect" id="Node000004" href="$classMeshHandler.html#a75c31c7e9003389554fc7dc8a5fffc6f" title=" " alt="" coords="197,104,356,129"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="130,77,212,98,211,103,129,83"/>
-</map>

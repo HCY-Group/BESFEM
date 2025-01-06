@@ -2,7 +2,7 @@
 <area shape="rect" id="Node000001" title=" " alt="" coords="101,5,252,45"/>
 <area shape="rect" id="Node000002" title=" " alt="" coords="5,167,95,192"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,48,121,69,95,95,75,125,61,155,57,152,71,122,91,92,117,65,145,43"/>
-<area shape="rect" id="Node000003" href="$Mesh__Handler_8hpp.html" title=" " alt="" coords="105,93,248,119"/>
+<area shape="rect" id="Node000003" href="$Mesh__Handler_8hpp.html" title="Header file for the MeshHandler class, which manages mesh operations, finite element spaces,..." alt="" coords="105,93,248,119"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="179,46,179,79,174,79,174,46"/>
 <area shape="rect" id="Node000005" title=" " alt="" coords="258,167,335,192"/>
 <area shape="poly" id="edge6_Node000001_Node000005" title=" " alt="" coords="208,43,236,65,261,92,280,122,292,152,287,154,275,125,257,95,232,69,205,47"/>

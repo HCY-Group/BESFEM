@@ -4,7 +4,7 @@
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="193,33,147,51,125,64,106,80,88,109,78,139,73,138,83,107,102,77,122,60,144,46,191,28"/>
 <area shape="rect" id="Node000003" title=" " alt="" coords="95,299,184,324"/>
 <area shape="poly" id="edge8_Node000001_Node000003" title=" " alt="" coords="189,33,140,49,89,73,65,88,44,107,26,128,13,153,8,174,11,194,20,214,33,232,69,265,107,290,104,294,66,269,29,236,15,216,6,196,3,174,8,151,22,125,40,103,62,84,86,68,138,44,187,28"/>
-<area shape="rect" id="Node000004" href="$Mesh__Handler_8hpp.html" title=" " alt="" coords="191,225,334,251"/>
+<area shape="rect" id="Node000004" href="$Mesh__Handler_8hpp.html" title="Header file for the MeshHandler class, which manages mesh operations, finite element spaces,..." alt="" coords="191,225,334,251"/>
 <area shape="poly" id="edge7_Node000001_Node000004" title=" " alt="" coords="211,33,177,52,162,64,150,80,147,91,150,103,162,142,186,176,208,198,232,216,229,220,205,202,182,179,158,145,145,105,142,91,145,78,158,61,174,47,209,28"/>
 <area shape="rect" id="Node000007" href="$CnE_8hpp.html" title=" " alt="" coords="160,79,234,104"/>
 <area shape="poly" id="edge9_Node000001_Node000007" title=" " alt="" coords="240,33,215,69,210,66,236,29"/>
