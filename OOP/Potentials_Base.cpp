@@ -19,7 +19,11 @@ Potentials::Potentials(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshH
     nC = mesh_handler.nC; 
     nV = mesh_handler.nV; 
 
-    px0 = new mfem::ParGridFunction(fespace); // Potential values before iteration
+    // px0 = new mfem::ParGridFunction(fespace); // Potential values before iteration
+    px0 = std::make_unique<mfem::ParGridFunction>(fespace);
+    Rxx = std::make_unique<mfem::ParGridFunction>(fespace);
+    // Bx2 = std::make_unique<mfem::ParLinearForm>(fespace);
+
     X0 = mfem::HypreParVector(fespace); // Hypre vector for solving linear systems
 
 }
@@ -77,13 +81,17 @@ void Potentials::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunctio
 
 void Potentials::ForceTerm(mfem::ParGridFunction &Rx2, mfem::ParLinearForm &Fxx) {
 
-    std::unique_ptr<ParLinearForm> Bx2(new ParLinearForm(fespace));	// Create a linear form
+    Bx2 = std::make_unique<mfem::ParLinearForm>(fespace);
+    // Bx2->Update();
 
-    Rxx = new mfem::ParGridFunction(fespace); // Initialize intermediate reaction field
+    // Rxx = new mfem::ParGridFunction(fespace); // Initialize intermediate reaction field
     *Rxx = Rx2;
-    cXx = new mfem::GridFunctionCoefficient(Rxx); // Wrap as a coefficient
 
-    Bx2->AddDomainIntegrator(new DomainLFIntegrator(*cXx)); // Integrate over the domain
+    // cXx = new mfem::GridFunctionCoefficient(Rxx.get()); // Wrap as a coefficient
+    cXx = std::make_unique<mfem::GridFunctionCoefficient>(Rxx.get());
+
+    Bx2->AddDomainIntegrator(new mfem::DomainLFIntegrator(*cXx)); // Integrate over the domain
+
     Bx2->Assemble(); // Assemble the linear form
     Fxx = std::move(*Bx2); // Transfer ownership to the provided reference
 
@@ -120,10 +128,11 @@ void Potentials::ErrorCalculation(mfem::ParGridFunction &phx, mfem::CGSolver &cg
     // Calculate error contributions across all elements
     for (int ei = 0; ei < nE; ei++){
         TmpF.GetNodalValues(ei,VtxVal) ;
-        double val = 0.0;
-        for (int vt = 0; vt < nC; vt++){
-            val += VtxVal[vt];
-        }
+        // double val = 0.0;
+        // for (int vt = 0; vt < nC; vt++){
+        //     val += VtxVal[vt];
+        // }
+        double val = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
         EAvg(ei) = val/nC;	
         error_X += EAvg(ei)*EVol(ei) ;					
     }	

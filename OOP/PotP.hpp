@@ -26,11 +26,11 @@ public:
 
     /**
      * @brief Constructor for the PotP class
-     * @param pmesh Pointer to the parallel mesh
-     * @param fespace Pointer to the finite element space
+     * @param pm Pointer to the parallel mesh
+     * @param fe Pointer to the finite element space
      * @param mh Reference to the mesh handler
      */
-    PotP(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
+    PotP(mfem::ParMesh* pm, mfem::ParFiniteElementSpace* fe, MeshHandler &mh);
 
     /**
      * @brief Initializes the particle potential field and solver
@@ -72,6 +72,8 @@ public:
 private:
 
     void ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx); ///< Computes particle conductivity
+
+    mfem::ParFiniteElementSpace *fespace; // Declare the member variable fe
 
     mfem::ParGridFunction *RpP; ///< Reaction field for the particle
     mfem::ParLinearForm ftPotP; ///< Linear form for the force term

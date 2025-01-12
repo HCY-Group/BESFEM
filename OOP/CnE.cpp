@@ -8,7 +8,7 @@
 
 
 CnE::CnE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Concentrations(pm, fe, mh), nbc_w_bdr(mh.nbc_w_bdr)
+    : Concentrations(pm, fe, mh), fespace(fe), nbc_w_bdr(mh.nbc_w_bdr)
     
     {
 
@@ -24,6 +24,9 @@ CnE::CnE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
     CeV0 = new mfem::HypreParVector(fespace);
     RHCe = new mfem::HypreParVector(fespace);
     CeVn = new mfem::HypreParVector(fespace);
+
+    // eKx2 = std::make_shared<mfem::ParBilinearForm>(fespace);
+
 
     }
 
@@ -57,7 +60,10 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     
     // Compute the diffusivity coefficient and stiffness matrix
     std::shared_ptr<GridFunctionCoefficient> cDe = Concentrations::Diffusivity(psx, Cn, false); // false using other equation
-    Concentrations::KMatrix(boundary_dofs, Cn, ftE, Kmate, X1v, Feb, cDe.get());
+    eKx2 = std::make_shared<mfem::ParBilinearForm>(fespace);
+
+    eKx2->Update();
+    Concentrations::KMatrix(eKx2, boundary_dofs, Cn, ftE, Kmate, X1v, Feb, cDe);
 
     // Form Crank-Nicolson system matrices
     TmatR = Add(1.0,*Mmate, -0.5*Constants::dt, *Kmate);		
@@ -72,7 +78,7 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     Me_solver->Mult(*RHCe, *CeVn) ;
 
 	Cn.Distribute(CeVn); 
- 
+    
     // Update the total electrolyte salt conservation
     Concentrations::SaltConservation(Cn, psx);	
 }

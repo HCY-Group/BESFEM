@@ -169,7 +169,7 @@ protected:
      * @param Fxb Reference to the HypreParVector that will hold the boundary contributions to the right-hand side
      * @param cDx Pointer to the GridFunctionCoefficient representing the diffusivity coefficient
      */
-    void KMatrix(mfem::Array<int> boundary, mfem::ParGridFunction &Cn, mfem::ParLinearForm &Fxx, std::shared_ptr<mfem::HypreParMatrix> &Kmatx, mfem::HypreParVector &X1v, mfem::HypreParVector &Fxb, mfem::GridFunctionCoefficient *cDx);
+    void KMatrix(std::shared_ptr<mfem::ParBilinearForm> &Kx2, mfem::Array<int> boundary, mfem::ParGridFunction &Cn, mfem::ParLinearForm &Fxx, std::shared_ptr<mfem::HypreParMatrix> &Kmatx, mfem::HypreParVector &X1v, mfem::HypreParVector &Fxb, std::shared_ptr<mfem::GridFunctionCoefficient> cDx);
     
     /**
      * @brief Computes and conserves the salt concentration in the system
@@ -217,6 +217,14 @@ private:
     mfem::GridFunctionCoefficient *cXx; ///< Coefficient for the reaction term
 
     double geCrnt; ///< Global current
+    double inv_nC;
+
+    mfem::Array<double> VtxVal;
+    mfem::Vector EAvg;
+    std::unique_ptr<mfem::ParLinearForm> Bx2;
+    std::shared_ptr<mfem::GridFunctionCoefficient> last_cDx;
+
+
 
 };
 

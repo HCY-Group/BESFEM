@@ -16,11 +16,11 @@ public:
 
     /**
      * @brief Constructor for the CnE class
-     * @param pmesh Pointer to the parallel mesh
-     * @param fespace Pointer to the finite element space
+     * @param pm Pointer to the parallel mesh
+     * @param fe Pointer to the finite element space
      * @param mh Reference to the mesh handler
      */
-    CnE(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
+    CnE(mfem::ParMesh* pm, mfem::ParFiniteElementSpace* fe, MeshHandler &mh);
 
     /**
      * @brief Initializes electrolyte concentration values and solver components
@@ -54,6 +54,7 @@ public:
 
 private:
 
+    mfem::ParFiniteElementSpace *fespace; // Declare the member variable fe
 
     mfem::ParGridFunction *PeR; ///< Pointer to a grid function storing reaction potential values
 
@@ -73,6 +74,9 @@ private:
     mfem::HypreParVector *RHCe; ///< Right-hand-side vector at the current time step
     mfem::HypreParMatrix *TmatR; ///< System matrix for the right-hand-side calculation (Crank-Nicolson)
     mfem::HypreParMatrix *TmatL; ///< System matrix for the left-hand-side calculation (Crank-Nicolson)
+
+    std::shared_ptr<mfem::ParBilinearForm> eKx2;
+
 
 
 };

@@ -16,11 +16,11 @@ public:
 
     /**
      * @brief Constructor for the CnP class
-     * @param pmesh Pointer to the parallel mesh
-     * @param fespace Pointer to the finite element space
+     * @param pm Pointer to the parallel mesh
+     * @param fe Pointer to the finite element space
      * @param mh Reference to the mesh handler
      */
-    CnP(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
+    CnP(mfem::ParMesh* pm, mfem::ParFiniteElementSpace* fe, MeshHandler &mh);
 
     /**
      * @brief Initializes particle concentration values and solver components
@@ -45,7 +45,7 @@ public:
 private:
 
     mfem::HypreParVector PsVc; ///< Vector for storing true degrees of freedom in the solid region
-
+    mfem::ParFiniteElementSpace *fespace; // Declare the member variable fe
 
     std::shared_ptr<mfem::CGSolver> Mp_solver; ///< Solver for the mass matrix
     std::shared_ptr<mfem::HypreParMatrix> Mmatp; ///< Mass matrix for particle concentrations
@@ -63,6 +63,8 @@ private:
     mfem::HypreParVector *CpVn; ///< Particle concentration values at the next time step
     mfem::HypreParVector *RHCp; ///< Right-hand-side vector at the current time step
     mfem::HypreParMatrix *Tmatp; ///< System matrix for time-stepping
+
+    std::shared_ptr<mfem::ParBilinearForm> pKx2;
 
 };
 

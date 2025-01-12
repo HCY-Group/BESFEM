@@ -9,7 +9,7 @@
 double BvP = 0.0; ///< Global variable for the boundary value of particle potential
 
 PotP::PotP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Potentials(pm, fe, mh), dbc_e_bdr(mh.dbc_e_bdr), gtPsi(mh.gtPsi), ess_tdof_list_e(mh.ess_tdof_list_e)
+    : Potentials(pm, fe, mh), fespace(fe), dbc_e_bdr(mh.dbc_e_bdr), gtPsi(mh.gtPsi), ess_tdof_list_e(mh.ess_tdof_list_e)
     
     {
 
@@ -56,6 +56,8 @@ void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
     Potentials::ImplementBoundaryConditions(dbc_e_Coef, BvP, phx, dbc_e_bdr); // Apply BCs
 
     Kp2 = std::make_unique<ParBilinearForm>(fespace);  // Initialize as a member variable
+
+    // Kp2->Update();
 
     Potentials::KMatrix(*Kp2, cKp, ess_tdof_list_e, phx, B1t, KmP, X1v, B1v); // Assemble system matrix
     Potentials::PCG_Solver(Mpp, *cgPP_solver, KmP); // Solve the system

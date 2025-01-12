@@ -28,11 +28,15 @@ int main(int argc, char *argv[])
 //	string mesh_file = "Mesh/Smesh_80x90_AMR_D01.mesh";
 //	string dsF_file =  "Mesh/dsF_81x91_AMR_D01.txt";
 		
- 	const char *mesh_file = "Mesh_3x90_T3.mesh";
- 	const char *dsF_file = "dsF_3x90_T3.txt"; // had "dsF_AMR_T03.txt" 
+ 	// const char *mesh_file = "Mesh_3x90_T3.mesh";
+	// const char* dsF_file = "dsF_3x90_T3.txt";
+	// const char *mesh_file = "Mesh_40x30_A1.mesh";
+ 	// const char *dsF_file = "dsF_40x30_A1.txt"; // had "dsF_AMR_T03.txt" 
 
+ 	const char *mesh_file = "Mesh_3x90x3_T01.mesh";
+	const char* dsF_file = "dsF_3x90x3_T01.txt";
 
-// 	bool visualization = true;
+	bool visualization = true;
 	
 	int order = 1;
 
@@ -537,8 +541,8 @@ int main(int argc, char *argv[])
 // 	//  ===================================================================   
 		
 // 	int t = 0;
-// for (int t = 0; t < 20 + 1; t++){
-	while ( VCell > Vcut){
+for (int t = 0; t < 4000 + 1; t++){
+	// while ( VCell > Vcut){
 // //	while ( t<1 ){
 	
 	
@@ -575,8 +579,6 @@ int main(int argc, char *argv[])
 			// appendix equation A-19
 			Dp(vi) = psi(vi)*(0.0277-0.084*CnP(vi) + 0.1003*CnP(vi)*CnP(vi))*1.0e-8;
 			if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
-
-			// std::cout << "Dp[" << vi << "] = " << Dp(vi) << std::endl;
 		}	
 		GridFunctionCoefficient cDp(&Dp) ;	
 
@@ -1249,11 +1251,11 @@ int main(int argc, char *argv[])
 	int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
 
-	pmesh.Save("Original/pmesh");
-    CnP.Save("Original/CnP");
-    CnE.Save("Original/CnE");
-    phP.Save("Original/phP");
-    phE.Save("Original/phE");
+	pmesh.Save("Original1/pmesh");
+    CnP.Save("Original1/CnP");
+    CnE.Save("Original1/CnE");
+    phP.Save("Original1/phP");
+    phE.Save("Original1/phE");
 
     // std::string file_name = "CnP_solution_original." + std::to_string(rank) + ".gf";  // MFEM's GridFunction format (.gf)
     

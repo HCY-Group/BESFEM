@@ -26,11 +26,11 @@ public:
 
     /**
      * @brief Constructor for the PotE class
-     * @param pmesh Pointer to the parallel mesh
-     * @param fespace Pointer to the finite element space
+     * @param pm Pointer to the parallel mesh
+     * @param fe Pointer to the finite element space
      * @param mh Reference to the mesh handler
      */
-    PotE(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
+    PotE(mfem::ParMesh* pm, mfem::ParFiniteElementSpace* fe, MeshHandler &mh);
 
     /**
      * @brief Initializes the electrolyte potential field and solver
@@ -91,6 +91,7 @@ private:
     mfem::HypreParVector B1v; ///< Right-hand-side vector
     mfem::HypreParVector RHSl; ///< Residual vector
 
+    mfem::ParFiniteElementSpace *fespace; // Declare the member variable fe
 
     mfem::HypreParVector *CeVn; ///< Concentration at the current time step
     mfem::HypreParVector *LpCe; ///< Diffusion-related vector

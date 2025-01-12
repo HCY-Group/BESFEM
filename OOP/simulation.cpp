@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     // Main Simulation Loop
  
     // Perform simulation over time steps
-    for (int t = 0; t < 200 + 1; ++t) {
+    for (int t = 0; t < 2000 + 1; ++t) {
     // while ( VCell > Constants::VCut) {
 
         // Step 1: Update concentrations for both particle and electrolyte phases
@@ -124,14 +124,18 @@ int main(int argc, char *argv[]) {
         
         std::cout << "VCell: " << VCell << std::endl;
 
+        // if (t % 100 == 0) {
+        // std::cout << "Iteration " << t << ": VCell = " << VCell << std::endl;
+        // }
+
     }
 
-    // Save Simulation Outputs
-    pmesh.Save("Results/pmesh");
-    CnP_gf.Save("Results/CnP");
-    CnE_gf.Save("Results/CnE");
-    phP_gf.Save("Results/phP");
-    phE_gf.Save("Results/phE");
+    // // Save simulation outputs
+    // pmesh.Save("Results/pmesh");
+    // CnP_gf.Save("Results/CnP");
+    // CnE_gf.Save("Results/CnE");
+    // phP_gf.Save("Results/phP");
+    // phE_gf.Save("Results/phE");
 
     // Finalize MPI processing
     Mpi::Finalize();

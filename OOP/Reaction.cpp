@@ -89,10 +89,11 @@ void Reaction::TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_cu
     // Loop over all elements to calculate local reaction current
     for (int ei = 0; ei < nE; ei++){
         Rx.GetNodalValues(ei,VtxVal) ;
-        double val = 0.0;
-        for (int vt = 0; vt < nC; vt++){
-            val += VtxVal[vt];
-        }
+        // double val = 0.0;
+        // for (int vt = 0; vt < nC; vt++){
+        //     val += VtxVal[vt];
+        // }
+        double val = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
         EAvg(ei) = val/nC;	// Average reaction rate for the element
         local_current += EAvg(ei)*EVol(ei) ; // Accumulate local current		 			
     }

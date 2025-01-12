@@ -45,10 +45,10 @@ public:
     /**
      * @brief Sets up boundary conditions for the simulation
      * 
-     * @param[in] pmesh Pointer to the parallel mesh object
-     * @param[in] fespace Pointer to the parallel finite element space object
+     * @param[in] pm Pointer to the parallel mesh object
+     * @param[in] fe Pointer to the parallel finite element space object
      */
-    void SetupBoundaryConditions(mfem::ParMesh *pmesh, mfem::ParFiniteElementSpace *fespace);
+    void SetupBoundaryConditions(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe);
 
     std::unique_ptr<mfem::ParGridFunction> psi; ///< Solid phase potential
     std::unique_ptr<mfem::ParGridFunction> pse; ///< Electrolyte phase potential
