@@ -16,8 +16,6 @@ public:
 	void AssignDirichletBCs(GridFunctionCoefficient &Coef, Array<int> &bdr);
 	void ParaviewSave(string FileName, string VariableName, GridFunction* gf);
 	void MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh);
-	//void InitStiffMatrix(Array<int> boundary_dofs, ParGridFunction Diff);
-	//void InitTimeDepOper(ParGridFunction DomPar);
 	void InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridFunction &Diff, ParGridFunction &DomPar);
 	void UpdateLinearForm(ParGridFunction gf);
 	void UpdateLinearForm_DoubleWellPotential();
@@ -48,8 +46,6 @@ private:
 	
 	ParBilinearForm *K;
 	ParLinearForm *Fct;
-	//HypreParMatrix Kmat;
-	//HypreParVector Fcb;
 	
 	ConductionOperator* oper;
 };
