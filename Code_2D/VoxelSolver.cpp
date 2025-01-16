@@ -90,7 +90,6 @@ void VoxelSolver::AssignDirichletBCs(GridFunctionCoefficient &Coef, Array<int> &
 void VoxelSolver::DetermineConnectivityBCs(ParGridFunction &DomPar) {
 	if (this->dbcval != nullptr) {delete this->dbcval;}
 	this->dbcval = new ParGridFunction(this->Vox->ParFESpace());
-	/*
 	*this->dbcval = 0.0;
 
 	for (int vi = 0; vi < this->Vox->Size(); vi++) {
@@ -101,7 +100,6 @@ void VoxelSolver::DetermineConnectivityBCs(ParGridFunction &DomPar) {
 	
 	if (this->dbcCoef != nullptr) {delete this->dbcCoef;}
 	this->dbcCoef = new GridFunctionCoefficient(this->dbcval);
-	*/
 }
 
 void VoxelSolver::NorthDirichletBCs(Mesh *mesh) {
@@ -125,6 +123,26 @@ void VoxelSolver::NorthDirichletBCs(Mesh *mesh) {
 	
 }
 
+void VoxelSolver::SouthDirichletBCs(Mesh *mesh) {
+	if (this->dbc_bdr != nullptr) {delete this->dbc_bdr;}
+	this->dbc_bdr = new Array<int>;
+	this->dbc_bdr->SetSize(mesh->bdr_attributes.Max());
+	*this->dbc_bdr = 0;
+	cout << "HERE A" << endl;
+	cout << "Size: " << this->dbc_bdr->Size() << endl;
+	if (mesh->Dimension()==2) {
+		(*this->dbc_bdr)[0] = 1;
+	} else {
+		(*this->dbc_bdr)[1] = 1;
+	}
+	cout << "HERE B" << endl;
+
+	if (this->ess_tdof_list != nullptr) {delete this->ess_tdof_list;}
+	this->ess_tdof_list = new Array<int>;
+	cout << "HERE C" << endl;
+	this->Vox->ParFESpace()->GetEssentialTrueDofs(*this->dbc_bdr, *this->ess_tdof_list);
+	
+}
 
 /*
 void VoxelSolver::InitStiffMatrix(Array<int> boundary_dofs, ParGridFunction Diff) {

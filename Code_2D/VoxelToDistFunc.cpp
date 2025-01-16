@@ -224,6 +224,14 @@ int main(int argc, char *argv[])
 		}
 
 		// Dirichlet Boundary conditions
+		if (ConIter==0){
+			ConnectSolver.NorthDirichletBCs(maker.GetParallelMesh());
+		} else{
+			ConnectSolver.SouthDirichletBCs(maker.GetParallelMesh());
+		}
+		ConnectSolver.DetermineConnectivityBCs(psi);
+		
+		/*
 		Array<int> dbc_bdr(pmesh.bdr_attributes.Max());
 		dbc_bdr = 0; 
 		if (pmesh.Dimension()==2) {
@@ -251,17 +259,19 @@ int main(int argc, char *argv[])
 		GridFunctionCoefficient dbcCoef(&dbcval);
 		
 		ConnectSolver.AssignDirichletBCs(dbcCoef, dbc_bdr);
+		*/
 		
-		//ConnectSolver.NorthDirichletBCs(maker.GetParallelMesh());
-		ConnectSolver.DetermineConnectivityBCs(psi);
-		
-		ConnectSolver.InitMatricesAndTimeDepOpers(ess_tdof_list, psi, psi);
+		ConnectSolver.AssignDirichletBCs(*ConnectSolver.GetBCCoef(), *ConnectSolver.GetBCMarker());
+		//ConnectSolver.InitMatricesAndTimeDepOpers(ess_tdof_list, psi, psi);
+		ConnectSolver.InitMatricesAndTimeDepOpers(*ConnectSolver.GetTDOF(), psi, psi);
 		
 		t_ode = 0.0;
 		dt = 0.05;
 		for (int t = 0; t < 100; t++){
-			ConnectSolver.UpdateSystemAndSolve(ess_tdof_list, t_ode, dt);
-			ConnectSolver.AccelerateDiffusion(psi, dbcCoef, dbc_bdr);
+			//ConnectSolver.UpdateSystemAndSolve(ess_tdof_list, t_ode, dt);
+			//ConnectSolver.AccelerateDiffusion(psi, dbcCoef, dbc_bdr);
+			ConnectSolver.UpdateSystemAndSolve(*ConnectSolver.GetTDOF(), t_ode, dt);
+			ConnectSolver.AccelerateDiffusion(psi, *ConnectSolver.GetBCCoef(), *ConnectSolver.GetBCMarker());
 		}
 
 		// Output Cn to Paraview

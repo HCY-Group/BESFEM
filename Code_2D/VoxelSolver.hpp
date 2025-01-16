@@ -24,10 +24,15 @@ public:
 	void UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, double dt);
 	void AccelerateDiffusion(ParGridFunction &DomPar, GridFunctionCoefficient &Coef, Array<int> &bdr);
 	void NorthDirichletBCs(Mesh *mesh);
+	void SouthDirichletBCs(Mesh *mesh);
 	void DetermineConnectivityBCs(ParGridFunction &DomPar);
 	
 	GridFunction* GetGlobalVox() {return gVox;}
 	ParGridFunction* GetParallelVox() {return Vox;}
+	
+	GridFunctionCoefficient* GetBCCoef() {return dbcCoef;}
+	Array<int>* GetBCMarker() {return dbc_bdr;}
+	Array<int>* GetTDOF() {return ess_tdof_list;}
 
 protected:
 	ODESolver* ode_solver;
