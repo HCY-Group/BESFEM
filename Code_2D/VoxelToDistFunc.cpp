@@ -231,45 +231,13 @@ int main(int argc, char *argv[])
 		}
 		ConnectSolver.DetermineConnectivityBCs(psi);
 		
-		/*
-		Array<int> dbc_bdr(pmesh.bdr_attributes.Max());
-		dbc_bdr = 0; 
-		if (pmesh.Dimension()==2) {
-			if (ConIter==0){
-				dbc_bdr[2] = 1; //north?
-			} else {
-				dbc_bdr[0] = 1; //south?
-			}
-		} else {
-			if (ConIter==0){
-				dbc_bdr[3] = 1; //north?
-			} else {
-				dbc_bdr[1] = 1; //south?
-			}
-		}	
-		Array<int> ess_tdof_list(0);
-		fespace.GetEssentialTrueDofs(dbc_bdr, ess_tdof_list);
-		ParGridFunction dbcval(&fespace);
-		dbcval = 0.0;
-		for (int vi = 0; vi < nV; vi++){
-			if ( psi(vi) > 0.6 ){
-				dbcval(vi) = 1.0;
-			}
-		}
-		GridFunctionCoefficient dbcCoef(&dbcval);
-		
-		ConnectSolver.AssignDirichletBCs(dbcCoef, dbc_bdr);
-		*/
 		
 		ConnectSolver.AssignDirichletBCs(*ConnectSolver.GetBCCoef(), *ConnectSolver.GetBCMarker());
-		//ConnectSolver.InitMatricesAndTimeDepOpers(ess_tdof_list, psi, psi);
 		ConnectSolver.InitMatricesAndTimeDepOpers(*ConnectSolver.GetTDOF(), psi, psi);
 		
 		t_ode = 0.0;
 		dt = 0.05;
 		for (int t = 0; t < 100; t++){
-			//ConnectSolver.UpdateSystemAndSolve(ess_tdof_list, t_ode, dt);
-			//ConnectSolver.AccelerateDiffusion(psi, dbcCoef, dbc_bdr);
 			ConnectSolver.UpdateSystemAndSolve(*ConnectSolver.GetTDOF(), t_ode, dt);
 			ConnectSolver.AccelerateDiffusion(psi, *ConnectSolver.GetBCCoef(), *ConnectSolver.GetBCMarker());
 		}
