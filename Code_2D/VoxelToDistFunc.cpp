@@ -28,6 +28,7 @@ int main(int argc, char *argv[])
 	cout << "LOADING IN TIFF" << endl;
 	const char* tiffname ="II_1_bin.tif";
 	Constraints args;
+	//TODO: The code works with serial 2d, parallel 2d, and serial 3d, but not parallel 3d
 	args.Depth_begin = 0;	//only read in one slice for 2D data
 	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
