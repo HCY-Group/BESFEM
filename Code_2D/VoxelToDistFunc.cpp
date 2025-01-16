@@ -129,36 +129,16 @@ int main(int argc, char *argv[])
 
 
 
-
-
-
-
-
-
-	// make variable names match from up above...
-	ParMesh pmesh(*maker.GetParallelMesh());
-	//ParGridFunction Vox2(*solver.GetParallelVox());
-	ParGridFunction Vox(*solver.GetParallelVox());
-	// TODO: When we construct fespace, do we need to also copy ParMesh and FiniteElementCollection???
-	ParFiniteElementSpace fespace(*maker.GetParallelFESpace());
-	cout << fespace.GetFE(0) << endl;
-	
-	int order = 1;
-	int nV = pmesh.GetNV();			//number of vertices
-
-
-
-
-
 	// ======================================
 	// FIND DISTANCE FUNCTION BY REINITIALIZING LEVEL SET
 	// ======================================
 	cout << "FINDING DISTANCE FUNCTION WITH LEVEL SET REINITIALIZATION" << endl;
 	
 	// Need to use Discontinuous Galerkin (DG) for upwinding (look at MFEM examples 9 and 18)
-	DG_FECollection fec_dg(order, pmesh.Dimension(), BasisType::GaussLobatto);
-	ParFiniteElementSpace fespace_dg(&pmesh, &fec_dg);
-	ParFiniteElementSpace dfespace_dg(&pmesh, &fec_dg, pmesh.Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
+	int order = 1;
+	DG_FECollection fec_dg(order, maker.GetParallelMesh()->Dimension(), BasisType::GaussLobatto);
+	ParFiniteElementSpace fespace_dg(maker.GetParallelMesh(), &fec_dg);
+	ParFiniteElementSpace dfespace_dg(maker.GetParallelMesh(), &fec_dg, maker.GetParallelMesh()->Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
 	maker.Make_DG_FESpace_Parallel();
 
 	
@@ -200,10 +180,10 @@ int main(int argc, char *argv[])
 	// ======================================
 
 	// Use d to define psi
-	ParGridFunction psi(&fespace);
+	ParGridFunction psi(maker.GetParallelFESpace());
 	psi.ProjectGridFunction(d);
 	psi -= 0.5; // Center about 0
-	for (int vi = 0; vi < nV; vi++){
+	for (int vi = 0; vi < maker.GetParallelMesh()->GetNV(); vi++){
 		psi(vi) = 0.5*( tanh(psi(vi)) + 1.0 );
 	}
 
@@ -253,127 +233,6 @@ int main(int argc, char *argv[])
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	// Concentration GridFunction
-	ParGridFunction Cn(&fespace);
-	Cn = 0.0;
-	
-	// Define order parameter psi from distance function
-	// This will use diffusion, so here we use H1 Finite Element Space again
-	ParGridFunction psi(&fespace);
-	psi.ProjectGridFunction(d);
-	double zeta = 0.75;
-	for (int vi = 0; vi < nV; vi++){
-		psi(vi) = 0.5*( 1.0+tanh(psi(vi)/zeta) );
-	}
-	psi = 1.0;
-	cout << "Min psi: " << psi.Min() << endl;
-	cout << "Max psi: " << psi.Max() << endl;
-	
-	// Indicate Dirichlet boundary conditions
-	Array<int> dbc_bdr(pmesh.bdr_attributes.Max());
-	dbc_bdr = 0; dbc_bdr[2] = 1;
-	// Node labels of Dirichlet BC
-	Array<int> ess_tdof_list(0);
-	fespace.GetEssentialTrueDofs(dbc_bdr, ess_tdof_list);
-	// Assign Dirichlet values
-	ConstantCoefficient dbc_Coef(1.0);
-	Cn.ProjectBdrCoefficient(dbc_Coef, dbc_bdr);
-	
-	// stiffness matrix and forcing vector
-	GridFunctionCoefficient psi_coef(&psi);
-	std::unique_ptr<ParBilinearForm> KCn(new ParBilinearForm(&fespace));
-	KCn->AddDomainIntegrator(new DiffusionIntegrator(psi_coef));
-	KCn->Assemble();
-	
-	ParLinearForm FctCn(&fespace);
-	HypreParMatrix KmatCn;
-	HypreParVector X1vCn(&fespace);
-	HypreParVector FcbCn(&fespace);
-	//KCn->FormLinearSystem(ess_tdof_list, Cn, FctCn, KmatCn, X1vCn, FcbCn);
-	KCn->FormLinearSystem(boundary_dofs, Cn, FctCn, KmatCn, X1vCn, FcbCn);
-	cout << "b max: " << FctCn.Max() << endl;
-	cout << "B max: " << FcbCn.Max() << endl;
-
-	// Initialize TimeDependentOperator and ODESolver
-	ConductionOperator operCon(psi, KmatCn, FcbCn, ess_tdof_list);
-	//ConductionOperator operCon(psi, KmatCn, FcbCn, boundary_dofs);
-	//operCon.~ConductionOperator();
-	
-	ODESolver *ode_solver_Con = new ForwardEulerSolver;
-	//ODESolver *ode_solver_Con = new BackwardEulerSolver;
-	ode_solver_Con->Init(operCon);
-	
-	// Output Cn to Paraview
-	cout << "PRINTING OUT Electrolyte Concentration" << endl;
-	//ParaViewDataCollection *pd = NULL;
-	pd = NULL;
-	pd = new ParaViewDataCollection("InitConn_E", &pmesh);
-	pd->RegisterField("Conn_E", &Cn);
-	pd->RegisterField("psi", &psi);
-	pd->SetLevelsOfDetail(order);
-	pd->SetDataFormat(VTKFormat::BINARY);
-	pd->SetHighOrderOutput(true);
-	pd->SetCycle(0);
-	pd->SetTime(0.0);
-	pd->Save();
-	delete pd;
-
-	// Time Step
-	HypreParVector Cn0(&fespace);
-	t_ode = 0.0;
-	dt = 0.0005;
-	for (int t = 0; t < 1; t++){
-		//Cn.GetTrueDofs(Cn0);
-		//ode_solver_Con->Step(Cn0, t_ode, dt);
-		//Cn.Distribute(Cn0);
-		
-		ode_solver_Con->Step(X1vCn, t_ode, dt);
-		KCn->RecoverFEMSolution(X1vCn, FctCn, Cn);
-		
-		// update only in the region of interest
-		//for (int vi = 0; vi < nV; vi++){
-		//	if (psi(vi) < 1.0e-5){
-		//		Cn(vi) = 0.0;
-		//	}
-		//}
-		
-		cout << "iter: " << t << " max Cn: " << Cn.Max() << endl;
-		cout << "iter: " << t << " min Cn: " << Cn.Min() << endl;
-	}
-	
-	// Output Cn to Paraview
-	cout << "PRINTING OUT Electrolyte Concentration" << endl;
-	//ParaViewDataCollection *pd = NULL;
-	pd = NULL;
-	pd = new ParaViewDataCollection("Conn_E", &pmesh);
-	pd->RegisterField("Conn_E", &Cn);
-	pd->RegisterField("psi", &psi);
-	pd->SetLevelsOfDetail(order);
-	pd->SetDataFormat(VTKFormat::BINARY);
-	pd->SetHighOrderOutput(true);
-	pd->SetCycle(0);
-	pd->SetTime(0.0);
-	pd->Save();
-	delete pd;
-
-	cout << "Here at end" << endl;
-	*/
 
 	return 0;
 
