@@ -36,7 +36,7 @@ protected:
 	Array<int> *dbc_bdr = nullptr;
 	ParGridFunction *dbcval = nullptr;
 	GridFunctionCoefficient *dbcCoef = nullptr;
-
+	
 private:
 	GridFunction* gVox;
 	ParGridFunction* Vox;

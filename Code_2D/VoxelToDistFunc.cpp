@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 	// Time Stepping
 	t_ode = 0.0;
 	dt = 0.1;
-	for (int t = 0; t < 50; t++){
+	for (int t = 0; t < 10; t++){
 		solver_dg.CalcLevelSetVel();
 		
 		
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
 		ConnectSolver.AssignDirichletBCs(dbcCoef, dbc_bdr);
 		
 		//ConnectSolver.NorthDirichletBCs(maker.GetParallelMesh());
-		//ConnectSolver.DetermineConnectivityBCs(psi);
+		ConnectSolver.DetermineConnectivityBCs(psi);
 		
 		ConnectSolver.InitMatricesAndTimeDepOpers(ess_tdof_list, psi, psi);
 		
