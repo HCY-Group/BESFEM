@@ -67,7 +67,9 @@ void MeshHandler::InitializeMesh() {
     EVol = EVolTemp;
 
     // Create Local FE Space
+    // fespace = make_shared<mfem::ParFiniteElementSpace>(pmesh0.get(), new mfem::H1_FECollection(order, pmesh0->Dimension()), pmesh0->Dimension(), Ordering::byNODES);
     fespace = make_shared<mfem::ParFiniteElementSpace>(pmesh0.get(), new mfem::H1_FECollection(order, pmesh0->Dimension()));
+
 
     // Local (parallel) GridFunction
     dsF = make_unique<mfem::ParGridFunction>(fespace.get());
@@ -207,28 +209,36 @@ void MeshHandler::PrintMeshInfo() {
 }
 
 void MeshHandler::SetupBoundaryConditions(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe) {
-        
-    // Boundary attributes for Neumann BC on the west boundary
+    
+    // South 1 [0] ; East 2 [1]; North 3 [2]; West 4 [3]
+
+    // Boundary attributes for Neumann BC on the west boundary for CnE
     nbc_w_bdr.SetSize(pm->bdr_attributes.Max());
     nbc_w_bdr = 0; 
-    nbc_w_bdr[0] = 1;  // Applying Neumann BC to the west boundary
+    // nbc_w_bdr[0] = 1;  // Applying Neumann BC to the west boundary
+    nbc_w_bdr[3] = 1;  // Applying Neumann BC to the west boundary
 
-    // Dirichlet BC on the east boundary for CnP
+
+    // Dirichlet BC on the east boundary for CnP & phP
     dbc_e_bdr.SetSize(pm->bdr_attributes.Max());
     dbc_e_bdr = 0; 
-    dbc_e_bdr[2] = 1;  // Applying Dirichlet BC to the east boundary
+    // dbc_e_bdr[2] = 1;  // Applying Dirichlet BC to the east boundary
+    dbc_e_bdr[1] = 1;  // Applying Dirichlet BC to the east boundary
+
 
     // Extract essential true DOFs (Dirichlet BCs) on the east boundary
-    // mfem::Array<int> ess_tdof_list_e(0);
+    mfem::Array<int> ess_tdof_list_e(0);
     fe->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
 
-    // Dirichlet BC on the west boundary for CnE
+    // Dirichlet BC on the west boundary for CnE & phE
     dbc_w_bdr.SetSize(pm->bdr_attributes.Max());
     dbc_w_bdr = 0; 
-    dbc_w_bdr[0] = 1;  // Applying Dirichlet BC to the west boundary
+    // dbc_w_bdr[0] = 1;  // Applying Dirichlet BC to the west boundary
+    dbc_w_bdr[3] = 1;  // Applying Dirichlet BC to the west boundary
+
 
     // Extract essential true DOFs (Dirichlet BCs) on the west boundary
-    // mfem::Array<int> ess_tdof_list_w(0);
+    mfem::Array<int> ess_tdof_list_w(0);
     fe->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
     
 }

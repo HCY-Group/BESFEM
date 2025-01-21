@@ -33,8 +33,8 @@ int main(int argc, char *argv[])
 	// const char *mesh_file = "Mesh_40x30_A1.mesh";
  	// const char *dsF_file = "dsF_40x30_A1.txt"; // had "dsF_AMR_T03.txt" 
 
- 	const char *mesh_file = "Mesh_3x90x3_T01.mesh";
-	const char* dsF_file = "dsF_3x90x3_T01.txt";
+ 	const char *mesh_file = "Mesh_3x90_2.mesh";
+	const char* dsF_file = "dsF_3x90_2.txt";
 
 	bool visualization = true;
 	
@@ -248,7 +248,11 @@ int main(int argc, char *argv[])
 	Array<int> ess_tdof_list_w(0);			
 	fespace.GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);	
 	
-// // 	ConstantCoefficient one(1.0);		
+// // 	ConstantCoefficient one(1.0);	
+
+    cout << "Total Psi: " << gtPsi << endl;
+    cout << "Total Pse: " << gtPse << endl;
+    cout << "Target Current: " << gTrgI << endl;
 		
 	
 // 	// delete global mesh because it is longer used
@@ -541,8 +545,8 @@ int main(int argc, char *argv[])
 // 	//  ===================================================================   
 		
 // 	int t = 0;
-for (int t = 0; t < 4000 + 1; t++){
-	// while ( VCell > Vcut){
+// for (int t = 0; t < 4000 + 1; t++){
+while ( VCell > Vcut){
 // //	while ( t<1 ){
 	
 	
@@ -1251,11 +1255,13 @@ for (int t = 0; t < 4000 + 1; t++){
 	int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the MPI rank
 
-	pmesh.Save("Original1/pmesh");
-    CnP.Save("Original1/CnP");
-    CnE.Save("Original1/CnE");
-    phP.Save("Original1/phP");
-    phE.Save("Original1/phE");
+	pmesh.Save("Original_2/pmesh");
+    CnP.Save("Original_2/CnP");
+    CnE.Save("Original_2/CnE");
+    phP.Save("Original_2/phP");
+    phE.Save("Original_2/phE");
+	psi.Save("Original_2/psi");
+    pse.Save("Original_2/pse");
 
     // std::string file_name = "CnP_solution_original." + std::to_string(rank) + ".gf";  // MFEM's GridFunction format (.gf)
     

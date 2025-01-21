@@ -60,7 +60,6 @@ void Potentials::PCG_Solver(mfem::HypreSmoother &smoother, mfem::CGSolver &cg, m
     cg.SetPreconditioner(smoother); // Attach the preconditioner to the solver
     cg.SetOperator(KMatrix); // Set the stiffness matrix as the operator
 
-
 }
 
 void Potentials::ImplementBoundaryConditions(mfem::ConstantCoefficient &dbc_Coef, double Bv, mfem::ParGridFunction &phx, mfem::Array<int> dbc_bdr){
