@@ -8,16 +8,21 @@ namespace Constants {
     // const char* mesh_file = "Mesh_3x90_T3.mesh";            ///< Path to the mesh file
     // const char* dsF_file = "dsF_3x90_T3.txt";               ///< Path to the surface flux data file
 
-    const char* mesh_file = "Mesh_40x30_A1.mesh";            ///< Path to the mesh file
-    const char* dsF_file = "dsF_40x30_A1.txt";               ///< Path to the surface flux data file
+    // const char* mesh_file = "Mesh_40x30_A1.mesh";            ///< Path to the mesh file
+    // const char* dsF_file = "dsF_40x30_A1.txt";               ///< Path to the surface flux data file
 
-    // const char* mesh_file = "Mesh_3x90_2.mesh";            ///< Path to the mesh file
-    // const char* dsF_file = "dsF_3x90_2.txt";               ///< Path to the surface flux data file
+    const char* mesh_file = "Mesh_40x30_2.mesh";            ///< Path to the mesh file
+    const char* dsF_file = "dsF_40x30_2.txt";               ///< Path to the surface flux data file
 
     bool visualization = true;
     const int order = 1;                                    ///< Order of the finite element basis functions
+    // const double dh = 0.5e-4;                               ///< Mesh element size
+    // const double zeta = 1.0 * 0.375;                        ///< Interfacial thickness
+
     const double dh = 0.5e-4;                               ///< Mesh element size
     const double zeta = 1.0 * 0.375;                        ///< Interfacial thickness
+    const double ze = 1.0e-5;
+
     const double thres = 1.0e-3;                            ///< Threshold value for numerical operations
     const double eps = 1.0e-6;                              ///< Small epsilon value for numerical tolerance
     const double dt = 1.864558472553700e-01 / 40;           ///< Time step size
