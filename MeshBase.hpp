@@ -6,7 +6,14 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
+
 class MeshBase {
+private:
+    std::vector<std::vector<std::vector<int>>> tiffdata;
+    bool tiffDataLoaded = false;
+
 protected:
     std::unique_ptr<mfem::Mesh> globalMesh;             // Global serial mesh
     std::unique_ptr<mfem::ParMesh> parallelMesh;        // Parallel mesh
@@ -15,6 +22,8 @@ protected:
     std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; // Parallel finite element space
     mfem::Vector elementVolumes;                       // Element volumes
     mfem::Array<int> boundaryMarkers;                  // Boundary markers
+    std::vector<std::vector<std::vector<int>>> data;
+
 
 public:
     MeshBase();
@@ -29,6 +38,13 @@ public:
 
     // Parallel finite element space setup
     void SetupParFiniteElementSpace(int order);
+
+    // Assign global values
+    void AssignGlobalValues(const char* mesh_file, vector<vector<vector<int>>> data = {});
+
+    // Map global values to local
+    void MapGlobalToLocal(const char* meshFile);
+
 
     // // Element volume calculation
     // void CalculateElementVolumes();
@@ -49,6 +65,16 @@ public:
     int nV; ///< Number of vertices
     int nE; ///< Number of elements
     int nC; ///< Number of corners per element
+
+    int gei;                // global element indices
+    int ei;                 // local element indices
+
+    double Onm; ///< Number of grid function entries
+    std::unique_ptr<mfem::GridFunction> gDsF; ///< Global distance function grid
+    std::unique_ptr<mfem::ParGridFunction> dsF; ///< distance function grid
+    std::unique_ptr<mfem::GridFunction> gVox; ///< Global vox function grid
+    std::unique_ptr<mfem::ParGridFunction> Vox; ///< Vox function grid
+
 
 };
 

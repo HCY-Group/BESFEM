@@ -1,3 +1,5 @@
+// This Mesh_Test code tests handling the mesh as done in Anna's OOP, but now using Mesh Base class MeshBase
+
 #include "Mesh_Test.hpp"
 #include "Constants.hpp"
 #include <iostream>
@@ -11,19 +13,23 @@ Mesh_Test::~Mesh_Test() = default;
 void Mesh_Test::Initialize() {
     
     // Initialize the global mesh
-    InitializeGlobalMesh(Constants::mesh_file);
+    MeshBase::InitializeGlobalMesh(Constants::mesh_file);
 
     // Initialize the parallel mesh
-    InitializeParallelMesh(MPI_COMM_WORLD);
+    MeshBase::InitializeParallelMesh(MPI_COMM_WORLD);
 
     // Set up the finite element space
-    SetupFiniteElementSpace(Constants::order);
+    MeshBase::SetupFiniteElementSpace(Constants::order);
 
     // Set up the parallel finite element space
-    SetupParFiniteElementSpace(Constants::order);
+    MeshBase::SetupParFiniteElementSpace(Constants::order);
+
+    MeshBase::AssignGlobalValues(Constants::mesh_file, data);
+
+    MeshBase::MapGlobalToLocal(Constants::mesh_file);
 
     // // Initialize grid functions
-    // psi = std::make_unique<mfem::ParGridFunction>(parFeSpace.get());
+    // psi = std::make_unique<mfem::ParGridFunction>(parfespace.get());
     // pse = std::make_unique<mfem::ParGridFunction>(parFeSpace.get());
 
     // // Compute element volumes
