@@ -166,6 +166,7 @@ private:
     double eps; ///< Epsilon value from Constants
     double rho; ///< Lithium site density from Constants
     double Cr; ///< C-rate from Constants
+    double ze;
     
     double Onm; ///< Number of grid function entries
     double localTotal; ///< Total computed value
