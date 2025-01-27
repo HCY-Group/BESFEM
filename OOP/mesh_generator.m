@@ -15,7 +15,7 @@ h = 0.2e-4;
 % lines of points
 mn = me+1;      % # of rows
 nn = ne+1;      % # of columns
-
+% 
 for i = 1: mn
     plot([1,nn],[i,i],'k-','LineWidth',2)
     hold on
@@ -54,19 +54,31 @@ for i = 1: mn
         N_ps(nid,1) = (i-1)*h;  % row
         N_ps(nid,3) = nid - 1;
 
+        % N_ps(nid,2) = (j-1);  % column
+        % N_ps(nid,1) = (i-1);  % row
+        % N_ps(nid,3) = nid - 1;
+
         NRC(nid,1:2) = [i,j];
         NRC(nid,3) = nid - 1;
 
     end
 end
 
-ze = 0.2*h;
+% ze = 0.2*h;
+% ze = 5*h;
+ze = 1.0e-5;
 
-xc = 12.1e-4;
+% xc = 12.1e-4;
+% xc = ((nn - 1) * h) / 2;
+% xc = h*nn/2 + 15*h;
+xc = 3.5e-4;
+
 
 for i = 1: size(N_ps,1)
 
     dis(i,1) = +(N_ps(i,2) - xc);
+    % dis(i,1) = +(N_ps(i,2));
+
 
     psi(i) = 0.5*(1+tanh(dis(i,1)/ze));
 
@@ -77,9 +89,21 @@ end
 
 figure()
 
-hold on
-set(gcf,'color','w')
-hold off
+imagesc(psi2);
+colorbar;
+title('Psi Distribution');
+
+figure()
+
+imagesc(dis2);
+colorbar;
+title('distance');
+
+% figure()
+% 
+% hold on
+% set(gcf,'color','w')
+% hold off
 
 for i = 1: me*ne
 
@@ -191,6 +215,14 @@ for k = 1: size(N_ps,1)
     fprintf(fid,'%.7f %.7f\n',N_ps(k,1:2));
 end
 fprintf(fid,'%s\n','');
+
+% fprintf(fid,'%s\n','vertices');  
+% fprintf(fid,'%s\n',num2str(size(N_ps,1)));
+% fprintf(fid,'%s\n',num2str(dim));
+% for el = 1: nid
+%     fprintf(fid, '%d %d\n', NRC(el,1)-1, NRC(el,3));
+% end
+% fprintf(fid,'%s\n','');
 
 fclose(fid);
 
