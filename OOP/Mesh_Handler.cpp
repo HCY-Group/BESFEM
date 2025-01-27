@@ -20,7 +20,7 @@ double gTrgI = 0.0;
 
 MeshHandler::MeshHandler()
     : mesh_file(Constants::mesh_file), dsF_file(Constants::dsF_file), order(Constants::order), dh(Constants::dh), 
-      zeta(Constants::zeta), eps(Constants::eps), rho(Constants::rho), Cr(Constants::Cr),
+      zeta(Constants::zeta), eps(Constants::eps), rho(Constants::rho), Cr(Constants::Cr), ze(Constants::ze),
       gtPsi(0.0), gtPse(0.0){}
 
 
@@ -125,9 +125,13 @@ void MeshHandler::InterpolateDomainParameters(const std::shared_ptr<mfem::ParFin
 
     // interpolate domain parameter from distance function
     for (int vi = 0; vi < nV; vi++) {
-        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (zeta * dh))); // must use * to dereference to access
+        // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (zeta * dh))); // must use * to dereference to access
+        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (ze))); // must use * to dereference to access
+
         (*pse)(vi) = 1.0 - (*psi)(vi);
-        (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (zeta * dh)), 2) - 1.0) / (2 * zeta * dh);
+        // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (zeta * dh)), 2) - 1.0) / (2 * zeta * dh);
+        (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (ze)), 2) - 1.0) / (2 * ze);
+
 
         if ((*psi)(vi) < eps) { (*psi)(vi) = eps; }
         if ((*pse)(vi) < eps) { (*pse)(vi) = eps; }
