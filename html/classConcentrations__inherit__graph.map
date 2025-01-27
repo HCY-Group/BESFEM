@@ -1,7 +1,0 @@
-<map id="Concentrations" name="Concentrations">
-<area shape="rect" id="Node000001" title="Class to handle concentration calculations in a battery simulation." alt="" coords="49,5,237,831"/>
-<area shape="rect" id="Node000002" href="$classCnE.html" title="Derived class implementing electrolyte concentration models for battery simulations." alt="" coords="5,879,131,1344"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="99,845,96,879,90,878,94,844"/>
-<area shape="rect" id="Node000003" href="$classCnP.html" title="Derived class implementing particle concentration models for battery simulations." alt="" coords="155,929,280,1294"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="191,844,200,928,195,929,186,845"/>
-</map>

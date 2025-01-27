@@ -1,9 +1,0 @@
-<map id="files/Reaction.hpp" name="files/Reaction.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="157,5,296,31"/>
-<area shape="rect" id="Node000002" href="$Current_8cpp.html" title="Implementation of the Current class for controlling current in battery simulations." alt="" coords="5,79,133,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="190,39,96,81,94,76,188,34"/>
-<area shape="rect" id="Node000003" href="$Reaction_8cpp.html" title="Implementation of the Reaction class for electrochemical reaction modeling in batteries." alt="" coords="158,79,295,104"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="229,44,229,79,224,79,224,44"/>
-<area shape="rect" id="Node000004" href="$simulation_8cpp.html" title=" " alt="" coords="320,79,469,104"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="267,34,368,76,366,81,265,38"/>
-</map>

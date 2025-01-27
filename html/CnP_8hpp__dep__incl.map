@@ -1,9 +1,0 @@
-<map id="files/CnP.hpp" name="files/CnP.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="145,5,249,31"/>
-<area shape="rect" id="Node000002" href="$CnP_8cpp.html" title="Implementation of the electrolyte concentration class for battery simulations." alt="" coords="5,79,108,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="163,39,81,81,78,76,161,34"/>
-<area shape="rect" id="Node000003" href="$Current_8cpp.html" title="Implementation of the Current class for controlling current in battery simulations." alt="" coords="133,79,261,104"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="199,44,199,79,194,79,194,44"/>
-<area shape="rect" id="Node000004" href="$simulation_8cpp.html" title=" " alt="" coords="285,79,434,104"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="236,34,334,76,332,81,234,39"/>
-</map>
