@@ -11,15 +11,11 @@ using namespace std;
 
 class MeshBase {
 private:
-    std::vector<std::vector<std::vector<int>>> tiffdata;
+    std::vector<std::vector<std::vector<int>>> tiffData;
     bool tiffDataLoaded = false;
 
 protected:
-    std::unique_ptr<mfem::Mesh> globalMesh;             // Global serial mesh
-    std::unique_ptr<mfem::ParMesh> parallelMesh;        // Parallel mesh
-    std::shared_ptr<mfem::FiniteElementSpace> feSpace;  // Serial finite element space
-    std::shared_ptr<mfem::FiniteElementSpace> globalfespace; // Parallel finite element space
-    std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; // Parallel finite element space
+
     mfem::Vector elementVolumes;                       // Element volumes
     mfem::Array<int> boundaryMarkers;                  // Boundary markers
     std::vector<std::vector<std::vector<int>>> data;
@@ -32,6 +28,8 @@ public:
     // Mesh initialization
     void InitializeGlobalMesh(const char* meshFile);
     void InitializeParallelMesh(MPI_Comm comm);
+    std::vector<std::vector<std::vector<int>>>ReadTiffFile(const char* meshFile);
+    std::unique_ptr<mfem::Mesh>CreateGlobalMeshFromTiffData(const std::vector<std::vector<std::vector<int>>>& tiffData);
 
     // Finite element space setup
     void SetupFiniteElementSpace(int order);
@@ -40,7 +38,7 @@ public:
     void SetupParFiniteElementSpace(int order);
 
     // Assign global values
-    void AssignGlobalValues(const char* mesh_file, vector<vector<vector<int>>> data = {});
+    void AssignGlobalValues(const char* mesh_file);
 
     // Map global values to local
     void MapGlobalToLocal(const char* meshFile);
@@ -68,6 +66,12 @@ public:
 
     int gei;                // global element indices
     int ei;                 // local element indices
+
+    std::unique_ptr<mfem::Mesh> globalMesh;             // Global serial mesh
+    std::unique_ptr<mfem::ParMesh> parallelMesh;        // Parallel mesh
+    std::shared_ptr<mfem::FiniteElementSpace> feSpace;  // Serial finite element space
+    std::shared_ptr<mfem::FiniteElementSpace> globalfespace; // Parallel finite element space
+    std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; // Parallel finite element space
 
     double Onm; ///< Number of grid function entries
     std::unique_ptr<mfem::GridFunction> gDsF; ///< Global distance function grid

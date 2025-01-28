@@ -170,17 +170,19 @@ LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \
 
 # Source files for the simulation
 SRC_FILES = battery_simulation.cpp Constants.cpp Mesh_Test.cpp \
-            MeshBase.cpp
+            MeshBase.cpp readtiff.cpp
 
 # Output executable
 EXEC = simulation
+
+LDFLAGS = -ltiff
 
 # Default target
 all: $(EXEC)
 
 # Compile the simulation target
 $(EXEC): $(SRC_FILES)
-	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) $^ -o $@ $(LIB_FLAGS)
+	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) $^ -o $@ $(LIB_FLAGS) $(LDFLAGS)
 
 # Clean build artifacts
 clean:

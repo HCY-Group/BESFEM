@@ -24,18 +24,18 @@ void Mesh_Test::Initialize() {
     // Set up the parallel finite element space
     MeshBase::SetupParFiniteElementSpace(Constants::order);
 
-    MeshBase::AssignGlobalValues(Constants::mesh_file, data);
+    MeshBase::AssignGlobalValues(Constants::mesh_file);
 
-    MeshBase::MapGlobalToLocal(Constants::mesh_file);
+    // MeshBase::MapGlobalToLocal(Constants::mesh_file);
 
-    // // Initialize grid functions
-    // psi = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-    // pse = std::make_unique<mfem::ParGridFunction>(parFeSpace.get());
+    // // // Initialize grid functions
+    // // psi = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    // // pse = std::make_unique<mfem::ParGridFunction>(parFeSpace.get());
 
-    // // Compute element volumes
-    // CalculateElementVolumes();
+    // // // Compute element volumes
+    // // CalculateElementVolumes();
 
-    PrintMeshInfo();
+    // PrintMeshInfo();
 }
 
 // void Mesh_Test::SetupBoundaryConditions() {
