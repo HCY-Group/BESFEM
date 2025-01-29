@@ -169,8 +169,8 @@ LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \
             -L../../../metis-4.0 -lmetis -lrt
 
 # Source files for the simulation
-SRC_FILES = battery_simulation.cpp Constants.cpp Mesh_Test.cpp \
-            MeshBase.cpp readtiff.cpp
+SRC_FILES = battery_simulation.cpp Constants.cpp Mesh.cpp \
+            readtiff.cpp
 
 # Output executable
 EXEC = simulation
