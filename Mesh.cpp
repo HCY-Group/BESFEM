@@ -10,9 +10,11 @@
 
 using namespace std;
 
+// Constructor
 Mesh::Mesh() 
 {}
 
+// Destructor
 Mesh::~Mesh() {}
 
 void Mesh::InitializeMesh(const char* meshFile, MPI_Comm comm, int order) {
@@ -40,14 +42,15 @@ void Mesh::InitializeMesh(const char* meshFile, MPI_Comm comm, int order) {
 
 }
 
+// Function to initialize the global mesh using a .tif or .mesh file
 void Mesh::InitializeGlobalMesh(const char* meshFile) {
     std::string meshFileStr(meshFile);  // Convert to std::string
     std::string fileExtension = meshFileStr.substr(meshFileStr.find_last_of(".") + 1);
 
     if (fileExtension == "tif") {
         std::cout << "Creating global mesh using .tif file" << std::endl;
-        tiffData = ReadTiffFile(meshFile);
-        globalMesh = CreateGlobalMeshFromTiffData(tiffData);
+        tiffData = ReadTiffFile(meshFile); // read voxel data from tiff file
+        globalMesh = CreateGlobalMeshFromTiffData(tiffData); // generate mesh from voxel data
     } 
     else if (fileExtension == "mesh") {
         std::cout << "Creating global mesh using .mesh file" << std::endl;
@@ -57,9 +60,11 @@ void Mesh::InitializeGlobalMesh(const char* meshFile) {
         throw std::invalid_argument("Unsupported file format. Only .tif and .mesh are allowed.");
     }
 
+    // ensure mesh supports non-conforming elements for adaptive refinement
     globalMesh->EnsureNCMesh(true);
 }
 
+// Function to initialize the parallel mesh
 void Mesh::InitializeParallelMesh(MPI_Comm comm) {
     if (!globalMesh) {
         throw std::runtime_error("Global mesh must be initialized before creating a parallel mesh.");
@@ -67,7 +72,7 @@ void Mesh::InitializeParallelMesh(MPI_Comm comm) {
     parallelMesh = std::make_unique<mfem::ParMesh>(comm, *globalMesh);
 }
 
-
+// Function to set up the finite element space on global mesh
 void Mesh::SetupFiniteElementSpace(int order) {
     if (!globalMesh) {
         throw std::runtime_error("Global mesh must be initialized before setting up FE space.");
@@ -76,6 +81,7 @@ void Mesh::SetupFiniteElementSpace(int order) {
     globalfespace = std::make_shared<mfem::FiniteElementSpace>(globalMesh.get(), fec);
 }
 
+// Function to set up finite element space on parallel mesh
 void Mesh::SetupParFiniteElementSpace(int order) {
     if (!parallelMesh) {
         throw std::runtime_error("Parallel mesh must be initialized before setting up FE space.");
@@ -202,6 +208,7 @@ void Mesh::MapGlobalToLocal(const char* meshFile) {
 
 }
 
+// Reading .tif file and returning voxel data
 std::vector<std::vector<std::vector<int>>> Mesh::ReadTiffFile(const char* meshFile) {
 
 	cout << "reading tiff file" << endl;
@@ -227,18 +234,18 @@ std::vector<std::vector<std::vector<int>>> Mesh::ReadTiffFile(const char* meshFi
     return tiffData;
 }
 
+// Create a global MFEM mesh from voxel data extracted from .tif file
 std::unique_ptr<mfem::Mesh> Mesh::CreateGlobalMeshFromTiffData(const std::vector<std::vector<std::vector<int>>>& tiffData) {
-    int nz = tiffData.size();
-    int ny = tiffData[0].size();
-    int nx = tiffData[0][0].size();
-    double sx = nx;  // make dx = 1
-    double sy = ny;  // make dy = 1
-    double sz = nz;  // make dz = 1
-    bool generate_edges = false;
-    bool sfc_ordering = false;
+    int nz = tiffData.size(); // depth dimension
+    int ny = tiffData[0].size(); // row dimension
+    int nx = tiffData[0][0].size(); // column dimension
+    double sx = nx;  // make dx = 1 // size in x direction
+    double sy = ny;  // make dy = 1 // size in y direction
+    double sz = nz;  // make dz = 1 // size in z direction
+    bool generate_edges = false; 
+    bool sfc_ordering = false; 
 
     std::unique_ptr<mfem::Mesh> mesh;
-
 
     if (nz == 1) {
         mesh = std::make_unique<mfem::Mesh>(
@@ -253,27 +260,6 @@ std::unique_ptr<mfem::Mesh> Mesh::CreateGlobalMeshFromTiffData(const std::vector
     return mesh;
 }
 
-// void Mesh::CalculateElementVolumes() {
-//     if (!parallelMesh) {
-//         throw std::runtime_error("Parallel mesh must be initialized before calculating element volumes.");
-//     }
-//     int numElements = parallelMesh->GetNE();
-//     elementVolumes.SetSize(numElements);
-//     for (int i = 0; i < numElements; ++i) {
-//         elementVolumes[i] = parallelMesh->GetElementVolume(i);
-//     }
-// }
-
-
-// void Mesh::OutputToParaview(const std::string &fileName, const std::string &varName, mfem::GridFunction *gf) {
-//     auto pd = new mfem::ParaViewDataCollection(fileName, gf->FESpace()->GetMesh());
-//     pd->RegisterField(varName, gf);
-//     pd->SetLevelsOfDetail(1);
-//     pd->SetDataFormat(mfem::VTKFormat::BINARY);
-//     pd->SetHighOrderOutput(true);
-//     pd->Save();
-//     delete pd;
-// }
 
 void Mesh::PrintMeshInfo() {
     
@@ -285,3 +271,13 @@ void Mesh::PrintMeshInfo() {
     std::cout << "Number of vertices: " << nV << "\n";
     std::cout << "Number of elements: " << nE << "\n";
 }
+
+// void Mesh::OutputToParaview(const std::string &fileName, const std::string &varName, mfem::GridFunction *gf) {
+//     auto pd = new mfem::ParaViewDataCollection(fileName, gf->FESpace()->GetMesh());
+//     pd->RegisterField(varName, gf);
+//     pd->SetLevelsOfDetail(1);
+//     pd->SetDataFormat(mfem::VTKFormat::BINARY);
+//     pd->SetHighOrderOutput(true);
+//     pd->Save();
+//     delete pd;
+// }
