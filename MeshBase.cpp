@@ -15,17 +15,42 @@ MeshBase::MeshBase()
 
 MeshBase::~MeshBase() {}
 
+void MeshBase::InitializeMesh(const char* meshFile, MPI_Comm comm, int order) {
+
+    // Initialize the global mesh
+    MeshBase::InitializeGlobalMesh(Constants::mesh_file);
+
+    // Initialize the parallel mesh
+    MeshBase::InitializeParallelMesh(MPI_COMM_WORLD);
+
+    // Set up the finite element space
+    MeshBase::SetupFiniteElementSpace(Constants::order);
+
+    // Set up the parallel finite element space
+    MeshBase::SetupParFiniteElementSpace(Constants::order);
+
+    // Assign the global values
+    MeshBase::AssignGlobalValues(Constants::mesh_file);
+
+    // Map the global values to the local
+    MeshBase::MapGlobalToLocal(Constants::mesh_file);
+
+    // Print out information relative to the mesh
+    MeshBase::PrintMeshInfo();
+
+}
+
 void MeshBase::InitializeGlobalMesh(const char* meshFile) {
     std::string meshFileStr(meshFile);  // Convert to std::string
     std::string fileExtension = meshFileStr.substr(meshFileStr.find_last_of(".") + 1);
 
     if (fileExtension == "tif") {
-        std::cout << "Global mesh using .tif file" << std::endl;
+        std::cout << "Creating global mesh using .tif file" << std::endl;
         tiffData = ReadTiffFile(meshFile);
         globalMesh = CreateGlobalMeshFromTiffData(tiffData);
     } 
     else if (fileExtension == "mesh") {
-        std::cout << "Global mesh using .mesh file" << std::endl;
+        std::cout << "Creating global mesh using .mesh file" << std::endl;
         globalMesh = std::make_unique<mfem::Mesh>(meshFile);
     } 
     else {
@@ -105,6 +130,7 @@ void MeshBase::AssignGlobalValues(const char* meshFile) {
 }
 
 void MeshBase::MapGlobalToLocal(const char* meshFile) {
+    
     if (!parallelMesh) {
         throw std::runtime_error("Parallel mesh must be initialized before calculating element volumes.");
     }
@@ -250,6 +276,7 @@ std::unique_ptr<mfem::Mesh> MeshBase::CreateGlobalMeshFromTiffData(const std::ve
 // }
 
 void MeshBase::PrintMeshInfo() {
+    
     if (!parallelMesh) {
         std::cout << "Parallel mesh not initialized.\n";
         return;

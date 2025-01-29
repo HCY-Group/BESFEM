@@ -35,7 +35,7 @@ void Mesh_Test::Initialize() {
     // // // Compute element volumes
     // // CalculateElementVolumes();
 
-    // PrintMeshInfo();
+    MeshBase::PrintMeshInfo();
 }
 
 // void Mesh_Test::SetupBoundaryConditions() {

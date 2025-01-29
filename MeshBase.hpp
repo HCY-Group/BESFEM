@@ -25,6 +25,8 @@ public:
     MeshBase();
     virtual ~MeshBase();
 
+    void InitializeMesh(const char* meshFile, MPI_Comm comm, int order);
+
     // Mesh initialization
     void InitializeGlobalMesh(const char* meshFile);
     void InitializeParallelMesh(MPI_Comm comm);
