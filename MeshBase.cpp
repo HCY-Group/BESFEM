@@ -83,6 +83,7 @@ void MeshBase::AssignGlobalValues(const char* meshFile) {
                 }
             }
         }
+
     } else if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "mesh") {
         // Process the .mesh file
         cout << "Reading .mesh file for global distance function" << endl;
@@ -103,74 +104,77 @@ void MeshBase::AssignGlobalValues(const char* meshFile) {
     }
 }
 
-// void MeshBase::MapGlobalToLocal(const char* meshFile) {
-//     if (!parallelMesh) {
-//         throw std::runtime_error("Parallel mesh must be initialized before calculating element volumes.");
-//     }
+void MeshBase::MapGlobalToLocal(const char* meshFile) {
+    if (!parallelMesh) {
+        throw std::runtime_error("Parallel mesh must be initialized before calculating element volumes.");
+    }
 
-//     if (!globalMesh) {
-//         throw std::runtime_error("Global mesh must be initialized before setting up FE space.");
-//     }
+    if (!globalMesh) {
+        throw std::runtime_error("Global mesh must be initialized before setting up FE space.");
+    }
         
-//     nV = parallelMesh->GetNV();        // number of vertices
-//     nE = parallelMesh->GetNE();        // number of elements
-//     nC = pow(2, parallelMesh->Dimension());  // number of corner vertices
+    nV = parallelMesh->GetNV();        // number of vertices
+    nE = parallelMesh->GetNE();        // number of elements
+    nC = pow(2, parallelMesh->Dimension());  // number of corner vertices
 
-//     // Map local to global element indices
-//     mfem::Array<HYPRE_BigInt> E_L2G;
-//     parallelMesh->GetGlobalElementIndices(E_L2G);
+    // Map local to global element indices
+    mfem::Array<HYPRE_BigInt> E_L2G;
+    parallelMesh->GetGlobalElementIndices(E_L2G);
 
-//     mfem::Array<int> gVTX(nC);    // global indices of corner vertices
-//     mfem::Array<int> VTX(nC);     // local indices of corner vertices
+    mfem::Array<int> gVTX(nC);    // global indices of corner vertices
+    mfem::Array<int> VTX(nC);     // local indices of corner vertices
 
-//     // Determine file type based on extension
-//     std::string meshFileStr(meshFile);  // Convert to std::string
-//     if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
-//         cout << "Reading .tif file for mapping global to local grid function" << endl;
+    // Determine file type based on extension
+    std::string meshFileStr(meshFile);  // Convert to std::string
+    if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
+        cout << "Reading .tif file for mapping global to local grid function" << endl;
 
-//         // Iterate over elements and map global to local
-//         for (ei = 0; ei < nE; ei++) {
-//             gei = E_L2G[ei];
+        Vox = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
-//             globalMesh->GetElementVertices(gei, gVTX);
-//             parallelMesh->GetElementVertices(ei, VTX);
+        // Iterate over elements and map global to local
+        for (ei = 0; ei < nE; ei++) {
+            gei = E_L2G[ei];
 
-//             for (int vi = 0; vi < nC; vi++) {
-//                 (*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);
-//             }
-//         }
-//     } else if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "mesh") {
-//         // Handle .mesh file
-//         cout << "Reading .mesh file for mapping global to local grid function" << endl;
+            globalMesh->GetElementVertices(gei, gVTX);
+            parallelMesh->GetElementVertices(ei, VTX);
 
-//         // Read global distance function
-//         gDsF = make_unique<mfem::GridFunction>(parfespace.get());
-//         Onm = gDsF->Size();
-//         ifstream myfile(Constants::dsF_file);
-//         for (int gi = 0; gi < Onm; gi++) {
-//             myfile >> (*gDsF)(gi);
-//         }
-//         myfile.close();
+            for (int vi = 0; vi < nC; vi++) {
+                (*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);
+            }
+        }
 
-//         // Assuming dsF is a ParGridFunction for the mesh file
-//         dsF = make_unique<mfem::ParGridFunction>(parfespace.get());
+    } else if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "mesh") {
+        // Handle .mesh file
+        cout << "Reading .mesh file for mapping global to local grid function" << endl;
 
-//         // Map local distance function from global one
-//         for (ei = 0; ei < nE; ei++) {
-//             gei = E_L2G[ei];
+        // Read global distance function
+        gDsF = make_unique<mfem::GridFunction>(parfespace.get());
+        Onm = gDsF->Size();
+        ifstream myfile(Constants::dsF_file);
+        for (int gi = 0; gi < Onm; gi++) {
+            myfile >> (*gDsF)(gi);
+        }
+        myfile.close();
 
-//             globalMesh->GetElementVertices(gei, gVTX);
-//             parallelMesh->GetElementVertices(ei, VTX);
+        // Assuming dsF is a ParGridFunction for the mesh file
+        dsF = make_unique<mfem::ParGridFunction>(parfespace.get());
 
-//             for (int vi = 0; vi < nC; vi++) {
-//                 (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]);
-//             }
-//         }
-//     } else {
-//         cerr << "Unsupported file type for MapGlobalToLocal" << endl;
-//     }
+        // Map local distance function from global one
+        for (ei = 0; ei < nE; ei++) {
+            gei = E_L2G[ei];
 
-// }
+            globalMesh->GetElementVertices(gei, gVTX);
+            parallelMesh->GetElementVertices(ei, VTX);
+
+            for (int vi = 0; vi < nC; vi++) {
+                (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]);
+            }
+        }
+    } else {
+        cerr << "Unsupported file type for MapGlobalToLocal" << endl;
+    }
+
+}
 
 std::vector<std::vector<std::vector<int>>> MeshBase::ReadTiffFile(const char* meshFile) {
 

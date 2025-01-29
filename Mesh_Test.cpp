@@ -26,7 +26,7 @@ void Mesh_Test::Initialize() {
 
     MeshBase::AssignGlobalValues(Constants::mesh_file);
 
-    // MeshBase::MapGlobalToLocal(Constants::mesh_file);
+    MeshBase::MapGlobalToLocal(Constants::mesh_file);
 
     // // // Initialize grid functions
     // // psi = std::make_unique<mfem::ParGridFunction>(parfespace.get());
