@@ -13,11 +13,11 @@ int main(int argc, char *argv[]) {
     geometry.InitializeMesh(Constants::mesh_file, MPI_COMM_WORLD, Constants::order);
     // mesh.SetupBoundaryConditions();
 
-    // // get the finite element space
-    // std::shared_ptr<mfem::ParFiniteElementSpace> fespace = geometry.GetParFiniteElementSpace();
+    // get the finite element space
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace = geometry.GetParFiniteElementSpace();
 
-    // Domain_Parameters domain_parameters(geometry);
-    // domain_parameters.SetupDomainParameters(fespace);
+    Domain_Parameters domain_parameters(geometry);
+    domain_parameters.SetupDomainParameters(fespace);
 
     MPI_Finalize();
     return 0;

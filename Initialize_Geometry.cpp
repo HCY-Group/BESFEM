@@ -40,8 +40,8 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
     // Print out information relative to the mesh
     PrintMeshInfo();
 
-    parallelMesh->Save("pmesh_IG");
-    dsF->Save("dsF_IG");
+    // parallelMesh->Save("pmesh_IG");
+    // dsF->Save("dsF_IG");
 
 }
 
@@ -120,12 +120,11 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile) {
 
     } else if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "mesh") {
         // Process the .mesh file
-        cout << "Reading .mesh file for global distance function" << endl;
-        ifstream myfile(meshFile);
+        cout << "Reading .dsF file for global distance function" << endl;
+        gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
+        Onm = gDsF->Size();
+        ifstream myfile(Constants::dsF_file);
         if (myfile.is_open()) {
-            // Assuming that the mesh data has a similar structure
-            gDsF = make_unique<mfem::GridFunction>(parfespace.get());
-            Onm = gDsF->Size();
             for (int gi = 0; gi < Onm; gi++) {
                 myfile >> (*gDsF)(gi);
             }
@@ -147,6 +146,9 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
     if (!globalMesh) {
         throw std::runtime_error("Global mesh must be initialized before setting up FE space.");
     }
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         
     nV = parallelMesh->GetNV();        // number of vertices
     nE = parallelMesh->GetNE();        // number of elements
@@ -182,14 +184,14 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
         // Handle .mesh file
         cout << "Reading .mesh file for mapping global to local grid function" << endl;
 
-        // Read global distance function
-        gDsF = make_unique<mfem::GridFunction>(parfespace.get());
-        Onm = gDsF->Size();
-        ifstream myfile(Constants::dsF_file);
-        for (int gi = 0; gi < Onm; gi++) {
-            myfile >> (*gDsF)(gi);
-        }
-        myfile.close();
+        // // Read global distance function
+        // gDsF = make_unique<mfem::GridFunction>(parfespace.get());
+        // Onm = gDsF->Size();
+        // ifstream myfile(Constants::dsF_file);
+        // for (int gi = 0; gi < Onm; gi++) {
+        //     myfile >> (*gDsF)(gi);
+        // }
+        // myfile.close();
 
         // Assuming dsF is a ParGridFunction for the mesh file
         dsF = make_unique<mfem::ParGridFunction>(parfespace.get());
