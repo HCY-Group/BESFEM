@@ -1,22 +1,23 @@
 #include "mfem.hpp"
-#include "Mesh.hpp"
+#include "Initialize_Geometry.hpp"
+#include "Domain_Parameters.hpp"
 #include "Constants.hpp"
 #include <mpi.h>
 
 int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     
-    Mesh mesh;
+    Initialize_Geometry geometry;
 
     // Initialize and setup the handler
-    mesh.InitializeMesh(Constants::mesh_file, MPI_COMM_WORLD, Constants::order);
+    geometry.InitializeMesh(Constants::mesh_file, MPI_COMM_WORLD, Constants::order);
     // mesh.SetupBoundaryConditions();
 
-    // // Perform calculations
-    // mesh.CalculatePhaseFields();
+    // get the finite element space
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace = geometry.GetParFiniteElementSpace();
 
-    // // Print results
-    // mesh.PrintResults();
+    Domain_Parameters domain_parameters(geometry);
+    domain_parameters.SetupDomainParameters(fespace);
 
     MPI_Finalize();
     return 0;
