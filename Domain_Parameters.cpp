@@ -20,13 +20,15 @@ Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo)
 Domain_Parameters::~Domain_Parameters() {}
 
 void Domain_Parameters::SetupDomainParameters(const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace){
-
+    
     InitializeGridFunctions(fespace);
     InterpolateDomainParameters(fespace);
     CalculatePhasePotentialsAndTargetCurrent();
 
     PrintInfo();
 
+    // pmesh->Save("pmesh_DP");
+    // dsF->Save("dsF_DP");
 }
 
 void Domain_Parameters::InitializeGridFunctions(const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace) {
@@ -73,7 +75,7 @@ void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction& grid_functi
     // Average value for each element
     mfem::Vector element_avg_values(nE);
 
-    for (int ei = 0; ei < nE; ei++) {
+    for (int ei = 0; ei < pmesh->GetNE(); ei++) {
         mfem::Array<double> vertex_values(nC);
         grid_function.GetNodalValues(ei, vertex_values);
 

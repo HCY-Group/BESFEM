@@ -40,6 +40,9 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
     // Print out information relative to the mesh
     PrintMeshInfo();
 
+    parallelMesh->Save("pmesh_IG");
+    dsF->Save("dsF_IG");
+
 }
 
 // Function to initialize the global mesh using a .tif or .mesh file
@@ -270,6 +273,8 @@ void Initialize_Geometry::PrintMeshInfo() {
     std::cout << "Number of vertices: " << nV << "\n";
     std::cout << "Number of elements: " << nE << "\n";
 }
+
+
 
 // void Mesh::OutputToParaview(const std::string &fileName, const std::string &varName, mfem::GridFunction *gf) {
 //     auto pd = new mfem::ParaViewDataCollection(fileName, gf->FESpace()->GetMesh());
