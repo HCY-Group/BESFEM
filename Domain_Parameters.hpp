@@ -29,6 +29,8 @@ public:
 
     double gtPsi; ///< Global total for Psi
     double gtPse; ///< Global total for Pse
+    mfem::Vector EVol; ///< Element volumes
+
 
 
 private:
@@ -41,16 +43,13 @@ private:
     void CalculateTargetCurrent(double total_psi);
     void PrintInfo();
 
-    mfem::Vector EVol; ///< Element volumes
-
     int nV;
     int nE;
     int nC;
     
-    std::unique_ptr<mfem::ParGridFunction> dsF; ///< distance function grid
-    std::unique_ptr<mfem::ParMesh> pmesh;        // Parallel mesh
-
-    std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
+    mfem::ParGridFunction* dsF;   ///< Pointer to distance function grid
+    mfem::ParMesh* pmesh;         ///< Pointer to parallel mesh
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Shared pointer to finite element space
 
 
     double tPsi; ///< Target Psi value

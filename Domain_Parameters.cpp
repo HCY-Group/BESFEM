@@ -13,8 +13,8 @@ double gTrgI = 0.0;
 
 // Constructor
 Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo) 
-    : geometry(geo), nV(geo.nV), nE(geo.nE), nC(geo.nC), dsF(std::move(geo.dsF)), pmesh(std::move(geo.parallelMesh)),
-    fespace(std::move(geo.parfespace))
+    : geometry(geo), nV(geo.nV), nE(geo.nE), nC(geo.nC), dsF(geo.dsF.get()), pmesh(geo.parallelMesh.get()),
+    fespace(geo.parfespace)
 {}
 
 // Destructor
