@@ -19,7 +19,7 @@ public:
     Initialize_Geometry &geometry;
     virtual ~Domain_Parameters();
 
-    void SetupDomainParameters(const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace);
+    void SetupDomainParameters();
 
 
     std::unique_ptr<mfem::ParGridFunction> psi; ///< Solid phase potential
@@ -33,8 +33,8 @@ public:
 
 private:
 
-    void InitializeGridFunctions(const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace);
-    void InterpolateDomainParameters(const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace);
+    void InitializeGridFunctions();
+    void InterpolateDomainParameters();
     void CalculateTotals(const mfem::ParGridFunction& grid_function, const mfem::Vector& element_volumes, double& local_total, double& global_total);
     void CalculateTotalPhaseField(const mfem::ParGridFunction& grid_function, double& total, double& global_total);
     void CalculatePhasePotentialsAndTargetCurrent();
@@ -49,6 +49,8 @@ private:
     
     std::unique_ptr<mfem::ParGridFunction> dsF; ///< distance function grid
     std::unique_ptr<mfem::ParMesh> pmesh;        // Parallel mesh
+
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
 
 
     double tPsi; ///< Target Psi value

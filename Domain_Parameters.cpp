@@ -13,16 +13,17 @@ double gTrgI = 0.0;
 
 // Constructor
 Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo) 
-    : geometry(geo), nV(geo.nV), nE(geo.nE), nC(geo.nC), dsF(std::move(geo.dsF)), pmesh(std::move(geo.parallelMesh))
+    : geometry(geo), nV(geo.nV), nE(geo.nE), nC(geo.nC), dsF(std::move(geo.dsF)), pmesh(std::move(geo.parallelMesh)),
+    fespace(std::move(geo.parfespace))
 {}
 
 // Destructor
 Domain_Parameters::~Domain_Parameters() {}
 
-void Domain_Parameters::SetupDomainParameters(const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace){
+void Domain_Parameters::SetupDomainParameters(){
     
-    InitializeGridFunctions(fespace);
-    InterpolateDomainParameters(fespace);
+    InitializeGridFunctions();
+    InterpolateDomainParameters();
     CalculatePhasePotentialsAndTargetCurrent();
 
     PrintInfo();
@@ -33,7 +34,7 @@ void Domain_Parameters::SetupDomainParameters(const std::shared_ptr<mfem::ParFin
     // pse->Save("pse");
 }
 
-void Domain_Parameters::InitializeGridFunctions(const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace) {
+void Domain_Parameters::InitializeGridFunctions() {
 
     if (!fespace) {
         throw std::runtime_error("Finite element space is not initialized.");
@@ -47,7 +48,7 @@ void Domain_Parameters::InitializeGridFunctions(const std::shared_ptr<mfem::ParF
 
 }
 
-void Domain_Parameters::InterpolateDomainParameters(const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace) {
+void Domain_Parameters::InterpolateDomainParameters() {
 
     // interpolate domain parameter from distance function
     for (int vi = 0; vi < nV; vi++) {

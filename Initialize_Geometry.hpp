@@ -45,10 +45,6 @@ public:
     // Map global values to local
     void MapGlobalToLocal(const char* meshFile);
 
-
-    // // Element volume calculation
-    // void CalculateElementVolumes();
-
     // // Boundary condition setup
     // virtual void SetupBoundaryConditions() = 0;
 

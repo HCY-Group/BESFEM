@@ -7,17 +7,14 @@
 int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     
+    // Initialize Mesh & Geometry
     Initialize_Geometry geometry;
-
-    // Initialize and setup the handler
     geometry.InitializeMesh(Constants::mesh_file, MPI_COMM_WORLD, Constants::order);
     // mesh.SetupBoundaryConditions();
 
-    // get the finite element space
-    std::shared_ptr<mfem::ParFiniteElementSpace> fespace = geometry.GetParFiniteElementSpace();
-
+    // Initialize and Calculate Domain Parameters (psi, pse, AvB, AvP)
     Domain_Parameters domain_parameters(geometry);
-    domain_parameters.SetupDomainParameters(fespace);
+    domain_parameters.SetupDomainParameters();
 
     MPI_Finalize();
     return 0;
