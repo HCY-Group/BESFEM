@@ -27,8 +27,10 @@ void Domain_Parameters::SetupDomainParameters(const std::shared_ptr<mfem::ParFin
 
     PrintInfo();
 
-    // pmesh->Save("pmesh_DP");
+    // pmesh->Save("pmesh");
     // dsF->Save("dsF_DP");
+    // psi->Save("psi");
+    // pse->Save("pse");
 }
 
 void Domain_Parameters::InitializeGridFunctions(const std::shared_ptr<mfem::ParFiniteElementSpace>& fespace) {

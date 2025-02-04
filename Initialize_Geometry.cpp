@@ -184,15 +184,6 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
         // Handle .mesh file
         cout << "Reading .mesh file for mapping global to local grid function" << endl;
 
-        // // Read global distance function
-        // gDsF = make_unique<mfem::GridFunction>(parfespace.get());
-        // Onm = gDsF->Size();
-        // ifstream myfile(Constants::dsF_file);
-        // for (int gi = 0; gi < Onm; gi++) {
-        //     myfile >> (*gDsF)(gi);
-        // }
-        // myfile.close();
-
         // Assuming dsF is a ParGridFunction for the mesh file
         dsF = make_unique<mfem::ParGridFunction>(parfespace.get());
 
