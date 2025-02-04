@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     // Initialize Mesh & Geometry
     Initialize_Geometry geometry;
     geometry.InitializeMesh(Constants::mesh_file, MPI_COMM_WORLD, Constants::order);
-    // mesh.SetupBoundaryConditions();
+    geometry.SetupBoundaryConditions();
 
     // Initialize and Calculate Domain Parameters (psi, pse, AvB, AvP)
     Domain_Parameters domain_parameters(geometry);

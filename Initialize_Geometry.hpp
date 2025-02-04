@@ -45,8 +45,8 @@ public:
     // Map global values to local
     void MapGlobalToLocal(const char* meshFile);
 
-    // // Boundary condition setup
-    // virtual void SetupBoundaryConditions() = 0;
+    // Boundary condition setup
+    void SetupBoundaryConditions();
 
     // // Output functions
     // void OutputToParaview(const std::string &fileName, const std::string &varName, mfem::GridFunction *gf);
@@ -65,6 +65,13 @@ public:
 
     int gei;                // global element indices
     int ei;                 // local element indices
+
+    mfem::Array<int> nbc_w_bdr; ///< West Neumann Boundary Conditions
+    mfem::Array<int> ess_tdof_list_w; ///< Total DOF West
+    mfem::Array<int> ess_tdof_list_e; ///< Total DOF East
+
+    mfem::Array<int> dbc_w_bdr; ///< West Dirichlet Boundary Conditions
+    mfem::Array<int> dbc_e_bdr; ///< East Dirichlet Boundary Conditions
 
     std::unique_ptr<mfem::Mesh> globalMesh;             // Global serial mesh
     std::unique_ptr<mfem::ParMesh> parallelMesh;        // Parallel mesh
