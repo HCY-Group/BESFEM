@@ -2,7 +2,9 @@
 #include "mpi.h"
 
 #include "Constants.hpp"
-#include "Mesh_Handler.hpp"
+// #include "Mesh_Handler.hpp"
+#include "Initialize_Geometry.hpp"
+#include "Domain_Parameters.hpp"
 #include "Concentrations_Base.hpp"
 #include "Potentials_Base.hpp"
 #include "CnP.hpp"
@@ -25,28 +27,37 @@ int main(int argc, char *argv[]) {
     Mpi::Init(argc, argv);
     Hypre::Init();
 
-    // Create the MeshHandler object and load the mesh
-    MeshHandler mesh_handler;
-    mesh_handler.LoadMesh();
+    // // Create the MeshHandler object and load the mesh
+    // MeshHandler mesh_handler;
+    // mesh_handler.LoadMesh();
 
-    // Create a parallel mesh and finite element space to use across the simulation 
-    mfem::ParMesh &pmesh = *mesh_handler.pmesh.get();
-    mfem::H1_FECollection fec(Constants::order, pmesh.Dimension());
-    ParFiniteElementSpace fespace(&pmesh, &fec);
+    // Initialize Mesh & Geometry
+    Initialize_Geometry geometry;
+    geometry.InitializeMesh(Constants::mesh_file, MPI_COMM_WORLD, Constants::order);
+    geometry.SetupBoundaryConditions();
 
-    // Setup boundary conditions for the mesh using the MeshHandler
-    mesh_handler.SetupBoundaryConditions(&pmesh, &fespace);
+    // Initialize and Calculate Domain Parameters (psi, pse, AvB, AvP)
+    Domain_Parameters domain_parameters(geometry);
+    domain_parameters.SetupDomainParameters();
+
+    // // Create a parallel mesh and finite element space to use across the simulation 
+    // mfem::ParMesh &pmesh = *mesh_handler.pmesh.get();
+    // mfem::H1_FECollection fec(Constants::order, pmesh.Dimension());
+    // ParFiniteElementSpace fespace(&pmesh, &fec);
+
+    // // Setup boundary conditions for the mesh using the MeshHandler
+    // mesh_handler.SetupBoundaryConditions(&pmesh, &fespace);
 
     // // Retrieve psi (particle phase potential) and pse (electrolyte phase potential) from the MeshHandler
     // mfem::ParGridFunction &psi = *mesh_handler.psi;
     // mfem::ParGridFunction &pse = *mesh_handler.pse;
 
-    // // Initialize Concentration Classes
+    // Initialize Concentration Classes
 
-    // // Particle concentration initialization with a grid function and initial value
-    // CnP particle_concentration(&pmesh, &fespace, mesh_handler);
-    // mfem::ParGridFunction CnP_gf(&fespace);
-    // particle_concentration.Initialize(CnP_gf, 0.3, psi); 
+    // Particle concentration initialization with a grid function and initial value
+    CnP particle_concentration(geometry, domain_parameters);
+    mfem::ParGridFunction CnP_gf(geometry.parfespace.get());
+    particle_concentration.Initialize(CnP_gf, 0.3, *domain_parameters.psi); 
 
     // // Electrolyte concentration initialization with a grid function and initial value
     // CnE electrolyte_concentration(&pmesh, &fespace, mesh_handler);

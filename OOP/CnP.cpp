@@ -4,33 +4,33 @@
  */
 
 #include "CnP.hpp"
+#include "Constants.hpp"
 #include "mfem.hpp"
 
-CnP::CnP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Concentrations(pm, fe, mh), fespace(fe)
+using namespace std;
+
+CnP::CnP(Initialize_Geometry &geo, Domain_Parameters &para)
+    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace)
     
     {
-    PsVc = mfem::HypreParVector(fespace);
-    RxP = new mfem::ParGridFunction(fespace);
+    PsVc = mfem::HypreParVector(fespace.get());
+    RxP = new mfem::ParGridFunction(fespace.get());
 
     Mmatp = std::make_shared<mfem::HypreParMatrix>();
     Mp_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
     Mp_prec.SetType(mfem::HypreSmoother::Jacobi);
 
     Kmatp = std::make_shared<mfem::HypreParMatrix>();
-    Fcb = HypreParVector(fespace);
+    Fcb = mfem::HypreParVector(fespace.get());
 
-    CpV0 = new mfem::HypreParVector(fespace);
-    RHCp = new mfem::HypreParVector(fespace);
-    CpVn = new mfem::HypreParVector(fespace);
+    CpV0 = new mfem::HypreParVector(fespace.get());
+    RHCp = new mfem::HypreParVector(fespace.get());
+    CpVn = new mfem::HypreParVector(fespace.get());
 
     // std::cout << "fespace address in CnP: " << fespace << std::endl;
 
-    pKx2 = std::make_shared<mfem::ParBilinearForm>(fespace);
+    pKx2 = std::make_shared<mfem::ParBilinearForm>(fespace.get());
     // std::cout << "fespace in CnP Constr: " << fespace << std::endl;
-
-    
-
     }
 
 void CnP::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
@@ -52,7 +52,7 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     Concentrations::CreateReaction(Rx, *RxP, (1.0/Constants::rho));
 
     // Create dummy values to use Force Term Function 
-    static Array<int> dummy_boundary;
+    static mfem::Array<int> dummy_boundary;
     static mfem::ConstantCoefficient coef1(0.0);
     static mfem::ConstantCoefficient coef2(0.0);
     static mfem::ProductCoefficient dummy_coef(coef1, coef2);
@@ -60,17 +60,17 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     // Assemble the force term without applying boundary conditions
     Concentrations::ForceTerm(*RxP, ftPC, dummy_boundary, dummy_coef, false); // false since not applying BCs
 
-    pKx2->Update(fespace);
+    pKx2->Update(fespace.get());
 
     // Compute the diffusivity coefficient and assemble the stiffness matrix
-    std::shared_ptr<GridFunctionCoefficient> cDp = Concentrations::Diffusivity(psx, Cn, true); // true since using first equation
-    pKx2 = std::make_shared<mfem::ParBilinearForm>(fespace);
+    std::shared_ptr<mfem::GridFunctionCoefficient> cDp = Concentrations::Diffusivity(psx, Cn, true); // true since using first equation
+    pKx2 = std::make_shared<mfem::ParBilinearForm>(fespace.get());
 
 
     Concentrations::KMatrix(pKx2, boundary_dofs, Cn, ftPC, Kmatp, X1v, Fcb, cDp);
 
     // cDp->ResetCoefficient();
-    pKx2->Update(fespace);
+    pKx2->Update(fespace.get());
 
 
     // Form the time-stepping system matrix

@@ -7,9 +7,9 @@
 #include "Mesh_Handler.hpp"
 #include "mfem.hpp"
 
-Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : pmesh(pm), fespace(fe), mesh_handler(mh), EVol(mh.EVol), gtPsi(mh.gtPsi), gtPse(mh.gtPse),
-    TmpF(fespace), nE(mh.nE), nC(mh.nC), nV(mh.nV), VtxVal(mh.nC), EAvg(mh.nE)
+Concentrations::Concentrations(Initialize_Geometry &geo, Domain_Parameters &para)
+    : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol), gtPsi(para.gtPsi), gtPse(para.gtPse),
+    nE(geo.nE), nC(geo.nC), nV(geo.nV), VtxVal(geo.nC), EAvg(geo.nE), gmesh(geo.globalMesh.get())
 
 
 {
@@ -17,6 +17,8 @@ Concentrations::Concentrations(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *f
     VtxVal.SetSize(nC); // Set size for nodal values
     EAvg.SetSize(nE);   // Set size for average element contributions
     inv_nC = 1.0 / nC;
+
+    TmpF = new mfem::ParGridFunction(fespace.get());
 
 }
 
@@ -31,10 +33,10 @@ void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double i
 void Concentrations::SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother) {
     
     // Create a parallel bilinear form for the finite element space
-    M = new mfem::ParBilinearForm(fespace);
+    M = new mfem::ParBilinearForm(fespace.get());
     
     // Copy the provided potential field to a new grid function for internal operations
-    Ps_gf = new mfem::ParGridFunction(fespace);
+    Ps_gf = new mfem::ParGridFunction(fespace.get());
     *Ps_gf = psx;
 
     // Wrap the grid function in a coefficient to use in the mass matrix integrator
@@ -72,14 +74,14 @@ void Concentrations::SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfe
 void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {
     
     // Temporary grid function to store the product of concentration and potential
-    TmpF = Cn; // Copy concentration values to the temporary grid function
-    TmpF *= psx; // Element-wise multiply concentration by potential
+    *TmpF = Cn; // Copy concentration values to the temporary grid function
+    *TmpF *= psx; // Element-wise multiply concentration by potential
 
     double lSum = 0.0; // Local sum of lithiation contributions
 
     // Iterate over mesh elements efficiently
     for (int ei = 0; ei < nE; ++ei) {
-        TmpF.GetNodalValues(ei, VtxVal); // Retrieve nodal values for the element
+        TmpF->GetNodalValues(ei, VtxVal); // Retrieve nodal values for the element
         // Use std::accumulate for faster summation
         double val = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
         EAvg(ei) = val / inv_nC;
@@ -106,10 +108,10 @@ void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFun
 
 void Concentrations::ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &Fxx, mfem::Array<int> boundary, mfem::ProductCoefficient m, bool apply_boundary_conditions) {
     
-    Bx2 = std::make_unique<mfem::ParLinearForm>(fespace);    
+    Bx2 = std::make_unique<mfem::ParLinearForm>(fespace.get());    
 
     // Initialize a new ParGridFunction to hold the input field and copy values from gfc
-    static mfem::ParGridFunction Rxx(fespace);
+    static mfem::ParGridFunction Rxx(fespace.get());
     Rxx = gfc;
     
     // Create a GridFunctionCoefficient from the ParGridFunction for use in integrators
@@ -138,6 +140,11 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
     
     xCrnt = 0.0; // Initialize the local total reaction value to zero
 
+    // calculate the west boundary size
+    mfem::Vector Rmin, Rmax;
+    gmesh->GetBoundingBox(Rmin, Rmax);
+    L_w = Rmax(1) - Rmin(1);
+
     for (int ei = 0; ei < nE; ei++) {
         Rx.GetNodalValues(ei, VtxVal); // Retrieve the nodal values of the reaction field for the current element
         double val = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
@@ -149,7 +156,7 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
     MPI_Allreduce(&xCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     
     // Calculate the reaction current density by normalizing with the domain characteristic length
-    infx = geCrnt / (mesh_handler.L_w);
+    infx = geCrnt / (L_w);
 
 }
 
@@ -157,7 +164,7 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
 std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
     
     // Create a new parallel grid function to store the computed diffusivity values
-    mfem::ParGridFunction *Dx = new mfem::ParGridFunction(fespace);
+    mfem::ParGridFunction *Dx = new mfem::ParGridFunction(fespace.get());
     // std::shared_ptr<mfem::ParGridFunction> Dx = std::make_shared<mfem::ParGridFunction>(fespace);
 
     
@@ -226,7 +233,7 @@ void Concentrations::SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFu
     CeC = 0.0; // Initialize total salt concentration to zero
     
     // Temporary grid function to hold the product of concentration and potential fields
-   static mfem::ParGridFunction CeT(fespace);
+   static mfem::ParGridFunction CeT(fespace.get());
 
     // Calculate the product of concentration and potential for each element
     CeT = Cn;

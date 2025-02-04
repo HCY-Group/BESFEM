@@ -15,7 +15,8 @@
  */
 
 #include "mfem.hpp"
-#include "Mesh_Handler.hpp"
+#include "Initialize_Geometry.hpp"
+#include "Domain_Parameters.hpp"
 #include <memory>
 
 /**
@@ -34,26 +35,27 @@ public:
      * 
      * Initializes the concentration fields and sets up the mesh and finite element space
      * 
-     * @param pmesh Pointer to the parallel mesh
-     * @param fespace Pointer to the parallel finite element space
-     * @param mh Reference to the MeshHandler object for accessing mesh data
+     * @param geo Reference to the geometry object for accessing mesh data
+     * @param para Reference to the domain parameters object for accessing psi, pse, AvB, and AvP data
      */
-    Concentrations(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
+    Concentrations(Initialize_Geometry &geo, Domain_Parameters &para);
     
     /**
      * @brief Destructor for the Concentrations class
      */
     virtual ~Concentrations() = default;
     
-    MeshHandler &mesh_handler;
+    Initialize_Geometry &geometry;
+    Domain_Parameters &domain_parameters;
     
     mfem::ParGridFunction psi; ///< Potential field for the particle                    
     mfem::ParGridFunction pse; ///< Potential field for the electrolyte
     mfem::ParGridFunction *CeT; ///< Temporary grid function for salt concentration calculations
 
 protected:
-    mfem::ParMesh *pmesh;  ///< Pointer to the parallel mesh
-    mfem::ParFiniteElementSpace *fespace; ///< Pointer to the finite element space
+    mfem::ParMesh* pmesh;  ///< Pointer to the parallel mesh
+    mfem::Mesh* gmesh;             // Global serial mesh
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
     std::shared_ptr<mfem::HypreParMatrix> Mmat; ///< Shared pointer to the mass matrix
     std::shared_ptr<mfem::CGSolver> solver; ///< Shared pointer to the conjugate gradient solver
     mfem::HypreSmoother smoother; ///< Smoother for preconditioning
@@ -63,6 +65,8 @@ protected:
     double gCeC = 0.0; ///< Global salt concentration
     double CeAvg = 0.0; ///< Average salt concentration
     double Ce0 = 0.001; ///< Initial salt concentration
+
+    double L_w; ///< West boundary size
 
     /**
      * @brief Sets the initial concentration values across the domain
@@ -203,7 +207,9 @@ private:
 
     mfem::Array<int> boundary_dofs; ///< Boundary degrees of freedom
 
-    mfem::ParGridFunction TmpF; ///< Temporary grid function for intermediate calculations
+    mfem::ParGridFunction *TmpF; ///< Temporary grid function for intermediate calculations
+    // std::shared_ptr<mfem::ParGridFunction> TmpF; ///< Temporary grid function for intermediate calculations
+
 
     int nE;                                         ///< Number of elements
     int nC;                                         ///< Number of corners in each element
