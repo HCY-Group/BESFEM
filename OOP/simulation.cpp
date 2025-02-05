@@ -94,8 +94,8 @@ int main(int argc, char *argv[]) {
     // Main Simulation Loop
  
     // Perform simulation over time steps
-    for (int t = 0; t < 6000 + 1; ++t) {
-    // while ( VCell > Constants::VCut) {
+    // for (int t = 0; t < 6000 + 1; ++t) {
+    while ( VCell > Constants::VCut) {
 
         // Step 1: Update concentrations for both particle and electrolyte phases
         particle_concentration.TimeStep(Rxn_gf, CnP_gf, *domain_parameters.psi);
@@ -146,6 +146,7 @@ int main(int argc, char *argv[]) {
     CnE_gf.Save("Results/CnE");
     phP_gf.Save("Results/phP");
     phE_gf.Save("Results/phE");
+    Rxn_gf.Save("Results/Rxn");
     // psi.Save("Results/psi");
     // pse.Save("Results/pse");
 

@@ -278,12 +278,10 @@ void Initialize_Geometry::SetupBoundaryConditions() {
     nbc_w_bdr = 0; 
     nbc_w_bdr[3] = 1;  // Applying Neumann BC to the west boundary
 
-
     // Dirichlet BC on the east boundary for CnP & phP
     dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
     dbc_e_bdr = 0; 
     dbc_e_bdr[1] = 1;  // Applying Dirichlet BC to the east boundary
-
 
     // Extract essential true DOFs (Dirichlet BCs) on the east boundary
     mfem::Array<int> ess_tdof_list_e(0);
@@ -293,7 +291,6 @@ void Initialize_Geometry::SetupBoundaryConditions() {
     dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
     dbc_w_bdr = 0; 
     dbc_w_bdr[3] = 1;  // Applying Dirichlet BC to the west boundary
-
 
     // Extract essential true DOFs (Dirichlet BCs) on the west boundary
     mfem::Array<int> ess_tdof_list_w(0);

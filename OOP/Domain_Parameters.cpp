@@ -55,12 +55,12 @@ void Domain_Parameters::InterpolateDomainParameters() {
 
     // interpolate domain parameter from distance function
     for (int vi = 0; vi < nV; vi++) {
-        // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (zeta * dh))); // must use * to dereference to access
-        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::ze))); // must use * to dereference to access
+        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // must use * to dereference to access
+        // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::ze))); // must use * to dereference to access
 
         (*pse)(vi) = 1.0 - (*psi)(vi);
-        // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (zeta * dh)), 2) - 1.0) / (2 * zeta * dh);
-        (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::ze)), 2) - 1.0) / (2 * Constants::ze);
+        (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh);
+        // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::ze)), 2) - 1.0) / (2 * Constants::ze);
 
 
         if ((*psi)(vi) < Constants::eps) { (*psi)(vi) = Constants::eps; }
