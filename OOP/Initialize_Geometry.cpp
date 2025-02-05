@@ -40,6 +40,8 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
     // Print out information relative to the mesh
     PrintMeshInfo();
 
+    parallelMesh->Save("Results/pmesh");
+
     // parallelMesh->Save("pmesh_IG");
     // dsF->Save("dsF_IG");
 

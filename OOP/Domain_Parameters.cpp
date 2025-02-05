@@ -28,6 +28,9 @@ void Domain_Parameters::SetupDomainParameters(){
 
     PrintInfo();
 
+    psi->Save("Results/psi");
+    pse->Save("Results/pse");
+
     // pmesh->Save("pmesh");
     // dsF->Save("dsF_DP");
     // psi->Save("psi");

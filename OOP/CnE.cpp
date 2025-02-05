@@ -4,16 +4,17 @@
  */
 
 #include "CnE.hpp"
+#include "Constants.hpp"
 #include "mfem.hpp"
 
 
-CnE::CnE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Concentrations(pm, fe, mh), fespace(fe), nbc_w_bdr(mh.nbc_w_bdr)
+CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para)
+    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), nbc_w_bdr(geo.nbc_w_bdr)
     
     {
 
-    PeR = new mfem::ParGridFunction(fespace);
-    RxE = new mfem::ParGridFunction(fespace);
+    PeR = new mfem::ParGridFunction(fespace.get());
+    RxE = new mfem::ParGridFunction(fespace.get());
 
     Mmate = std::make_shared<mfem::HypreParMatrix>();
     Me_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
@@ -21,12 +22,9 @@ CnE::CnE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
 
     Kmate = std::make_shared<mfem::HypreParMatrix>();
 
-    CeV0 = new mfem::HypreParVector(fespace);
-    RHCe = new mfem::HypreParVector(fespace);
-    CeVn = new mfem::HypreParVector(fespace);
-
-    // eKx2 = std::make_shared<mfem::ParBilinearForm>(fespace);
-
+    CeV0 = new mfem::HypreParVector(fespace.get());
+    RHCe = new mfem::HypreParVector(fespace.get());
+    CeVn = new mfem::HypreParVector(fespace.get());
 
     }
 
@@ -59,8 +57,8 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     Concentrations::ForceTerm(*RxE, ftE, nbc_w_bdr, m_nbcCoef, true); // true since applying BCs
     
     // Compute the diffusivity coefficient and stiffness matrix
-    std::shared_ptr<GridFunctionCoefficient> cDe = Concentrations::Diffusivity(psx, Cn, false); // false using other equation
-    eKx2 = std::make_shared<mfem::ParBilinearForm>(fespace);
+    std::shared_ptr<mfem::GridFunctionCoefficient> cDe = Concentrations::Diffusivity(psx, Cn, false); // false using other equation
+    eKx2 = std::make_shared<mfem::ParBilinearForm>(fespace.get());
 
     eKx2->Update();
     Concentrations::KMatrix(eKx2, boundary_dofs, Cn, ftE, Kmate, X1v, Feb, cDe);

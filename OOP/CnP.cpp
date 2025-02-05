@@ -27,10 +27,8 @@ CnP::CnP(Initialize_Geometry &geo, Domain_Parameters &para)
     RHCp = new mfem::HypreParVector(fespace.get());
     CpVn = new mfem::HypreParVector(fespace.get());
 
-    // std::cout << "fespace address in CnP: " << fespace << std::endl;
-
     pKx2 = std::make_shared<mfem::ParBilinearForm>(fespace.get());
-    // std::cout << "fespace in CnP Constr: " << fespace << std::endl;
+
     }
 
 void CnP::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
@@ -40,8 +38,6 @@ void CnP::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     Concentrations::SetUpSolver(psx, Mmatp, *Mp_solver, Mp_prec);
 
     psx.GetTrueDofs(PsVc); // Extract true degrees of freedom in the potential field
-
-    // pKx2 = std::make_shared<mfem::ParBilinearForm>(fespace);
 
 }
 

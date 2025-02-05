@@ -4,7 +4,8 @@
  */
 
 #include "Current.hpp"
-#include "Mesh_Handler.hpp"
+#include "Initialize_Geometry.hpp"
+#include "Domain_Parameters.hpp"
 #include "mfem.hpp"
 #include "CnE.hpp"
 #include "CnP.hpp"
@@ -12,14 +13,10 @@
 #include "PotP.hpp"
 #include "Reaction.hpp"
 
-Current::Current(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : pmesh(pm), fespace(fe), mesh_handler(mh)
+Current::Current(Initialize_Geometry &geo, Domain_Parameters &para)
+    : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para)
 
-{
-    
-
-
-}
+{}
 
 void Current::Constant(mfem::ParGridFunction &phx, double &global_current){
 

@@ -19,7 +19,10 @@ public:
      * @param fespace Pointer to the finite element space
      * @param mh Reference to the mesh handler
      */
-    Reaction(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
+    Reaction(Initialize_Geometry &geo, Domain_Parameters &para);
+
+    Initialize_Geometry &geometry;
+    Domain_Parameters &domain_parameters;
 
     /**
      * @brief Initializes the reaction field with a given initial value
@@ -57,7 +60,7 @@ public:
 
 private:
 
-    MeshHandler &mesh_handler; ///< Reference to the mesh handler for geometry data
+    // MeshHandler &mesh_handler; ///< Reference to the mesh handler for geometry data
 
 
     /**
@@ -70,7 +73,7 @@ private:
 
 
     mfem::ParMesh *pmesh; ///< Pointer to the parallel mesh
-    mfem::ParFiniteElementSpace *fespace; ///< Pointer to the finite element space
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
     mfem::ParGridFunction AvP; ///< Grid function for active particle surface area
     mfem::ParGridFunction AvB; ///< Grid function for active boundary area

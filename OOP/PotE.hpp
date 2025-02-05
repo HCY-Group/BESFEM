@@ -2,6 +2,7 @@
 #define POTE_HPP
 
 #include "Potentials_Base.hpp"
+#include "Constants.hpp"
 
 /**
  * @brief Boundary value for the electrolyte potential.
@@ -30,7 +31,10 @@ public:
      * @param fe Pointer to the finite element space
      * @param mh Reference to the mesh handler
      */
-    PotE(mfem::ParMesh* pm, mfem::ParFiniteElementSpace* fe, MeshHandler &mh);
+    PotE(Initialize_Geometry &geo, Domain_Parameters &para);
+
+    Initialize_Geometry &geometry;
+    Domain_Parameters &domain_parameters;
 
     /**
      * @brief Initializes the electrolyte potential field and solver
@@ -91,14 +95,14 @@ private:
     mfem::HypreParVector B1v; ///< Right-hand-side vector
     mfem::HypreParVector RHSl; ///< Residual vector
 
-    mfem::ParFiniteElementSpace *fespace; // Declare the member variable fe
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
     mfem::HypreParVector *CeVn; ///< Concentration at the current time step
     mfem::HypreParVector *LpCe; ///< Diffusion-related vector
 
     mfem::HypreSmoother Mpe; ///< Preconditioner for the solver
 
-    Array<int> boundary_dofs; ///< Array of boundary degrees of freedom
+    mfem::Array<int> boundary_dofs; ///< Array of boundary degrees of freedom
 
     mfem::GridFunctionCoefficient cKp; ///< Coefficient for the stiffness matrix
 

@@ -4,7 +4,8 @@
  */
 
 #include "Concentrations_Base.hpp"
-#include "Mesh_Handler.hpp"
+#include "Initialize_Geometry.hpp"
+#include "Constants.hpp"
 #include "mfem.hpp"
 
 Concentrations::Concentrations(Initialize_Geometry &geo, Domain_Parameters &para)

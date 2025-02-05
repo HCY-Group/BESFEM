@@ -4,34 +4,35 @@
  */
 
 #include "PotE.hpp"
+#include "Constants.hpp"
 #include "mfem.hpp"
 #include "CnE.hpp"
 
 double BvE = 0.0; ///< Global variable for the boundary value of electrolyte potential
 
-PotE::PotE(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Potentials(pm, fe, mh), fespace(fe), dbc_w_bdr(mh.dbc_w_bdr), gtPse(mh.gtPse), ess_tdof_list_w(mh.ess_tdof_list_w)
+PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para)
+    : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_w_bdr(geo.dbc_w_bdr), gtPse(para.gtPse), ess_tdof_list_w(geo.ess_tdof_list_w)
     
     {
 
     cgPE_solver = new mfem::CGSolver(MPI_COMM_WORLD);
-    RpE = new ParGridFunction(fespace); // reaction rate for particle;
+    RpE = new mfem::ParGridFunction(fespace.get()); // reaction rate for particle;
 
-    Flb = mfem::HypreParVector(fespace);
+    Flb = mfem::HypreParVector(fespace.get());
 
-    Dmp = new mfem::ParGridFunction(fespace); // D_minus_plus
-    kpl = new mfem::ParGridFunction(fespace); // electrolyte conductivity
+    Dmp = new mfem::ParGridFunction(fespace.get()); // D_minus_plus
+    kpl = new mfem::ParGridFunction(fespace.get()); // electrolyte conductivity
 
-    Kl1 = std::make_unique<mfem::ParBilinearForm>(fespace); // Use make_unique
-    Kl2 = std::make_unique<mfem::ParBilinearForm>(fespace); // Use make_unique
+    Kl1 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Use make_unique
+    Kl2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Use make_unique
 
-    B1t = mfem::ParLinearForm(fespace);
-    X1v = mfem::HypreParVector(fespace);
-    B1v = mfem::HypreParVector(fespace);
-    RHSl = mfem::HypreParVector(fespace);
+    B1t = mfem::ParLinearForm(fespace.get());
+    X1v = mfem::HypreParVector(fespace.get());
+    B1v = mfem::HypreParVector(fespace.get());
+    RHSl = mfem::HypreParVector(fespace.get());
 
-    LpCe = new mfem::HypreParVector(fespace);
-    CeVn = new mfem::HypreParVector(fespace);
+    LpCe = new mfem::HypreParVector(fespace.get());
+    CeVn = new mfem::HypreParVector(fespace.get());
 
     // std::cout << "fespace address in PotE: " << fespace << std::endl;
 
@@ -64,7 +65,7 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
     mfem::GridFunctionCoefficient cDm(Dmp); 
     mfem::GridFunctionCoefficient cKe(kpl); 
     
-    Kl1 = std::make_unique<mfem::ParBilinearForm>(fespace);  // Initialize as a member variable
+    Kl1 = std::make_unique<mfem::ParBilinearForm>(fespace.get());  // Initialize as a member variable
 
     // Kl1->Update();
 
@@ -75,7 +76,7 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     // Kl2->Update();
 
-    Kl2 = std::make_unique<mfem::ParBilinearForm>(fespace);  // Initialize as a member variable
+    Kl2 = std::make_unique<mfem::ParBilinearForm>(fespace.get());  // Initialize as a member variable
 
     Potentials::ImplementBoundaryConditions(dbc_w_Coef, BvE, phx, dbc_w_bdr); // Apply boundary conditions
     Potentials::KMatrix(*Kl2, cKe, ess_tdof_list_w, phx, B1t, KmE, X1v, B1v); // Conductivity matrix

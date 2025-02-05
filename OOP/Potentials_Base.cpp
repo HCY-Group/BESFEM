@@ -4,27 +4,27 @@
  */
 
 #include "Potentials_Base.hpp"
-#include "Mesh_Handler.hpp"
+#include "Initialize_Geometry.hpp"
 #include "mfem.hpp"
 
 /**
  * @brief Constructor: Initializes the Potentials object.
  */
-Potentials::Potentials(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : pmesh(pm), fespace(fe), mesh_handler(mh), EVol(mh.EVol)
+Potentials::Potentials(Initialize_Geometry &geo, Domain_Parameters &para)
+    : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol)
 
 {
     
-    nE = mesh_handler.nE; 
-    nC = mesh_handler.nC; 
-    nV = mesh_handler.nV; 
+    nE = geometry.nE; 
+    nC = geometry.nC; 
+    nV = geometry.nV; 
 
     // px0 = new mfem::ParGridFunction(fespace); // Potential values before iteration
-    px0 = std::make_unique<mfem::ParGridFunction>(fespace);
-    Rxx = std::make_unique<mfem::ParGridFunction>(fespace);
+    px0 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    Rxx = std::make_unique<mfem::ParGridFunction>(fespace.get());
     // Bx2 = std::make_unique<mfem::ParLinearForm>(fespace);
 
-    X0 = mfem::HypreParVector(fespace); // Hypre vector for solving linear systems
+    X0 = mfem::HypreParVector(fespace.get()); // Hypre vector for solving linear systems
 
 }
 
@@ -49,14 +49,14 @@ void Potentials::KMatrix(mfem::ParBilinearForm &K, mfem::GridFunctionCoefficient
 mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &hpv_X, mfem::HypreParVector &hpv_B){
 
     K.Update(); // Update the bilinear form
-    K.AddDomainIntegrator(new DiffusionIntegrator(gfc)); // Add domain integrator for stiffness
+    K.AddDomainIntegrator(new mfem::DiffusionIntegrator(gfc)); // Add domain integrator for stiffness
     K.Assemble(); // Assemble the matrix
     K.FormLinearSystem(boundary, potential, plf_B, matrix, hpv_X, hpv_B); // Form the linear system
 }
 
 void Potentials::PCG_Solver(mfem::HypreSmoother &smoother, mfem::CGSolver &cg, mfem::HypreParMatrix &KMatrix){
 
-    smoother.SetType(HypreSmoother::Jacobi); // Set smoother type to Jacobi
+    smoother.SetType(mfem::HypreSmoother::Jacobi); // Set smoother type to Jacobi
     cg.SetPreconditioner(smoother); // Attach the preconditioner to the solver
     cg.SetOperator(KMatrix); // Set the stiffness matrix as the operator
 
@@ -80,7 +80,7 @@ void Potentials::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunctio
 
 void Potentials::ForceTerm(mfem::ParGridFunction &Rx2, mfem::ParLinearForm &Fxx) {
 
-    Bx2 = std::make_unique<mfem::ParLinearForm>(fespace);
+    Bx2 = std::make_unique<mfem::ParLinearForm>(fespace.get());
     // Bx2->Update();
 
     // Rxx = new mfem::ParGridFunction(fespace); // Initialize intermediate reaction field
@@ -113,7 +113,7 @@ void Potentials::ErrorCalculation(mfem::ParGridFunction &phx, mfem::CGSolver &cg
     cg_solver.Mult(fterm, X0); // Solve for the error term
 
     phx.Distribute(X0); // Distribute the updated values
-    mfem::ParGridFunction TmpF(fespace);
+    mfem::ParGridFunction TmpF(fespace.get());
 
     // Compute squared error using the auxiliary field
     for (int vi = 0; vi < nV; vi++){

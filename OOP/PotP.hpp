@@ -30,7 +30,10 @@ public:
      * @param fe Pointer to the finite element space
      * @param mh Reference to the mesh handler
      */
-    PotP(mfem::ParMesh* pm, mfem::ParFiniteElementSpace* fe, MeshHandler &mh);
+    PotP(Initialize_Geometry &geo, Domain_Parameters &para);
+
+    Initialize_Geometry &geometry;
+    Domain_Parameters &domain_parameters;
 
     /**
      * @brief Initializes the particle potential field and solver
@@ -73,7 +76,7 @@ private:
 
     void ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx); ///< Computes particle conductivity
 
-    mfem::ParFiniteElementSpace *fespace; // Declare the member variable fe
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
     mfem::ParGridFunction *RpP; ///< Reaction field for the particle
     mfem::ParLinearForm ftPotP; ///< Linear form for the force term

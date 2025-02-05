@@ -4,28 +4,28 @@
  */
 
 #include "Reaction.hpp"
-#include "Mesh_Handler.hpp"
+#include "Constants.hpp"
 #include "mfem.hpp"
 #include "CnE.hpp"
 #include "PotE.hpp"
 #include "PotP.hpp"
 
 
-Reaction::Reaction(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : pmesh(pm), fespace(fe), mesh_handler(mh), AvP(*mh.AvP), AvB(*mh.AvB), EVol(mh.EVol)
+Reaction::Reaction(Initialize_Geometry &geo, Domain_Parameters &para)
+    : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para), AvP(*para.AvP), AvB(*para.AvB), EVol(para.EVol)
 
 {
     
-    nE = mesh_handler.nE; 
-    nC = mesh_handler.nC; 
-    nV = mesh_handler.nV; 
+    nE = geometry.nE; 
+    nC = geometry.nC; 
+    nV = geometry.nV; 
 
-    i0C = new mfem::ParGridFunction(fespace); // exchange current density
-    OCV = new mfem::ParGridFunction(fespace); // open circuit voltage
-    Kfw = new mfem::ParGridFunction(fespace); // forward reaction constant
-    Kbw = new mfem::ParGridFunction(fespace); // backward rection constant
+    i0C = new mfem::ParGridFunction(fespace.get()); // exchange current density
+    OCV = new mfem::ParGridFunction(fespace.get()); // open circuit voltage
+    Kfw = new mfem::ParGridFunction(fespace.get()); // forward reaction constant
+    Kbw = new mfem::ParGridFunction(fespace.get()); // backward rection constant
 
-    dPHE = new mfem::ParGridFunction(fespace); // voltage drop
+    dPHE = new mfem::ParGridFunction(fespace.get()); // voltage drop
 
 
 

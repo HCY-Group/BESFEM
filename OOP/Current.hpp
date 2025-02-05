@@ -3,7 +3,8 @@
 
 
 #include "mfem.hpp"
-#include "Mesh_Handler.hpp"
+#include "Initialize_Geometry.hpp"
+#include "Domain_Parameters.hpp"
 
 // #include "Concentrations_Base.hpp"
 
@@ -27,7 +28,10 @@ public:
      * @param fespace Pointer to the finite element space
      * @param mh Reference to the mesh handler
      */
-    Current(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
+    Current(Initialize_Geometry &geo, Domain_Parameters &para);
+
+    Initialize_Geometry &geometry;
+    Domain_Parameters &domain_parameters;
     
     /**
      * @brief Adjusts the particle potential to maintain the constant target global current
@@ -43,10 +47,10 @@ public:
 
 private:
 
-    MeshHandler &mesh_handler; ///< Reference to the mesh handler for geometry-related operations
+    // MeshHandler &mesh_handler; ///< Reference to the mesh handler for geometry-related operations
 
     mfem::ParMesh *pmesh; ///< Pointer to the parallel mesh
-    mfem::ParFiniteElementSpace *fespace; ///< Pointer to the finite element space
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
     double sgn; ///< Sign of the difference between the target and global current
     double dV; ///< Voltage adjustment step based on the target current

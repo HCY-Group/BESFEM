@@ -7,7 +7,8 @@
 
 
 #include "mfem.hpp"
-#include "Mesh_Handler.hpp"
+#include "Initialize_Geometry.hpp"
+#include "Domain_Parameters.hpp"
 
 #include <memory>
 
@@ -28,11 +29,12 @@ public:
      * @param fespace Pointer to the finite element space
      * @param mh Reference to the MeshHandler for geometry and volume data
      */
-    Potentials(mfem::ParMesh* pmesh, mfem::ParFiniteElementSpace* fespace, MeshHandler &mh);
+    Potentials(Initialize_Geometry &geo, Domain_Parameters &para);
 
     virtual ~Potentials() = default; ///< Virtual destructor
 
-    MeshHandler &mesh_handler; ///< Reference to the MeshHandler for geometry and volume operations
+    Initialize_Geometry &geometry;
+    Domain_Parameters &domain_parameters;
 
     /**
      * @brief Initializes the potentials to a specified initial value
@@ -129,7 +131,7 @@ public:
 protected:
     
     mfem::ParMesh *pmesh; ///< Pointer to the parallel mesh
-    mfem::ParFiniteElementSpace *fespace; ///< Finite element space for the potentials
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
 
 private:

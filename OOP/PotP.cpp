@@ -4,25 +4,26 @@
  */
 
 #include "PotP.hpp"
+#include "Constants.hpp"
 #include "mfem.hpp"
 
 double BvP = 0.0; ///< Global variable for the boundary value of particle potential
 
-PotP::PotP(mfem::ParMesh *pm, mfem::ParFiniteElementSpace *fe, MeshHandler &mh)
-    : Potentials(pm, fe, mh), fespace(fe), dbc_e_bdr(mh.dbc_e_bdr), gtPsi(mh.gtPsi), ess_tdof_list_e(mh.ess_tdof_list_e)
+PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
+    : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_e_bdr(geo.dbc_e_bdr), gtPsi(para.gtPsi), ess_tdof_list_e(geo.ess_tdof_list_e)
     
     {
 
     cgPP_solver = new mfem::CGSolver(MPI_COMM_WORLD);
-    RpP = new ParGridFunction(fespace); // Initialize reaction rate grid function
+    RpP = new mfem::ParGridFunction(fespace.get()); // Initialize reaction rate grid function
 
-    Fpb = mfem::HypreParVector(fespace); // Initialize force term vector
-    kap = new mfem::ParGridFunction(fespace); // Initialize conductivity field
-    Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace); // Initialize bilinear form
+    Fpb = mfem::HypreParVector(fespace.get()); // Initialize force term vector
+    kap = new mfem::ParGridFunction(fespace.get()); // Initialize conductivity field
+    Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Initialize bilinear form
 
-    B1t = mfem::ParLinearForm(fespace);
-    X1v = mfem::HypreParVector(fespace);
-    B1v = mfem::HypreParVector(fespace);
+    B1t = mfem::ParLinearForm(fespace.get());
+    X1v = mfem::HypreParVector(fespace.get());
+    B1v = mfem::HypreParVector(fespace.get());
 
     }
 
@@ -55,7 +56,7 @@ void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     Potentials::ImplementBoundaryConditions(dbc_e_Coef, BvP, phx, dbc_e_bdr); // Apply BCs
 
-    Kp2 = std::make_unique<ParBilinearForm>(fespace);  // Initialize as a member variable
+    Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace.get());  // Initialize as a member variable
 
     // Kp2->Update();
 

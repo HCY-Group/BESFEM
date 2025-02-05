@@ -20,7 +20,10 @@ public:
      * @param fe Pointer to the finite element space
      * @param mh Reference to the mesh handler
      */
-    CnE(mfem::ParMesh* pm, mfem::ParFiniteElementSpace* fe, MeshHandler &mh);
+    CnE(Initialize_Geometry &geo, Domain_Parameters &para);
+
+    Initialize_Geometry &geometry;
+    Domain_Parameters &domain_parameters;
 
     /**
      * @brief Initializes electrolyte concentration values and solver components
@@ -54,7 +57,7 @@ public:
 
 private:
 
-    mfem::ParFiniteElementSpace *fespace; // Declare the member variable fe
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
     mfem::ParGridFunction *PeR; ///< Pointer to a grid function storing reaction potential values
 
