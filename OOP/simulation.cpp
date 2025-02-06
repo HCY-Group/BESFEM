@@ -92,6 +92,8 @@ int main(int argc, char *argv[]) {
     double VCell = BvP - BvE;
 
     // Main Simulation Loop
+
+    int t = 0;
  
     // Perform simulation over time steps
     // for (int t = 0; t < 6000 + 1; ++t) {
@@ -112,6 +114,7 @@ int main(int argc, char *argv[]) {
         double globalerror_P = 1.0; // Error for particle potential
 		double globalerror_E = 1.0; // Error for electrolyte potential
 
+        if (t % 40 == 0) {
         // int inlp = 0;
         while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
 
@@ -121,6 +124,7 @@ int main(int argc, char *argv[]) {
             // Calculate global errors for particle and electrolyte potentials
             particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
             electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
+        }
         }
 
         // Step 5: Compute the total reaction current
@@ -132,11 +136,13 @@ int main(int argc, char *argv[]) {
         // Step 7: Update the cell voltage based on the particle and electrolyte potentials
         VCell = BvP - BvE;
         
-        std::cout << "VCell: " << VCell << std::endl;
+        std::cout << "timestep: " << t << "VCell: " << VCell << std::endl;
 
         // if (t % 100 == 0) {
         // std::cout << "Iteration " << t << ": VCell = " << VCell << std::endl;
         // }
+
+        t++;
 
     }
 
