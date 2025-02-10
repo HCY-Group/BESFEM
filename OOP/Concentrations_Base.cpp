@@ -17,7 +17,6 @@ Concentrations::Concentrations(Initialize_Geometry &geo, Domain_Parameters &para
     // Allocate once for reuse
     VtxVal.SetSize(nC); // Set size for nodal values
     EAvg.SetSize(nE);   // Set size for average element contributions
-    inv_nC = 1.0 / nC;
 
     TmpF = new mfem::ParGridFunction(fespace.get());
 
@@ -85,7 +84,7 @@ void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParG
         TmpF->GetNodalValues(ei, VtxVal); // Retrieve nodal values for the element
         // Use std::accumulate for faster summation
         double val = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
-        EAvg(ei) = val / inv_nC;
+        EAvg(ei) = val / nC;
         lSum += EAvg(ei) * EVol(ei);
     }
 

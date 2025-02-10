@@ -98,17 +98,16 @@ int main(int argc, char *argv[]) {
         double globalerror_P = 1.0; // Error for particle potential
 		double globalerror_E = 1.0; // Error for electrolyte potential
 
-        if (t % 1 == 0) {
-        // int inlp = 0;
-        while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
+        if (t % 50 == 0) {
+            while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
 
-            // Update reaction rates using the Butler-Volmer equation
-            reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
+                // Update reaction rates using the Butler-Volmer equation
+                reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
 
-            // Calculate global errors for particle and electrolyte potentials
-            particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
-            electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
-        }
+                // Calculate global errors for particle and electrolyte potentials
+                particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
+                electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
+            }
         }
 
         // Step 5: Compute the total reaction current
@@ -121,10 +120,6 @@ int main(int argc, char *argv[]) {
         VCell = BvP - BvE;
         
         std::cout << "timestep: " << t << "    " << "VCell: " << VCell << std::endl;
-
-        // if (t % 100 == 0) {
-        // std::cout << "Iteration " << t << ": VCell = " << VCell << std::endl;
-        // }
 
         t++;
 
