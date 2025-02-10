@@ -27,14 +27,6 @@ void Domain_Parameters::SetupDomainParameters(){
     CalculatePhasePotentialsAndTargetCurrent();
 
     PrintInfo();
-
-    psi->Save("Results/psi");
-    pse->Save("Results/pse");
-
-    // pmesh->Save("pmesh");
-    // dsF->Save("dsF_DP");
-    // psi->Save("psi");
-    // pse->Save("pse");
 }
 
 void Domain_Parameters::InitializeGridFunctions() {
@@ -55,13 +47,16 @@ void Domain_Parameters::InterpolateDomainParameters() {
 
     // interpolate domain parameter from distance function
     for (int vi = 0; vi < nV; vi++) {
-        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // must use * to dereference to access
-        // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::ze))); // must use * to dereference to access
+        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // 
+        // tanh(x) transitions -1 (electrolyte) to 1 (particle), adding 1.0 and multiplying 0.5 shifts range to 0 to 1
+        // psi close to 1 is particle, psi close to 0 is electrolyte
+        // large dsF = close to 1, so inside particle ; small or negative dsF = close to -1, so inside electrolyte
 
         (*pse)(vi) = 1.0 - (*psi)(vi);
-        (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh);
-        // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::ze)), 2) - 1.0) / (2 * Constants::ze);
+        // pse close to 0 is particle, pse close to 1 is electrolyte
 
+        (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh);
+        // AvP is the rate of change of psi; used in reaction rates
 
         if ((*psi)(vi) < Constants::eps) { (*psi)(vi) = Constants::eps; }
         if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }

@@ -12,6 +12,7 @@ namespace Constants {
     // const char* dsF_file = "dsF_40x30_A1.txt";               ///< Path to the surface flux data file
 
     const char* mesh_file = "Mesh_3x90_2.mesh";            ///< Path to the mesh file
+    // const char* mesh_file = "hexagon.mesh";
     const char* dsF_file = "dsF_3x90_2.txt";               ///< Path to the surface flux data file
 
     bool visualization = true;

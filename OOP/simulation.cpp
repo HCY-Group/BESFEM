@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
         double globalerror_P = 1.0; // Error for particle potential
 		double globalerror_E = 1.0; // Error for electrolyte potential
 
-        if (t % 40 == 0) {
+        if (t % 1 == 0) {
         // int inlp = 0;
         while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
 
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
         // Step 7: Update the cell voltage based on the particle and electrolyte potentials
         VCell = BvP - BvE;
         
-        std::cout << "timestep: " << t << "VCell: " << VCell << std::endl;
+        std::cout << "timestep: " << t << "    " << "VCell: " << VCell << std::endl;
 
         // if (t % 100 == 0) {
         // std::cout << "Iteration " << t << ": VCell = " << VCell << std::endl;
@@ -147,14 +147,15 @@ int main(int argc, char *argv[]) {
     }
 
     // Save simulation outputs
-    // pmesh.Save("Results/pmesh");
+    geometry.parallelMesh->Save("Results/pmesh");
+    domain_parameters.psi->Save("Results/psi");
+    domain_parameters.pse->Save("Results/pse");
+
     CnP_gf.Save("Results/CnP");
     CnE_gf.Save("Results/CnE");
     phP_gf.Save("Results/phP");
     phE_gf.Save("Results/phE");
     Rxn_gf.Save("Results/Rxn");
-    // psi.Save("Results/psi");
-    // pse.Save("Results/pse");
 
     // Finalize MPI processing
     mfem::Mpi::Finalize();
