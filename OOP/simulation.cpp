@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
         double globalerror_P = 1.0; // Error for particle potential
 		double globalerror_E = 1.0; // Error for electrolyte potential
 
-        if (t % 50 == 0) {
+        if (t % 30 == 0) {
             while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
 
                 // Update reaction rates using the Butler-Volmer equation
