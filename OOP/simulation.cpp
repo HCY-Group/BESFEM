@@ -26,10 +26,6 @@ int main(int argc, char *argv[]) {
     mfem::Mpi::Init(argc, argv);
     mfem::Hypre::Init();
 
-    // // Create the MeshHandler object and load the mesh
-    // MeshHandler mesh_handler;
-    // mesh_handler.LoadMesh();
-
     // Initialize Mesh & Geometry
     Initialize_Geometry geometry;
     geometry.InitializeMesh(Constants::mesh_file, MPI_COMM_WORLD, Constants::order);
@@ -38,18 +34,6 @@ int main(int argc, char *argv[]) {
     // Initialize and Calculate Domain Parameters (psi, pse, AvB, AvP)
     Domain_Parameters domain_parameters(geometry);
     domain_parameters.SetupDomainParameters();
-
-    // // Create a parallel mesh and finite element space to use across the simulation 
-    // mfem::ParMesh &pmesh = *mesh_handler.pmesh.get();
-    // mfem::H1_FECollection fec(Constants::order, pmesh.Dimension());
-    // ParFiniteElementSpace fespace(&pmesh, &fec);
-
-    // // Setup boundary conditions for the mesh using the MeshHandler
-    // mesh_handler.SetupBoundaryConditions(&pmesh, &fespace);
-
-    // // Retrieve psi (particle phase potential) and pse (electrolyte phase potential) from the MeshHandler
-    // mfem::ParGridFunction &psi = *mesh_handler.psi;
-    // mfem::ParGridFunction &pse = *mesh_handler.pse;
 
     // Initialize Concentration Classes
 

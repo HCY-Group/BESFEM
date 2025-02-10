@@ -19,10 +19,8 @@ Potentials::Potentials(Initialize_Geometry &geo, Domain_Parameters &para)
     nC = geometry.nC; 
     nV = geometry.nV; 
 
-    // px0 = new mfem::ParGridFunction(fespace); // Potential values before iteration
     px0 = std::make_unique<mfem::ParGridFunction>(fespace.get());
     Rxx = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    // Bx2 = std::make_unique<mfem::ParLinearForm>(fespace);
 
     X0 = mfem::HypreParVector(fespace.get()); // Hypre vector for solving linear systems
 
