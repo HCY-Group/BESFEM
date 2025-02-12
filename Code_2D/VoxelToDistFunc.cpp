@@ -218,7 +218,8 @@ int main(int argc, char *argv[])
 		
 		t_ode = 0.0;
 		dt = 0.05;
-		for (int t = 0; t < 150; t++){
+		//dt = 0.1;
+		for (int t = 0; t < 300; t++){
 			ConnectSolver.UpdateSystemAndSolve(*ConnectSolver.GetTDOF(), t_ode, dt);
 			ConnectSolver.AccelerateDiffusion(psi, *ConnectSolver.GetBCCoef(), *ConnectSolver.GetBCMarker());
 		}

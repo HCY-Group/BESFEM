@@ -196,7 +196,7 @@ void VoxelSolver::AccelerateDiffusion(ParGridFunction &DomPar, GridFunctionCoeff
 	
 	int nV = Vox->Size();
 	for (int vi = 0; vi < nV; vi++){
-		if ( (*Vox)(vi) > 1.0e-2 && DomPar(vi) > 0.9 ){
+		if ( (*Vox)(vi) > 0.1 && DomPar(vi) > 0.9 ){
 			(*Vox)(vi) = 1.0; // Modify Vox
 		}
 	}
