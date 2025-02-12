@@ -137,9 +137,9 @@ int main(int argc, char *argv[])
 	
 	// Need to use Discontinuous Galerkin (DG) for upwinding (look at MFEM examples 9 and 18)
 	int order = 1;
-	DG_FECollection fec_dg(order, maker.GetParallelMesh()->Dimension(), BasisType::GaussLobatto);
-	ParFiniteElementSpace fespace_dg(maker.GetParallelMesh(), &fec_dg);
-	ParFiniteElementSpace dfespace_dg(maker.GetParallelMesh(), &fec_dg, maker.GetParallelMesh()->Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
+	//DG_FECollection fec_dg(order, maker.GetParallelMesh()->Dimension(), BasisType::GaussLobatto);
+	//ParFiniteElementSpace fespace_dg(maker.GetParallelMesh(), &fec_dg);
+	//ParFiniteElementSpace dfespace_dg(maker.GetParallelMesh(), &fec_dg, maker.GetParallelMesh()->Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
 	maker.Make_DG_FESpace_Parallel();
 
 	
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 	solver_dg.ProjectVals(solver.GetParallelVox());
 	solver_dg.CalcLevelSetVel();
 		
-	ODESolver *ode_solver_dg2 = new ForwardEulerSolver; // WHY IS THIS LINE NECESSARY???
+	ODESolver *ode_solver_dg2 = new ForwardEulerSolver; //TODO: WHY IS THIS LINE NECESSARY???
 		
 	solver_dg.FormMatrices(boundary_dofs);
 	// Time Stepping
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 		
 		t_ode = 0.0;
 		dt = 0.05;
-		for (int t = 0; t < 100; t++){
+		for (int t = 0; t < 150; t++){
 			ConnectSolver.UpdateSystemAndSolve(*ConnectSolver.GetTDOF(), t_ode, dt);
 			ConnectSolver.AccelerateDiffusion(psi, *ConnectSolver.GetBCCoef(), *ConnectSolver.GetBCMarker());
 		}
