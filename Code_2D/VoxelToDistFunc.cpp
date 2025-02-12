@@ -136,10 +136,6 @@ int main(int argc, char *argv[])
 	cout << "FINDING DISTANCE FUNCTION WITH LEVEL SET REINITIALIZATION" << endl;
 	
 	// Need to use Discontinuous Galerkin (DG) for upwinding (look at MFEM examples 9 and 18)
-	int order = 1;
-	//DG_FECollection fec_dg(order, maker.GetParallelMesh()->Dimension(), BasisType::GaussLobatto);
-	//ParFiniteElementSpace fespace_dg(maker.GetParallelMesh(), &fec_dg);
-	//ParFiniteElementSpace dfespace_dg(maker.GetParallelMesh(), &fec_dg, maker.GetParallelMesh()->Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
 	maker.Make_DG_FESpace_Parallel();
 
 	
@@ -193,6 +189,7 @@ int main(int argc, char *argv[])
 	solver.ParaviewSave("psi","psi",&psi);
 	
 	VoxelSolver ConnectSolver(maker.GetGlobalFESpace(),maker.GetParallelFESpace());
+	VoxelSolver_DG solver_dg2(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
 		
 
 	for (int ConIter = 0; ConIter < 2; ConIter++){
@@ -234,6 +231,49 @@ int main(int argc, char *argv[])
 		} else {
 			ConnectSolver.ParaviewSave("Conc_e","Cn_e",ConnectSolver.GetParallelVox());
 		}
+
+		// ======================================
+		// FIND DISTANCE FUNCTION BY REINITIALIZING LEVEL SET
+		// ======================================
+		cout << "FINDING DISTANCE FUNCTION WITH LEVEL SET REINITIALIZATION" << endl;
+		
+		solver_dg2.ProjectVals(ConnectSolver.GetParallelVox());
+		solver_dg2.CalcLevelSetVel();
+			
+		//ODESolver *ode_solver_dg2 = new ForwardEulerSolver; //TODO: WHY IS THIS LINE NECESSARY???
+			
+		solver_dg2.FormMatrices(boundary_dofs);
+		// Time Stepping
+		t_ode = 0.0;
+		dt = 0.1;
+		for (int t = 0; t < 10; t++){
+			solver_dg2.CalcLevelSetVel();
+			
+			
+			solver_dg2.UpdateMatricesAndSolve(boundary_dofs, t_ode, dt);
+		}
+		
+		
+		// Output Distance to Paraview
+		ParGridFunction d2(*solver_dg2.GetDistFunc());
+		//d = d2;
+		cout << "PRINTING OUT DistanceFunction" << endl;
+		if (ConIter==0){
+			solver.ParaviewSave("DstFun_p","Dst_p",&d2);
+
+			// Output Advection Velocity to Paraview
+			ParGridFunction c(*solver_dg2.GetAdvVel());
+			//c = c2;
+			solver.ParaviewSave("AdvVel_p","Vel_p",&c);
+		} else {
+			solver.ParaviewSave("DstFun_e","Dst_e",&d2);
+
+			// Output Advection Velocity to Paraview
+			ParGridFunction c(*solver_dg.GetAdvVel());
+			//c = c2;
+			solver.ParaviewSave("AdvVel_e","Vel_e",&c);
+		}
+
 	}
 
 
