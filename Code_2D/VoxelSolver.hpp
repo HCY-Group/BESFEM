@@ -24,6 +24,7 @@ public:
 	void NorthDirichletBCs(Mesh *mesh);
 	void SouthDirichletBCs(Mesh *mesh);
 	void DetermineConnectivityBCs(ParGridFunction &DomPar);
+	void MultiplyVox(GridFunction &gf); //Elementwise Multiplication
 	
 	GridFunction* GetGlobalVox() {return gVox;}
 	ParGridFunction* GetParallelVox() {return Vox;}

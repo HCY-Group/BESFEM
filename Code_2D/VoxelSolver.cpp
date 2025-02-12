@@ -35,6 +35,11 @@ void VoxelSolver::AssignGlobalValues(vector<vector<vector<int>>> data) {
 	}
 }
 
+void VoxelSolver::MultiplyVox(GridFunction &gf) { 
+	//Elementwise Multiplication
+	*this->Vox *= gf;
+}
+
 void VoxelSolver::MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh) {
 	int nV = pmesh->GetNV();		//number of vertices
 	int nE = pmesh->GetNE();		//number of elements

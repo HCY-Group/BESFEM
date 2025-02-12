@@ -223,7 +223,10 @@ int main(int argc, char *argv[])
 			ConnectSolver.UpdateSystemAndSolve(*ConnectSolver.GetTDOF(), t_ode, dt);
 			ConnectSolver.AccelerateDiffusion(psi, *ConnectSolver.GetBCCoef(), *ConnectSolver.GetBCMarker());
 		}
-
+		
+		//Multiply value by psi so the boundaries are closer to each other
+		ConnectSolver.MultiplyVox(psi);
+		
 		// Output Cn to Paraview
 		cout << "PRINTING OUT Electrolyte Concentration" << endl;
 		if (ConIter==0){
