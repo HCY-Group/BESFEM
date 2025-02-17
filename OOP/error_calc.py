@@ -84,3 +84,17 @@ plt.legend()
 plt.grid()
 plt.show()
 plt.savefig("L2_error_plot.png", dpi=300)
+
+# Plot relative error for each file type
+plt.figure(figsize=(10, 5))
+for file_type in data["file_type"].unique():
+    subset = data[data["file_type"] == file_type]
+    plt.plot(subset["node"], subset["rel_error_mean"], marker="o", label=file_type)
+
+plt.xlabel("Node")
+plt.ylabel("Relative Error")
+plt.title("Mean Relative Error Across Nodes for Different File Types")
+plt.legend()
+plt.grid()
+plt.show()
+plt.savefig("rel_error_plot.png", dpi=300)

@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     int global_nE = 0;
 
     MPI_Allreduce(&local_nE, &global_nE, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 20.0)));
+    int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 40.0)));
  
     // Perform simulation over time steps
     // for (int t = 0; t < 6000 + 1; ++t) {
