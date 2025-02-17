@@ -3,8 +3,8 @@ import numpy as np
 import glob
 
 # Define directories
-no_skip_dir = "Results_3x90_0205_3"
-skip_dir = "Results_3x90_0211_20"
+no_skip_dir = "Results_3x90_0205_1"
+skip_dir = "Results_3x90_0217_7"
 
 # File types to compare
 file_types = ["CnE", "CnP", "phP", "phE"]
