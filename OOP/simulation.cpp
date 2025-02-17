@@ -15,6 +15,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <cmath>
 
 int main(int argc, char *argv[]) {
 
@@ -78,6 +79,11 @@ int main(int argc, char *argv[]) {
     // Main Simulation Loop
 
     int t = 0;
+    int local_nE = geometry.nE;  // Local number of elements on this MPI process
+    int global_nE = 0;
+
+    MPI_Allreduce(&local_nE, &global_nE, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 20.0)));
  
     // Perform simulation over time steps
     // for (int t = 0; t < 6000 + 1; ++t) {
@@ -87,9 +93,11 @@ int main(int argc, char *argv[]) {
         particle_concentration.TimeStep(Rxn_gf, CnP_gf, *domain_parameters.psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
         
-        // Step 2: Update potentials for both particle and electrolyte phases
-        particle_potential.TimeStep(CnP_gf, *domain_parameters.psi, phP_gf);
-        electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf);
+        if (t % t_skip == 0) {
+            // Step 2: Update potentials for both particle and electrolyte phases
+            particle_potential.TimeStep(CnP_gf, *domain_parameters.psi, phP_gf);
+            electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf);
+        }
 
         // Step 3: Compute rate constants and exchange current density at the interface     
         reaction.ExchangeCurrentDensity(CnP_gf); 
@@ -98,7 +106,7 @@ int main(int argc, char *argv[]) {
         double globalerror_P = 1.0; // Error for particle potential
 		double globalerror_E = 1.0; // Error for electrolyte potential
 
-        if (t % 30 == 0) {
+        if (t % t_skip == 0) {
             while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
 
                 // Update reaction rates using the Butler-Volmer equation
@@ -107,6 +115,7 @@ int main(int argc, char *argv[]) {
                 // Calculate global errors for particle and electrolyte potentials
                 particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
                 electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
+            
             }
         }
 
@@ -145,7 +154,7 @@ int main(int argc, char *argv[]) {
               << duration_cast<seconds>(program_end - program_start).count() 
               << " seconds" << std::endl;
 
-
+    std::cout << "t skip value: " << t_skip << std::endl;
 
     return 0;
 }
