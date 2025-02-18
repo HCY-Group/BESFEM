@@ -8,6 +8,8 @@
 #include "MeshMaker.hpp"
 #include "VoxelSolver.hpp"
 #include "VoxelSolver_DG.hpp"
+#include "../code/Initialize_Geometry.hpp"
+#include "../code/Constants.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -21,7 +23,8 @@ int main(int argc, char *argv[])
 	// Initialize MPI and HYPRE
 	Mpi::Init(argc, argv);
 	Hypre::Init();
-	
+
+	/*	
 	// ======================================
 	// READ IN TIFF FILE
 	// ======================================
@@ -45,14 +48,6 @@ int main(int argc, char *argv[])
 	cout << "tiff[0] size: "         << tiffdata[0].size()      << endl;
 	cout << "tiff[0][0] size: "      << tiffdata[0][0].size()   << endl;
 	cout << "tiffdata[0][0][0] = "   << tiffdata[0][0][0]       << endl;
-	/*for (int i = 0; i < tiffdata.size(); i++) {
-		for (int j = 0; j < tiffdata[i].size(); j++) {
-			for (int k = 0; k < tiffdata[i][j].size(); k++) {
-				cout << tiffdata[i][j][k] << endl;
-			}
-		}
-	}
-	*/
 
 
 	// ======================================
@@ -66,11 +61,8 @@ int main(int argc, char *argv[])
 	maker.Make_H1_FESpace_Parallel();
 	maker.TestGetFE();
 	
+	*/
 	
-	//VoxelSolver solver(maker.GetGlobalFESpace());
-	VoxelSolver solver(maker.GetGlobalFESpace(), maker.GetParallelFESpace());
-	solver.AssignGlobalValues(tiffdata);
-	solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
 	
 	
 
@@ -82,12 +74,24 @@ int main(int argc, char *argv[])
 	// ======================================
 	// LOCAL (PARALLEL) MESH AND DATA
 	// ======================================
-	solver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
-	solver.ParaviewSave("pVoxelData","Vox",solver.GetParallelVox());
 	
 
+	// Test Initialize_Geometry class
+    	Initialize_Geometry geometry;
+    	geometry.InitializeMesh(Constants::mesh_file, MPI_COMM_WORLD, Constants::order);
+    	geometry.SetupBoundaryConditions();
 
+	//VoxelSolver solver(maker.GetGlobalFESpace());
+	//VoxelSolver solver(maker.GetGlobalFESpace(), maker.GetParallelFESpace());
+	VoxelSolver solver(&*geometry.globalfespace, &*geometry.parfespace);
+	//solver.AssignGlobalValues(tiffdata);
+	solver.AssignGlobalValues(geometry.tiffData);
+	solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
 
+	//solver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
+	solver.MapGlobalToLocal(&*geometry.globalMesh,&*geometry.parallelMesh);
+	solver.ParaviewSave("pVoxelData","Vox",solver.GetParallelVox());
+	
 
 	// ======================================
 	// SMOOTH THE DATA USING ALLEN-CAHN
@@ -98,13 +102,14 @@ int main(int argc, char *argv[])
 	Array<int> boundary_dofs;
 	
 	// Domain Parameter
-	//ParGridFunction ones(&fespace);	
-	ParGridFunction ones(maker.GetParallelFESpace());
+	//ParGridFunction ones(maker.GetParallelFESpace());
+	ParGridFunction ones(&*geometry.parfespace);
 	ones = 1.0;
 	
 	// Diffusion Coefficient
 	//ParGridFunction Mob(&fespace);
-	ParGridFunction Mob(maker.GetParallelFESpace());
+	//ParGridFunction Mob(maker.GetParallelFESpace());
+	ParGridFunction Mob(&*geometry.parfespace);
 	Mob = 0.64;
 	
 
@@ -129,7 +134,7 @@ int main(int argc, char *argv[])
 
 
 
-
+	/*
 	// ======================================
 	// FIND DISTANCE FUNCTION BY REINITIALIZING LEVEL SET
 	// ======================================
@@ -231,7 +236,7 @@ int main(int argc, char *argv[])
 			ConnectSolver.ParaviewSave("Conc_e","Cn_e",ConnectSolver.GetParallelVox());
 		}
 	}
-
+	*/
 
 
 

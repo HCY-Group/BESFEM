@@ -11,7 +11,7 @@ using namespace std;
 
 class Initialize_Geometry {
 private:
-    std::vector<std::vector<std::vector<int>>> tiffData;
+    //std::vector<std::vector<std::vector<int>>> tiffData;
     bool tiffDataLoaded = false;
 
 protected:
@@ -85,6 +85,7 @@ public:
     std::unique_ptr<mfem::GridFunction> gVox; ///< Global vox function grid
     std::unique_ptr<mfem::ParGridFunction> Vox; ///< Vox function grid
 
+    std::vector<std::vector<std::vector<int>>> tiffData;
 
 };
 
