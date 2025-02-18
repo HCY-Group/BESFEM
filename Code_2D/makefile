@@ -5,9 +5,9 @@ include $(CONFIG_MK)
 
 
 LDFLAGS = -ltiff
-SOURCECODE = ../code/Initialize_Geometry.cpp TimeDepOpers.cpp readtiff.cpp MeshMaker.cpp VoxelSolver.cpp VoxelSolver_DG.cpp
+SOURCECODE = ../code/Constants.cpp ../code/Initialize_Geometry.cpp TimeDepOpers.cpp readtiff.cpp MeshMaker.cpp VoxelSolver.cpp VoxelSolver_DG.cpp
 
-
+MFEM_CXXFLAGS = -std=c++14 -O3 -DNDEBUG -O2 -ftree-vectorize -march=native -fno-math-errno -fopenmp
 
 # Remove built-in rule
 %: %.cpp
