@@ -93,6 +93,8 @@ int main(int argc, char *argv[])
 	solver.ParaviewSave("pVoxelData","Vox",solver.GetParallelVox());
 	
 
+	ODESolver *ode_solver_dg2 = new ForwardEulerSolver; // WHY IS THIS LINE NECESSARY???
+	
 	// ======================================
 	// SMOOTH THE DATA USING ALLEN-CAHN
 	// ======================================
