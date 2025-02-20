@@ -267,6 +267,7 @@ int main(int argc, char *argv[])
 		if (ConIter==0){
 			//solver.ParaviewSave("DstFun_p","Dst_p",&d2);
 			solver.ParaviewSave("DstFun_p","Dst_p",&psi2);
+			psi2.SaveAsOne("dsF_p.txt");
 
 			// Output Advection Velocity to Paraview
 			ParGridFunction c(*solver_dg2.GetAdvVel());
@@ -275,6 +276,7 @@ int main(int argc, char *argv[])
 		} else {
 			//solver.ParaviewSave("DstFun_e","Dst_e",&d2);
 			solver.ParaviewSave("DstFun_e","Dst_e",&psi2);
+			psi2.SaveAsOne("dsF_e.txt");
 
 			// Output Advection Velocity to Paraview
 			ParGridFunction c(*solver_dg.GetAdvVel());
@@ -284,7 +286,10 @@ int main(int argc, char *argv[])
 
 	}
 
-
+	// Output mesh to use in BESFEM sims
+	Mesh mesh2(*maker.GetGlobalMesh());
+	mesh2.Save("VoxMesh.mesh");
+	
 
 
 	return 0;
