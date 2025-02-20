@@ -3,13 +3,13 @@ import numpy as np
 import glob
 
 # Define directories
-no_skip_dir = "Results_3x90_0205_1"
-skip_dir = "Results_3x90_0217_7"
+no_skip_dir = "Results_20x60_0219_1_m"
+skip_dir = "Results_20x60_0219_2_m"
 
 # File types to compare
 file_types = ["CnE", "CnP", "phP", "phE"]
 
-# Number of MPI nodes
+# Number of MPI ranks
 num_nodes = 6
 
 def read_numerical_values(file_path):
@@ -52,7 +52,7 @@ for file_type in file_types:
         # Store results
         error_summary.append({
             "file_type": file_type,
-            "node": node_id,
+            "rank": node_id,
             "abs_error_mean": np.mean(abs_error),
             "rel_error_mean": np.mean(rel_error),
             "L2_error": l2_error
@@ -75,11 +75,11 @@ data = pd.read_csv("error_comparison.csv")
 plt.figure(figsize=(10, 5))
 for file_type in data["file_type"].unique():
     subset = data[data["file_type"] == file_type]
-    plt.plot(subset["node"], subset["L2_error"], marker="o", label=file_type)
+    plt.plot(subset["rank"], subset["L2_error"], marker="o", label=file_type)
 
-plt.xlabel("Node")
+plt.xlabel("Rank")
 plt.ylabel("L2 Error")
-plt.title("L2 Error Across Nodes for Different File Types")
+plt.title("L2 Error Across Ranks for Different File Types")
 plt.legend()
 plt.grid()
 plt.show()
@@ -89,11 +89,11 @@ plt.savefig("L2_error_plot.png", dpi=300)
 plt.figure(figsize=(10, 5))
 for file_type in data["file_type"].unique():
     subset = data[data["file_type"] == file_type]
-    plt.plot(subset["node"], subset["rel_error_mean"], marker="o", label=file_type)
+    plt.plot(subset["rank"], subset["rel_error_mean"], marker="o", label=file_type)
 
-plt.xlabel("Node")
+plt.xlabel("Rank")
 plt.ylabel("Relative Error")
-plt.title("Mean Relative Error Across Nodes for Different File Types")
+plt.title("Mean Relative Error Across Ranks for Different File Types")
 plt.legend()
 plt.grid()
 plt.show()
