@@ -257,16 +257,24 @@ int main(int argc, char *argv[])
 		// Output Distance to Paraview
 		ParGridFunction d2(*solver_dg2.GetDistFunc());
 		//d = d2;
+	
+		// Project d2 onto H1 FESpace to use in BESFEM sim
+		ParGridFunction psi2(maker.GetParallelFESpace());
+		psi2.ProjectGridFunction(d2);
+		psi2 -= 0.5; // Center about 0
+		
 		cout << "PRINTING OUT DistanceFunction" << endl;
 		if (ConIter==0){
-			solver.ParaviewSave("DstFun_p","Dst_p",&d2);
+			//solver.ParaviewSave("DstFun_p","Dst_p",&d2);
+			solver.ParaviewSave("DstFun_p","Dst_p",&psi2);
 
 			// Output Advection Velocity to Paraview
 			ParGridFunction c(*solver_dg2.GetAdvVel());
 			//c = c2;
 			solver.ParaviewSave("AdvVel_p","Vel_p",&c);
 		} else {
-			solver.ParaviewSave("DstFun_e","Dst_e",&d2);
+			//solver.ParaviewSave("DstFun_e","Dst_e",&d2);
+			solver.ParaviewSave("DstFun_e","Dst_e",&psi2);
 
 			// Output Advection Velocity to Paraview
 			ParGridFunction c(*solver_dg.GetAdvVel());
