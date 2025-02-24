@@ -22,6 +22,8 @@ public:
      */
     CnE(Initialize_Geometry &geo, Domain_Parameters &para);
 
+    virtual ~CnE();
+
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
 
@@ -75,8 +77,12 @@ private:
 
     mfem::HypreParVector *CeV0; ///< Initial electrolyte concentration values
     mfem::HypreParVector *RHCe; ///< Right-hand-side vector at the current time step
-    mfem::HypreParMatrix *TmatR; ///< System matrix for the right-hand-side calculation (Crank-Nicolson)
-    mfem::HypreParMatrix *TmatL; ///< System matrix for the left-hand-side calculation (Crank-Nicolson)
+    // mfem::HypreParMatrix *TmatR; ///< System matrix for the right-hand-side calculation (Crank-Nicolson)
+    // mfem::HypreParMatrix *TmatL; ///< System matrix for the left-hand-side calculation (Crank-Nicolson)
+
+    std::unique_ptr<mfem::HypreParMatrix> TmatR;
+    std::unique_ptr<mfem::HypreParMatrix> TmatL;
+
 
     std::shared_ptr<mfem::ParBilinearForm> eKx2;
 

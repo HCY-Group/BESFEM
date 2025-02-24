@@ -9,7 +9,8 @@
 
 
 CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), nbc_w_bdr(geo.nbc_w_bdr)
+    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), nbc_w_bdr(geo.nbc_w_bdr),
+    TmatR(nullptr), TmatL(nullptr)
     
     {
 
@@ -26,10 +27,21 @@ CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para)
     RHCe = new mfem::HypreParVector(fespace.get());
     CeVn = new mfem::HypreParVector(fespace.get());
 
+    // TmatR = nullptr;
+    // TmatL = nullptr;
+
     }
 
 mfem::HypreParVector* CnE::CeVn = nullptr; // static variable to be used in reaction
 
+CnE::~CnE()
+{
+    delete PeR;
+    delete RxE;
+    delete CeV0;
+    delete RHCe;
+    delete CeVn;
+}
 
 void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
@@ -63,9 +75,19 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     eKx2->Update();
     Concentrations::KMatrix(eKx2, boundary_dofs, Cn, ftE, Kmate, X1v, Feb, cDe);
 
-    // Form Crank-Nicolson system matrices
-    TmatR = Add(1.0,*Mmate, -0.5*Constants::dt, *Kmate);		
-    TmatL = Add(1.0, *Mmate,  0.5*Constants::dt, *Kmate);	
+    // delete TmatR;
+    // delete TmatL;
+
+    // // Form Crank-Nicolson system matrices
+    // TmatR = Add(1.0,*Mmate, -0.5*Constants::dt, *Kmate);		
+    // TmatL = Add(1.0, *Mmate,  0.5*Constants::dt, *Kmate);	
+
+    // TmatR = std::make_unique<mfem::HypreParMatrix>(Add(1.0,*Mmate, -0.5*Constants::dt, *Kmate));		
+    // TmatL = std::make_unique<mfem::HypreParMatrix>(Add(1.0, *Mmate,  0.5*Constants::dt, *Kmate));	
+
+    TmatR.reset(Add(1.0, *Mmate, -0.5 * Constants::dt, *Kmate));
+    TmatL.reset(Add(1.0, *Mmate,  0.5 * Constants::dt, *Kmate));
+
     
     // Solve for the next time step concentration
     Cn.GetTrueDofs(*CeV0);	

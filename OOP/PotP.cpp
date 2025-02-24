@@ -29,6 +29,12 @@ PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
 
 mfem::CGSolver* PotP::cgPP_solver = nullptr; // static variable to be used in reaction
 
+PotP::~PotP()
+{
+    delete cgPP_solver;
+    delete RpP;
+    delete kap;
+}
 
 void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value)
 

@@ -31,6 +31,15 @@ Reaction::Reaction(Initialize_Geometry &geo, Domain_Parameters &para)
 
 }
 
+Reaction::~Reaction()
+{
+    delete i0C;
+    delete OCV;
+    delete Kfw;
+    delete Kbw;
+    delete dPHE;
+}
+
 void Reaction::Initialize(mfem::ParGridFunction &Rx, double initial_value) {
 
     SetInitialReaction(Rx, initial_value);

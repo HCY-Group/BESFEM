@@ -10,7 +10,8 @@
 using namespace std;
 
 CnP::CnP(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace)
+    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace),
+    Tmatp(nullptr)
     
     {
     PsVc = mfem::HypreParVector(fespace.get());
@@ -29,7 +30,17 @@ CnP::CnP(Initialize_Geometry &geo, Domain_Parameters &para)
 
     pKx2 = std::make_shared<mfem::ParBilinearForm>(fespace.get());
 
+    // Tmatp = nullptr;
+
     }
+
+CnP::~CnP()
+{
+    delete CpV0;
+    delete RHCp;
+    delete CpVn;
+    delete RxP;
+}
 
 void CnP::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
@@ -56,8 +67,8 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     // Assemble the force term without applying boundary conditions
     Concentrations::ForceTerm(*RxP, ftPC, dummy_boundary, dummy_coef, false); // false since not applying BCs
 
-    pKx2->Update(fespace.get());
-
+    // pKx2->Update(fespace.get());
+    
     // Compute the diffusivity coefficient and assemble the stiffness matrix
     std::shared_ptr<mfem::GridFunctionCoefficient> cDp = Concentrations::Diffusivity(psx, Cn, true); // true since using first equation
     pKx2 = std::make_shared<mfem::ParBilinearForm>(fespace.get());
@@ -68,9 +79,12 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     // cDp->ResetCoefficient();
     pKx2->Update(fespace.get());
 
-
+    // delete Tmatp;
     // Form the time-stepping system matrix
-    Tmatp = Add(1.0, *Mmatp, -(Constants::dt), *Kmatp);
+    // Tmatp = Add(1.0, *Mmatp, -(Constants::dt), *Kmatp);
+    // Tmatp = std::make_shared<mfem::HypreParMatrix>(*Add(1.0, *Mmatp, -(Constants::dt), *Kmatp));
+
+    Tmatp.reset(Add(1.0, *Mmatp, -(Constants::dt), *Kmatp));
 
     // Solve for the next time-step concentrations
     int nDof = CpV0->Size();

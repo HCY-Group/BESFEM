@@ -21,6 +21,8 @@ public:
      */
     Reaction(Initialize_Geometry &geo, Domain_Parameters &para);
 
+    virtual ~Reaction();
+
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
 

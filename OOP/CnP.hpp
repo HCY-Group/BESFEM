@@ -21,6 +21,8 @@ public:
      * @param mh Reference to the mesh handler
      */
     CnP(Initialize_Geometry &geo, Domain_Parameters &para);
+
+    virtual ~CnP();
     
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
@@ -70,7 +72,11 @@ private:
     mfem::HypreParVector *CpV0; ///< Initial particle concentration values
     mfem::HypreParVector *CpVn; ///< Particle concentration values at the next time step
     mfem::HypreParVector *RHCp; ///< Right-hand-side vector at the current time step
-    mfem::HypreParMatrix *Tmatp; ///< System matrix for time-stepping
+    // mfem::HypreParMatrix *Tmatp; ///< System matrix for time-stepping
+    // std::shared_ptr<mfem::HypreParMatrix> Tmatp;
+    std::unique_ptr<mfem::HypreParMatrix> Tmatp;
+
+
 
     std::shared_ptr<mfem::ParBilinearForm> pKx2;
 

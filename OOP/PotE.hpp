@@ -33,6 +33,8 @@ public:
      */
     PotE(Initialize_Geometry &geo, Domain_Parameters &para);
 
+    virtual ~PotE();
+
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
 

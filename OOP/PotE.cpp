@@ -41,6 +41,16 @@ PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para)
 
 mfem::CGSolver* PotE::cgPE_solver = nullptr; // static variable to be used in reaction
 
+PotE::~PotE()
+{
+    delete cgPE_solver;
+    delete RpE;
+    delete Dmp;
+    delete kpl;
+    delete LpCe;
+    delete CeVn;
+}
+
 
 void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value)
 

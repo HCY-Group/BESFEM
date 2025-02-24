@@ -22,6 +22,11 @@ Concentrations::Concentrations(Initialize_Geometry &geo, Domain_Parameters &para
 
 }
 
+Concentrations::~Concentrations()
+{
+    delete TmpF;
+}
+
 void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double initial_value) {
     
     for (int i = 0; i < Cn.Size(); ++i) {
@@ -68,6 +73,10 @@ void Concentrations::SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfe
     m_solver.SetPreconditioner(smoother); // Attach the preconditioner to the solver
     m_solver.SetOperator(*Mmat); // Set the mass matrix as the operator to solve
 
+    // Clean up dynamically allocated objects
+    delete cP; 
+    delete Ps_gf;
+    delete M;
 
 }
 
@@ -164,8 +173,10 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
 std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
     
     // Create a new parallel grid function to store the computed diffusivity values
-    mfem::ParGridFunction *Dx = new mfem::ParGridFunction(fespace.get());
-    // std::shared_ptr<mfem::ParGridFunction> Dx = std::make_shared<mfem::ParGridFunction>(fespace);
+    // mfem::ParGridFunction *Dx = new mfem::ParGridFunction(fespace.get());
+    Dx = std::make_shared<mfem::ParGridFunction>(fespace.get());
+
+    // auto Dx = std::make_shared<mfem::ParGridFunction>(fespace);
 
     
     // Loop through all vertices in the domain to calculate diffusivity
@@ -187,9 +198,11 @@ std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem:
     }
     
     // Wrap the computed diffusivity grid function in a GridFunctionCoefficient and return it
-    return std::make_shared<mfem::GridFunctionCoefficient>(Dx);
+    return std::make_shared<mfem::GridFunctionCoefficient>(Dx.get());
 
 }
+
+
 
 
 void Concentrations::KMatrix(std::shared_ptr<mfem::ParBilinearForm> &Kx2, mfem::Array<int> boundary, mfem::ParGridFunction &Cn, mfem::ParLinearForm &Fxx, std::shared_ptr<mfem::HypreParMatrix> &Kmatx, mfem::HypreParVector &X1v, mfem::HypreParVector &Fxb, std::shared_ptr<mfem::GridFunctionCoefficient> cDx) {

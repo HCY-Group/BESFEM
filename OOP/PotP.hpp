@@ -32,6 +32,9 @@ public:
      */
     PotP(Initialize_Geometry &geo, Domain_Parameters &para);
 
+    virtual ~PotP();
+
+
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
 

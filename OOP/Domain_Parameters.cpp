@@ -47,7 +47,10 @@ void Domain_Parameters::InterpolateDomainParameters() {
 
     // interpolate domain parameter from distance function
     for (int vi = 0; vi < nV; vi++) {
-        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // 
+        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // used for rectangle 
+        // (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta));
+        // psi(i) = 0.5*(1+tanh((11*h-rad(i,1))/ze))
+        
         // tanh(x) transitions -1 (electrolyte) to 1 (particle), adding 1.0 and multiplying 0.5 shifts range to 0 to 1
         // psi close to 1 is particle, psi close to 0 is electrolyte
         // large dsF = close to 1, so inside particle ; small or negative dsF = close to -1, so inside electrolyte

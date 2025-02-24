@@ -83,11 +83,11 @@ int main(int argc, char *argv[]) {
     int global_nE = 0;
 
     MPI_Allreduce(&local_nE, &global_nE, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 40.0)));
+    int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 50.0)));
  
     // Perform simulation over time steps
-    // for (int t = 0; t < 6000 + 1; ++t) {
-    while ( VCell > Constants::VCut) {
+    for (int t = 0; t < 6000 + 1; ++t) {
+    // while ( VCell > Constants::VCut) {
 
         // Step 1: Update concentrations for both particle and electrolyte phases
         particle_concentration.TimeStep(Rxn_gf, CnP_gf, *domain_parameters.psi);
@@ -134,6 +134,13 @@ int main(int argc, char *argv[]) {
 
     }
 
+    // Multiply Grid Functions for Error Calculations
+    CnP_gf *= *domain_parameters.psi;
+    phP_gf *= *domain_parameters.psi;
+
+    CnE_gf *= *domain_parameters.pse;
+    phE_gf *= *domain_parameters.pse;
+
     // Save simulation outputs
     geometry.parallelMesh->Save("Results/pmesh");
     domain_parameters.psi->Save("Results/psi");
@@ -144,6 +151,9 @@ int main(int argc, char *argv[]) {
     phP_gf.Save("Results/phP");
     phE_gf.Save("Results/phE");
     Rxn_gf.Save("Results/Rxn");
+
+    // Finalize HYPRE processing
+    mfem::Hypre::Finalize();
 
     // Finalize MPI processing
     mfem::Mpi::Finalize();

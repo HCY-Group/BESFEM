@@ -43,7 +43,7 @@ public:
     /**
      * @brief Destructor for the Concentrations class
      */
-    virtual ~Concentrations() = default;
+    virtual ~Concentrations();
     
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
@@ -230,6 +230,7 @@ private:
     std::unique_ptr<mfem::ParLinearForm> Bx2;
     std::shared_ptr<mfem::GridFunctionCoefficient> last_cDx;
 
+    std::shared_ptr<mfem::ParGridFunction> Dx; // Persistent storage
 
 
 };
