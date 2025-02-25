@@ -85,8 +85,8 @@ public:
     std::unique_ptr<mfem::GridFunction> gVox; ///< Global vox function grid
     std::unique_ptr<mfem::ParGridFunction> Vox; ///< Vox function grid
 
-    std::unique_ptr<mfem::H1_FECollection> fec_storage;
-
+    // std::unique_ptr<mfem::H1_FECollection> fec_storage;
+    std::unique_ptr<mfem::H1_FECollection> fec;
 
 
 };

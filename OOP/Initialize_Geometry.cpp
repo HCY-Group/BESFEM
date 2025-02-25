@@ -77,14 +77,9 @@ void Initialize_Geometry::SetupFiniteElementSpace(int order) {
     if (!globalMesh) {
         throw std::runtime_error("Global mesh must be initialized before setting up FE space.");
     }
-    // auto fec = new mfem::H1_FECollection(order, globalMesh->Dimension());
-    // globalfespace = std::make_shared<mfem::FiniteElementSpace>(globalMesh.get(), fec);
 
-    auto fec = std::make_unique<mfem::H1_FECollection>(order, globalMesh->Dimension());
+    fec = std::make_unique<mfem::H1_FECollection>(order, globalMesh->Dimension());
     globalfespace = std::make_shared<mfem::FiniteElementSpace>(globalMesh.get(), fec.get());
-
-    // Transfer ownership of fec to a class member (if needed) or let it go out of scope.
-    this->fec_storage = std::move(fec);
 }
 
 // Function to set up finite element space on parallel mesh
@@ -92,14 +87,10 @@ void Initialize_Geometry::SetupParFiniteElementSpace(int order) {
     if (!parallelMesh) {
         throw std::runtime_error("Parallel mesh must be initialized before setting up FE space.");
     }
-    // auto fec = new mfem::H1_FECollection(order, parallelMesh->Dimension());
-    // parfespace = std::make_shared<mfem::ParFiniteElementSpace>(parallelMesh.get(), fec);
-
-    auto fec = std::make_unique<mfem::H1_FECollection>(order, parallelMesh->Dimension());
+    
+    fec = std::make_unique<mfem::H1_FECollection>(order, parallelMesh->Dimension());
     parfespace = std::make_shared<mfem::ParFiniteElementSpace>(parallelMesh.get(), fec.get());
 
-    // Transfer ownership of fec to a class member (if needed) or let it go out of scope.
-    this->fec_storage = std::move(fec);
 }
 
 
