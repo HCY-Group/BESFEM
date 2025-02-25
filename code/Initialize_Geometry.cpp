@@ -79,7 +79,7 @@ void Initialize_Geometry::SetupFiniteElementSpace(int order) {
     }
 
     gfec = std::make_unique<mfem::H1_FECollection>(order, globalMesh->Dimension());
-    globalfespace = std::make_shared<mfem::FiniteElementSpace>(globalMesh.get(), fec.get());
+    globalfespace = std::make_shared<mfem::FiniteElementSpace>(globalMesh.get(), gfec.get());
 }
 
 // Function to set up finite element space on parallel mesh
@@ -89,7 +89,7 @@ void Initialize_Geometry::SetupParFiniteElementSpace(int order) {
     }
     
     pfec = std::make_unique<mfem::H1_FECollection>(order, parallelMesh->Dimension());
-    parfespace = std::make_shared<mfem::ParFiniteElementSpace>(parallelMesh.get(), fec.get());
+    parfespace = std::make_shared<mfem::ParFiniteElementSpace>(parallelMesh.get(), pfec.get());
 
 }
 
