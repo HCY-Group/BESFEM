@@ -86,6 +86,10 @@ public:
     std::unique_ptr<mfem::ParGridFunction> Vox; ///< Vox function grid
 
     std::vector<std::vector<std::vector<int>>> tiffData;
+    std::unique_ptr<mfem::H1_FECollection> gfec;
+    std::unique_ptr<mfem::H1_FECollection> pfec;
+
+
 
 };
 
