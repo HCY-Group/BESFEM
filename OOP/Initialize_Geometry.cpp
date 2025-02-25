@@ -78,7 +78,7 @@ void Initialize_Geometry::SetupFiniteElementSpace(int order) {
         throw std::runtime_error("Global mesh must be initialized before setting up FE space.");
     }
 
-    fec = std::make_unique<mfem::H1_FECollection>(order, globalMesh->Dimension());
+    gfec = std::make_unique<mfem::H1_FECollection>(order, globalMesh->Dimension());
     globalfespace = std::make_shared<mfem::FiniteElementSpace>(globalMesh.get(), fec.get());
 }
 
@@ -88,7 +88,7 @@ void Initialize_Geometry::SetupParFiniteElementSpace(int order) {
         throw std::runtime_error("Parallel mesh must be initialized before setting up FE space.");
     }
     
-    fec = std::make_unique<mfem::H1_FECollection>(order, parallelMesh->Dimension());
+    pfec = std::make_unique<mfem::H1_FECollection>(order, parallelMesh->Dimension());
     parfespace = std::make_shared<mfem::ParFiniteElementSpace>(parallelMesh.get(), fec.get());
 
 }
