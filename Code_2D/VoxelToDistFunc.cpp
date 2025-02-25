@@ -136,26 +136,27 @@ int main(int argc, char *argv[])
 
 
 
-	/*
+	
 	// ======================================
 	// FIND DISTANCE FUNCTION BY REINITIALIZING LEVEL SET
 	// ======================================
 	cout << "FINDING DISTANCE FUNCTION WITH LEVEL SET REINITIALIZATION" << endl;
 	
 	// Need to use Discontinuous Galerkin (DG) for upwinding (look at MFEM examples 9 and 18)
-	int order = 1;
-	DG_FECollection fec_dg(order, maker.GetParallelMesh()->Dimension(), BasisType::GaussLobatto);
-	ParFiniteElementSpace fespace_dg(maker.GetParallelMesh(), &fec_dg);
-	ParFiniteElementSpace dfespace_dg(maker.GetParallelMesh(), &fec_dg, maker.GetParallelMesh()->Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
-	maker.Make_DG_FESpace_Parallel();
+	//int order = 1;
+	//DG_FECollection fec_dg(order, maker.GetParallelMesh()->Dimension(), BasisType::GaussLobatto);
+	//ParFiniteElementSpace fespace_dg(maker.GetParallelMesh(), &fec_dg);
+	//ParFiniteElementSpace dfespace_dg(maker.GetParallelMesh(), &fec_dg, maker.GetParallelMesh()->Dimension(), Ordering::byNODES); //X1X2X3.....,Y1Y2Y3.....,Z1Z2Z3......
+	//maker.Make_DG_FESpace_Parallel();
 
 	
-	VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
+	//VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
+	VoxelSolver_DG solver_dg(&*geometry.globalfespace, &*geometry.parfespace, &*geometry.parfespace_dg, &*geometry.pardimfespace_dg);
 	
 	solver_dg.ProjectVals(solver.GetParallelVox());
 	solver_dg.CalcLevelSetVel();
 		
-	ODESolver *ode_solver_dg2 = new ForwardEulerSolver; // WHY IS THIS LINE NECESSARY???
+	//ODESolver *ode_solver_dg2 = new ForwardEulerSolver; // WHY IS THIS LINE NECESSARY???
 		
 	solver_dg.FormMatrices(boundary_dofs);
 	// Time Stepping
@@ -181,17 +182,19 @@ int main(int argc, char *argv[])
 	solver.ParaviewSave("AdvVel","Vel",&c);
 
 
-
-
+	
+	
 	// ======================================
 	// FIND CONNECTIVITY
 	// ======================================
 
 	// Use d to define psi
-	ParGridFunction psi(maker.GetParallelFESpace());
+	//ParGridFunction psi(maker.GetParallelFESpace());
+	ParGridFunction psi(&*geometry.parfespace);
 	psi.ProjectGridFunction(d);
 	psi -= 0.5; // Center about 0
-	for (int vi = 0; vi < maker.GetParallelMesh()->GetNV(); vi++){
+	//for (int vi = 0; vi < maker.GetParallelMesh()->GetNV(); vi++){
+	for (int vi = 0; vi < geometry.parallelMesh->GetNV(); vi++){
 		psi(vi) = 0.5*( tanh(psi(vi)) + 1.0 );
 	}
 
@@ -199,12 +202,14 @@ int main(int argc, char *argv[])
 	cout << "PRINTING OUT Electrolyte Concentration" << endl;
 	solver.ParaviewSave("psi","psi",&psi);
 	
-	VoxelSolver ConnectSolver(maker.GetGlobalFESpace(),maker.GetParallelFESpace());
+	//VoxelSolver ConnectSolver(maker.GetGlobalFESpace(),maker.GetParallelFESpace());
+	VoxelSolver ConnectSolver(&*geometry.globalfespace,&*geometry.parfespace);
 		
 
 	for (int ConIter = 0; ConIter < 2; ConIter++){
 		ConnectSolver.AssignGlobalValues(0.0);
-		ConnectSolver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
+		//ConnectSolver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
+		ConnectSolver.MapGlobalToLocal(&*geometry.globalMesh,&*geometry.parallelMesh);
 		
 		if (ConIter==1){
 			psi.Neg();
@@ -213,9 +218,11 @@ int main(int argc, char *argv[])
 
 		// Dirichlet Boundary conditions
 		if (ConIter==0){
-			ConnectSolver.NorthDirichletBCs(maker.GetParallelMesh());
+			//ConnectSolver.NorthDirichletBCs(maker.GetParallelMesh());
+			ConnectSolver.NorthDirichletBCs(&*geometry.parallelMesh);
 		} else{
-			ConnectSolver.SouthDirichletBCs(maker.GetParallelMesh());
+			//ConnectSolver.SouthDirichletBCs(maker.GetParallelMesh());
+			ConnectSolver.SouthDirichletBCs(&*geometry.parallelMesh);
 		}
 		ConnectSolver.DetermineConnectivityBCs(psi);
 		
@@ -238,7 +245,7 @@ int main(int argc, char *argv[])
 			ConnectSolver.ParaviewSave("Conc_e","Cn_e",ConnectSolver.GetParallelVox());
 		}
 	}
-	*/
+	
 
 
 

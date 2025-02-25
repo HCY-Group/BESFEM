@@ -78,6 +78,8 @@ public:
     std::shared_ptr<mfem::FiniteElementSpace> feSpace;  // Serial finite element space
     std::shared_ptr<mfem::FiniteElementSpace> globalfespace; // Parallel finite element space
     std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; // Parallel finite element space
+    std::shared_ptr<mfem::ParFiniteElementSpace> parfespace_dg;
+    std::shared_ptr<mfem::ParFiniteElementSpace> pardimfespace_dg;
 
     double Onm; ///< Number of grid function entries
     std::unique_ptr<mfem::GridFunction> gDsF; ///< Global distance function grid
@@ -88,7 +90,8 @@ public:
     std::vector<std::vector<std::vector<int>>> tiffData;
     std::unique_ptr<mfem::H1_FECollection> gfec;
     std::unique_ptr<mfem::H1_FECollection> pfec;
-
+    std::unique_ptr<mfem::DG_FECollection> pfec_dg;
+    
 
 
 };
