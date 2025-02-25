@@ -11,26 +11,26 @@ namespace Constants {
     // const char* mesh_file = "Mesh_40x30_A1.mesh";            ///< Path to the mesh file
     // const char* dsF_file = "dsF_40x30_A1.txt";               ///< Path to the surface flux data file
 
-    const char* mesh_file = "Mesh_3x90_2.mesh";            ///< Path to the mesh file
-    const char* dsF_file = "dsF_3x90_2.txt";               ///< Path to the surface flux data file
+    // const char* mesh_file = "Mesh_3x90_2.mesh";            ///< Path to the mesh file
+    // const char* dsF_file = "dsF_3x90_2.txt";               ///< Path to the surface flux data file
 
     // const char* mesh_file = "Mesh_20x60_2.mesh";            ///< Path to the mesh file
     // const char* dsF_file = "dsF_20x60_2.txt";  
 
-    // const char* mesh_file = "Mesh_40x30_3.mesh";            ///< Path to the mesh file
-    // const char* dsF_file = "dsF_40x30_3.txt"; 
+    const char* mesh_file = "Mesh_40x30_3.mesh";            ///< Path to the mesh file
+    const char* dsF_file = "dsF_40x30_3.txt"; 
 
     bool visualization = true;
     const int order = 1;                                    ///< Order of the finite element basis functions
     // const double dh = 0.5e-4;                               ///< Mesh element size // 20x60
     // const double zeta = 1;                        ///< Interfacial thickness // 20x60
 
-    const double dh = 0.2e-4;                               ///< Mesh element size // 3x90
-    const double zeta = 1.0 * 0.375;                        ///< Interfacial thickness // 3x90
-    // const double ze = 1.0e-5;
+    // const double dh = 0.2e-4;                               ///< Mesh element size // 3x90
+    // const double zeta = 1.0 * 0.375;                        ///< Interfacial thickness // 3x90
+    // // const double ze = 1.0e-5;
 
-    // const double dh = 0.1e-4;                               ///< Mesh element size // 40x30 circ
-    // const double zeta = 1;                        ///< Interfacial thickness ze = zeta * h
+    const double dh = 0.1e-4;                               ///< Mesh element size // 40x30 circ
+    const double zeta = 1.0e-5;                        ///< Interfacial thickness ze = zeta * h
 
     const double thres = 1.0e-3;                            ///< Threshold value for numerical operations
     const double eps = 1.0e-6;                              ///< Small epsilon value for numerical tolerance
