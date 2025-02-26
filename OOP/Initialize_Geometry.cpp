@@ -79,7 +79,7 @@ void Initialize_Geometry::SetupFiniteElementSpace(int order) {
     }
 
     gfec = std::make_unique<mfem::H1_FECollection>(order, globalMesh->Dimension());
-    globalfespace = std::make_shared<mfem::FiniteElementSpace>(globalMesh.get(), fec.get());
+    globalfespace = std::make_shared<mfem::FiniteElementSpace>(globalMesh.get(), gfec.get());
 }
 
 // Function to set up finite element space on parallel mesh
@@ -89,7 +89,7 @@ void Initialize_Geometry::SetupParFiniteElementSpace(int order) {
     }
     
     pfec = std::make_unique<mfem::H1_FECollection>(order, parallelMesh->Dimension());
-    parfespace = std::make_shared<mfem::ParFiniteElementSpace>(parallelMesh.get(), fec.get());
+    parfespace = std::make_shared<mfem::ParFiniteElementSpace>(parallelMesh.get(), pfec.get());
 
 }
 
@@ -222,10 +222,10 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	std::vector<std::vector<std::vector<int>>> tiffData;
 	tiffData = reader.getImageData();
 	
-	cout << "tiff size: "            << tiffData.size()         << endl;	
-	cout << "tiff[0] size: "         << tiffData[0].size()      << endl;
-	cout << "tiff[0][0] size: "      << tiffData[0][0].size()   << endl;
-	cout << "tiffdata[0][0][0] = "   << tiffData[0][0][0]       << endl;
+	// cout << "tiff size: "            << tiffData.size()         << endl;	
+	// cout << "tiff[0] size: "         << tiffData[0].size()      << endl;
+	// cout << "tiff[0][0] size: "      << tiffData[0][0].size()   << endl;
+	// cout << "tiffdata[0][0][0] = "   << tiffData[0][0][0]       << endl;
 
     return tiffData;
 }
