@@ -49,19 +49,12 @@ void Domain_Parameters::InterpolateDomainParameters() {
     for (int vi = 0; vi < nV; vi++) {
         // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // used for rectangle 
         (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta)); // used for circle
-        // psi(i) = 0.5*(1+tanh((11*h-rad(i,1))/ze))
         
-        // tanh(x) transitions -1 (electrolyte) to 1 (particle), adding 1.0 and multiplying 0.5 shifts range to 0 to 1
-        // psi close to 1 is particle, psi close to 0 is electrolyte
-        // large dsF = close to 1, so inside particle ; small or negative dsF = close to -1, so inside electrolyte
-
         (*pse)(vi) = 1.0 - (*psi)(vi);
-        // pse close to 0 is particle, pse close to 1 is electrolyte
 
-        // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
         // AvP is the rate of change of psi; used in reaction rates
+        // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
         (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta); // circle
-        // AvP(i) = -(tanh((11*h-rad(i,1))/ze)^2-1)/(2*ze); % circle
 
         if ((*psi)(vi) < Constants::eps) { (*psi)(vi) = Constants::eps; }
         if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }
