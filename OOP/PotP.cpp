@@ -14,11 +14,14 @@ PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
     
     {
 
-    cgPP_solver = new mfem::CGSolver(MPI_COMM_WORLD);
-    RpP = new mfem::ParGridFunction(fespace.get()); // Initialize reaction rate grid function
+    // cgPP_solver = new mfem::CGSolver(MPI_COMM_WORLD);
+    cgPP_solver = std::make_unique<mfem::CGSolver>(MPI_COMM_WORLD);
+    // RpP = new mfem::ParGridFunction(fespace.get()); // Initialize reaction rate grid function
+    RpP = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
     Fpb = mfem::HypreParVector(fespace.get()); // Initialize force term vector
-    kap = new mfem::ParGridFunction(fespace.get()); // Initialize conductivity field
+    // kap = new mfem::ParGridFunction(fespace.get()); // Initialize conductivity field
+    kap = std::make_unique<mfem::ParGridFunction>(fespace.get());
     Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Initialize bilinear form
 
     B1t = mfem::ParLinearForm(fespace.get());
@@ -27,14 +30,14 @@ PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
 
     }
 
-mfem::CGSolver* PotP::cgPP_solver = nullptr; // static variable to be used in reaction
+// mfem::CGSolver* PotP::cgPP_solver = nullptr; // static variable to be used in reaction
 
-PotP::~PotP()
-{
-    delete cgPP_solver;
-    delete RpP;
-    delete kap;
-}
+// PotP::~PotP()
+// {
+//     delete cgPP_solver;
+//     delete RpP;
+//     delete kap;
+// }
 
 void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value)
 
@@ -58,7 +61,7 @@ void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 {
     ParticleConductivity(Cn, psx); // Update conductivity
 
-    mfem::GridFunctionCoefficient cKp(kap); // Wrap conductivity as a coefficient
+    mfem::GridFunctionCoefficient cKp(kap.get()); // Wrap conductivity as a coefficient
 
     Potentials::ImplementBoundaryConditions(dbc_e_Coef, BvP, phx, dbc_e_bdr); // Apply BCs
 

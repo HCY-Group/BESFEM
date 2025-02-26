@@ -148,7 +148,9 @@ private:
 
     // mfem::ParGridFunction *px0; ///< Grid function for potential values before iteration
     std::unique_ptr<mfem::ParGridFunction> px0;
-    mfem::HypreParVector X0; ///< Hypre vector for solving systems
+    // mfem::HypreParVector X0; ///< Hypre vector for solving systems
+    std::shared_ptr<mfem::HypreParVector> X0;
+
 
     mfem::ParGridFunction TmpF; ///< Temporary field for error calculations
 

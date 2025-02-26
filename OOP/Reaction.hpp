@@ -21,7 +21,7 @@ public:
      */
     Reaction(Initialize_Geometry &geo, Domain_Parameters &para);
 
-    virtual ~Reaction();
+    // virtual ~Reaction();
 
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
@@ -86,11 +86,17 @@ private:
 
     double local_current; ///< Local reaction current for each MPI process
 
-    mfem::ParGridFunction *i0C; ///< Exchange current density field
-    mfem::ParGridFunction *OCV; ///< Open circuit voltage field
-    mfem::ParGridFunction *Kfw; ///< Open circuit voltage field
-    mfem::ParGridFunction *Kbw; ///< Backward reaction rate constant field
-    mfem::ParGridFunction *dPHE; ///< Voltage drop field
+    // mfem::ParGridFunction *i0C; ///< Exchange current density field
+    // mfem::ParGridFunction *OCV; ///< Open circuit voltage field
+    // mfem::ParGridFunction *Kfw; ///< Open circuit voltage field
+    // mfem::ParGridFunction *Kbw; ///< Backward reaction rate constant field
+    // mfem::ParGridFunction *dPHE; ///< Voltage drop field
+
+    std::unique_ptr<mfem::ParGridFunction> i0C;
+    std::unique_ptr<mfem::ParGridFunction> OCV;
+    std::unique_ptr<mfem::ParGridFunction> Kfw;
+    std::unique_ptr<mfem::ParGridFunction> Kbw;
+    std::unique_ptr<mfem::ParGridFunction> dPHE;
 
     const mfem::Vector& EVol; ///< Element volumes from the mesh handler
 

@@ -32,7 +32,7 @@ public:
      */
     PotP(Initialize_Geometry &geo, Domain_Parameters &para);
 
-    virtual ~PotP();
+    // virtual ~PotP();
 
 
     Initialize_Geometry &geometry;
@@ -63,13 +63,14 @@ public:
     void CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
 
 
-    static mfem::CGSolver *cgPP_solver; ///< Static variable for the conjugate gradient solver
+    // static mfem::CGSolver *cgPP_solver; ///< Static variable for the conjugate gradient solver
+    std::unique_ptr<mfem::CGSolver> cgPP_solver;
 
-    /**
-     * @brief Getter for the static conjugate gradient solver instance
-     * @return Pointer to the conjugate gradient solver
-     */
-    static mfem::CGSolver *GetcgPPsolver() { return cgPP_solver; }
+    // /**
+    //  * @brief Getter for the static conjugate gradient solver instance
+    //  * @return Pointer to the conjugate gradient solver
+    //  */
+    // static mfem::CGSolver *GetcgPPsolver() { return cgPP_solver; }
 
     double error_P = 1.0; ///< Local error in the particle potential solution
 
@@ -81,11 +82,15 @@ private:
 
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
-    mfem::ParGridFunction *RpP; ///< Reaction field for the particle
+    // mfem::ParGridFunction *RpP; ///< Reaction field for the particle
+    std::unique_ptr<mfem::ParGridFunction> RpP;
+
     mfem::ParLinearForm ftPotP; ///< Linear form for the force term
     mfem::HypreParVector Fpb; ///< Vector for assembled force term
 
-    mfem::ParGridFunction *kap; ///< Conductivity field
+    // mfem::ParGridFunction *kap; ///< Conductivity field
+    std::unique_ptr<mfem::ParGridFunction> kap;
+
     mfem::ParLinearForm B1t; ///< Linear form for the right-hand side
     mfem::HypreParVector X1v; ///< Solution vector
     mfem::HypreParVector B1v; ///< Right-hand-side vector

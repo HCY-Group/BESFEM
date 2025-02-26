@@ -20,25 +20,29 @@ Reaction::Reaction(Initialize_Geometry &geo, Domain_Parameters &para)
     nC = geometry.nC; 
     nV = geometry.nV; 
 
-    i0C = new mfem::ParGridFunction(fespace.get()); // exchange current density
-    OCV = new mfem::ParGridFunction(fespace.get()); // open circuit voltage
-    Kfw = new mfem::ParGridFunction(fespace.get()); // forward reaction constant
-    Kbw = new mfem::ParGridFunction(fespace.get()); // backward rection constant
+    // i0C = new mfem::ParGridFunction(fespace.get()); // exchange current density
+    // OCV = new mfem::ParGridFunction(fespace.get()); // open circuit voltage
+    // Kfw = new mfem::ParGridFunction(fespace.get()); // forward reaction constant
+    // Kbw = new mfem::ParGridFunction(fespace.get()); // backward rection constant
 
-    dPHE = new mfem::ParGridFunction(fespace.get()); // voltage drop
+    // dPHE = new mfem::ParGridFunction(fespace.get()); // voltage drop
 
-
+    i0C = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    OCV = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    Kfw = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    Kbw = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    dPHE = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
 }
 
-Reaction::~Reaction()
-{
-    delete i0C;
-    delete OCV;
-    delete Kfw;
-    delete Kbw;
-    delete dPHE;
-}
+// Reaction::~Reaction()
+// {
+//     delete i0C;
+//     delete OCV;
+//     delete Kfw;
+//     delete Kbw;
+//     delete dPHE;
+// }
 
 void Reaction::Initialize(mfem::ParGridFunction &Rx, double initial_value) {
 

@@ -22,7 +22,9 @@ Potentials::Potentials(Initialize_Geometry &geo, Domain_Parameters &para)
     px0 = std::make_unique<mfem::ParGridFunction>(fespace.get());
     Rxx = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
-    X0 = mfem::HypreParVector(fespace.get()); // Hypre vector for solving linear systems
+    // X0 = mfem::HypreParVector(fespace.get()); // Hypre vector for solving linear systems
+    X0 = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
+
 
 }
 
@@ -107,10 +109,10 @@ mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &
 void Potentials::ErrorCalculation(mfem::ParGridFunction &phx, mfem::CGSolver &cg_solver, mfem::HypreParVector &fterm, mfem::ParGridFunction &psx, double error_X, double &globalerror, double gtPsx){
 
     *px0 = phx; // Store the current potential field
-    px0->GetTrueDofs(X0); // Extract degrees of freedom
-    cg_solver.Mult(fterm, X0); // Solve for the error term
+    px0->GetTrueDofs(*X0); // Extract degrees of freedom
+    cg_solver.Mult(fterm, *X0); // Solve for the error term
 
-    phx.Distribute(X0); // Distribute the updated values
+    phx.Distribute(X0.get()); // Distribute the updated values
     mfem::ParGridFunction TmpF(fespace.get());
 
     // Compute squared error using the auxiliary field

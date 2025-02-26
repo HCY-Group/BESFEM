@@ -15,13 +15,18 @@ PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para)
     
     {
 
-    cgPE_solver = new mfem::CGSolver(MPI_COMM_WORLD);
-    RpE = new mfem::ParGridFunction(fespace.get()); // reaction rate for particle;
+    // cgPE_solver = new mfem::CGSolver(MPI_COMM_WORLD);
+    cgPE_solver = std::make_unique<mfem::CGSolver>(MPI_COMM_WORLD);
+    RpE = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
+    // RpE = new mfem::ParGridFunction(fespace.get()); // reaction rate for particle;
 
     Flb = mfem::HypreParVector(fespace.get());
 
-    Dmp = new mfem::ParGridFunction(fespace.get()); // D_minus_plus
-    kpl = new mfem::ParGridFunction(fespace.get()); // electrolyte conductivity
+    // Dmp = new mfem::ParGridFunction(fespace.get()); // D_minus_plus
+    // kpl = new mfem::ParGridFunction(fespace.get()); // electrolyte conductivity
+    Dmp = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    kpl = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
     Kl1 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Use make_unique
     Kl2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Use make_unique
@@ -31,25 +36,26 @@ PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para)
     B1v = mfem::HypreParVector(fespace.get());
     RHSl = mfem::HypreParVector(fespace.get());
 
-    LpCe = new mfem::HypreParVector(fespace.get());
-    CeVn = new mfem::HypreParVector(fespace.get());
+    // LpCe = new mfem::HypreParVector(fespace.get());
+    // CeVn = new mfem::HypreParVector(fespace.get());
 
-    // std::cout << "fespace address in PotE: " << fespace << std::endl;
+    LpCe = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
+    CeVn = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
 
 
     }
 
-mfem::CGSolver* PotE::cgPE_solver = nullptr; // static variable to be used in reaction
+// mfem::CGSolver* PotE::cgPE_solver = nullptr; // static variable to be used in reaction
 
-PotE::~PotE()
-{
-    delete cgPE_solver;
-    delete RpE;
-    delete Dmp;
-    delete kpl;
-    delete LpCe;
-    delete CeVn;
-}
+// PotE::~PotE()
+// {
+//     // delete cgPE_solver;
+//     // delete RpE;
+//     // delete Dmp;
+//     // delete kpl;
+//     delete LpCe;
+//     delete CeVn;
+// }
 
 
 void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value)
@@ -72,8 +78,8 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     ElectrolyteConductivity(Cn, psx); // Update conductivity and diffusivity
 
-    mfem::GridFunctionCoefficient cDm(Dmp); 
-    mfem::GridFunctionCoefficient cKe(kpl); 
+    mfem::GridFunctionCoefficient cDm(Dmp.get()); 
+    mfem::GridFunctionCoefficient cKe(kpl.get()); 
     
     Kl1 = std::make_unique<mfem::ParBilinearForm>(fespace.get());  // Initialize as a member variable
 
