@@ -47,14 +47,14 @@ void Domain_Parameters::InterpolateDomainParameters() {
 
     // interpolate domain parameter from distance function
     for (int vi = 0; vi < nV; vi++) {
-        // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // used for rectangle 
-        (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta)); // used for circle
+        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // used for rectangle 
+        // (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta)); // used for circle
         
         (*pse)(vi) = 1.0 - (*psi)(vi);
 
         // AvP is the rate of change of psi; used in reaction rates
-        // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
-        (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta); // circle
+        (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
+        // (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta); // circle
 
         if ((*psi)(vi) < Constants::eps) { (*psi)(vi) = Constants::eps; }
         if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }

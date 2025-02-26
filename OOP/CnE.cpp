@@ -9,13 +9,16 @@
 
 
 CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), nbc_w_bdr(geo.nbc_w_bdr),
-    TmatR(nullptr), TmatL(nullptr)
+    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), nbc_w_bdr(geo.nbc_w_bdr)
     
     {
 
-    PeR = new mfem::ParGridFunction(fespace.get());
-    RxE = new mfem::ParGridFunction(fespace.get());
+    // PeR = new mfem::ParGridFunction(fespace.get());
+    // RxE = new mfem::ParGridFunction(fespace.get());
+
+    RxE = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    PeR = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
 
     Mmate = std::make_shared<mfem::HypreParMatrix>();
     Me_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
@@ -23,25 +26,29 @@ CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para)
 
     Kmate = std::make_shared<mfem::HypreParMatrix>();
 
-    CeV0 = new mfem::HypreParVector(fespace.get());
-    RHCe = new mfem::HypreParVector(fespace.get());
-    CeVn = new mfem::HypreParVector(fespace.get());
+    // CeV0 = new mfem::HypreParVector(fespace.get());
+    // RHCe = new mfem::HypreParVector(fespace.get());
+    // CeVn = new mfem::HypreParVector(fespace.get());
+
+    CeV0 = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
+    RHCe = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
+    CeVn = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
 
     // TmatR = nullptr;
     // TmatL = nullptr;
 
     }
 
-mfem::HypreParVector* CnE::CeVn = nullptr; // static variable to be used in reaction
+// mfem::HypreParVector* CnE::CeVn = nullptr; // static variable to be used in reaction
 
-CnE::~CnE()
-{
-    delete PeR;
-    delete RxE;
-    delete CeV0;
-    delete RHCe;
-    delete CeVn;
-}
+// CnE::~CnE()
+// {
+//     delete PeR;
+//     delete RxE;
+//     delete CeV0;
+//     delete RHCe;
+//     delete CeVn;
+// }
 
 void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
@@ -62,7 +69,7 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 
     // Set up coefficients for Neumann boundary conditions
     mfem::ConstantCoefficient nbcCoef(infx); 
-    mfem::GridFunctionCoefficient matCoef_R(PeR);
+    mfem::GridFunctionCoefficient matCoef_R(PeR.get());
     mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
     
     // Assemble the force term with boundary conditions applied
@@ -97,7 +104,7 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     Me_solver->SetOperator(*TmatL);
     Me_solver->Mult(*RHCe, *CeVn) ;
 
-	Cn.Distribute(CeVn); 
+	Cn.Distribute(CeVn.get()); 
     
     // Update the total electrolyte salt conservation
     Concentrations::SaltConservation(Cn, psx);	

@@ -40,10 +40,10 @@ public:
      */
     Concentrations(Initialize_Geometry &geo, Domain_Parameters &para);
     
-    /**
-     * @brief Destructor for the Concentrations class
-     */
-    virtual ~Concentrations();
+    // /**
+    //  * @brief Destructor for the Concentrations class
+    //  */
+    // virtual ~Concentrations();
     
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
@@ -207,8 +207,10 @@ private:
 
     mfem::Array<int> boundary_dofs; ///< Boundary degrees of freedom
 
-    mfem::ParGridFunction *TmpF; ///< Temporary grid function for intermediate calculations
+    // mfem::ParGridFunction *TmpF; ///< Temporary grid function for intermediate calculations
     // std::shared_ptr<mfem::ParGridFunction> TmpF; ///< Temporary grid function for intermediate calculations
+    std::unique_ptr<mfem::ParGridFunction> TmpF;
+
 
 
     int nE;                                         ///< Number of elements

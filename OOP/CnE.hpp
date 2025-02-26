@@ -22,7 +22,7 @@ public:
      */
     CnE(Initialize_Geometry &geo, Domain_Parameters &para);
 
-    virtual ~CnE();
+    // virtual ~CnE();
 
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
@@ -43,25 +43,30 @@ public:
      */
     void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
-    mfem::ParGridFunction *RxE; ///< Pointer to a grid function storing reaction values for the electrolyte
+    // mfem::ParGridFunction *RxE; ///< Pointer to a grid function storing reaction values for the electrolyte
+    std::unique_ptr<mfem::ParGridFunction> RxE;
+
     mfem::ParLinearForm ftE; ///< Linear form for the force term related to electrolyte concentration
     mfem::Array<int> nbc_w_bdr; ///< Boundary markers for Neumann boundary conditions
     std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef; ///< Product coefficient for Neumann boundary conditions
     mfem::Array<int> boundary_dofs; ///< Array to store boundary degrees of freedom
 
-    static mfem::HypreParVector *CeVn; ///< Static variable to store the electrolyte concentration vector at the next time step
+    // static mfem::HypreParVector *CeVn; ///< Static variable to store the electrolyte concentration vector at the next time step
+    std::shared_ptr<mfem::HypreParVector> CeVn;
 
-    /**
-     * @brief Getter for the static variable CeVn
-     * @return Pointer to the electrolyte concentration vector at the next time step
-     */
-    static mfem::HypreParVector* GetCeVn() { return CeVn; } // static variable to be used in reaction
+    // /**
+    //  * @brief Getter for the static variable CeVn
+    //  * @return Pointer to the electrolyte concentration vector at the next time step
+    //  */
+    // static mfem::HypreParVector* GetCeVn() { return CeVn; } // static variable to be used in reaction
 
 private:
 
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
-    mfem::ParGridFunction *PeR; ///< Pointer to a grid function storing reaction potential values
+    // mfem::ParGridFunction *PeR; ///< Pointer to a grid function storing reaction potential values
+    std::unique_ptr<mfem::ParGridFunction> PeR;
+
 
 
     std::shared_ptr<mfem::CGSolver> Me_solver; ///< Solver for the mass matrix
@@ -75,13 +80,16 @@ private:
     mfem::HypreParVector Feb; ///< Right-hand-side vector for the system of equations
     mfem::HypreParVector X1v; ///< Temporary vector used during assembly
 
-    mfem::HypreParVector *CeV0; ///< Initial electrolyte concentration values
-    mfem::HypreParVector *RHCe; ///< Right-hand-side vector at the current time step
+    // mfem::HypreParVector *CeV0; ///< Initial electrolyte concentration values
+    // mfem::HypreParVector *RHCe; ///< Right-hand-side vector at the current time step
     // mfem::HypreParMatrix *TmatR; ///< System matrix for the right-hand-side calculation (Crank-Nicolson)
     // mfem::HypreParMatrix *TmatL; ///< System matrix for the left-hand-side calculation (Crank-Nicolson)
 
     std::unique_ptr<mfem::HypreParMatrix> TmatR;
     std::unique_ptr<mfem::HypreParMatrix> TmatL;
+
+    std::shared_ptr<mfem::HypreParVector> CeV0;
+    std::shared_ptr<mfem::HypreParVector> RHCe;
 
 
     std::shared_ptr<mfem::ParBilinearForm> eKx2;

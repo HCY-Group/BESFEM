@@ -15,7 +15,7 @@ CnP::CnP(Initialize_Geometry &geo, Domain_Parameters &para)
     
     {
     PsVc = mfem::HypreParVector(fespace.get());
-    RxP = new mfem::ParGridFunction(fespace.get());
+    RxP = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
     Mmatp = std::make_shared<mfem::HypreParMatrix>();
     Mp_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
@@ -24,23 +24,13 @@ CnP::CnP(Initialize_Geometry &geo, Domain_Parameters &para)
     Kmatp = std::make_shared<mfem::HypreParMatrix>();
     Fcb = mfem::HypreParVector(fespace.get());
 
-    CpV0 = new mfem::HypreParVector(fespace.get());
-    RHCp = new mfem::HypreParVector(fespace.get());
-    CpVn = new mfem::HypreParVector(fespace.get());
+    CpV0 = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
+    RHCp = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
+    CpVn = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
 
     pKx2 = std::make_shared<mfem::ParBilinearForm>(fespace.get());
 
-    // Tmatp = nullptr;
-
     }
-
-CnP::~CnP()
-{
-    delete CpV0;
-    delete RHCp;
-    delete CpVn;
-    delete RxP;
-}
 
 void CnP::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
@@ -100,7 +90,7 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
             (*CpVn)(p) = 0.3;} // Cp0 initial value
     }
 
-    Cn.Distribute(CpVn);
+    Cn.Distribute(CpVn.get());
 
     // Degree of Lithiation
     Concentrations::LithiationCalculation(Cn, psx);

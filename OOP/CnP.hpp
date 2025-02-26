@@ -21,8 +21,6 @@ public:
      * @param mh Reference to the mesh handler
      */
     CnP(Initialize_Geometry &geo, Domain_Parameters &para);
-
-    virtual ~CnP();
     
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
@@ -44,7 +42,8 @@ public:
      */
     void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
-    mfem::ParGridFunction *RxP; ///< Pointer to a grid function storing reaction values
+    // mfem::ParGridFunction *RxP; ///< Pointer to a grid function storing reaction values
+    std::unique_ptr<mfem::ParGridFunction> RxP;
 
 
 
@@ -69,9 +68,16 @@ private:
     mfem::Array<int> boundary_dofs; ///< Array to store boundary degrees of freedom
     mfem::HypreParVector X1v; ///< Temporary vector used during assembly
 
-    mfem::HypreParVector *CpV0; ///< Initial particle concentration values
-    mfem::HypreParVector *CpVn; ///< Particle concentration values at the next time step
-    mfem::HypreParVector *RHCp; ///< Right-hand-side vector at the current time step
+    // mfem::HypreParVector *CpV0; ///< Initial particle concentration values
+    // CpV0 = std::make_unique<mfem::HypreParVector(fespace.get());
+    std::shared_ptr<mfem::HypreParVector> CpV0;
+    std::shared_ptr<mfem::HypreParVector> CpVn;
+    std::shared_ptr<mfem::HypreParVector> RHCp;
+
+
+
+    // mfem::HypreParVector *CpVn; ///< Particle concentration values at the next time step
+    // mfem::HypreParVector *RHCp; ///< Right-hand-side vector at the current time step
     // mfem::HypreParMatrix *Tmatp; ///< System matrix for time-stepping
     // std::shared_ptr<mfem::HypreParMatrix> Tmatp;
     std::unique_ptr<mfem::HypreParMatrix> Tmatp;

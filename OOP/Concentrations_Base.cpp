@@ -18,14 +18,17 @@ Concentrations::Concentrations(Initialize_Geometry &geo, Domain_Parameters &para
     VtxVal.SetSize(nC); // Set size for nodal values
     EAvg.SetSize(nE);   // Set size for average element contributions
 
-    TmpF = new mfem::ParGridFunction(fespace.get());
+    // TmpF = new mfem::ParGridFunction(fespace.get());
+    TmpF = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
 
 }
 
-Concentrations::~Concentrations()
-{
-    delete TmpF;
-}
+// Concentrations::~Concentrations()
+// {
+//     delete TmpF;
+// }
+
 
 void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double initial_value) {
     
