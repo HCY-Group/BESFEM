@@ -8,6 +8,8 @@
 #include "MeshMaker.hpp"
 #include "VoxelSolver.hpp"
 #include "VoxelSolver_DG.hpp"
+#include "../code/Initialize_Geometry.hpp"
+#include "../code/Constants.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -21,7 +23,8 @@ int main(int argc, char *argv[])
 	// Initialize MPI and HYPRE
 	Mpi::Init(argc, argv);
 	Hypre::Init();
-	
+
+	/*	
 	// ======================================
 	// READ IN TIFF FILE
 	// ======================================
@@ -45,14 +48,6 @@ int main(int argc, char *argv[])
 	cout << "tiff[0] size: "         << tiffdata[0].size()      << endl;
 	cout << "tiff[0][0] size: "      << tiffdata[0][0].size()   << endl;
 	cout << "tiffdata[0][0][0] = "   << tiffdata[0][0][0]       << endl;
-	/*for (int i = 0; i < tiffdata.size(); i++) {
-		for (int j = 0; j < tiffdata[i].size(); j++) {
-			for (int k = 0; k < tiffdata[i][j].size(); k++) {
-				cout << tiffdata[i][j][k] << endl;
-			}
-		}
-	}
-	*/
 
 
 	// ======================================
@@ -66,11 +61,8 @@ int main(int argc, char *argv[])
 	maker.Make_H1_FESpace_Parallel();
 	maker.TestGetFE();
 	
+	*/
 	
-	//VoxelSolver solver(maker.GetGlobalFESpace());
-	VoxelSolver solver(maker.GetGlobalFESpace(), maker.GetParallelFESpace());
-	solver.AssignGlobalValues(tiffdata);
-	solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
 	
 	
 
@@ -82,13 +74,27 @@ int main(int argc, char *argv[])
 	// ======================================
 	// LOCAL (PARALLEL) MESH AND DATA
 	// ======================================
-	solver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
+	
+
+	// Test Initialize_Geometry class
+    	Initialize_Geometry geometry;
+    	geometry.InitializeMesh(Constants::mesh_file, MPI_COMM_WORLD, Constants::order);
+    	geometry.SetupBoundaryConditions();
+
+	//VoxelSolver solver(maker.GetGlobalFESpace());
+	//VoxelSolver solver(maker.GetGlobalFESpace(), maker.GetParallelFESpace());
+	VoxelSolver solver(&*geometry.globalfespace, &*geometry.parfespace);
+	//solver.AssignGlobalValues(tiffdata);
+	solver.AssignGlobalValues(geometry.tiffData);
+	solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
+
+	//solver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
+	solver.MapGlobalToLocal(&*geometry.globalMesh,&*geometry.parallelMesh);
 	solver.ParaviewSave("pVoxelData","Vox",solver.GetParallelVox());
 	
 
-
-
-
+	ODESolver *ode_solver_dg2 = new ForwardEulerSolver; // WHY IS THIS LINE NECESSARY???
+	
 	// ======================================
 	// SMOOTH THE DATA USING ALLEN-CAHN
 	// ======================================
@@ -98,13 +104,14 @@ int main(int argc, char *argv[])
 	Array<int> boundary_dofs;
 	
 	// Domain Parameter
-	//ParGridFunction ones(&fespace);	
-	ParGridFunction ones(maker.GetParallelFESpace());
+	//ParGridFunction ones(maker.GetParallelFESpace());
+	ParGridFunction ones(&*geometry.parfespace);
 	ones = 1.0;
 	
 	// Diffusion Coefficient
 	//ParGridFunction Mob(&fespace);
-	ParGridFunction Mob(maker.GetParallelFESpace());
+	//ParGridFunction Mob(maker.GetParallelFESpace());
+	ParGridFunction Mob(&*geometry.parfespace);
 	Mob = 0.64;
 	
 
@@ -129,22 +136,20 @@ int main(int argc, char *argv[])
 
 
 
-
+	
 	// ======================================
 	// FIND DISTANCE FUNCTION BY REINITIALIZING LEVEL SET
 	// ======================================
 	cout << "FINDING DISTANCE FUNCTION WITH LEVEL SET REINITIALIZATION" << endl;
 	
 	// Need to use Discontinuous Galerkin (DG) for upwinding (look at MFEM examples 9 and 18)
-	maker.Make_DG_FESpace_Parallel();
 
 	
-	VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
+	//VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
+	VoxelSolver_DG solver_dg(&*geometry.globalfespace, &*geometry.parfespace, &*geometry.parfespace_dg, &*geometry.pardimfespace_dg);
 	
 	solver_dg.ProjectVals(solver.GetParallelVox());
 	solver_dg.CalcLevelSetVel();
-		
-	ODESolver *ode_solver_dg2 = new ForwardEulerSolver; //TODO: WHY IS THIS LINE NECESSARY???
 		
 	solver_dg.FormMatrices(boundary_dofs);
 	// Time Stepping
@@ -170,17 +175,19 @@ int main(int argc, char *argv[])
 	solver.ParaviewSave("AdvVel","Vel",&c);
 
 
-
-
+	
+	
 	// ======================================
 	// FIND CONNECTIVITY
 	// ======================================
 
 	// Use d to define psi
-	ParGridFunction psi(maker.GetParallelFESpace());
+	//ParGridFunction psi(maker.GetParallelFESpace());
+	ParGridFunction psi(&*geometry.parfespace);
 	psi.ProjectGridFunction(d);
 	psi -= 0.5; // Center about 0
-	for (int vi = 0; vi < maker.GetParallelMesh()->GetNV(); vi++){
+	//for (int vi = 0; vi < maker.GetParallelMesh()->GetNV(); vi++){
+	for (int vi = 0; vi < geometry.parallelMesh->GetNV(); vi++){
 		psi(vi) = 0.5*( tanh(psi(vi)) + 1.0 );
 	}
 
@@ -188,13 +195,16 @@ int main(int argc, char *argv[])
 	cout << "PRINTING OUT Electrolyte Concentration" << endl;
 	solver.ParaviewSave("psi","psi",&psi);
 	
-	VoxelSolver ConnectSolver(maker.GetGlobalFESpace(),maker.GetParallelFESpace());
-	VoxelSolver_DG solver_dg2(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
+	//VoxelSolver ConnectSolver(maker.GetGlobalFESpace(),maker.GetParallelFESpace());
+	//VoxelSolver_DG solver_dg2(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
+	VoxelSolver ConnectSolver(&*geometry.globalfespace,&*geometry.parfespace);
+	VoxelSolver_DG solver_dg2(&*geometry.globalfespace, &*geometry.parfespace, &*geometry.parfespace_dg, &*geometry.pardimfespace_dg);
 		
 
 	for (int ConIter = 0; ConIter < 2; ConIter++){
 		ConnectSolver.AssignGlobalValues(0.0);
-		ConnectSolver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
+		//ConnectSolver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
+		ConnectSolver.MapGlobalToLocal(&*geometry.globalMesh,&*geometry.parallelMesh);
 		
 		if (ConIter==1){
 			psi.Neg();
@@ -203,9 +213,11 @@ int main(int argc, char *argv[])
 
 		// Dirichlet Boundary conditions
 		if (ConIter==0){
-			ConnectSolver.NorthDirichletBCs(maker.GetParallelMesh());
+			//ConnectSolver.NorthDirichletBCs(maker.GetParallelMesh());
+			ConnectSolver.NorthDirichletBCs(&*geometry.parallelMesh);
 		} else{
-			ConnectSolver.SouthDirichletBCs(maker.GetParallelMesh());
+			//ConnectSolver.SouthDirichletBCs(maker.GetParallelMesh());
+			ConnectSolver.SouthDirichletBCs(&*geometry.parallelMesh);
 		}
 		ConnectSolver.DetermineConnectivityBCs(psi);
 		
@@ -259,7 +271,8 @@ int main(int argc, char *argv[])
 		//d = d2;
 	
 		// Project d2 onto H1 FESpace to use in BESFEM sim
-		ParGridFunction psi2(maker.GetParallelFESpace());
+		//ParGridFunction psi2(maker.GetParallelFESpace());
+		ParGridFunction psi2(&*geometry.parfespace);
 		psi2.ProjectGridFunction(d2);
 		psi2 -= 0.5; // Center about 0
 		
@@ -287,7 +300,8 @@ int main(int argc, char *argv[])
 	}
 
 	// Output mesh to use in BESFEM sims
-	Mesh mesh2(*maker.GetGlobalMesh());
+	//Mesh mesh2(*maker.GetGlobalMesh());
+	Mesh mesh2(*geometry.globalMesh);
 	mesh2.Save("VoxMesh.mesh");
 	
 
