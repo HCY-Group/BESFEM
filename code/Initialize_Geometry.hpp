@@ -1,0 +1,96 @@
+#ifndef INITIALIZE_GEOMETRY_HPP
+#define INITIALIZE_GEOMETRY_HPP
+
+#include "mfem.hpp"
+#include <memory>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+
+class Initialize_Geometry {
+private:
+    std::vector<std::vector<std::vector<int>>> tiffData;
+    bool tiffDataLoaded = false;
+
+protected:
+
+    mfem::Vector elementVolumes;                       // Element volumes
+    mfem::Array<int> boundaryMarkers;                  // Boundary markers
+    std::vector<std::vector<std::vector<int>>> data;
+
+
+public:
+    Initialize_Geometry();
+    virtual ~Initialize_Geometry();
+
+    void InitializeMesh(const char* meshFile, MPI_Comm comm, int order);
+
+    // Mesh initialization
+    void InitializeGlobalMesh(const char* meshFile);
+    void InitializeParallelMesh(MPI_Comm comm);
+    std::vector<std::vector<std::vector<int>>>ReadTiffFile(const char* meshFile);
+    std::unique_ptr<mfem::Mesh>CreateGlobalMeshFromTiffData(const std::vector<std::vector<std::vector<int>>>& tiffData);
+
+    // Finite element space setup
+    void SetupFiniteElementSpace(int order);
+
+    // Parallel finite element space setup
+    void SetupParFiniteElementSpace(int order);
+
+    // Assign global values
+    void AssignGlobalValues(const char* mesh_file);
+
+    // Map global values to local
+    void MapGlobalToLocal(const char* meshFile);
+
+    // Boundary condition setup
+    void SetupBoundaryConditions();
+
+    // // Output functions
+    // void OutputToParaview(const std::string &fileName, const std::string &varName, mfem::GridFunction *gf);
+
+    // Print Mesh Information
+    void PrintMeshInfo();
+
+    // Getters for derived classes
+    mfem::ParMesh *GetParallelMesh() const { return parallelMesh.get(); }
+    std::shared_ptr<mfem::ParFiniteElementSpace> GetParFiniteElementSpace() const {
+        return parfespace;
+    }
+    int nV; ///< Number of vertices
+    int nE; ///< Number of elements
+    int nC; ///< Number of corners per element
+
+    int gei;                // global element indices
+    int ei;                 // local element indices
+
+    mfem::Array<int> nbc_w_bdr; ///< West Neumann Boundary Conditions
+    mfem::Array<int> ess_tdof_list_w; ///< Total DOF West
+    mfem::Array<int> ess_tdof_list_e; ///< Total DOF East
+
+    mfem::Array<int> dbc_w_bdr; ///< West Dirichlet Boundary Conditions
+    mfem::Array<int> dbc_e_bdr; ///< East Dirichlet Boundary Conditions
+
+    std::unique_ptr<mfem::Mesh> globalMesh;             // Global serial mesh
+    std::unique_ptr<mfem::ParMesh> parallelMesh;        // Parallel mesh
+    std::shared_ptr<mfem::FiniteElementSpace> feSpace;  // Serial finite element space
+    std::shared_ptr<mfem::FiniteElementSpace> globalfespace; // Parallel finite element space
+    std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; // Parallel finite element space
+
+    double Onm; ///< Number of grid function entries
+    std::unique_ptr<mfem::GridFunction> gDsF; ///< Global distance function grid
+    std::unique_ptr<mfem::ParGridFunction> dsF; ///< distance function grid
+    std::unique_ptr<mfem::GridFunction> gVox; ///< Global vox function grid
+    std::unique_ptr<mfem::ParGridFunction> Vox; ///< Vox function grid
+
+    // std::unique_ptr<mfem::H1_FECollection> fec_storage;
+    std::unique_ptr<mfem::H1_FECollection> gfec;
+    std::unique_ptr<mfem::H1_FECollection> pfec;
+
+
+
+};
+
+#endif // INITIALIZE_GEOMETRY_HPP
