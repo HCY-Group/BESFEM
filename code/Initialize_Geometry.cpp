@@ -20,22 +20,22 @@ Initialize_Geometry::~Initialize_Geometry() {}
 void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, int order) {
 
     // Initialize the global mesh
-    InitializeGlobalMesh(Constants::mesh_file);
+    InitializeGlobalMesh(meshFile);
 
     // Initialize the parallel mesh
     InitializeParallelMesh(MPI_COMM_WORLD);
 
     // Set up the finite element space
-    SetupFiniteElementSpace(Constants::order);
+    SetupFiniteElementSpace(order);
 
     // Set up the parallel finite element space
-    SetupParFiniteElementSpace(Constants::order);
+    SetupParFiniteElementSpace(order);
 
     // Assign the global values
-    AssignGlobalValues(Constants::mesh_file);
+    AssignGlobalValues(meshFile);
 
     // Map the global values to the local
-    MapGlobalToLocal(Constants::mesh_file);
+    MapGlobalToLocal(meshFile);
 
     // Print out information relative to the mesh
     PrintMeshInfo();
