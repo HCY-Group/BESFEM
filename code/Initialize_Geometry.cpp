@@ -169,7 +169,7 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
     if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
         cout << "Reading .tif file for mapping global to local grid function" << endl;
 
-        Vox = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
         // Iterate over elements and map global to local
         for (ei = 0; ei < nE; ei++) {
@@ -179,7 +179,7 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
             parallelMesh->GetElementVertices(ei, VTX);
 
             for (int vi = 0; vi < nC; vi++) {
-                (*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);
+                (*this->dsF)(VTX[vi]) = (*this->gVox)(gVTX[vi]);
             }
         }
 
