@@ -17,25 +17,25 @@ Initialize_Geometry::Initialize_Geometry()
 // Destructor
 Initialize_Geometry::~Initialize_Geometry() {}
 
-void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, int order) {
+void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order) {
 
     // Initialize the global mesh
-    InitializeGlobalMesh(Constants::mesh_file);
+    InitializeGlobalMesh(meshFile);
 
     // Initialize the parallel mesh
     InitializeParallelMesh(MPI_COMM_WORLD);
 
     // Set up the finite element space
-    SetupFiniteElementSpace(Constants::order);
+    SetupFiniteElementSpace(order);
 
     // Set up the parallel finite element space
-    SetupParFiniteElementSpace(Constants::order);
+    SetupParFiniteElementSpace(order);
 
     // Assign the global values
-    AssignGlobalValues(Constants::mesh_file);
+    AssignGlobalValues(meshFile, distanceFile);
 
     // Map the global values to the local
-    MapGlobalToLocal(Constants::mesh_file);
+    MapGlobalToLocal(meshFile);
 
     // Print out information relative to the mesh
     PrintMeshInfo();
@@ -91,10 +91,13 @@ void Initialize_Geometry::SetupParFiniteElementSpace(int order) {
     pfec = std::make_unique<mfem::H1_FECollection>(order, parallelMesh->Dimension());
     parfespace = std::make_shared<mfem::ParFiniteElementSpace>(parallelMesh.get(), pfec.get());
 
+    this->pfec_dg = std::make_unique<mfem::DG_FECollection>(order, this->parallelMesh->Dimension(), mfem::BasisType::GaussLobatto);
+    this->parfespace_dg = std::make_shared<mfem::ParFiniteElementSpace>(this->parallelMesh.get(), this->pfec_dg.get());
+    this->pardimfespace_dg = std::make_shared<mfem::ParFiniteElementSpace>(this->parallelMesh.get(), this->pfec_dg.get(), this->parallelMesh->Dimension(), mfem::Ordering::byNODES);
 }
 
 
-void Initialize_Geometry::AssignGlobalValues(const char* meshFile) {
+void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* distanceFile) {
     std::string meshFileStr(meshFile);  // Convert to std::string
     if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
         // Process the .tif file
@@ -123,7 +126,7 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile) {
         cout << "Reading .dsF file for global distance function" << endl;
         gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
         Onm = gDsF->Size();
-        ifstream myfile(Constants::dsF_file);
+        ifstream myfile(distanceFile);
         if (myfile.is_open()) {
             for (int gi = 0; gi < Onm; gi++) {
                 myfile >> (*gDsF)(gi);
@@ -166,7 +169,7 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
     if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
         cout << "Reading .tif file for mapping global to local grid function" << endl;
 
-        Vox = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
         // Iterate over elements and map global to local
         for (ei = 0; ei < nE; ei++) {
@@ -176,7 +179,7 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
             parallelMesh->GetElementVertices(ei, VTX);
 
             for (int vi = 0; vi < nC; vi++) {
-                (*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);
+                (*this->dsF)(VTX[vi]) = (*this->gVox)(gVTX[vi]);
             }
         }
 
@@ -201,7 +204,6 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
     } else {
         cerr << "Unsupported file type for MapGlobalToLocal" << endl;
     }
-
 }
 
 // Reading .tif file and returning voxel data
@@ -222,10 +224,10 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	std::vector<std::vector<std::vector<int>>> tiffData;
 	tiffData = reader.getImageData();
 	
-	// cout << "tiff size: "            << tiffData.size()         << endl;	
-	// cout << "tiff[0] size: "         << tiffData[0].size()      << endl;
-	// cout << "tiff[0][0] size: "      << tiffData[0][0].size()   << endl;
-	// cout << "tiffdata[0][0][0] = "   << tiffData[0][0][0]       << endl;
+	cout << "tiff size: "            << tiffData.size()         << endl;	
+	cout << "tiff[0] size: "         << tiffData[0].size()      << endl;
+	cout << "tiff[0][0] size: "      << tiffData[0][0].size()   << endl;
+	cout << "tiffdata[0][0][0] = "   << tiffData[0][0][0]       << endl;
 
     return tiffData;
 }

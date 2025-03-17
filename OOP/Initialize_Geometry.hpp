@@ -11,7 +11,7 @@ using namespace std;
 
 class Initialize_Geometry {
 private:
-    std::vector<std::vector<std::vector<int>>> tiffData;
+    //std::vector<std::vector<std::vector<int>>> tiffData;
     bool tiffDataLoaded = false;
 
 protected:
@@ -25,7 +25,7 @@ public:
     Initialize_Geometry();
     virtual ~Initialize_Geometry();
 
-    void InitializeMesh(const char* meshFile, MPI_Comm comm, int order);
+    void InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order);
 
     // Mesh initialization
     void InitializeGlobalMesh(const char* meshFile);
@@ -40,7 +40,7 @@ public:
     void SetupParFiniteElementSpace(int order);
 
     // Assign global values
-    void AssignGlobalValues(const char* mesh_file);
+    void AssignGlobalValues(const char* mesh_file, const char* distanceFile);
 
     // Map global values to local
     void MapGlobalToLocal(const char* meshFile);
@@ -78,6 +78,8 @@ public:
     std::shared_ptr<mfem::FiniteElementSpace> feSpace;  // Serial finite element space
     std::shared_ptr<mfem::FiniteElementSpace> globalfespace; // Parallel finite element space
     std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; // Parallel finite element space
+    std::shared_ptr<mfem::ParFiniteElementSpace> parfespace_dg;
+    std::shared_ptr<mfem::ParFiniteElementSpace> pardimfespace_dg;
 
     double Onm; ///< Number of grid function entries
     std::unique_ptr<mfem::GridFunction> gDsF; ///< Global distance function grid
@@ -85,8 +87,11 @@ public:
     std::unique_ptr<mfem::GridFunction> gVox; ///< Global vox function grid
     std::unique_ptr<mfem::ParGridFunction> Vox; ///< Vox function grid
 
+    std::vector<std::vector<std::vector<int>>> tiffData;
     std::unique_ptr<mfem::H1_FECollection> gfec;
     std::unique_ptr<mfem::H1_FECollection> pfec;
+    std::unique_ptr<mfem::DG_FECollection> pfec_dg;
+    
 
 
 };
