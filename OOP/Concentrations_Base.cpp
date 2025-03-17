@@ -17,18 +17,10 @@ Concentrations::Concentrations(Initialize_Geometry &geo, Domain_Parameters &para
     // Allocate once for reuse
     VtxVal.SetSize(nC); // Set size for nodal values
     EAvg.SetSize(nE);   // Set size for average element contributions
-
-    // TmpF = new mfem::ParGridFunction(fespace.get());
     TmpF = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
 
 }
-
-// Concentrations::~Concentrations()
-// {
-//     delete TmpF;
-// }
-
 
 void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double initial_value) {
     
@@ -141,7 +133,6 @@ void Concentrations::ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &
     Bx2->Assemble();
     
     // Move the assembled linear form into the provided Fxx reference
-    // Fxx = std::move(*Bx2);
     Fxx = *Bx2;
 
 
@@ -175,12 +166,7 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
 
 std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
     
-    // Create a new parallel grid function to store the computed diffusivity values
-    // mfem::ParGridFunction *Dx = new mfem::ParGridFunction(fespace.get());
     Dx = std::make_shared<mfem::ParGridFunction>(fespace.get());
-
-    // auto Dx = std::make_shared<mfem::ParGridFunction>(fespace);
-
     
     // Loop through all vertices in the domain to calculate diffusivity
     for (int vi = 0; vi < nV; vi++) {
@@ -210,26 +196,17 @@ std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem:
 
 void Concentrations::KMatrix(std::shared_ptr<mfem::ParBilinearForm> &Kx2, mfem::Array<int> boundary, mfem::ParGridFunction &Cn, mfem::ParLinearForm &Fxx, std::shared_ptr<mfem::HypreParMatrix> &Kmatx, mfem::HypreParVector &X1v, mfem::HypreParVector &Fxb, std::shared_ptr<mfem::GridFunctionCoefficient> cDx) {
     
-    // Kx2 = std::make_unique<mfem::ParBilinearForm>(fespace);
-
     Kx2->Update();
 
-    // std::cout << "fespace in KMatrix: " << fespace << std::endl;
-
-    // mfem::ConstantCoefficient dummy_coef(0.85);
-    
     // Add a domain integrator for the diffusion term using the given diffusivity coefficient (cDx)
     Kx2->AddDomainIntegrator(new mfem::DiffusionIntegrator(*cDx));
-    // Kx2->AddDomainIntegrator(new mfem::DiffusionIntegrator(dummy_coef));
-
     
     // Assemble the bilinear form into a sparse matrix
     Kx2->Assemble();
 
     // Temporary matrix to hold the assembled stiffness matrix
     mfem::HypreParMatrix Khpm;
-    // mfem::HypreParMatrix *Khpm = nullptr;
-    
+        
     // Form the linear system, considering boundary conditions, concentration field (Cn), and the right-hand side (Fxx)
     Kx2->FormLinearSystem(boundary, Cn, Fxx, Khpm, X1v, Fxb);
     

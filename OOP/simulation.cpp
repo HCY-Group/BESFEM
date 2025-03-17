@@ -130,6 +130,10 @@ int main(int argc, char *argv[]) {
         
         std::cout << "timestep: " << t << "    " << "VCell: " << VCell << std::endl;
 
+        // Get the MPI rank of the current processor
+        int rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
         t++;
 
     }

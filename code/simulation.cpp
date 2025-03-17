@@ -7,6 +7,7 @@
 // Sample runs:  mpirun -np 4 simulation
 //               mpirun -np 4 simulation -m ../Mesh_3x90_T3.mesh
 //               mpirun -np 4 simulation -m ../Mesh_40x30_3.mesh
+//               mpirun -np 4 simulation -m ../II_1_bin.tif
 //               mpirun -np 4 ex0p -m ../data/square-disc.mesh -o 2 // MFEM Example
 
 

@@ -42,7 +42,6 @@ void CnP::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
 
 }
 
-
 void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
 {
     // Compute the reaction field scaled by a constant factor
@@ -56,23 +55,13 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 
     // Assemble the force term without applying boundary conditions
     Concentrations::ForceTerm(*RxP, ftPC, dummy_boundary, dummy_coef, false); // false since not applying BCs
-
-    // pKx2->Update(fespace.get());
     
     // Compute the diffusivity coefficient and assemble the stiffness matrix
     std::shared_ptr<mfem::GridFunctionCoefficient> cDp = Concentrations::Diffusivity(psx, Cn, true); // true since using first equation
     pKx2 = std::make_shared<mfem::ParBilinearForm>(fespace.get());
 
-
     Concentrations::KMatrix(pKx2, boundary_dofs, Cn, ftPC, Kmatp, X1v, Fcb, cDp);
-
-    // cDp->ResetCoefficient();
     pKx2->Update(fespace.get());
-
-    // delete Tmatp;
-    // Form the time-stepping system matrix
-    // Tmatp = Add(1.0, *Mmatp, -(Constants::dt), *Kmatp);
-    // Tmatp = std::make_shared<mfem::HypreParMatrix>(*Add(1.0, *Mmatp, -(Constants::dt), *Kmatp));
 
     Tmatp.reset(Add(1.0, *Mmatp, -(Constants::dt), *Kmatp));
 
