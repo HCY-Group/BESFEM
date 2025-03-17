@@ -41,7 +41,7 @@ void TIFFReader::readinfo() {
         for (int col = constraints.Column_begin; col < constraints.Column_end; col++) {
             for (int row = constraints.Row_begin; row < constraints.Row_end; row++) {
                 TIFFReadScanline(tiff, buf, row);
-                uint8* pixel = (uint8*)buf; //cast void pointer
+                uint8_t* pixel = (uint8_t*)buf; // Use uint8_t instead of uint8
                 imageData[page - constraints.Depth_begin][row - constraints.Row_begin][col - constraints.Column_begin] = 1 - static_cast<int>(pixel[col]) / 255;
             }
         }
