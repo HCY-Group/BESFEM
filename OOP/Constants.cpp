@@ -11,8 +11,8 @@ namespace Constants {
     // const char* mesh_file = "Mesh_40x30_A1.mesh";            ///< Path to the mesh file
     // const char* dsF_file = "dsF_40x30_A1.txt";               ///< Path to the surface flux data file
 
-    const char* mesh_file = "Mesh_3x90_2.mesh";            ///< Path to the mesh file
-    const char* dsF_file = "dsF_3x90_2.txt";               ///< Path to the surface flux data file
+    // const char* mesh_file = "Mesh_3x90_2.mesh";            ///< Path to the mesh file
+    // const char* dsF_file = "dsF_3x90_2.txt";               ///< Path to the surface flux data file
 
     // const char* mesh_file = "Mesh_20x60_2.mesh";            ///< Path to the mesh file
     // const char* dsF_file = "dsF_20x60_2.txt";  
@@ -20,7 +20,8 @@ namespace Constants {
     // const char* mesh_file = "Mesh_40x30_3.mesh";            ///< Path to the mesh file
     // const char* dsF_file = "dsF_40x30_3.txt"; 
 
-    // const char* mesh_file = "II_1_bin.tif";            ///< Path to the mesh file
+    const char* mesh_file = "../II_1_bin.tif";            ///< Path to the mesh file
+    const char* dsF_file = "../dsF.txt";
 
     bool visualization = true;
     const int order = 1;                                    ///< Order of the finite element basis functions
