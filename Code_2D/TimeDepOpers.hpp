@@ -122,7 +122,7 @@ private:
    HypreParMatrix *A;
    GMRESSolver linear_solver;
    Solver *prec;
-   real_t dt;
+   double dt; // was real_t
 public:
    DG_Solver(HypreParMatrix &M_, HypreParMatrix &K_, const FiniteElementSpace &fes)
       : M(M_),
@@ -155,7 +155,7 @@ public:
       M.GetDiag(M_diag);
    }
 
-   void SetTimeStep(real_t dt_)
+   void SetTimeStep(double dt_) // was real_t
    {
       if (dt_ != dt)
       {
@@ -210,7 +210,7 @@ public:
    FE_Evolution(ParBilinearForm &M_, ParBilinearForm &K_, const Vector &b_);
 
    virtual void Mult(const Vector &x, Vector &y) const;
-   virtual void ImplicitSolve(const real_t dt, const Vector &x, Vector &k);
+   virtual void ImplicitSolve(const double dt, const Vector &x, Vector &k); // was real_t
 
    virtual ~FE_Evolution();
 };

@@ -281,7 +281,7 @@ FE_Evolution::FE_Evolution(ParBilinearForm &M_, ParBilinearForm &K_,
 //    u_t = M^{-1}(Ku + b),
 // by solving associated linear system
 //    (M - dt*K) d = K*u + b
-void FE_Evolution::ImplicitSolve(const real_t dt, const Vector &x, Vector &k)
+void FE_Evolution::ImplicitSolve(const double dt, const Vector &x, Vector &k) // was real_t
 {
    K->Mult(x, z);
    z += b;
