@@ -17,7 +17,7 @@ Initialize_Geometry::Initialize_Geometry()
 // Destructor
 Initialize_Geometry::~Initialize_Geometry() {}
 
-void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, int order) {
+void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order) {
 
     // Initialize the global mesh
     InitializeGlobalMesh(meshFile);
@@ -32,7 +32,7 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
     SetupParFiniteElementSpace(order);
 
     // Assign the global values
-    AssignGlobalValues(meshFile);
+    AssignGlobalValues(meshFile, distanceFile);
 
     // Map the global values to the local
     MapGlobalToLocal(meshFile);
@@ -97,7 +97,7 @@ void Initialize_Geometry::SetupParFiniteElementSpace(int order) {
 }
 
 
-void Initialize_Geometry::AssignGlobalValues(const char* meshFile) {
+void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* distanceFile) {
     std::string meshFileStr(meshFile);  // Convert to std::string
     if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
         // Process the .tif file
@@ -126,7 +126,7 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile) {
         cout << "Reading .dsF file for global distance function" << endl;
         gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
         Onm = gDsF->Size();
-        ifstream myfile(Constants::dsF_file);
+        ifstream myfile(distanceFile);
         if (myfile.is_open()) {
             for (int gi = 0; gi < Onm; gi++) {
                 myfile >> (*gDsF)(gi);

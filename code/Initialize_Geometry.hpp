@@ -25,7 +25,7 @@ public:
     Initialize_Geometry();
     virtual ~Initialize_Geometry();
 
-    void InitializeMesh(const char* meshFile, MPI_Comm comm, int order);
+    void InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order);
 
     // Mesh initialization
     void InitializeGlobalMesh(const char* meshFile);
@@ -40,7 +40,7 @@ public:
     void SetupParFiniteElementSpace(int order);
 
     // Assign global values
-    void AssignGlobalValues(const char* mesh_file);
+    void AssignGlobalValues(const char* mesh_file, const char* distanceFile);
 
     // Map global values to local
     void MapGlobalToLocal(const char* meshFile);
