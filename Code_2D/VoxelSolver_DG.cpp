@@ -63,7 +63,7 @@ void VoxelSolver_DG::FormMatrices(Array<int> ess_tdof_list) {
 	this->m->AddDomainIntegrator(new MassIntegrator);
 	
 	//calculate K matrix
-	real_t alpha = -1.0;
+	double alpha = -1.0; // was real_t
 	this->k = new ParBilinearForm(this->d->ParFESpace());
 	VectorGridFunctionCoefficient cCoef(this->c);
    	this->k->AddDomainIntegrator(new ConvectionIntegrator(cCoef, alpha));
@@ -104,7 +104,7 @@ void VoxelSolver_DG::FormMatrices(Array<int> ess_tdof_list) {
 void VoxelSolver_DG::UpdateMatricesAndSolve(Array<int> ess_tdof_list, double t_ode, double dt) {
 
 	//calculate K matrix
-	real_t alpha = -1.0;
+	double alpha = -1.0; // was real_t
 	delete this->k;
 	this->k = new ParBilinearForm(this->d->ParFESpace());
 	VectorGridFunctionCoefficient cCoef(this->c);
