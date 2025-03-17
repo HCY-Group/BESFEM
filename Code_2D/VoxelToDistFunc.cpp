@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
 	// Test Initialize_Geometry class
     	Initialize_Geometry geometry;
-    	geometry.InitializeMesh(Constants::mesh_file, MPI_COMM_WORLD, Constants::order);
+    	geometry.InitializeMesh(Constants::mesh_file, Constants::dsF_file, MPI_COMM_WORLD, Constants::order);
     	geometry.SetupBoundaryConditions();
 
 	//VoxelSolver solver(maker.GetGlobalFESpace());
@@ -168,6 +168,7 @@ int main(int argc, char *argv[])
 	//d = d2;
 	cout << "PRINTING OUT DistanceFunction" << endl;
 	solver.ParaviewSave("DstFun","Dst",&d);
+	d.Save("dsF.txt");
 
 	// Output Advection Velocity to Paraview
 	ParGridFunction c(*solver_dg.GetAdvVel());
