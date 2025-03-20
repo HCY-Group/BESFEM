@@ -20,7 +20,7 @@
 // Sample runs:  mpirun -np 2 simulation
 //               mpirun -np 1 simulation -m ../Mesh_3x90_T3.mesh
 //               mpirun -np 6 simulation -m ../Mesh_40x30_3.mesh
-//               mpirun -np 4 simulation -m ../Code_2D/II_1_bin.tif -d ../dsF_p.txt
+//               mpirun -np 4 simulation -m ../Code_2D/II_1_bin.tif -d ../Code_2D/dsF_p.txt
 
 int main(int argc, char *argv[]) {
 
