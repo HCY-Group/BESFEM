@@ -86,11 +86,11 @@ int main(int argc, char *argv[])
 	VoxelSolver solver(&*geometry.globalfespace, &*geometry.parfespace);
 	//solver.AssignGlobalValues(tiffdata);
 	solver.AssignGlobalValues(geometry.tiffData);
-	solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
+	// solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
 
 	//solver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
 	solver.MapGlobalToLocal(&*geometry.globalMesh,&*geometry.parallelMesh);
-	solver.ParaviewSave("pVoxelData","Vox",solver.GetParallelVox());
+	// solver.ParaviewSave("pVoxelData","Vox",solver.GetParallelVox());
 	
 
 	ODESolver *ode_solver_dg2 = new ForwardEulerSolver; // WHY IS THIS LINE NECESSARY???
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 	//oper.~ConductionOperator();
 	
 	// Output Vox to Paraview
-	solver.ParaviewSave("SmoothVox","Vox",solver.GetGlobalVox());
+	// solver.ParaviewSave("SmoothVox","Vox",solver.GetGlobalVox());
 
 
 
@@ -167,13 +167,13 @@ int main(int argc, char *argv[])
 	ParGridFunction d(*solver_dg.GetDistFunc());
 	//d = d2;
 	cout << "PRINTING OUT DistanceFunction" << endl;
-	solver.ParaviewSave("DstFun","Dst",&d);
+	// solver.ParaviewSave("DstFun","Dst",&d);
 	d.Save("dsF.txt");
 
 	// Output Advection Velocity to Paraview
 	ParGridFunction c(*solver_dg.GetAdvVel());
 	//c = c2;
-	solver.ParaviewSave("AdvVel","Vel",&c);
+	// solver.ParaviewSave("AdvVel","Vel",&c);
 
 
 	
@@ -182,19 +182,29 @@ int main(int argc, char *argv[])
 	// FIND CONNECTIVITY
 	// ======================================
 
+	// d.Save("pre_d");
+
 	// Use d to define psi
 	//ParGridFunction psi(maker.GetParallelFESpace());
 	ParGridFunction psi(&*geometry.parfespace);
 	psi.ProjectGridFunction(d);
+
+	psi.Save("project");
+
 	psi -= 0.5; // Center about 0
+
+	// psi.Save("psi_pre");
+
 	//for (int vi = 0; vi < maker.GetParallelMesh()->GetNV(); vi++){
 	for (int vi = 0; vi < geometry.parallelMesh->GetNV(); vi++){
 		psi(vi) = 0.5*( tanh(psi(vi)) + 1.0 );
 	}
 
+	// psi.Save("psi_post");
+
 	// Output psi to Paraview
 	cout << "PRINTING OUT Electrolyte Concentration" << endl;
-	solver.ParaviewSave("psi","psi",&psi);
+	// solver.ParaviewSave("psi","psi",&psi);
 	
 	//VoxelSolver ConnectSolver(maker.GetGlobalFESpace(),maker.GetParallelFESpace());
 	//VoxelSolver_DG solver_dg2(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
@@ -240,9 +250,9 @@ int main(int argc, char *argv[])
 		// Output Cn to Paraview
 		cout << "PRINTING OUT Electrolyte Concentration" << endl;
 		if (ConIter==0){
-			ConnectSolver.ParaviewSave("Conc_p","Cn_p",ConnectSolver.GetParallelVox());
+			// ConnectSolver.ParaviewSave("Conc_p","Cn_p",ConnectSolver.GetParallelVox());
 		} else {
-			ConnectSolver.ParaviewSave("Conc_e","Cn_e",ConnectSolver.GetParallelVox());
+			// ConnectSolver.ParaviewSave("Conc_e","Cn_e",ConnectSolver.GetParallelVox());
 		}
 
 		// ======================================
@@ -280,22 +290,22 @@ int main(int argc, char *argv[])
 		cout << "PRINTING OUT DistanceFunction" << endl;
 		if (ConIter==0){
 			//solver.ParaviewSave("DstFun_p","Dst_p",&d2);
-			solver.ParaviewSave("DstFun_p","Dst_p",&psi2);
+			// solver.ParaviewSave("DstFun_p","Dst_p",&psi2);
 			psi2.SaveAsOne("dsF_p.txt");
 
 			// Output Advection Velocity to Paraview
 			ParGridFunction c(*solver_dg2.GetAdvVel());
 			//c = c2;
-			solver.ParaviewSave("AdvVel_p","Vel_p",&c);
+			// solver.ParaviewSave("AdvVel_p","Vel_p",&c);
 		} else {
 			//solver.ParaviewSave("DstFun_e","Dst_e",&d2);
-			solver.ParaviewSave("DstFun_e","Dst_e",&psi2);
+			// solver.ParaviewSave("DstFun_e","Dst_e",&psi2);
 			psi2.SaveAsOne("dsF_e.txt");
 
 			// Output Advection Velocity to Paraview
 			ParGridFunction c(*solver_dg.GetAdvVel());
 			//c = c2;
-			solver.ParaviewSave("AdvVel_e","Vel_e",&c);
+			// solver.ParaviewSave("AdvVel_e","Vel_e",&c);
 		}
 
 	}

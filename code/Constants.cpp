@@ -7,10 +7,9 @@
 namespace Constants {
 
     // const char* mesh_file = "../Mesh_3x90_T3.mesh";            ///< Path to the mesh file
-    const char* mesh_file = "../II_1_bin.tif";            ///< Path to the mesh file
-    const char* dsF_file = "../dsF_3x90_T3.txt";               ///< Path to the surface flux data file
-    // const char* dsF_file = "../dsF_40x30_2.txt";               ///< Path to the surface flux data file
-
+    // const char* dsF_file = "../dsF_3x90_T3.txt";               ///< Path to the surface flux data file
+    const char* mesh_file = "../Code_2D/II_1_bin.tif";            ///< Path to the mesh file
+    const char* dsF_file = "../Code_2D/dsF_p.txt";               ///< Path to the surface flux data file
 
     bool visualization = true;
     const int order = 1;                                    ///< Order of the finite element basis functions

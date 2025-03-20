@@ -47,7 +47,7 @@ private:
     int nE;
     int nC;
     
-    mfem::ParGridFunction* dsF;   ///< Pointer to distance function grid
+    mfem::GridFunction* dsF;   ///< Pointer to distance function grid
     mfem::ParMesh* pmesh;         ///< Pointer to parallel mesh
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Shared pointer to finite element space
 

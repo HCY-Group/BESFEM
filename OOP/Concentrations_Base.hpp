@@ -15,7 +15,7 @@
  */
 
 #include "mfem.hpp"
-#include "Initialize_Geometry.hpp"
+#include "../code/Initialize_Geometry.hpp"
 #include "Domain_Parameters.hpp"
 #include <memory>
 

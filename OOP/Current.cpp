@@ -4,7 +4,7 @@
  */
 
 #include "Current.hpp"
-#include "Initialize_Geometry.hpp"
+#include "../code/Initialize_Geometry.hpp"
 #include "Domain_Parameters.hpp"
 #include "mfem.hpp"
 #include "CnE.hpp"

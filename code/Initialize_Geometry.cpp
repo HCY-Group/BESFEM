@@ -99,6 +99,7 @@ void Initialize_Geometry::SetupParFiniteElementSpace(int order) {
 
 void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* distanceFile) {
     std::string meshFileStr(meshFile);  // Convert to std::string
+    
     if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
         // Process the .tif file
         cout << "Reading .tif file for voxel data" << endl;
@@ -120,10 +121,8 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
                 }
             }
         }
-
-    } else if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "mesh") {
-        // Process the .mesh file
-        cout << "Reading .dsF file for global distance function" << endl;
+    
+    cout << "Reading .dsF file for global distance function for tif case" << endl;
         gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
         Onm = gDsF->Size();
         ifstream myfile(distanceFile);
@@ -133,7 +132,24 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
             }
             myfile.close();
         } else {
-            cerr << "Failed to open .mesh file" << endl;
+            cerr << "Failed to open distance file" << endl;
+        }
+    
+
+
+    } else if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "mesh") {
+    
+    cout << "Reading .dsF file for global distance function for mesh case" << endl;
+        gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
+        Onm = gDsF->Size();
+        ifstream myfile(distanceFile);
+        if (myfile.is_open()) {
+            for (int gi = 0; gi < Onm; gi++) {
+                myfile >> (*gDsF)(gi);
+            }
+            myfile.close();
+        } else {
+            cerr << "Failed to open distance file" << endl;
         }
     } else {
         cerr << "Unsupported file type" << endl;
@@ -169,6 +185,7 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
     if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
         cout << "Reading .tif file for mapping global to local grid function" << endl;
 
+        Vox = std::make_unique<mfem::ParGridFunction>(parfespace.get());
         dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
         // Iterate over elements and map global to local
@@ -179,7 +196,11 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
             parallelMesh->GetElementVertices(ei, VTX);
 
             for (int vi = 0; vi < nC; vi++) {
-                (*this->dsF)(VTX[vi]) = (*this->gVox)(gVTX[vi]);
+                (*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);
+            }
+
+            for (int vi = 0; vi < nC; vi++) {
+                (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]);
             }
         }
 

@@ -4,7 +4,7 @@
  */
 
 #include "Potentials_Base.hpp"
-#include "Initialize_Geometry.hpp"
+#include "../code/Initialize_Geometry.hpp"
 #include "mfem.hpp"
 
 /**

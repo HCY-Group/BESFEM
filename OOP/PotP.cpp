@@ -4,7 +4,7 @@
  */
 
 #include "PotP.hpp"
-#include "Constants.hpp"
+#include "../code/Constants.hpp"
 #include "mfem.hpp"
 
 double BvP = 0.0; ///< Global variable for the boundary value of particle potential

@@ -2,8 +2,7 @@
 #define POTE_HPP
 
 #include "Potentials_Base.hpp"
-#include "Constants.hpp"
-
+#include "../code/Constants.hpp"
 /**
  * @brief Boundary value for the electrolyte potential.
  */

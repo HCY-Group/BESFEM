@@ -1,6 +1,6 @@
-#include "Initialize_Geometry.hpp"
+#include "../code/Constants.hpp"
+#include "../code/Initialize_Geometry.hpp"
 #include "Domain_Parameters.hpp"
-#include "Constants.hpp"
 #include "readtiff.h"
 #include "mfem.hpp"
 #include <tiffio.h>
@@ -21,6 +21,8 @@ Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo)
 Domain_Parameters::~Domain_Parameters() {}
 
 void Domain_Parameters::SetupDomainParameters(){
+    
+    // dsF->Save("dsF_setup");
     
     InitializeGridFunctions();
     InterpolateDomainParameters();
@@ -45,11 +47,21 @@ void Domain_Parameters::InitializeGridFunctions() {
 
 void Domain_Parameters::InterpolateDomainParameters() {
 
+    // dsF->Save("distance_pre");
+    
+    psi->ProjectGridFunction(*dsF);
+
+    // psi->Save("project");
+
+    *psi -= 0.5;
+
+    // psi->Save("psi_pre");
+
     // interpolate domain parameter from distance function
     for (int vi = 0; vi < nV; vi++) {
         // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // used for rectangle 
         // (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta)); // used for circle
-        (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi))); // used for voxel code
+        (*psi)(vi) = 0.5 * (1.0 + tanh((*psi)(vi))); // used for voxel code
         
         (*pse)(vi) = 1.0 - (*psi)(vi);
 

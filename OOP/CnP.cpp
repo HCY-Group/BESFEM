@@ -4,7 +4,7 @@
  */
 
 #include "CnP.hpp"
-#include "Constants.hpp"
+#include "../code/Constants.hpp"
 #include "mfem.hpp"
 
 using namespace std;
