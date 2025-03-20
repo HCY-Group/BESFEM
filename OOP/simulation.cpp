@@ -17,6 +17,11 @@
 #include <iostream>
 #include <cmath>
 
+// Sample runs:  mpirun -np 2 simulation
+//               mpirun -np 1 simulation -m ../Mesh_3x90_T3.mesh
+//               mpirun -np 6 simulation -m ../Mesh_40x30_3.mesh
+//               mpirun -np 4 simulation -m ../Code_2D/II_1_bin.tif -d ../dsF_p.txt
+
 int main(int argc, char *argv[]) {
 
     // Start measuring the program execution time
@@ -27,9 +32,21 @@ int main(int argc, char *argv[]) {
     mfem::Mpi::Init(argc, argv);
     mfem::Hypre::Init();
 
+    // Default values
+    const char* mesh_file = Constants::mesh_file;
+    const char* dsF_file = Constants::dsF_file;
+    int order = Constants::order;
+
+    // Parse command-line options from MFEM
+    mfem::OptionsParser args(argc, argv);
+    args.AddOption(&mesh_file, "-m", "--mesh", "Mesh file to use.");
+    args.AddOption(&dsF_file, "-d", "--distance", "Distance file to use.");
+    args.AddOption(&order, "-o", "--order", "Finite element polynomial degree.");
+    args.ParseCheck();
+
     // Initialize Mesh & Geometry
     Initialize_Geometry geometry;
-    geometry.InitializeMesh(Constants::mesh_file, Constants::dsF_file, MPI_COMM_WORLD, Constants::order);
+    geometry.InitializeMesh(mesh_file, dsF_file, MPI_COMM_WORLD, order);
     geometry.SetupBoundaryConditions();
 
     // Initialize and Calculate Domain Parameters (psi, pse, AvB, AvP)

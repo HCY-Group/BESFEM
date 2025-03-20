@@ -136,7 +136,6 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
         }
     
 
-
     } else if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "mesh") {
     
     cout << "Reading .dsF file for global distance function for mesh case" << endl;
@@ -185,7 +184,7 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
     if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
         cout << "Reading .tif file for mapping global to local grid function" << endl;
 
-        Vox = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        // Vox = std::make_unique<mfem::ParGridFunction>(parfespace.get()); used in Vox code
         dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
         // Iterate over elements and map global to local
@@ -195,9 +194,9 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
             globalMesh->GetElementVertices(gei, gVTX);
             parallelMesh->GetElementVertices(ei, VTX);
 
-            for (int vi = 0; vi < nC; vi++) {
-                (*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);
-            }
+            // for (int vi = 0; vi < nC; vi++) {                            // used in Vox code
+            //     (*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);         // used in Vox code
+            // }                                                            // used in Vox code
 
             for (int vi = 0; vi < nC; vi++) {
                 (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]);
@@ -246,10 +245,10 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	std::vector<std::vector<std::vector<int>>> tiffData;
 	tiffData = reader.getImageData();
 	
-	cout << "tiff size: "            << tiffData.size()         << endl;	
-	cout << "tiff[0] size: "         << tiffData[0].size()      << endl;
-	cout << "tiff[0][0] size: "      << tiffData[0][0].size()   << endl;
-	cout << "tiffdata[0][0][0] = "   << tiffData[0][0][0]       << endl;
+	// cout << "tiff size: "            << tiffData.size()         << endl;	
+	// cout << "tiff[0] size: "         << tiffData[0].size()      << endl;
+	// cout << "tiff[0][0] size: "      << tiffData[0][0].size()   << endl;
+	// cout << "tiffdata[0][0][0] = "   << tiffData[0][0][0]       << endl;
 
     return tiffData;
 }
