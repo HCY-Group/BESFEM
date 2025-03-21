@@ -5,13 +5,13 @@
 using namespace mfem;
 using namespace std;
 
-VoxelSolver::VoxelSolver(FiniteElementSpace *fes){
-	this->gVox = new GridFunction(fes);
+VoxelSolver::VoxelSolver(mfem::FiniteElementSpace *fes){
+	this->gVox = new mfem::GridFunction(fes);
 	
 }
-VoxelSolver::VoxelSolver(FiniteElementSpace *gfes, ParFiniteElementSpace *fes){
-	this->gVox = new GridFunction(gfes);
-	this->Vox = new ParGridFunction(fes);
+VoxelSolver::VoxelSolver(mfem::FiniteElementSpace *gfes, mfem::ParFiniteElementSpace *fes){
+	this->gVox = new mfem::GridFunction(gfes);
+	this->Vox = new mfem::ParGridFunction(fes);
 }
 	
 void VoxelSolver::AssignGlobalValues(double value){
@@ -35,12 +35,12 @@ void VoxelSolver::AssignGlobalValues(vector<vector<vector<int>>> data) {
 	}
 }
 
-void VoxelSolver::MultiplyVox(GridFunction &gf) { 
+void VoxelSolver::MultiplyVox(mfem::GridFunction &gf) { 
 	//Elementwise Multiplication
 	*this->Vox *= gf;
 }
 
-void VoxelSolver::MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh) {
+void VoxelSolver::MapGlobalToLocal(mfem::Mesh* gmesh, mfem::ParMesh* pmesh) {
 	int nV = pmesh->GetNV();		//number of vertices
 	int nE = pmesh->GetNE();		//number of elements
 	int nC = pow(2,pmesh->Dimension());	//number of corner vertices
@@ -69,13 +69,13 @@ void VoxelSolver::MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh) {
 
 }
 
-void VoxelSolver::AssignDirichletBCs(GridFunctionCoefficient &Coef, Array<int> &bdr) {
+void VoxelSolver::AssignDirichletBCs(mfem::GridFunctionCoefficient &Coef, Array<int> &bdr) {
 	this->Vox->ProjectBdrCoefficient(Coef, bdr);
 }
 
-void VoxelSolver::DetermineConnectivityBCs(ParGridFunction &DomPar) {
+void VoxelSolver::DetermineConnectivityBCs(mfem::ParGridFunction &DomPar) {
 	if (this->dbcval != nullptr) {delete this->dbcval;}
-	this->dbcval = new ParGridFunction(this->Vox->ParFESpace());
+	this->dbcval = new mfem::ParGridFunction(this->Vox->ParFESpace());
 	*this->dbcval = 0.0;
 
 	for (int vi = 0; vi < this->Vox->Size(); vi++) {
@@ -85,10 +85,10 @@ void VoxelSolver::DetermineConnectivityBCs(ParGridFunction &DomPar) {
 	}
 	
 	if (this->dbcCoef != nullptr) {delete this->dbcCoef;}
-	this->dbcCoef = new GridFunctionCoefficient(this->dbcval);
+	this->dbcCoef = new mfem::GridFunctionCoefficient(this->dbcval);
 }
 
-void VoxelSolver::NorthDirichletBCs(Mesh *mesh) {
+void VoxelSolver::NorthDirichletBCs(mfem::Mesh *mesh) {
 	if (this->dbc_bdr != nullptr) {delete this->dbc_bdr;}
 	this->dbc_bdr = new Array<int>;
 	this->dbc_bdr->SetSize(mesh->bdr_attributes.Max());
@@ -109,7 +109,7 @@ void VoxelSolver::NorthDirichletBCs(Mesh *mesh) {
 	
 }
 
-void VoxelSolver::SouthDirichletBCs(Mesh *mesh) {
+void VoxelSolver::SouthDirichletBCs(mfem::Mesh *mesh) {
 	if (this->dbc_bdr != nullptr) {delete this->dbc_bdr;}
 	this->dbc_bdr = new Array<int>;
 	this->dbc_bdr->SetSize(mesh->bdr_attributes.Max());
@@ -130,45 +130,45 @@ void VoxelSolver::SouthDirichletBCs(Mesh *mesh) {
 	
 }
 
-void VoxelSolver::InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridFunction &Diff, ParGridFunction &DomPar) {
+void VoxelSolver::InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, mfem::ParGridFunction &Diff, mfem::ParGridFunction &DomPar) {
 
 	// TODO: Add check to make sure that Diff and DomPar have same FESpace as Vox
-	this->Fct = new ParLinearForm(Vox->ParFESpace());
-	HypreParVector Fcb(Vox->ParFESpace());
-	HypreParVector X1v(Vox->ParFESpace());
+	this->Fct = new mfem::ParLinearForm(Vox->ParFESpace());
+	mfem::HypreParVector Fcb(Vox->ParFESpace());
+	mfem::HypreParVector X1v(Vox->ParFESpace());
 	
 
 	Fcb = X1v.CreateCompatibleVector(); //needed so that Fcb is defined on a fespace?
 	
 	// stiffness matrix
-	HypreParMatrix Kmat;
-	GridFunctionCoefficient cMob(&Diff);
-	K = new ParBilinearForm(Diff.ParFESpace());
-	K->AddDomainIntegrator(new DiffusionIntegrator(cMob));
+	mfem::HypreParMatrix Kmat;
+	mfem::GridFunctionCoefficient cMob(&Diff);
+	K = new mfem::ParBilinearForm(Diff.ParFESpace());
+	K->AddDomainIntegrator(new mfem::DiffusionIntegrator(cMob));
 	K->Assemble();
 	K->FormLinearSystem(boundary_dofs, *Vox, *Fct, Kmat, X1v, Fcb);
 
 	// TimeDependentOperator and ODESolver
 	cout << Fcb.Size() << endl;
 	oper = new ConductionOperator(DomPar, Kmat, Fcb, boundary_dofs);
-	ode_solver = new BackwardEulerSolver;
+	ode_solver = new mfem::BackwardEulerSolver;
 	ode_solver->Init(*oper);
 }
 
-void VoxelSolver::UpdateLinearForm(ParGridFunction gf) {
+void VoxelSolver::UpdateLinearForm(mfem::ParGridFunction gf) {
 	
-	GridFunctionCoefficient coef(&gf);
+	mfem::GridFunctionCoefficient coef(&gf);
 	
 	delete this->Fct;
-	this->Fct = new ParLinearForm(this->Vox->ParFESpace());
-	this->Fct->AddDomainIntegrator(new DomainLFIntegrator(coef));
+	this->Fct = new mfem::ParLinearForm(this->Vox->ParFESpace());
+	this->Fct->AddDomainIntegrator(new mfem::DomainLFIntegrator(coef));
 	this->Fct->Assemble();
 	
 }
 
 void VoxelSolver::UpdateLinearForm_DoubleWellPotential() {
 
-	ParGridFunction Pot(Vox->ParFESpace());
+	mfem::ParGridFunction Pot(Vox->ParFESpace());
 	int nV = Pot.Size();
 	
 	for (int vi = 0; vi < nV; vi++){
@@ -181,10 +181,10 @@ void VoxelSolver::UpdateLinearForm_DoubleWellPotential() {
 
 void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, double dt) {
 	
-	HypreParVector Fcb(this->Vox->ParFESpace());
-	HypreParVector X1v(this->Vox->ParFESpace());
-	HypreParVector Vox0(this->Vox->ParFESpace());
-	HypreParMatrix Kmat;
+	mfem::HypreParVector Fcb(this->Vox->ParFESpace());
+	mfem::HypreParVector X1v(this->Vox->ParFESpace());
+	mfem::HypreParVector Vox0(this->Vox->ParFESpace());
+	mfem::HypreParMatrix Kmat;
 	
 	//cout << "Max Fct: " << Fct->Max() << ", Min Fct:  " << Fct->Min() << endl;
 	K->FormLinearSystem(boundary_dofs, *Vox, *Fct, Kmat, X1v, Fcb);
@@ -196,7 +196,7 @@ void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, d
 	K->RecoverFEMSolution(X1v, *Fct, *Vox);
 }
 
-void VoxelSolver::AccelerateDiffusion(ParGridFunction &DomPar, GridFunctionCoefficient &Coef, Array<int> &bdr) {
+void VoxelSolver::AccelerateDiffusion(mfem::ParGridFunction &DomPar, mfem::GridFunctionCoefficient &Coef, Array<int> &bdr) {
 	//TODO: add check to see if DomPar and Vox are same size
 	
 	int nV = Vox->Size();
@@ -209,12 +209,12 @@ void VoxelSolver::AccelerateDiffusion(ParGridFunction &DomPar, GridFunctionCoeff
 	AssignDirichletBCs(Coef, bdr);
 }
 
-void VoxelSolver::ParaviewSave(string FileName, string VariableName, GridFunction* gf) {
+void VoxelSolver::ParaviewSave(string FileName, string VariableName, mfem::GridFunction* gf) {
 	
 	int order = 1;
 	
-	ParaViewDataCollection *pd = NULL;
-	pd = new ParaViewDataCollection(FileName, gf->FESpace()->GetMesh());
+	mfem::ParaViewDataCollection *pd = NULL;
+	pd = new mfem::ParaViewDataCollection(FileName, gf->FESpace()->GetMesh());
 	pd->RegisterField(VariableName, gf);
 	pd->SetLevelsOfDetail(order);
 	pd->SetDataFormat(VTKFormat::BINARY);
