@@ -149,15 +149,15 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
         gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
         ifstream myfile(distanceFile);
         if (myfile.is_open()) {
-            // Skip the first four lines
-            string line;
-            for (int i = 0; i < 4; i++) {
-                if (!getline(myfile, line)) {
-                    cerr << "Error: Distance file has fewer than four header lines" << endl;
-                    myfile.close();
-                    return;
-                }
-            }
+            // // Skip the first four lines
+            // string line;
+            // for (int i = 0; i < 4; i++) {
+            //     if (!getline(myfile, line)) {
+            //         cerr << "Error: Distance file has fewer than four header lines" << endl;
+            //         myfile.close();
+            //         return;
+            //     }
+            // }
             // Use MFEM's Load function
             gDsF->Load(myfile, gDsF->Size());
             myfile.close();
