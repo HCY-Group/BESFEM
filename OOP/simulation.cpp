@@ -35,6 +35,7 @@ int main(int argc, char *argv[]) {
     // Default values
     const char* mesh_file = Constants::mesh_file;
     const char* dsF_file = Constants::dsF_file;
+    const char* mesh_type = nullptr;
     int order = Constants::order;
 
     // Parse command-line options from MFEM
@@ -42,6 +43,7 @@ int main(int argc, char *argv[]) {
     args.AddOption(&mesh_file, "-m", "--mesh", "Mesh file to use.");
     args.AddOption(&dsF_file, "-d", "--distance", "Distance file to use.");
     args.AddOption(&order, "-o", "--order", "Finite element polynomial degree.");
+    args.AddOption(&mesh_type, "-t", "--type", "Mesh type (r for rectangle, c for circle, v for voxel).");
     args.ParseCheck();
 
     // Initialize Mesh & Geometry
@@ -51,7 +53,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize and Calculate Domain Parameters (psi, pse, AvB, AvP)
     Domain_Parameters domain_parameters(geometry);
-    domain_parameters.SetupDomainParameters();
+    domain_parameters.SetupDomainParameters(mesh_type);
 
     // Initialize Concentration Classes
 
@@ -103,7 +105,7 @@ int main(int argc, char *argv[]) {
     int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 100.0)));
 
     // Perform simulation over time steps
-    for (int t = 0; t < 100 + 1; ++t) {
+    for (int t = 0; t < 1000 + 1; ++t) {
     // while ( VCell > Constants::VCut) {
 
         // Step 1: Update concentrations for both particle and electrolyte phases
@@ -123,25 +125,25 @@ int main(int argc, char *argv[]) {
         double globalerror_P = 1.0; // Error for particle potential
         double globalerror_E = 1.0; // Error for electrolyte potential
 
-        // // if (t % t_skip == 0) {
-        //     // while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
-        //         while (globalerror_P > 1.0e-9) {
+        if (t % t_skip == 0) {
+            // while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
+                while (globalerror_P > 1.0e-9) {
 
-        //         // Update reaction rates using the Butler-Volmer equation
-        //         reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
+                // Update reaction rates using the Butler-Volmer equation
+                reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
 
-        //         // Calculate global errors for particle and electrolyte potentials
-        //         particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
-        //     //     // electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
+                // Calculate global errors for particle and electrolyte potentials
+                particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
+                electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
             
-        //     }
-        // // }
+            }
+        }
 
-        // // Step 5: Compute the total reaction current
-        // reaction.TotalReactionCurrent(Rxn_gf, global_current);
+        // Step 5: Compute the total reaction current
+        reaction.TotalReactionCurrent(Rxn_gf, global_current);
 
-        // // Step 6: Adjust the particle potential based on the target constant current
-        // current.Constant(phP_gf, global_current);
+        // Step 6: Adjust the particle potential based on the target constant current
+        current.Constant(phP_gf, global_current);
 
         // Step 7: Update the cell voltage based on the particle and electrolyte potentials
         VCell = BvP - BvE;

@@ -20,10 +20,10 @@ Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo)
 // Destructor
 Domain_Parameters::~Domain_Parameters() {}
 
-void Domain_Parameters::SetupDomainParameters(){
+void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
         
     InitializeGridFunctions();
-    InterpolateDomainParameters();
+    InterpolateDomainParameters(mesh_type);
     CalculatePhasePotentialsAndTargetCurrent();
 
     PrintInfo();
@@ -42,23 +42,31 @@ void Domain_Parameters::InitializeGridFunctions() {
 
 }
 
-void Domain_Parameters::InterpolateDomainParameters() {
+void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     
-    psi->ProjectGridFunction(*dsF);
-    *psi -= 0.5;
+    if (mesh_type == nullptr) {
+        std::cerr << "Error: Mesh type not specified. Use -t option to specify mesh type (r for rectangle, c for circle, v for voxel)." << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
-    // interpolate domain parameter from distance function
+    if (strcmp(mesh_type, "v") == 0) {
+        psi->ProjectGridFunction(*dsF);
+        *psi -= 0.5;
+    }
+
     for (int vi = 0; vi < nV; vi++) {
-        // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // used for rectangle 
-        // (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta)); // used for circle
-        (*psi)(vi) = 0.5 * (1.0 + tanh((*psi)(vi))); // used for voxel code
-        
-        (*pse)(vi) = 1.0 - (*psi)(vi);
+        if (strcmp(mesh_type, "r") == 0) {
+            (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // rectangle
+            (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
+        } else if (strcmp(mesh_type, "c") == 0) {
+            (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta)); // circle
+            (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta), 2) - 1.0) / (2 * Constants::zeta); // circle
+        } else {
+            (*psi)(vi) = 0.5 * (1.0 + tanh((*psi)(vi))); // voxel
+            (*AvP)(vi) = -(pow(tanh((*dsF)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
+        }
 
-        // AvP is the rate of change of psi; used in reaction rates
-        // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
-        // (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta); // circle
-        (*AvP)(vi) s= -(pow(tanh((*dsF)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // used for voxel code
+        (*pse)(vi) = 1.0 - (*psi)(vi);
 
         if ((*psi)(vi) < Constants::eps) { (*psi)(vi) = Constants::eps; }
         if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }
@@ -70,6 +78,34 @@ void Domain_Parameters::InterpolateDomainParameters() {
         if ((*AvP)(vi) * Constants::dh < 1.0e-3) { (*AvP)(vi) = 0.0; }
         if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
     }
+
+    
+    // psi->ProjectGridFunction(*dsF);
+    // *psi -= 0.5;
+
+    // // interpolate domain parameter from distance function
+    // for (int vi = 0; vi < nV; vi++) {
+    //     // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // used for rectangle 
+    //     // (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta)); // used for circle
+    //     // (*psi)(vi) = 0.5 * (1.0 + tanh((*psi)(vi))); // used for voxel code
+        
+    //     // (*pse)(vi) = 1.0 - (*psi)(vi);
+
+    //     // AvP is the rate of change of psi; used in reaction rates
+    //     // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
+    //     // (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta); // circle
+    //     // (*AvP)(vi) s= -(pow(tanh((*dsF)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // used for voxel code
+
+    //     if ((*psi)(vi) < Constants::eps) { (*psi)(vi) = Constants::eps; }
+    //     if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }
+    // }
+
+    // AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
+
+    // for (int vi = 0; vi < nV; vi++) {
+    //     if ((*AvP)(vi) * Constants::dh < 1.0e-3) { (*AvP)(vi) = 0.0; }
+    //     if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
+    // }
 }
 
 void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction& grid_function, const mfem::Vector& element_volumes, double& local_total, double& global_total) {

@@ -19,7 +19,7 @@ public:
     Initialize_Geometry &geometry;
     virtual ~Domain_Parameters();
 
-    void SetupDomainParameters();
+    void SetupDomainParameters(const char* mesh_type);
 
 
     std::unique_ptr<mfem::ParGridFunction> psi; ///< Solid phase potential
@@ -36,7 +36,7 @@ public:
 private:
 
     void InitializeGridFunctions();
-    void InterpolateDomainParameters();
+    void InterpolateDomainParameters(const char* mesh_type);
     void CalculateTotals(const mfem::ParGridFunction& grid_function, const mfem::Vector& element_volumes, double& local_total, double& global_total);
     void CalculateTotalPhaseField(const mfem::ParGridFunction& grid_function, double& total, double& global_total);
     void CalculatePhasePotentialsAndTargetCurrent();
