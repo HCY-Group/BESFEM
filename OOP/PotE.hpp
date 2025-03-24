@@ -32,8 +32,6 @@ public:
      */
     PotE(Initialize_Geometry &geo, Domain_Parameters &para);
 
-    // virtual ~PotE();
-
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
 
@@ -61,14 +59,7 @@ public:
      */
     void CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
 
-    // static mfem::CGSolver *cgPE_solver; ///< Static variable for the conjugate gradient solver
-    std::unique_ptr<mfem::CGSolver> cgPE_solver;
-    
-    // /**
-    //  * @brief Getter for the static conjugate gradient solver instance
-    //  * @return Pointer to the conjugate gradient solver
-    //  */
-    // static mfem::CGSolver *GetcgPEsolver() { return cgPE_solver; }
+    std::unique_ptr<mfem::CGSolver> cgPE_solver; ///< Variable for the conjugate gradient solver
 
     mfem::Array<int> ess_tdof_list_w; ///< List of essential true degrees of freedom for Dirichlet boundary conditions
     mfem::ConstantCoefficient dbc_w_Coef; ///< Coefficient for Dirichlet boundary conditions
@@ -86,11 +77,8 @@ private:
     
     void ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx); ///< Computes electrolyte conductivity and diffusivity
 
-    // mfem::ParGridFunction *Dmp; ///< Diffusivity field - D minus plus
-    // mfem::ParGridFunction *kpl; ///< Conductivity field
-
-    std::unique_ptr<mfem::ParGridFunction> Dmp;
-    std::unique_ptr<mfem::ParGridFunction> kpl;
+    std::unique_ptr<mfem::ParGridFunction> Dmp;  ///< Diffusivity field - D minus plus
+    std::unique_ptr<mfem::ParGridFunction> kpl; ///< Conductivity field
 
     mfem::HypreParMatrix Kdm; ///< Stiffness matrix for diffusivity
     mfem::HypreParMatrix KmE; ///< Stiffness matrix for conductivity
@@ -102,18 +90,14 @@ private:
 
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
-    // mfem::HypreParVector *CeVn; ///< Concentration at the current time step
-    // mfem::HypreParVector *LpCe; ///< Diffusion-related vector
-
-    std::shared_ptr<mfem::HypreParVector> CeVn;
-    std::shared_ptr<mfem::HypreParVector> LpCe;
+    std::shared_ptr<mfem::HypreParVector> CeVn; ///< Concentration at the current time step
+    std::shared_ptr<mfem::HypreParVector> LpCe; ///< Diffusion-related vector
 
     mfem::HypreSmoother Mpe; ///< Preconditioner for the solver
     mfem::Array<int> boundary_dofs; ///< Array of boundary degrees of freedom
     mfem::GridFunctionCoefficient cKp; ///< Coefficient for the stiffness matrix
 
-    // mfem::ParGridFunction *RpE; ///< Reaction field for the electrolyte
-    std::unique_ptr<mfem::ParGridFunction> RpE;
+    std::unique_ptr<mfem::ParGridFunction> RpE; ///< Reaction field for the electrolyte
 
     mfem::ParLinearForm ftPotE; // force term particle electrolyte
     mfem::HypreParVector Flb; ///< Vector for assembled force term

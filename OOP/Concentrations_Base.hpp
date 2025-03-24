@@ -206,12 +206,7 @@ private:
     mfem::GridFunctionCoefficient *cP; ///< Coefficient for the potential field
 
     mfem::Array<int> boundary_dofs; ///< Boundary degrees of freedom
-
-    // mfem::ParGridFunction *TmpF; ///< Temporary grid function for intermediate calculations
-    // std::shared_ptr<mfem::ParGridFunction> TmpF; ///< Temporary grid function for intermediate calculations
-    std::unique_ptr<mfem::ParGridFunction> TmpF;
-
-
+    std::unique_ptr<mfem::ParGridFunction> TmpF; ///< Temporary grid function for intermediate calculations
 
     int nE;                                         ///< Number of elements
     int nC;                                         ///< Number of corners in each element

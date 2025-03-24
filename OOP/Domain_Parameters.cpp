@@ -21,9 +21,7 @@ Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo)
 Domain_Parameters::~Domain_Parameters() {}
 
 void Domain_Parameters::SetupDomainParameters(){
-    
-    // dsF->Save("dsF_setup");
-    
+        
     InitializeGridFunctions();
     InterpolateDomainParameters();
     CalculatePhasePotentialsAndTargetCurrent();
@@ -42,20 +40,12 @@ void Domain_Parameters::InitializeGridFunctions() {
     AvP = make_unique<mfem::ParGridFunction>(fespace.get());
     AvB = make_unique<mfem::ParGridFunction>(fespace.get());
 
-
 }
 
 void Domain_Parameters::InterpolateDomainParameters() {
-
-    // dsF->Save("distance_pre");
     
     psi->ProjectGridFunction(*dsF);
-
-    // psi->Save("project");
-
     *psi -= 0.5;
-
-    // psi->Save("psi_pre");
 
     // interpolate domain parameter from distance function
     for (int vi = 0; vi < nV; vi++) {
@@ -68,7 +58,7 @@ void Domain_Parameters::InterpolateDomainParameters() {
         // AvP is the rate of change of psi; used in reaction rates
         // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
         // (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta); // circle
-        (*AvP)(vi) = -(pow(tanh((*dsF)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // used for voxel code
+        (*AvP)(vi) s= -(pow(tanh((*dsF)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // used for voxel code
 
         if ((*psi)(vi) < Constants::eps) { (*psi)(vi) = Constants::eps; }
         if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }

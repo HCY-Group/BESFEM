@@ -124,12 +124,19 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
     
     cout << "Reading .dsF file for global distance function for tif case" << endl;
         gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
-        Onm = gDsF->Size();
         ifstream myfile(distanceFile);
         if (myfile.is_open()) {
-            for (int gi = 0; gi < Onm; gi++) {
-                myfile >> (*gDsF)(gi);
+            // Skip the first four lines
+            string line;
+            for (int i = 0; i < 4; i++) {
+                if (!getline(myfile, line)) {
+                    cerr << "Error: Distance file has fewer than four header lines" << endl;
+                    myfile.close();
+                    return;
+                }
             }
+            // Use MFEM's Load function
+            gDsF->Load(myfile, gDsF->Size());
             myfile.close();
         } else {
             cerr << "Failed to open distance file" << endl;
@@ -140,20 +147,25 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
     
     cout << "Reading .dsF file for global distance function for mesh case" << endl;
         gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
-        Onm = gDsF->Size();
         ifstream myfile(distanceFile);
         if (myfile.is_open()) {
-            for (int gi = 0; gi < Onm; gi++) {
-                myfile >> (*gDsF)(gi);
+            // Skip the first four lines
+            string line;
+            for (int i = 0; i < 4; i++) {
+                if (!getline(myfile, line)) {
+                    cerr << "Error: Distance file has fewer than four header lines" << endl;
+                    myfile.close();
+                    return;
+                }
             }
+            // Use MFEM's Load function
+            gDsF->Load(myfile, gDsF->Size());
             myfile.close();
         } else {
             cerr << "Failed to open distance file" << endl;
         }
-    } else {
-        cerr << "Unsupported file type" << endl;
     }
-}
+}   
 
 void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
     

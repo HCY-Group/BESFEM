@@ -136,20 +136,13 @@ protected:
 
 private:
 
-    // mfem::ParGridFunction *Rxx; ///< Intermediate grid function for reactions
-    std::unique_ptr<mfem::ParGridFunction> Rxx;
+    std::unique_ptr<mfem::ParGridFunction> Rxx; ///< Intermediate grid function for reactions
 
     std::unique_ptr<mfem::ParLinearForm> Bx2;
+    std::unique_ptr<mfem::GridFunctionCoefficient> cXx; ///< Coefficient derived from grid functions
 
-
-    // mfem::GridFunctionCoefficient *cXx; ///< Coefficient derived from grid functions
-    std::unique_ptr<mfem::GridFunctionCoefficient> cXx;
-
-
-    // mfem::ParGridFunction *px0; ///< Grid function for potential values before iteration
-    std::unique_ptr<mfem::ParGridFunction> px0;
-    // mfem::HypreParVector X0; ///< Hypre vector for solving systems
-    std::shared_ptr<mfem::HypreParVector> X0;
+    std::unique_ptr<mfem::ParGridFunction> px0; ///< Grid function for potential values before iteration
+    std::shared_ptr<mfem::HypreParVector> X0; ///< Hypre vector for solving systems
 
 
     mfem::ParGridFunction TmpF; ///< Temporary field for error calculations

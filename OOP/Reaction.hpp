@@ -62,17 +62,12 @@ public:
 
 private:
 
-    // MeshHandler &mesh_handler; ///< Reference to the mesh handler for geometry data
-
-
     /**
      * @brief Sets an initial reaction rate for the reaction field
      * @param Cn Concentration field
      * @param initial_value Initial reaction value
      */
     void SetInitialReaction(mfem::ParGridFunction &Cn, double initial_value);
-
-
 
     mfem::ParMesh *pmesh; ///< Pointer to the parallel mesh
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
@@ -86,17 +81,11 @@ private:
 
     double local_current; ///< Local reaction current for each MPI process
 
-    // mfem::ParGridFunction *i0C; ///< Exchange current density field
-    // mfem::ParGridFunction *OCV; ///< Open circuit voltage field
-    // mfem::ParGridFunction *Kfw; ///< Open circuit voltage field
-    // mfem::ParGridFunction *Kbw; ///< Backward reaction rate constant field
-    // mfem::ParGridFunction *dPHE; ///< Voltage drop field
-
-    std::unique_ptr<mfem::ParGridFunction> i0C;
-    std::unique_ptr<mfem::ParGridFunction> OCV;
-    std::unique_ptr<mfem::ParGridFunction> Kfw;
-    std::unique_ptr<mfem::ParGridFunction> Kbw;
-    std::unique_ptr<mfem::ParGridFunction> dPHE;
+    std::unique_ptr<mfem::ParGridFunction> i0C; ///< Exchange current density field
+    std::unique_ptr<mfem::ParGridFunction> OCV; ///< Open circuit voltage field
+    std::unique_ptr<mfem::ParGridFunction> Kfw; ///< Open circuit voltage field
+    std::unique_ptr<mfem::ParGridFunction> Kbw; ///< Backward reaction rate constant field
+    std::unique_ptr<mfem::ParGridFunction> dPHE; ///< Voltage drop field
 
     const mfem::Vector& EVol; ///< Element volumes from the mesh handler
 

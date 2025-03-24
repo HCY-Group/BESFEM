@@ -47,8 +47,6 @@ public:
 
 private:
 
-    // MeshHandler &mesh_handler; ///< Reference to the mesh handler for geometry-related operations
-
     mfem::ParMesh *pmesh; ///< Pointer to the parallel mesh
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
