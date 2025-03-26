@@ -1,6 +1,5 @@
 #include "Solver.hpp"
 #include "Initialize_Geometry.hpp"
-#include "../OOP/Domain_Parameters.hpp"
 #include "Constants.hpp"
 #include "mfem.hpp"
 #include <tiffio.h>
@@ -12,8 +11,8 @@
 using namespace std;
 
 // Constructor
-Solver::Solver(Initialize_Geometry &geo, Domain_Parameters &para)
-: pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para) 
+Solver::Solver(Initialize_Geometry &geo)
+: pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo)
 
 {}
 

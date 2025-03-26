@@ -2,7 +2,6 @@
 #define SOLVER_HPP
 
 #include "Initialize_Geometry.hpp"
-#include "../OOP/Domain_Parameters.hpp"
 #include "Constants.hpp"
 #include "mfem.hpp"
 #include <tiffio.h>
@@ -14,7 +13,7 @@
 
 class Solver {
 public:
-    Solver(Initialize_Geometry &geo, Domain_Parameters &para);
+    Solver(Initialize_Geometry &geo);
     ~Solver();
 
     void MassMatrix(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat);
@@ -31,7 +30,6 @@ private:
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
     
     Initialize_Geometry &geometry;
-    Domain_Parameters &domain_parameters;
     
     mfem::ParBilinearForm *M = nullptr;
     mfem::ParBilinearForm *K = nullptr;
