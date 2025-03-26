@@ -16,6 +16,7 @@
 
 #include "mfem.hpp"
 #include "../code/Initialize_Geometry.hpp"
+#include "../code/Solver.hpp"
 #include "Domain_Parameters.hpp"
 #include <memory>
 
@@ -27,7 +28,7 @@
  * as well as related calculations like diffusivity, reaction terms, and salt conservation
  * It uses the MFEM library for finite element computations and supports parallelism through MPI
  */
-class Concentrations {
+class Concentrations : public Solver {
 public:
 
     /**
@@ -91,7 +92,7 @@ protected:
      * @param m_solver Reference to the conjugate gradient solver to be configured
      * @param smoother Reference to the preconditioner for the mass matrix
      */
-    void SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother);
+    void SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::HypreSmoother &smoother);
     
     /**
      * @brief Applies a Neumann boundary condition by negating a potential field
@@ -118,20 +119,20 @@ protected:
      */
     void CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value);
     
-    /**
-     * @brief Constructs a force term for the system based on a given field and boundary conditions
-     * 
-     * This method creates a linear form (`Fxx`) representing a force term, incorporating contributions 
-     * from the domain and optionally from boundary conditions. The force term is built using a grid function 
-     * coefficient derived from the input field (`gfc`)
-     * 
-     * @param gfc Reference to the ParGridFunction representing the input field (e.g., reaction rates or fluxes)
-     * @param Fxx Reference to the ParLinearForm where the assembled force term will be stored
-     * @param boundary Array of integers specifying boundary indices for applying boundary conditions
-     * @param m ProductCoefficient used to scale the boundary contributions, representing a Neumann-type boundary condition
-     * @param apply_boundary_conditions Boolean flag indicating whether to include boundary contributions in the force term
-     */
-    void ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &Fxx, mfem::Array<int> boundary, mfem::ProductCoefficient m, bool apply_boundary_conditions);
+    // /**
+    //  * @brief Constructs a force term for the system based on a given field and boundary conditions
+    //  * 
+    //  * This method creates a linear form (`Fxx`) representing a force term, incorporating contributions 
+    //  * from the domain and optionally from boundary conditions. The force term is built using a grid function 
+    //  * coefficient derived from the input field (`gfc`)
+    //  * 
+    //  * @param gfc Reference to the ParGridFunction representing the input field (e.g., reaction rates or fluxes)
+    //  * @param Fxx Reference to the ParLinearForm where the assembled force term will be stored
+    //  * @param boundary Array of integers specifying boundary indices for applying boundary conditions
+    //  * @param m ProductCoefficient used to scale the boundary contributions, representing a Neumann-type boundary condition
+    //  * @param apply_boundary_conditions Boolean flag indicating whether to include boundary contributions in the force term
+    //  */
+    // void ForceTerm(mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, mfem::Array<int> boundary, mfem::ProductCoefficient m, bool apply_boundary_conditions);
    
     /**
      * @brief Calculates the total reaction and the reaction current density
@@ -158,22 +159,22 @@ protected:
      */
     std::shared_ptr<mfem::GridFunctionCoefficient> Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte );
     
-    /**
-     * @brief Assembles the stiffness matrix and linear system for diffusion-based problems
-     * 
-     * This method constructs the stiffness matrix (`Kmatx`) and the right-hand side vector (`Fxb`) 
-     * based on the concentration field (`Cn`) and diffusivity coefficient (`cDx`). The method also 
-     * accounts for boundary conditions and the finite element space for diffusion processes in the system
-     * 
-     * @param boundary Array of integers representing the boundary degrees of freedom for the system
-     * @param Cn Reference to the ParGridFunction representing the concentration field
-     * @param Fxx Reference to the ParLinearForm representing the right-hand side of the linear system
-     * @param Kmatx Shared pointer to the stiffness matrix that will be assembled
-     * @param X1v Reference to the HypreParVector that holds the solution vector
-     * @param Fxb Reference to the HypreParVector that will hold the boundary contributions to the right-hand side
-     * @param cDx Pointer to the GridFunctionCoefficient representing the diffusivity coefficient
-     */
-    void KMatrix(std::shared_ptr<mfem::ParBilinearForm> &Kx2, mfem::Array<int> boundary, mfem::ParGridFunction &Cn, mfem::ParLinearForm &Fxx, std::shared_ptr<mfem::HypreParMatrix> &Kmatx, mfem::HypreParVector &X1v, mfem::HypreParVector &Fxb, std::shared_ptr<mfem::GridFunctionCoefficient> cDx);
+    // /**
+    //  * @brief Assembles the stiffness matrix and linear system for diffusion-based problems
+    //  * 
+    //  * This method constructs the stiffness matrix (`Kmatx`) and the right-hand side vector (`Fxb`) 
+    //  * based on the concentration field (`Cn`) and diffusivity coefficient (`cDx`). The method also 
+    //  * accounts for boundary conditions and the finite element space for diffusion processes in the system
+    //  * 
+    //  * @param boundary Array of integers representing the boundary degrees of freedom for the system
+    //  * @param Cn Reference to the ParGridFunction representing the concentration field
+    //  * @param Fxx Reference to the ParLinearForm representing the right-hand side of the linear system
+    //  * @param Kmatx Shared pointer to the stiffness matrix that will be assembled
+    //  * @param X1v Reference to the HypreParVector that holds the solution vector
+    //  * @param Fxb Reference to the HypreParVector that will hold the boundary contributions to the right-hand side
+    //  * @param cDx Pointer to the GridFunctionCoefficient representing the diffusivity coefficient
+    //  */
+    // void KMatrix(mfem::Array<int> boundary, mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, std::shared_ptr<mfem::HypreParMatrix> &Kmat, mfem::HypreParVector &RHS, std::shared_ptr<mfem::GridFunctionCoefficient> cDx);
     
     /**
      * @brief Computes and conserves the salt concentration in the system

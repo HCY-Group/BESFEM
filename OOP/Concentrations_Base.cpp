@@ -9,7 +9,7 @@
 #include "mfem.hpp"
 
 Concentrations::Concentrations(Initialize_Geometry &geo, Domain_Parameters &para)
-    : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol), gtPsi(para.gtPsi), gtPse(para.gtPse),
+    : Solver(geo, para), pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol), gtPsi(para.gtPsi), gtPse(para.gtPse),
     nE(geo.nE), nC(geo.nC), nV(geo.nV), VtxVal(geo.nC), EAvg(geo.nE), gmesh(geo.globalMesh.get())
 
 
@@ -18,7 +18,6 @@ Concentrations::Concentrations(Initialize_Geometry &geo, Domain_Parameters &para
     VtxVal.SetSize(nC); // Set size for nodal values
     EAvg.SetSize(nE);   // Set size for average element contributions
     TmpF = std::make_unique<mfem::ParGridFunction>(fespace.get());
-
 
 }
 
@@ -30,49 +29,11 @@ void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double i
 
 }
 
-void Concentrations::SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &m_solver, mfem::HypreSmoother &smoother) {
+void Concentrations::SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::HypreSmoother &smoother) {
     
-    // Create a parallel bilinear form for the finite element space
-    M = new mfem::ParBilinearForm(fespace.get());
+    Solver::MassMatrix(psx, Mmat);
+    Solver::SolverConditions(Mmat, solver, smoother);
     
-    // Copy the provided potential field to a new grid function for internal operations
-    Ps_gf = new mfem::ParGridFunction(fespace.get());
-    *Ps_gf = psx;
-
-    // Wrap the grid function in a coefficient to use in the mass matrix integrator
-    cP = new mfem::GridFunctionCoefficient(Ps_gf);
-
-    // Add a domain integrator to the bilinear form using the weighted mass integrator
-    M->AddDomainIntegrator(new mfem::MassIntegrator(*cP));
-    
-    // Assemble the bilinear form into a sparse matrix representation
-    M->Assemble();
-    M->Finalize();
-
-    // Construct the system matrix (mass matrix) and store it in HPM
-    mfem::HypreParMatrix HPM;
-    M->FormSystemMatrix(boundary_dofs, HPM); // should be form linear system
-    
-    // Assign the constructed matrix to the shared pointer provided
-    Mmat = std::make_shared<mfem::HypreParMatrix>(HPM);
-
-    // Configure the preconditioner using a Jacobi smoother
-    smoother.SetType(mfem::HypreSmoother::Jacobi);
-
-    // Set up the solver for the mass matrix.
-    m_solver.iterative_mode = false; // Use direct solving for the system matrix
-    m_solver.SetRelTol(1e-7); // Set relative tolerance for the solver
-    m_solver.SetAbsTol(0); // Set absolute tolerance for the solver
-    m_solver.SetMaxIter(102); // Limit the maximum number of iterations
-    m_solver.SetPrintLevel(0); // Suppress output from the solver
-    m_solver.SetPreconditioner(smoother); // Attach the preconditioner to the solver
-    m_solver.SetOperator(*Mmat); // Set the mass matrix as the operator to solve
-
-    // Clean up dynamically allocated objects
-    delete cP; 
-    delete Ps_gf;
-    delete M;
-
 }
 
 void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {
@@ -108,36 +69,6 @@ void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFun
     Rx2 *= value; // Scale the output reaction field by the specified factor
 
 }
-
-
-void Concentrations::ForceTerm(mfem::ParGridFunction &gfc, mfem::ParLinearForm &Fxx, mfem::Array<int> boundary, mfem::ProductCoefficient m, bool apply_boundary_conditions) {
-    
-    Bx2 = std::make_unique<mfem::ParLinearForm>(fespace.get());    
-
-    // Initialize a new ParGridFunction to hold the input field and copy values from gfc
-    static mfem::ParGridFunction Rxx(fespace.get());
-    Rxx = gfc;
-    
-    // Create a GridFunctionCoefficient from the ParGridFunction for use in integrators
-    mfem::GridFunctionCoefficient cXx(&Rxx);
-
-    // Add a domain integrator to compute contributions from the entire domain
-    Bx2->AddDomainIntegrator(new mfem::DomainLFIntegrator(cXx));
-
-    // If boundary conditions are to be applied, add a boundary integrator
-    if (apply_boundary_conditions) {
-        Bx2->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(m), boundary);
-    }
-    
-    // Assemble the linear form to finalize its representation
-    Bx2->Assemble();
-    
-    // Move the assembled linear form into the provided Fxx reference
-    Fxx = *Bx2;
-
-
-}
-
 
 void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
     
@@ -190,35 +121,6 @@ std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem:
     return std::make_shared<mfem::GridFunctionCoefficient>(Dx.get());
 
 }
-
-
-
-
-void Concentrations::KMatrix(std::shared_ptr<mfem::ParBilinearForm> &Kx2, mfem::Array<int> boundary, mfem::ParGridFunction &Cn, mfem::ParLinearForm &Fxx, std::shared_ptr<mfem::HypreParMatrix> &Kmatx, mfem::HypreParVector &X1v, mfem::HypreParVector &Fxb, std::shared_ptr<mfem::GridFunctionCoefficient> cDx) {
-    
-    Kx2->Update();
-
-    // Add a domain integrator for the diffusion term using the given diffusivity coefficient (cDx)
-    Kx2->AddDomainIntegrator(new mfem::DiffusionIntegrator(*cDx));
-    
-    // Assemble the bilinear form into a sparse matrix
-    Kx2->Assemble();
-
-    // Temporary matrix to hold the assembled stiffness matrix
-    mfem::HypreParMatrix Khpm;
-        
-    // Form the linear system, considering boundary conditions, concentration field (Cn), and the right-hand side (Fxx)
-    Kx2->FormLinearSystem(boundary, Cn, Fxx, Khpm, X1v, Fxb);
-    
-    // Convert the assembled stiffness matrix into a shared pointer for further use
-    Kmatx = std::make_shared<mfem::HypreParMatrix>(Khpm);
-    
-    // Scale the right-hand side vector for time-stepping by multiplying with the time step constant (Constants::dt)
-    Fxb *= Constants::dt;
-
-}
-
-
 
 
 void Concentrations::SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {

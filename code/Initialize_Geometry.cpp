@@ -124,7 +124,7 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
     
     cout << "Reading .dsF file for global distance function for tif case" << endl;
         gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
-        ifstream myfile(distanceFile);
+        std::ifstream myfile(distanceFile);
         if (myfile.is_open()) {
             // Skip the first four lines
             string line;
@@ -135,13 +135,21 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
                     return;
                 }
             }
-            // Use MFEM's Load function
             gDsF->Load(myfile, gDsF->Size());
             myfile.close();
         } else {
             cerr << "Failed to open distance file" << endl;
         }
-    
+        
+        // std::ifstream f(distanceFile, std::ifstream::in);
+        // gDsF->mfem::Mesh::Loader(f, gDsF->Size());
+        // f.close();
+
+        // gDsF = make_unique<mfem::GridFunction>(meshFile, myfile);
+        // mfem::ifgzstream myfile(distanceFile);
+        // mfem::GridFunction gDsF(globalMesh.get(), myfile);
+
+
 
     } else if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "mesh") {
     
@@ -158,7 +166,6 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
             //         return;
             //     }
             // }
-            // Use MFEM's Load function
             gDsF->Load(myfile, gDsF->Size());
             myfile.close();
         } else {
@@ -300,6 +307,7 @@ void Initialize_Geometry::PrintMeshInfo() {
 
     std::cout << "Number of vertices: " << nV << "\n";
     std::cout << "Number of elements: " << nE << "\n";
+    std::cout << "Number of corner vertices: " << nC << "\n";
 }
 
 void Initialize_Geometry::SetupBoundaryConditions() {

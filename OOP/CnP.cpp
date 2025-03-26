@@ -54,13 +54,14 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     static mfem::ProductCoefficient dummy_coef(coef1, coef2);
 
     // Assemble the force term without applying boundary conditions
-    Concentrations::ForceTerm(*RxP, ftPC, dummy_boundary, dummy_coef, false); // false since not applying BCs
+    Solver::ForceTerm(*RxP, ftPC, dummy_boundary, dummy_coef, false); // false since not applying BCs
     
     // Compute the diffusivity coefficient and assemble the stiffness matrix
     std::shared_ptr<mfem::GridFunctionCoefficient> cDp = Concentrations::Diffusivity(psx, Cn, true); // true since using first equation
     pKx2 = std::make_shared<mfem::ParBilinearForm>(fespace.get());
 
-    Concentrations::KMatrix(pKx2, boundary_dofs, Cn, ftPC, Kmatp, X1v, Fcb, cDp);
+    // Concentrations::KMatrix(boundary_dofs, Cn, ftPC, Kmatp, Fcb, cDp);
+    Solver::StiffnessMatrix(cDp, boundary_dofs, Cn, ftPC, Kmatp, Fcb);
     pKx2->Update(fespace.get());
 
     Tmatp.reset(Add(1.0, *Mmatp, -(Constants::dt), *Kmatp));
