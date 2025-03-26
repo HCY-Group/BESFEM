@@ -36,7 +36,7 @@ void CnP::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
 {
     Concentrations::SetInitialConcentration(Cn, initial_value);
     Concentrations::LithiationCalculation(Cn, psx);
-    Concentrations::SetUpSolver(psx, Mmatp, *Mp_solver, Mp_prec);
+    Concentrations::SetUpSolver(psx, Mmatp, *Mp_solver, Mp_prec); // sets up Mass Matrix & Conditions
 
     psx.GetTrueDofs(PsVc); // Extract true degrees of freedom in the potential field
 

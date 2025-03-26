@@ -8,6 +8,7 @@
 
 #include "mfem.hpp"
 #include "../code/Initialize_Geometry.hpp"
+#include "../code/Solver.hpp"
 #include "Domain_Parameters.hpp"
 
 #include <memory>
@@ -20,7 +21,7 @@
  * and perform operations like reaction generation, force term assembly,
  * and error calculations for battery simulation
  */
-class Potentials {
+class Potentials : public Solver {
 public:
 
     /**
@@ -51,18 +52,18 @@ public:
      */
     void SetUpSolver(mfem::CGSolver &solver, double value_1, double value_2);
     
-    /**
-     * @brief Assembles the stiffness matrix and system for a given potential field
-     * @param K Parallel bilinear form for the stiffness matrix
-     * @param gfc Coefficient for domain integration
-     * @param boundary Array of boundary markers
-     * @param potential Potential field grid function
-     * @param plf_B Linear form for the right-hand side
-     * @param matrix Resulting Hypre matrix
-     * @param hpv_X Solution vector
-     * @param hpv_B Right-hand-side vector
-     */
-    void KMatrix(mfem::ParBilinearForm &K, mfem::GridFunctionCoefficient &gfc, mfem::Array<int> boundary, mfem::ParGridFunction &potential, mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &hpv_X, mfem::HypreParVector &hpv_B);
+    // /**
+    //  * @brief Assembles the stiffness matrix and system for a given potential field
+    //  * @param K Parallel bilinear form for the stiffness matrix
+    //  * @param gfc Coefficient for domain integration
+    //  * @param boundary Array of boundary markers
+    //  * @param potential Potential field grid function
+    //  * @param plf_B Linear form for the right-hand side
+    //  * @param matrix Resulting Hypre matrix
+    //  * @param hpv_X Solution vector
+    //  * @param hpv_B Right-hand-side vector
+    //  */
+    // void KMatrix(mfem::ParBilinearForm &K, mfem::GridFunctionCoefficient &gfc, mfem::Array<int> boundary, mfem::ParGridFunction &potential, mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &hpv_X, mfem::HypreParVector &hpv_B);
     
     /**
      * @brief Configures and attaches a preconditioner to the conjugate gradient solver
@@ -89,12 +90,12 @@ public:
      */
     void CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value);
     
-    /**
-     * @brief Constructs the force term for the right-hand side of the system
-     * @param Rx2 Reaction field
-     * @param Fxx Linear form representing the force term
-     */
-    void ForceTerm(mfem::ParGridFunction &Rx2, mfem::ParLinearForm &Fxx);
+    // /**
+    //  * @brief Constructs the force term for the right-hand side of the system
+    //  * @param Rx2 Reaction field
+    //  * @param Fxx Linear form representing the force term
+    //  */
+    // void ForceTerm(mfem::ParGridFunction &Rx2, mfem::ParLinearForm &Fxx);
     
     /**
      * @brief Sets up the linear system considering boundary conditions

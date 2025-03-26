@@ -25,6 +25,8 @@ public:
     void SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, 
                           mfem::HypreSmoother &smoother);
 
+    std::shared_ptr<mfem::ParBilinearForm> K;
+
 private:
     mfem::ParMesh *pmesh;
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
@@ -32,7 +34,6 @@ private:
     Initialize_Geometry &geometry;
     
     mfem::ParBilinearForm *M = nullptr;
-    mfem::ParBilinearForm *K = nullptr;
     std::unique_ptr<mfem::ParLinearForm> B;
     mfem::ParGridFunction *temp_ps = nullptr;
     mfem::GridFunctionCoefficient *coef = nullptr;

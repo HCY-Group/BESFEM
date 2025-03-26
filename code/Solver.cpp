@@ -54,7 +54,7 @@ void Solver::MassMatrix(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreP
 void Solver::StiffnessMatrix(std::shared_ptr<mfem::GridFunctionCoefficient> cDx, mfem::Array<int> boundary, mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, std::shared_ptr<mfem::HypreParMatrix> &Kmat, mfem::HypreParVector &RHS){
 
     // Create a parallel bilinear form for the finite element space
-    K = new mfem::ParBilinearForm(fespace.get());
+    K = std::make_shared<mfem::ParBilinearForm>(fespace.get());
 
     // Add a domain integrator for the diffusion term using the given diffusivity coefficient (cDx)
     K->AddDomainIntegrator(new mfem::DiffusionIntegrator(*cDx));
@@ -75,7 +75,7 @@ void Solver::StiffnessMatrix(std::shared_ptr<mfem::GridFunctionCoefficient> cDx,
     RHS *= Constants::dt;
 
     // Clean up dynamically allocated objects
-    delete K;
+    // delete K;
 
 };
 

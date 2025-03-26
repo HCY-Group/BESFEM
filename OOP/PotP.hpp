@@ -18,7 +18,7 @@ extern double BvP;
  */
 class PotP : public Potentials {
 
-    std::unique_ptr<mfem::ParBilinearForm> Kp2; ///< Unique pointer for the bilinear form used in matrix assembly
+    // std::unique_ptr<mfem::ParBilinearForm> K; ///< Unique pointer for the bilinear form used in matrix assembly
 
 
 
@@ -51,7 +51,7 @@ public:
      * @param psx Psi potential field
      * @param phx Particle potential field
      */
-    void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &phx);
+    void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
 
     /**
      * @brief Calculates the global error in the particle potential solution
@@ -95,7 +95,7 @@ private:
     mfem::HypreParVector X1v; ///< Solution vector
     mfem::HypreParVector B1v; ///< Right-hand-side vector
     mfem::HypreSmoother Mpp; ///< Preconditioner for the solver
-    mfem::HypreParMatrix KmP; ///< Stiffness matrix for conductivity
+    std::shared_ptr<mfem::HypreParMatrix> KmP; ///< Stiffness matrix for conductivity
 
     double gtPsi; ///< Total Psi from MeshHandler
 

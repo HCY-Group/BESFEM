@@ -17,8 +17,8 @@ extern double BvE;
  */
 class PotE : public Potentials {
 
-    std::unique_ptr<mfem::ParBilinearForm> Kl1; ///< Unique pointer for bilinear forms used in matrix assembly
-    std::unique_ptr<mfem::ParBilinearForm> Kl2; ///< Unique pointer for bilinear forms used in matrix assembly
+    // std::unique_ptr<mfem::ParBilinearForm> Kl1; ///< Unique pointer for bilinear forms used in matrix assembly
+    // std::unique_ptr<mfem::ParBilinearForm> Kl2; ///< Unique pointer for bilinear forms used in matrix assembly
 
 
 
@@ -48,7 +48,7 @@ public:
      * @param psx Psi potential field
      * @param phx Electrolyte potential field
      */
-    void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &phx);
+    void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
     
     /**
      * @brief Calculates the global error in the electrolyte potential solution
@@ -80,8 +80,8 @@ private:
     std::unique_ptr<mfem::ParGridFunction> Dmp;  ///< Diffusivity field - D minus plus
     std::unique_ptr<mfem::ParGridFunction> kpl; ///< Conductivity field
 
-    mfem::HypreParMatrix Kdm; ///< Stiffness matrix for diffusivity
-    mfem::HypreParMatrix KmE; ///< Stiffness matrix for conductivity
+    std::shared_ptr<mfem::HypreParMatrix> Kdm; ///< Stiffness matrix for diffusivity
+    std::shared_ptr<mfem::HypreParMatrix> KmE; ///< Stiffness matrix for conductivity
 
     mfem::ParLinearForm B1t; ///< Linear form for the right-hand side
     mfem::HypreParVector X1v; ///< Solution vector

@@ -31,7 +31,7 @@ CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para)
 void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
     Concentrations::SetInitialConcentration(Cn, initial_value);
-    Concentrations::SetUpSolver(psx, Mmate, *Me_solver, Me_prec);
+    Concentrations::SetUpSolver(psx, Mmate, *Me_solver, Me_prec); // sets up Mass Matrix & Conditions
 
     // Apply Neumann boundary conditions to the reaction potential field
     ImposeNeumannBC(psx, *PeR);
