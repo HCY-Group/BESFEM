@@ -9,7 +9,7 @@
 #include "mfem.hpp"
 
 Concentrations::Concentrations(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Solver(geo), pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol), gtPsi(para.gtPsi), gtPse(para.gtPse),
+    : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), SolverSteps(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol), gtPsi(para.gtPsi), gtPse(para.gtPse),
     nE(geo.nE), nC(geo.nC), nV(geo.nV), VtxVal(geo.nC), EAvg(geo.nE), gmesh(geo.globalMesh.get())
 
 
@@ -31,8 +31,8 @@ void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double i
 
 void Concentrations::SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::HypreSmoother &smoother) {
     
-    Solver::MassMatrix(psx, Mmat);
-    Solver::SolverConditions(Mmat, solver, smoother);
+    SolverSteps::MassMatrix(psx, Mmat);
+    SolverSteps::SolverConditions(Mmat, solver, smoother);
     
 }
 

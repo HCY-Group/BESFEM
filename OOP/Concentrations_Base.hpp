@@ -16,7 +16,7 @@
 
 #include "mfem.hpp"
 #include "../code/Initialize_Geometry.hpp"
-#include "../code/Solver.hpp"
+#include "../code/SolverSteps.hpp"
 #include "Domain_Parameters.hpp"
 #include <memory>
 
@@ -28,7 +28,7 @@
  * as well as related calculations like diffusivity, reaction terms, and salt conservation
  * It uses the MFEM library for finite element computations and supports parallelism through MPI
  */
-class Concentrations : public Solver {
+class Concentrations : public SolverSteps {
 public:
 
     /**

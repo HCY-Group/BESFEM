@@ -8,7 +8,7 @@
 
 #include "mfem.hpp"
 #include "../code/Initialize_Geometry.hpp"
-#include "../code/Solver.hpp"
+#include "../code/SolverSteps.hpp"
 #include "Domain_Parameters.hpp"
 
 #include <memory>
@@ -21,7 +21,7 @@
  * and perform operations like reaction generation, force term assembly,
  * and error calculations for battery simulation
  */
-class Potentials : public Solver {
+class Potentials : public SolverSteps {
 public:
 
     /**

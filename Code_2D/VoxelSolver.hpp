@@ -3,6 +3,7 @@
 
 #include "mfem.hpp"
 #include "TimeDepOpers.hpp"
+#include "../code/SolverSteps.hpp"
 
 using namespace std;
 using namespace mfem;

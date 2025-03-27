@@ -14,6 +14,9 @@ public:
 
 	ParGridFunction* GetDistFunc() {return d;}
 	ParGridFunction* GetAdvVel() {return c;}
+
+	std::shared_ptr<mfem::HypreParMatrix> Mmat;
+	std::shared_ptr<mfem::HypreParMatrix> Kmat;
 	
 private:
 	ParGridFunction *d = nullptr;

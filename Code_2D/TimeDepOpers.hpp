@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include "mpi.h"
+#include "../code/SolverSteps.hpp"
 
 #include <cmath>
 
@@ -41,9 +42,10 @@ protected:
 
    HypreParVector b;
 
-   HypreParMatrix Mmat;
-   HypreParMatrix Kmat;
-   HypreParMatrix *T; // T = M + dt K
+   std::shared_ptr<mfem::HypreParMatrix> Mmat;
+   std::shared_ptr<mfem::HypreParMatrix> Kmat;
+   std::unique_ptr<mfem::HypreParMatrix> T;
+   // HypreParMatrix *T; // T = M + dt K
    //double current_dt;
 
    CGSolver M_solver;    // Krylov solver for inverting the mass matrix M
@@ -83,8 +85,11 @@ protected:
 
    HypreParVector b;
 
-   HypreParMatrix Mmat;
-   HypreParMatrix Kmat;
+   // HypreParMatrix Mmat;
+   // HypreParMatrix Kmat;
+
+   std::shared_ptr<mfem::HypreParMatrix> Mmat;
+   std::shared_ptr<mfem::HypreParMatrix> Kmat;
 
    CGSolver M_solver;    // Krylov solver for inverting the mass matrix M
    HypreSmoother M_prec; // Preconditioner for the mass matrix M

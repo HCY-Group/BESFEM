@@ -10,6 +10,7 @@
 #include "VoxelSolver_DG.hpp"
 #include "../code/Initialize_Geometry.hpp"
 #include "../code/Constants.hpp"
+#include "../code/SolverSteps.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -189,7 +190,7 @@ int main(int argc, char *argv[])
 	ParGridFunction psi(&*geometry.parfespace);
 	psi.ProjectGridFunction(d);
 
-	psi.Save("project");
+	// psi.Save("project");
 
 	psi -= 0.5; // Center about 0
 

@@ -35,7 +35,7 @@ LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \
 
 # Source files for the simulation
 SRC_FILES = ../code/Constants.cpp ../code/Initialize_Geometry.cpp TimeDepOpers.cpp readtiff.cpp MeshMaker.cpp VoxelSolver.cpp VoxelSolver_DG.cpp \
-			VoxelToDistFunc.cpp
+			VoxelToDistFunc.cpp ../code/SolverSteps.cpp
 
 # Output executable
 EXEC = voxel

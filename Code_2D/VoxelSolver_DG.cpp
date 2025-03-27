@@ -4,6 +4,9 @@
 VoxelSolver_DG::VoxelSolver_DG(FiniteElementSpace *gfes, ParFiniteElementSpace *fes)
 	: VoxelSolver(gfes, fes){
 
+	Kmat = std::make_shared<mfem::HypreParMatrix>();
+	Mmat = std::make_shared<mfem::HypreParMatrix>();
+
 }
 
 VoxelSolver_DG::VoxelSolver_DG(FiniteElementSpace *gfes, ParFiniteElementSpace *fes_h1, ParFiniteElementSpace *fes_dg, ParFiniteElementSpace *dimfes_dg)
@@ -14,6 +17,9 @@ VoxelSolver_DG::VoxelSolver_DG(FiniteElementSpace *gfes, ParFiniteElementSpace *
 	this->cx  = new ParGridFunction(fes_dg);
 	this->cy  = new ParGridFunction(fes_dg);
 	this->sgn = new ParGridFunction(fes_dg);
+
+	Kmat = std::make_shared<mfem::HypreParMatrix>();
+	Mmat = std::make_shared<mfem::HypreParMatrix>();
 }
 
 void VoxelSolver_DG::ProjectVals(ParGridFunction *gf) {

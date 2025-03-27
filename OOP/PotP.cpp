@@ -40,7 +40,7 @@ void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
     auto cKp = std::make_shared<mfem::GridFunctionCoefficient>(kap.get());
 
     Potentials::ImplementBoundaryConditions(dbc_e_Coef, BvP, potential, dbc_e_bdr); // Apply BCs
-    Solver::StiffnessMatrix(cKp, ess_tdof_list_e, potential, B1t, KmP, B1v);
+    SolverSteps::StiffnessMatrix(cKp, ess_tdof_list_e, potential, B1t, KmP, B1v);
     Potentials::PCG_Solver(Mpp, *cgPP_solver, *KmP); // Solve the system
 }
 
@@ -55,7 +55,7 @@ void PotP::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction
     Potentials::CreateReaction(Rx, *RpP, Constants::Frd); // Create reaction field
 
     // Assemble the force term without applying boundary conditions
-    Solver::ForceTerm(*RpP, ftPotP); // false since not applying BCs
+    SolverSteps::ForceTerm(*RpP, ftPotP); // false since not applying BCs
 
     Potentials::ForceVector(*K, ess_tdof_list_e, phx, ftPotP, *KmP, X1v, Fpb, dbc_e_Coef, dbc_e_bdr); // Force vector
     Potentials::ErrorCalculation(phx, *cgPP_solver, Fpb, psx, error_P, gerror, gtPsi); // Compute global error

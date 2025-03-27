@@ -27,7 +27,10 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
 {
    const double rel_tol = 1e-8;
 
-   Kmat = K;
+   Kmat = std::make_shared<mfem::HypreParMatrix>();
+   Mmat = std::make_shared<mfem::HypreParMatrix>();
+
+   *Kmat = K;
    b = Fb;
    z = Fb.CreateCompatibleVector();
    
@@ -36,7 +39,10 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    M = new ParBilinearForm(ps.ParFESpace());
    M->AddDomainIntegrator(new MassIntegrator(cp));
    M->Assemble(); // keep sparsity pattern of M and K the same
-   M->FormSystemMatrix(ess_tdof_list, Mmat);
+   M->FormSystemMatrix(ess_tdof_list, *Mmat);
+
+   // SolverSteps::MassMatrix(ps, Mmat);
+   // SolverSteps::SolverConditions(Mmat, M_solver, M_prec);
    
    M_solver.iterative_mode = false;
    M_solver.SetRelTol(rel_tol);
@@ -45,7 +51,7 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    M_solver.SetPrintLevel(0);
    M_prec.SetType(HypreSmoother::Jacobi);
    M_solver.SetPreconditioner(M_prec);
-   M_solver.SetOperator(Mmat);
+   M_solver.SetOperator(*Mmat);
    
 
    T_solver.iterative_mode = false;
@@ -63,10 +69,12 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
      M_solver(K.GetComm()), T_solver(K.GetComm())
 {
    const double rel_tol = 1e-8;
+   Kmat = std::make_shared<mfem::HypreParMatrix>();
+   Mmat = std::make_shared<mfem::HypreParMatrix>();
 
    //ess_tdof_list = ess_list;
 
-   Kmat = K;
+   *Kmat = K;
    b = Fb;
    z = Fb.CreateCompatibleVector();
    
@@ -76,7 +84,11 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    M->AddDomainIntegrator(new MassIntegrator(cp));
    M->Assemble(); // keep sparsity pattern of M and K the same
    //M->FormSystemMatrix(ess_tdof_list, Mmat);
-   M->FormSystemMatrix(ess_list, Mmat);
+   M->FormSystemMatrix(ess_list, *Mmat);
+
+   // SolverSteps::MassMatrix(ps, Mmat);
+   // SolverSteps::SolverConditions(Mmat, M_solver, M_prec);
+
 
    M_solver.iterative_mode = false;
    M_solver.SetRelTol(rel_tol);
@@ -85,7 +97,7 @@ ConductionOperator::ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, H
    M_solver.SetPrintLevel(0);
    M_prec.SetType(HypreSmoother::Jacobi);
    M_solver.SetPreconditioner(M_prec);
-   M_solver.SetOperator(Mmat);
+   M_solver.SetOperator(*Mmat);
    
 
    T_solver.iterative_mode = false;
@@ -103,7 +115,7 @@ void ConductionOperator::Mult(const Vector &u, Vector &du_dt) const
    // Compute:
    //    du_dt = M^{-1}*-Ku
    // for du_dt, where K is linearized by using u from the previous timestep
-   Kmat.Mult(u, z);
+   Kmat->Mult(u, z);
    z.Neg(); // z = -z
    //cout << "Max z: " << z.Max() << endl;
    //cout << "Min z: " << z.Min() << endl;
@@ -121,11 +133,11 @@ void ConductionOperator::ImplicitSolve(const double dt,
    // Solve the equation:
    //    du_dt = M^{-1}*[-K(u + dt*du_dt)]
    // for du_dt, where K is linearized by using u from the previous timestep
-   T = Add(1.0, Mmat, dt, Kmat);
+   T.reset(Add(1.0, *Mmat, dt, *Kmat));
    //current_dt = dt;
    T_solver.SetOperator(*T);
    //MFEM_VERIFY(dt == current_dt, ""); // SDIRK methods use the same dt
-   Kmat.Mult(u, z);
+   Kmat->Mult(u, z);
    z.Neg();
    z += b;
    T_solver.Mult(z, du_dt);
@@ -157,14 +169,14 @@ void ConductionOperator::SetParameters(const Vector &u)
 
 void ConductionOperator::UpdateParams(const HypreParMatrix &K, const HypreParVector &Fb)
 {
-   Kmat = K;
+   *Kmat = K;
    b = Fb;
 }
 
 ConductionOperator::~ConductionOperator()
 {
    //cout << "HERE A DELETE" << endl;
-   delete T;
+   // delete T;
    //cout << "HERE B DELETE" << endl;
    delete M;
    //cout << "HERE C DELETE" << endl;
@@ -182,7 +194,10 @@ AdvectionOperator::AdvectionOperator(ParGridFunction &ps, HypreParMatrix &K, Hyp
 {
    const double rel_tol = 1e-8;
 
-   Kmat = K;
+   Kmat = std::make_shared<mfem::HypreParMatrix>();
+   Mmat = std::make_shared<mfem::HypreParMatrix>();
+
+   *Kmat = K;
    b = Fb;
    z = Fb.CreateCompatibleVector();
    
@@ -191,7 +206,7 @@ AdvectionOperator::AdvectionOperator(ParGridFunction &ps, HypreParMatrix &K, Hyp
    M = new ParBilinearForm(ps.ParFESpace());
    M->AddDomainIntegrator(new MassIntegrator);
    M->Assemble(); // keep sparsity pattern of M and K the same
-   M->FormSystemMatrix(ess_tdof_list, Mmat);
+   M->FormSystemMatrix(ess_tdof_list, *Mmat);
    
    M_solver.iterative_mode = false;
    M_solver.SetRelTol(rel_tol);
@@ -200,7 +215,10 @@ AdvectionOperator::AdvectionOperator(ParGridFunction &ps, HypreParMatrix &K, Hyp
    M_solver.SetPrintLevel(0);
    M_prec.SetType(HypreSmoother::Jacobi);
    M_solver.SetPreconditioner(M_prec);
-   M_solver.SetOperator(Mmat);
+   M_solver.SetOperator(*Mmat);
+
+   // SolverSteps::MassMatrix(ps, Mmat);
+   // SolverSteps::SolverConditions(Mmat, M_solver, M_prec);
 
 }
 
@@ -209,7 +227,7 @@ void AdvectionOperator::Mult(const Vector &u, Vector &du_dt) const
    // Compute:
    //    du_dt = M^{-1} (Ku + b)
    // for du_dt, where K is linearized by using u from the previous timestep
-   Kmat.Mult(u, z);
+   Kmat->Mult(u, z);
    z += b;
    M_solver.Mult(z, du_dt);
 }
@@ -218,7 +236,7 @@ void AdvectionOperator::Mult(const Vector &u, Vector &du_dt) const
 
 void AdvectionOperator::UpdateParams(const HypreParMatrix &K, const HypreParVector &Fb)
 {
-   Kmat = K;
+   *Kmat = K;
    b = Fb;
 }
 

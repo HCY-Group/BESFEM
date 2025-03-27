@@ -53,7 +53,7 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
     
     // Assemble the force term with boundary conditions applied
-    Solver::ForceTerm(*RxE, ftE, nbc_w_bdr, m_nbcCoef);
+    SolverSteps::ForceTerm(*RxE, ftE, nbc_w_bdr, m_nbcCoef);
     
     // Compute the diffusivity coefficient and stiffness matrix
     std::shared_ptr<mfem::GridFunctionCoefficient> cDe = Concentrations::Diffusivity(psx, Cn, false); // false using other equation
@@ -61,7 +61,7 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 
     eKx2->Update();
     // Concentrations::KMatrix(boundary_dofs, Cn, ftE, Kmate, Feb, cDe);
-    Solver::StiffnessMatrix(cDe, boundary_dofs, Cn, ftE, Kmate, Feb);
+    SolverSteps::StiffnessMatrix(cDe, boundary_dofs, Cn, ftE, Kmate, Feb);
 
     TmatR.reset(Add(1.0, *Mmate, -0.5 * Constants::dt, *Kmate));
     TmatL.reset(Add(1.0, *Mmate,  0.5 * Constants::dt, *Kmate));

@@ -11,7 +11,7 @@
  * @brief Constructor: Initializes the Potentials object.
  */
 Potentials::Potentials(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Solver(geo), pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol)
+    : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), SolverSteps(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol)
 
 {
     nE = geometry.nE; 

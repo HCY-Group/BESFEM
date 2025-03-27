@@ -16,7 +16,7 @@ LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \
             -L../../../../metis-4.0 -lmetis -lrt
 
 # Source files for the simulation
-SRC_FILES = simulation.cpp Constants.cpp Initialize_Geometry.cpp Solver.cpp \
+SRC_FILES = simulation.cpp Constants.cpp Initialize_Geometry.cpp SolverSteps.cpp \
             readtiff.cpp
 
 # Output executable

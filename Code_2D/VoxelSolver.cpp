@@ -5,13 +5,16 @@
 using namespace mfem;
 using namespace std;
 
-VoxelSolver::VoxelSolver(FiniteElementSpace *fes){
+VoxelSolver::VoxelSolver(FiniteElementSpace *fes)
+{
 	this->gVox = new GridFunction(fes);
 	
 }
-VoxelSolver::VoxelSolver(FiniteElementSpace *gfes, ParFiniteElementSpace *fes){
+VoxelSolver::VoxelSolver(FiniteElementSpace *gfes, ParFiniteElementSpace *fes)
+{
 	this->gVox = new GridFunction(gfes);
 	this->Vox = new ParGridFunction(fes);
+	
 }
 	
 void VoxelSolver::AssignGlobalValues(double value){

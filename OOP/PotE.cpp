@@ -43,12 +43,12 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
     auto cDm = std::make_shared<mfem::GridFunctionCoefficient>(Dmp.get());
     auto cKe = std::make_shared<mfem::GridFunctionCoefficient>(kpl.get());
 
-    Solver::StiffnessMatrix(cDm, boundary_dofs, potential, B1t, Kdm, B1v);
+    SolverSteps::StiffnessMatrix(cDm, boundary_dofs, potential, B1t, Kdm, B1v);
     Cn.GetTrueDofs(*CeVn); 
     Kdm->Mult(*CeVn, *LpCe); // Multiply concentration by diffusivity matrix
     
     Potentials::ImplementBoundaryConditions(dbc_w_Coef, BvE, potential, dbc_w_bdr); // Apply boundary conditions
-    Solver::StiffnessMatrix(cKe, ess_tdof_list_w, potential, B1t, KmE, B1v);
+    SolverSteps::StiffnessMatrix(cKe, ess_tdof_list_w, potential, B1t, KmE, B1v);
     Potentials::PCG_Solver(Mpe, *cgPE_solver, *KmE); // Solve the system
 }
 
@@ -65,7 +65,7 @@ void PotE::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction
     Potentials::CreateReaction(Rx, *RpE, -1.0); // Create reaction field
 
     // Assemble the force term without applying boundary conditions
-    Solver::ForceTerm(*RpE, ftPotE); // false since not applying BCs
+    SolverSteps::ForceTerm(*RpE, ftPotE); // false since not applying BCs
     
     Potentials::ForceVector(*K, ess_tdof_list_w, phx, ftPotE, *KmE, X1v, Flb, dbc_w_Coef, dbc_w_bdr); // Force vector
     RHSl = Flb;
