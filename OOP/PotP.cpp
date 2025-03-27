@@ -6,6 +6,8 @@
 #include "PotP.hpp"
 #include "../code/Constants.hpp"
 #include "mfem.hpp"
+#include <optional>
+
 
 double BvP = 0.0; ///< Global variable for the boundary value of particle potential
 
@@ -52,14 +54,8 @@ void PotP::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction
 {
     Potentials::CreateReaction(Rx, *RpP, Constants::Frd); // Create reaction field
 
-    // Create dummy values to use Force Term Function 
-    static mfem::Array<int> dummy_boundary;
-    static mfem::ConstantCoefficient coef1(0.0);
-    static mfem::ConstantCoefficient coef2(0.0);
-    static mfem::ProductCoefficient dummy_coef(coef1, coef2);
-
     // Assemble the force term without applying boundary conditions
-    Solver::ForceTerm(*RpP, ftPotP, dummy_boundary, dummy_coef, false); // false since not applying BCs
+    Solver::ForceTerm(*RpP, ftPotP); // false since not applying BCs
 
     Potentials::ForceVector(*K, ess_tdof_list_e, phx, ftPotP, *KmP, X1v, Fpb, dbc_e_Coef, dbc_e_bdr); // Force vector
     Potentials::ErrorCalculation(phx, *cgPP_solver, Fpb, psx, error_P, gerror, gtPsi); // Compute global error

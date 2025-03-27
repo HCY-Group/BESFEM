@@ -53,24 +53,6 @@ void Potentials::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunctio
     Rx2 *= value; // Scale the field by the provided factor
 }
 
-// void Potentials::ForceTerm(mfem::ParGridFunction &Rx2, mfem::ParLinearForm &Fxx) {
-
-//     Bx2 = std::make_unique<mfem::ParLinearForm>(fespace.get());
-//     // Bx2->Update();
-
-//     // Rxx = new mfem::ParGridFunction(fespace); // Initialize intermediate reaction field
-//     *Rxx = Rx2;
-
-//     // cXx = new mfem::GridFunctionCoefficient(Rxx.get()); // Wrap as a coefficient
-//     cXx = std::make_unique<mfem::GridFunctionCoefficient>(Rxx.get());
-
-//     Bx2->AddDomainIntegrator(new mfem::DomainLFIntegrator(*cXx)); // Integrate over the domain
-
-//     Bx2->Assemble(); // Assemble the linear form
-//     Fxx = std::move(*Bx2); // Transfer ownership to the provided reference
-
-// }
-
 
 void Potentials::ForceVector(mfem::ParBilinearForm &K, mfem::Array<int> boundary, mfem::ParGridFunction &phx, 
 mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &hpv_X, mfem::HypreParVector &hpv_B, mfem::ConstantCoefficient &Coef, mfem::Array<int> &bdr){
@@ -78,7 +60,6 @@ mfem::ParLinearForm &plf_B, mfem::HypreParMatrix &matrix, mfem::HypreParVector &
     phx.ProjectBdrCoefficient(Coef, bdr); // Apply boundary conditions
     K.FormLinearSystem(boundary, phx, plf_B, matrix, hpv_X, hpv_B); // Form the linear system
 }
-
 
 
 void Potentials::ErrorCalculation(mfem::ParGridFunction &phx, mfem::CGSolver &cg_solver, mfem::HypreParVector &fterm, mfem::ParGridFunction &psx, double error_X, double &globalerror, double gtPsx){

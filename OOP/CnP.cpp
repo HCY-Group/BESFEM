@@ -6,6 +6,8 @@
 #include "CnP.hpp"
 #include "../code/Constants.hpp"
 #include "mfem.hpp"
+#include <optional>
+
 
 using namespace std;
 
@@ -47,14 +49,8 @@ void CnP::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     // Compute the reaction field scaled by a constant factor
     Concentrations::CreateReaction(Rx, *RxP, (1.0/Constants::rho));
 
-    // Create dummy values to use Force Term Function 
-    static mfem::Array<int> dummy_boundary;
-    static mfem::ConstantCoefficient coef1(0.0);
-    static mfem::ConstantCoefficient coef2(0.0);
-    static mfem::ProductCoefficient dummy_coef(coef1, coef2);
-
     // Assemble the force term without applying boundary conditions
-    Solver::ForceTerm(*RxP, ftPC, dummy_boundary, dummy_coef, false); // false since not applying BCs
+    Solver::ForceTerm(*RxP, ftPC);
     
     // Compute the diffusivity coefficient and assemble the stiffness matrix
     std::shared_ptr<mfem::GridFunctionCoefficient> cDp = Concentrations::Diffusivity(psx, Cn, true); // true since using first equation

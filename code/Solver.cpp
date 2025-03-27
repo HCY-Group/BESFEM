@@ -79,32 +79,37 @@ void Solver::StiffnessMatrix(std::shared_ptr<mfem::GridFunctionCoefficient> cDx,
 
 };
 
-void Solver::ForceTerm(mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, mfem::Array<int> boundary, mfem::ProductCoefficient m, bool apply_boundary_conditions){
 
+void Solver::ForceTerm(mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, mfem::Array<int> &boundary, mfem::ProductCoefficient &m) 
+{
     B = std::make_unique<mfem::ParLinearForm>(fespace.get());    
 
-    // Initialize a new ParGridFunction to hold the input field and copy values from parGF
     static mfem::ParGridFunction temp_parGF(fespace.get());
     temp_parGF = parGF;
-    
-    // Create a GridFunctionCoefficient from the ParGridFunction for use in integrators
-    mfem::GridFunctionCoefficient coef(&temp_parGF);
 
-    // Add a domain integrator to compute contributions from the entire domain
+    mfem::GridFunctionCoefficient coef(&temp_parGF);
     B->AddDomainIntegrator(new mfem::DomainLFIntegrator(coef));
 
-    // If boundary conditions are to be applied, add a boundary integrator
-    if (apply_boundary_conditions) {
-        B->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(m), boundary);
-    }
-    
-    // Assemble the linear form to finalize its representation
-    B->Assemble();
-    
-    // Move the assembled linear form into the provided force reference
-    F = *B;
+    // Apply boundary conditions
+    B->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(m), boundary);
 
-};
+    B->Assemble();
+    F = *B;
+}
+
+void Solver::ForceTerm(mfem::ParGridFunction &parGF, mfem::ParLinearForm &F) 
+{
+    B = std::make_unique<mfem::ParLinearForm>(fespace.get());    
+
+    static mfem::ParGridFunction temp_parGF(fespace.get());
+    temp_parGF = parGF;
+
+    mfem::GridFunctionCoefficient coef(&temp_parGF);
+    B->AddDomainIntegrator(new mfem::DomainLFIntegrator(coef));
+
+    B->Assemble();
+    F = *B;
+}
 
 void Solver::SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::HypreSmoother &smoother){
 

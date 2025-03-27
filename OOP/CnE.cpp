@@ -6,6 +6,8 @@
 #include "CnE.hpp"
 #include "../code/Constants.hpp"
 #include "mfem.hpp"
+#include <optional>
+
 
 
 CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para)
@@ -51,7 +53,7 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
     
     // Assemble the force term with boundary conditions applied
-    Solver::ForceTerm(*RxE, ftE, nbc_w_bdr, m_nbcCoef, true); // true since applying BCs
+    Solver::ForceTerm(*RxE, ftE, nbc_w_bdr, m_nbcCoef);
     
     // Compute the diffusivity coefficient and stiffness matrix
     std::shared_ptr<mfem::GridFunctionCoefficient> cDe = Concentrations::Diffusivity(psx, Cn, false); // false using other equation

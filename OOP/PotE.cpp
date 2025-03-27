@@ -7,6 +7,8 @@
 #include "../code/Constants.hpp"
 #include "mfem.hpp"
 #include "CnE.hpp"
+#include <optional>
+
 
 double BvE = 0.0; ///< Global variable for the boundary value of electrolyte potential
 
@@ -62,14 +64,8 @@ void PotE::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction
 {
     Potentials::CreateReaction(Rx, *RpE, -1.0); // Create reaction field
 
-    // Create dummy values to use Force Term Function 
-    static mfem::Array<int> dummy_boundary;
-    static mfem::ConstantCoefficient coef1(0.0);
-    static mfem::ConstantCoefficient coef2(0.0);
-    static mfem::ProductCoefficient dummy_coef(coef1, coef2);
-
     // Assemble the force term without applying boundary conditions
-    Solver::ForceTerm(*RpE, ftPotE, dummy_boundary, dummy_coef, false); // false since not applying BCs
+    Solver::ForceTerm(*RpE, ftPotE); // false since not applying BCs
     
     Potentials::ForceVector(*K, ess_tdof_list_w, phx, ftPotE, *KmE, X1v, Flb, dbc_w_Coef, dbc_w_bdr); // Force vector
     RHSl = Flb;
