@@ -30,76 +30,76 @@ using namespace mfem;
  * NOTE: We might need a different operator for the evolution in the anode,
  *       which is more complicated and follows a fourth order PDE.
  */
-class ConductionOperator : public TimeDependentOperator
+class ConductionOperator : public mfem::TimeDependentOperator
 {
 protected:
    //ParFiniteElementSpace &fespace;
-   Array<int> ess_tdof_list; // this list remains empty for pure Neumann b.c.
+   mfem::Array<int> ess_tdof_list; // this list remains empty for pure Neumann b.c.
 
-   ParBilinearForm *M;
-   ParBilinearForm *K;
+   mfem::ParBilinearForm *M;
+   mfem::ParBilinearForm *K;
 
-   HypreParVector b;
+   mfem::HypreParVector b;
 
-   HypreParMatrix Mmat;
-   HypreParMatrix Kmat;
-   HypreParMatrix *T; // T = M + dt K
+   mfem::HypreParMatrix Mmat;
+   mfem::HypreParMatrix Kmat;
+   mfem::HypreParMatrix *T; // T = M + dt K
    //double current_dt;
 
-   CGSolver M_solver;    // Krylov solver for inverting the mass matrix M
-   HypreSmoother M_prec; // Preconditioner for the mass matrix M
+   mfem::CGSolver M_solver;    // Krylov solver for inverting the mass matrix M
+   mfem::HypreSmoother M_prec; // Preconditioner for the mass matrix M
 
-   CGSolver T_solver;    // Implicit solver for T = M + dt K
-   HypreSmoother T_prec; // Preconditioner for the implicit solver
+   mfem::CGSolver T_solver;    // Implicit solver for T = M + dt K
+   mfem::HypreSmoother T_prec; // Preconditioner for the implicit solver
 
-   mutable HypreParVector z; // auxiliary vector
+   mutable mfem::HypreParVector z; // auxiliary vector
 
 public:
-   ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb);
-   ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb, Array<int> &ess_list);
+   ConductionOperator(mfem::ParGridFunction &ps, mfem::HypreParMatrix &K, mfem::HypreParVector &Fb);
+   ConductionOperator(mfem::ParGridFunction &ps, mfem::HypreParMatrix &K, mfem::HypreParVector &Fb, mfem::Array<int> &ess_list);
 
-   virtual void Mult(const Vector &u, Vector &du_dt) const;
+   virtual void Mult(const mfem::Vector &u, mfem::Vector &du_dt) const;
    
    /** Solve the Backward-Euler equation: k = f(u + dt*k, t), for the unknown k.
        This is the only requirement for high-order SDIRK implicit integration.*/
-   virtual void ImplicitSolve(const double dt, const Vector &u, Vector &k);
+   virtual void ImplicitSolve(const double dt, const mfem::Vector &u, mfem::Vector &k);
 
    //Update K matrix and b vector
-   void UpdateParams(const HypreParMatrix &K, const HypreParVector &Fb);
+   void UpdateParams(const mfem::HypreParMatrix &K, const mfem::HypreParVector &Fb);
 
    virtual ~ConductionOperator();
 };
 
 
 
-class AdvectionOperator : public TimeDependentOperator
+class AdvectionOperator : public mfem::TimeDependentOperator
 {
 protected:
    //ParFiniteElementSpace &fespace;
-   Array<int> ess_tdof_list; // this list remains empty for pure Neumann b.c.
+   mfem::Array<int> ess_tdof_list; // this list remains empty for pure Neumann b.c.
 
-   ParBilinearForm *M;
-   ParBilinearForm *K;
+   mfem::ParBilinearForm *M;
+   mfem::ParBilinearForm *K;
 
-   HypreParVector b;
+   mfem::HypreParVector b;
 
-   HypreParMatrix Mmat;
-   HypreParMatrix Kmat;
+   mfem::HypreParMatrix Mmat;
+   mfem::HypreParMatrix Kmat;
 
-   CGSolver M_solver;    // Krylov solver for inverting the mass matrix M
-   HypreSmoother M_prec; // Preconditioner for the mass matrix M
+   mfem::CGSolver M_solver;    // Krylov solver for inverting the mass matrix M
+   mfem::HypreSmoother M_prec; // Preconditioner for the mass matrix M
 
 
-   mutable HypreParVector z; // auxiliary vector
+   mutable mfem::HypreParVector z; // auxiliary vector
 
 public:
-   AdvectionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb);
-   AdvectionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb, Array<int> &ess_list);
+   AdvectionOperator(mfem::ParGridFunction &ps, mfem::HypreParMatrix &K, mfem::HypreParVector &Fb);
+   AdvectionOperator(mfem::ParGridFunction &ps, mfem::HypreParMatrix &K, mfem::HypreParVector &Fb, mfem::Array<int> &ess_list);
 
-   virtual void Mult(const Vector &u, Vector &du_dt) const;
+   virtual void Mult(const mfem::Vector &u, mfem::Vector &du_dt) const;
    
    //Update K matrix and b vector
-   void UpdateParams(const HypreParMatrix &K, const HypreParVector &Fb);
+   void UpdateParams(const mfem::HypreParMatrix &K, const mfem::HypreParVector &Fb);
 
    virtual ~AdvectionOperator();
 };
@@ -114,17 +114,17 @@ public:
 
 
 // Discontinuous Galerkin Solver used in Advection
-class DG_Solver : public Solver
+class DG_Solver : public mfem::Solver
 {
 private:
-   HypreParMatrix &M, &K;
-   SparseMatrix M_diag;
-   HypreParMatrix *A;
-   GMRESSolver linear_solver;
-   Solver *prec;
-   real_t dt;
+   mfem::HypreParMatrix &M, &K;
+   mfem::SparseMatrix M_diag;
+   mfem::HypreParMatrix *A;
+   mfem::GMRESSolver linear_solver;
+   mfem::Solver *prec;
+   mfem::real_t dt;
 public:
-   DG_Solver(HypreParMatrix &M_, HypreParMatrix &K_, const FiniteElementSpace &fes)
+   DG_Solver(mfem::HypreParMatrix &M_, mfem::HypreParMatrix &K_, const mfem::FiniteElementSpace &fes)
       : M(M_),
         K(K_),
         A(NULL),
@@ -134,8 +134,8 @@ public:
       int block_size = fes.GetFE(0)->GetDof();
       //if (prec_type == PrecType::ILU)
       //{
-         prec = new BlockILU(block_size,
-                             BlockILU::Reordering::MINIMUM_DISCARDED_FILL);
+         prec = new mfem::BlockILU(block_size,
+                             mfem::BlockILU::Reordering::MINIMUM_DISCARDED_FILL);
       //}
       //else if (prec_type == PrecType::AIR)
       //{
@@ -155,7 +155,7 @@ public:
       M.GetDiag(M_diag);
    }
 
-   void SetTimeStep(real_t dt_)
+   void SetTimeStep(mfem::real_t dt_)
    {
       if (dt_ != dt)
       {
@@ -163,7 +163,7 @@ public:
          // Form operator A = M - dt*K
          delete A;
          A = Add(-dt, K, 0.0, K);
-         SparseMatrix A_diag;
+         mfem::SparseMatrix A_diag;
          A->GetDiag(A_diag);
          A_diag.Add(1.0, M_diag);
          // this will also call SetOperator on the preconditioner
@@ -171,12 +171,12 @@ public:
       }
    }
 
-   void SetOperator(const Operator &op)
+   void SetOperator(const mfem::Operator &op)
    {
       linear_solver.SetOperator(op);
    }
 
-   virtual void Mult(const Vector &x, Vector &y) const
+   virtual void Mult(const mfem::Vector &x, mfem::Vector &y) const
    {
       linear_solver.Mult(x, y);
    }
@@ -195,22 +195,22 @@ public:
     and advection matrices, and b describes the flow on the boundary. This can
     be written as a general ODE, du/dt = M^{-1} (K u + b), and this class is
     used to evaluate the right-hand side. */
-class FE_Evolution : public TimeDependentOperator
+class FE_Evolution : public mfem::TimeDependentOperator
 {
 private:
-   OperatorHandle M, K;
-   const Vector &b;
-   Solver *M_prec;
-   CGSolver M_solver;
+   mfem::OperatorHandle M, K;
+   const mfem::Vector &b;
+   mfem::Solver *M_prec;
+   mfem::CGSolver M_solver;
    DG_Solver *dg_solver;
 
-   mutable Vector z;
+   mutable mfem::Vector z;
 
 public:
-   FE_Evolution(ParBilinearForm &M_, ParBilinearForm &K_, const Vector &b_);
+   FE_Evolution(mfem::ParBilinearForm &M_, mfem::ParBilinearForm &K_, const mfem::Vector &b_);
 
-   virtual void Mult(const Vector &x, Vector &y) const;
-   virtual void ImplicitSolve(const real_t dt, const Vector &x, Vector &k);
+   virtual void Mult(const mfem::Vector &x, mfem::Vector &y) const;
+   virtual void ImplicitSolve(const mfem::real_t dt, const mfem::Vector &x, mfem::Vector &k);
 
    virtual ~FE_Evolution();
 };
