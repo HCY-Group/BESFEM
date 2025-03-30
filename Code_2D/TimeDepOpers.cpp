@@ -214,27 +214,24 @@ AdvectionOperator::AdvectionOperator(ParGridFunction &ps, HypreParMatrix &K, Hyp
    
    GridFunctionCoefficient cp(&ps);
 
-   // // Use SolverSteps to create the mass matrix & solver conditions
-   // SolverSteps solverSteps(ps.ParFESpace());
-   // solverSteps.MassMatrix(ps, Mmat);
-   // solverSteps.SolverConditions(Mmat, M_solver, M_prec);
+   // Use SolverSteps to create the mass matrix & solver conditions
+   SolverSteps solverSteps(ps.ParFESpace());
+   solverSteps.MassMatrix(Mmat);
+   solverSteps.SolverConditions(Mmat, M_solver, M_prec);
    
-   M = new ParBilinearForm(ps.ParFESpace());
-   M->AddDomainIntegrator(new MassIntegrator);
-   M->Assemble(); // keep sparsity pattern of M and K the same
-   M->FormSystemMatrix(ess_tdof_list, *Mmat);
+   // M = new ParBilinearForm(ps.ParFESpace());
+   // M->AddDomainIntegrator(new MassIntegrator);
+   // M->Assemble(); // keep sparsity pattern of M and K the same
+   // M->FormSystemMatrix(ess_tdof_list, *Mmat);
    
-   M_solver.iterative_mode = false;
-   M_solver.SetRelTol(rel_tol);
-   M_solver.SetAbsTol(0.0);
-   M_solver.SetMaxIter(100);
-   M_solver.SetPrintLevel(0);
-   M_prec.SetType(HypreSmoother::Jacobi);
-   M_solver.SetPreconditioner(M_prec);
-   M_solver.SetOperator(*Mmat);
-
-   // SolverSteps::MassMatrix(ps, Mmat);
-   // SolverSteps::SolverConditions(Mmat, M_solver, M_prec);
+   // M_solver.iterative_mode = false;
+   // M_solver.SetRelTol(rel_tol);
+   // M_solver.SetAbsTol(0.0);
+   // M_solver.SetMaxIter(100);
+   // M_solver.SetPrintLevel(0);
+   // M_prec.SetType(HypreSmoother::Jacobi);
+   // M_solver.SetPreconditioner(M_prec);
+   // M_solver.SetOperator(*Mmat);
 
 }
 

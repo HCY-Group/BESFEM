@@ -69,6 +69,7 @@ public:
     ~SolverSteps();
 
     void MassMatrix(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat);
+    void MassMatrix(std::shared_ptr<mfem::HypreParMatrix> &Mmat);
     
     void StiffnessMatrix(std::shared_ptr<mfem::GridFunctionCoefficient> cDx, mfem::Array<int> boundary, 
                          mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, 

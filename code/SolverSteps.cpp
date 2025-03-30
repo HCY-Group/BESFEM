@@ -169,6 +169,33 @@ void SolverSteps::MassMatrix(mfem::ParGridFunction &psx, std::shared_ptr<mfem::H
     delete M;
 }
 
+void SolverSteps::MassMatrix(std::shared_ptr<mfem::HypreParMatrix> &Mmat) {
+    mfem::ParFiniteElementSpace* local_fespace = fespace ? fespace.get() : raw_fespace;
+    if (!local_fespace) {
+        throw std::runtime_error("fespace is null");
+    }
+    // Create a parallel bilinear form for the finite element space
+    M = new mfem::ParBilinearForm(local_fespace);
+
+    // Add a domain integrator to the bilinear form using the weighted mass integrator
+    M->AddDomainIntegrator(new mfem::MassIntegrator);
+    
+    // Assemble the bilinear form into a sparse matrix representation
+    M->Assemble();
+
+    // Construct the mass matrix and store it in HPM
+    mfem::HypreParMatrix HPM;
+    M->FormSystemMatrix(boundary_dofs, HPM); // should be form linear system
+    
+    // Assign the mass matrix to the shared pointer
+    Mmat = std::make_shared<mfem::HypreParMatrix>(HPM);
+
+    // Clean up dynamically allocated objects
+    delete coef; 
+    delete temp_ps;
+    delete M;
+}
+
 void SolverSteps::StiffnessMatrix(std::shared_ptr<mfem::GridFunctionCoefficient> cDx, mfem::Array<int> boundary, mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, std::shared_ptr<mfem::HypreParMatrix> &Kmat, mfem::HypreParVector &RHS){
     mfem::ParFiniteElementSpace* local_fespace = fespace ? fespace.get() : raw_fespace;
     if (!local_fespace) {
