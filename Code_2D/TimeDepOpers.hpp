@@ -44,6 +44,8 @@ protected:
 
    std::shared_ptr<mfem::HypreParMatrix> Mmat;
    std::shared_ptr<mfem::HypreParMatrix> Kmat;
+   std::shared_ptr<mfem::HypreParMatrix> Tmat;
+
    std::unique_ptr<mfem::HypreParMatrix> T;
    // HypreParMatrix *T; // T = M + dt K
    //double current_dt;
@@ -55,6 +57,8 @@ protected:
    HypreSmoother T_prec; // Preconditioner for the implicit solver
 
    mutable HypreParVector z; // auxiliary vector
+
+   std::shared_ptr<mfem::ParFiniteElementSpace> shared_fespace;
 
 public:
    ConductionOperator(ParGridFunction &ps, HypreParMatrix &K, HypreParVector &Fb);
@@ -90,6 +94,7 @@ protected:
 
    std::shared_ptr<mfem::HypreParMatrix> Mmat;
    std::shared_ptr<mfem::HypreParMatrix> Kmat;
+
 
    CGSolver M_solver;    // Krylov solver for inverting the mass matrix M
    HypreSmoother M_prec; // Preconditioner for the mass matrix M

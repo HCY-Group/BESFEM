@@ -132,20 +132,12 @@ int main(int argc, char *argv[])
 	// Output Vox to Paraview
 	// solver.ParaviewSave("SmoothVox","Vox",solver.GetGlobalVox());
 
-
-
-
-
-
-	
 	// ======================================
 	// FIND DISTANCE FUNCTION BY REINITIALIZING LEVEL SET
 	// ======================================
 	cout << "FINDING DISTANCE FUNCTION WITH LEVEL SET REINITIALIZATION" << endl;
 	
 	// Need to use Discontinuous Galerkin (DG) for upwinding (look at MFEM examples 9 and 18)
-
-	
 	//VoxelSolver_DG solver_dg(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
 	VoxelSolver_DG solver_dg(&*geometry.globalfespace, &*geometry.parfespace, &*geometry.parfespace_dg, &*geometry.pardimfespace_dg);
 	
@@ -176,9 +168,6 @@ int main(int argc, char *argv[])
 	//c = c2;
 	// solver.ParaviewSave("AdvVel","Vel",&c);
 
-
-	
-	
 	// ======================================
 	// FIND CONNECTIVITY
 	// ======================================
@@ -212,7 +201,6 @@ int main(int argc, char *argv[])
 	VoxelSolver ConnectSolver(&*geometry.globalfespace,&*geometry.parfespace);
 	VoxelSolver_DG solver_dg2(&*geometry.globalfespace, &*geometry.parfespace, &*geometry.parfespace_dg, &*geometry.pardimfespace_dg);
 		
-
 	for (int ConIter = 0; ConIter < 2; ConIter++){
 		ConnectSolver.AssignGlobalValues(0.0);
 		//ConnectSolver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
