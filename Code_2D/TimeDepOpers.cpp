@@ -144,9 +144,9 @@ void ConductionOperator::ImplicitSolve(const double dt,
    // Solve the equation:
    //    du_dt = M^{-1}*[-K(u + dt*du_dt)]
    // for du_dt, where K is linearized by using u from the previous timestep
-   T.reset(Add(1.0, *Mmat, dt, *Kmat));
+   Tmat.reset(Add(1.0, *Mmat, dt, *Kmat));
    //current_dt = dt;
-   T_solver.SetOperator(*T);
+   T_solver.SetOperator(*Tmat);
    //MFEM_VERIFY(dt == current_dt, ""); // SDIRK methods use the same dt
    Kmat->Mult(u, z);
    z.Neg();

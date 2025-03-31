@@ -46,7 +46,7 @@ protected:
    std::shared_ptr<mfem::HypreParMatrix> Kmat;
    std::shared_ptr<mfem::HypreParMatrix> Tmat;
 
-   std::unique_ptr<mfem::HypreParMatrix> T;
+   // std::unique_ptr<mfem::HypreParMatrix> T;
    // HypreParMatrix *T; // T = M + dt K
    //double current_dt;
 
