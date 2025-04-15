@@ -7,7 +7,8 @@
 using namespace std;
 using namespace mfem;
 
-class VoxelSolver {
+class VoxelSolver : public TimeDependentOperator
+{
 public:
 	VoxelSolver(FiniteElementSpace *fes); //constructor
 	VoxelSolver(FiniteElementSpace *gfes, ParFiniteElementSpace *fes); //constructor with parallel
@@ -16,6 +17,10 @@ public:
 	void AssignDirichletBCs(GridFunctionCoefficient &Coef, Array<int> &bdr);
 	void ParaviewSave(string FileName, string VariableName, GridFunction* gf);
 	void MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh);
+	
+	void InitStiffMat(ParGridFunction &Diff);
+	void InitMassMat(ParGridFunction &DomPar);
+	
 	void InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridFunction &Diff, ParGridFunction &DomPar);
 	void UpdateLinearForm(ParGridFunction gf);
 	void UpdateLinearForm_DoubleWellPotential();
@@ -46,7 +51,22 @@ private:
 	ParGridFunction* Vox;
 	
 	ParBilinearForm *K;
+	ParBilinearForm *M;
 	ParLinearForm *Fct;
+	
+	HypreParMatrix Mmat;
+	HypreParMatrix Kmat;
+	HypreParVector b;
+	HypreParMatrix *T; // T = M + dt K
+
+	CGSolver M_solver;    // Krylov solver for inverting the mass matrix M
+	HypreSmoother M_prec; // Preconditioner for the mass matrix M
+
+	CGSolver T_solver;    // Implicit solver for T = M + dt K
+	HypreSmoother T_prec; // Preconditioner for the implicit solver
+
+	mutable HypreParVector z; // auxiliary vector
+
 	
 	ConductionOperator* oper;
 };

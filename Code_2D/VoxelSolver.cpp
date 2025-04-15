@@ -130,6 +130,35 @@ void VoxelSolver::SouthDirichletBCs(Mesh *mesh) {
 	
 }
 
+void VoxelSolver::InitStiffMat(ParGridFunction &Diff) {
+	// stiffness matrix
+	GridFunctionCoefficient cMob(&Diff);
+	this->K = new ParBilinearForm(Diff.ParFESpace());
+	this->K->AddDomainIntegrator(new DiffusionIntegrator(cMob));
+	this->K->Assemble();
+}
+
+void VoxelSolver::InitMassMat(ParGridFunction &psi) {
+
+	GridFunctionCoefficient cp(&psi);
+	const double rel_tol = 1e-8;
+	
+	this->M = new ParBilinearForm(psi.ParFESpace());
+	this->M->AddDomainIntegrator(new MassIntegrator(cp));
+	this->M->Assemble();
+	this->M->FormSystemMatrix(*this->ess_tdof_list, Mmat);
+
+	this->M_solver.iterative_mode = false;
+	this->M_solver.SetRelTol(rel_tol);
+	this->M_solver.SetAbsTol(0.0);
+	this->M_solver.SetMaxIter(100);
+	this->M_solver.SetPrintLevel(0);
+	this->M_prec.SetType(HypreSmoother::Jacobi);
+	this->M_solver.SetPreconditioner(M_prec);
+	this->M_solver.SetOperator(Mmat);
+}	
+	
+
 void VoxelSolver::InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridFunction &Diff, ParGridFunction &DomPar) {
 
 	// TODO: Add check to make sure that Diff and DomPar have same FESpace as Vox
