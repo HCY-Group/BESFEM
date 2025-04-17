@@ -18,12 +18,18 @@ public:
 	void ParaviewSave(string FileName, string VariableName, GridFunction* gf);
 	void MapGlobalToLocal(Mesh* gmesh, ParMesh* pmesh);
 	
+	void InitBoundaryConditions(Array<int> boundary_dofs);
+	void InitForceVec();
 	void InitStiffMat(ParGridFunction &Diff);
-	void InitMassMat(ParGridFunction &DomPar);
-	
+	void InitMassMat(ParGridFunction &DomPar);	
 	void InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridFunction &Diff, ParGridFunction &DomPar);
+	
+	void ReplaceForceVec();
+	ParGridFunction CalcNewLinearForm();
+	ParGridFunction CalcDoubleWellPotential();
 	void UpdateLinearForm(ParGridFunction gf);
 	void UpdateLinearForm_DoubleWellPotential();
+	
 	void UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, double dt);
 	void AccelerateDiffusion(ParGridFunction &DomPar, GridFunctionCoefficient &Coef, Array<int> &bdr);
 	void NorthDirichletBCs(Mesh *mesh);
@@ -56,7 +62,7 @@ private:
 	
 	HypreParMatrix Mmat;
 	HypreParMatrix Kmat;
-	HypreParVector b;
+	HypreParVector *b;
 	HypreParMatrix *T; // T = M + dt K
 
 	CGSolver M_solver;    // Krylov solver for inverting the mass matrix M

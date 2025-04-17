@@ -114,14 +114,18 @@ int main(int argc, char *argv[])
 	ParGridFunction Mob(&*geometry.parfespace);
 	Mob = 0.64;
 	
-
+	solver.InitBoundaryConditions(boundary_dofs);
+	solver.InitForceVec();    //test new function
+	solver.InitStiffMat(Mob); //test new function
+	solver.InitMassMat(ones); //test new function
 	solver.InitMatricesAndTimeDepOpers(boundary_dofs, Mob, ones);
 	
 	// time step
 	double t_ode = 0.0;
 	double dt = 0.05;
 	for (int t = 0; t < 20; t++){
-
+		
+		solver.ReplaceForceVec(); //test new function
 		solver.UpdateLinearForm_DoubleWellPotential();
 		
 		solver.UpdateSystemAndSolve(boundary_dofs, t_ode, dt);

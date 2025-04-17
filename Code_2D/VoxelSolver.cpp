@@ -130,12 +130,26 @@ void VoxelSolver::SouthDirichletBCs(Mesh *mesh) {
 	
 }
 
+void VoxelSolver::InitBoundaryConditions(Array<int> boundary_dofs) {
+	this->ess_tdof_list = &boundary_dofs;
+}
+
+void VoxelSolver::InitForceVec() {
+	this->Fct = new ParLinearForm(Vox->ParFESpace());
+	this->b = new HypreParVector(Vox->ParFESpace());
+}
+
 void VoxelSolver::InitStiffMat(ParGridFunction &Diff) {
+	
+	HypreParVector X1v(Vox->ParFESpace());
+	
 	// stiffness matrix
 	GridFunctionCoefficient cMob(&Diff);
 	this->K = new ParBilinearForm(Diff.ParFESpace());
 	this->K->AddDomainIntegrator(new DiffusionIntegrator(cMob));
 	this->K->Assemble();
+	//this->K->FormSystemMatrix(*this->ess_tdof_list, this->Kmat);
+	this->K->FormLinearSystem(*this->ess_tdof_list, *this->Vox, *this->Fct, this->Kmat, X1v, *this->b);
 }
 
 void VoxelSolver::InitMassMat(ParGridFunction &psi) {
@@ -146,8 +160,8 @@ void VoxelSolver::InitMassMat(ParGridFunction &psi) {
 	this->M = new ParBilinearForm(psi.ParFESpace());
 	this->M->AddDomainIntegrator(new MassIntegrator(cp));
 	this->M->Assemble();
-	this->M->FormSystemMatrix(*this->ess_tdof_list, Mmat);
-
+	this->M->FormSystemMatrix(*this->ess_tdof_list, this->Mmat);
+	
 	this->M_solver.iterative_mode = false;
 	this->M_solver.SetRelTol(rel_tol);
 	this->M_solver.SetAbsTol(0.0);
@@ -184,6 +198,10 @@ void VoxelSolver::InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridF
 	ode_solver->Init(*oper);
 }
 
+void VoxelSolver::ReplaceForceVec() {
+	VoxelSolver::UpdateLinearForm(VoxelSolver::CalcNewLinearForm());
+}
+
 void VoxelSolver::UpdateLinearForm(ParGridFunction gf) {
 	
 	GridFunctionCoefficient coef(&gf);
@@ -193,6 +211,21 @@ void VoxelSolver::UpdateLinearForm(ParGridFunction gf) {
 	this->Fct->AddDomainIntegrator(new DomainLFIntegrator(coef));
 	this->Fct->Assemble();
 	
+}
+
+ParGridFunction VoxelSolver::CalcNewLinearForm() {
+	return VoxelSolver::CalcDoubleWellPotential();
+}
+
+ParGridFunction VoxelSolver::CalcDoubleWellPotential() {
+	ParGridFunction Pot(Vox->ParFESpace());
+	int nV = Pot.Size();
+	
+	for (int vi = 0; vi < nV; vi++){
+		Pot(vi) = 2.0*(*Vox)(vi)*(1.0-(*Vox)(vi))*(1.0-2.0*(*Vox)(vi));
+	}
+	
+	return Pot;
 }
 
 void VoxelSolver::UpdateLinearForm_DoubleWellPotential() {
