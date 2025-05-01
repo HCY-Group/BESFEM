@@ -336,8 +336,10 @@ void Initialize_Geometry::SetupBoundaryConditions() {
     // Extract essential true DOFs (Dirichlet BCs) on the west boundary
     mfem::Array<int> ess_tdof_list_w(0);
     parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
-    
+
 }
+    
+
 
 
 

@@ -47,8 +47,12 @@ public:
      * @param phx1 Potential field on one side of the interface
      * @param phx2 Potential field on the other side of the interface
      */
-    void ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2);
+    // void ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2);
 
+
+    void ButlerVolmer(mfem::ParGridFunction &Rx, const mfem::ParGridFunction &Cn1,
+        const mfem::ParGridFunction &Cn2, const mfem::ParGridFunction &phx1,
+        const mfem::ParGridFunction &phx2);
     /**
      * @brief Computes the total reaction current over the domain
      * @param Rx Reaction rate grid function
@@ -58,6 +62,7 @@ public:
 
     double global_current;     ///< Global reaction current
 
+    void WriteKfwToFile(const std::string &filename) const;
 
 
 private:
@@ -88,6 +93,14 @@ private:
     std::unique_ptr<mfem::ParGridFunction> dPHE; ///< Voltage drop field
 
     const mfem::Vector& EVol; ///< Element volumes from the mesh handler
+
+    // Interpolation tables
+    mfem::Vector X_101 = mfem::Vector(101);
+    mfem::Vector i0C_101 = mfem::Vector(101);
+    mfem::Vector OCV_101 = mfem::Vector(101);
+
+    double InterpolateFromTable(double cn, const mfem::Vector &X_101, const mfem::Vector &table_101);
+
 
 
 };

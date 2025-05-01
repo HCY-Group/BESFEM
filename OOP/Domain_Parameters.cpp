@@ -58,9 +58,21 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         if (strcmp(mesh_type, "r") == 0) {
             (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // rectangle
             (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
+
         } else if (strcmp(mesh_type, "c") == 0) {
             (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta)); // circle
             (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta), 2) - 1.0) / (2 * Constants::zeta); // circle
+
+        } else if (strcmp(mesh_type, "d") == 0) {
+            double scalingFactor = 1/(Constants::dh); 
+            (*psi)(vi) = 0.5 * (1.0 + tanh(((*dsF)(vi)) / 1.0)); // disk
+            // use psi to calculate AvP in the future
+            (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh * scalingFactor)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // disk
+ 
+        } else if (strcmp(mesh_type, "v") == 0) {
+            (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi))); // voxel
+            (*AvP)(vi) = -(pow(tanh((*dsF)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
+
         } else {
             (*psi)(vi) = 0.5 * (1.0 + tanh((*psi)(vi))); // voxel
             (*AvP)(vi) = -(pow(tanh((*dsF)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
@@ -78,6 +90,10 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         if ((*AvP)(vi) * Constants::dh < 1.0e-3) { (*AvP)(vi) = 0.0; }
         if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
     }
+    
+
+    AvP->Save("Results/AvP");
+}
 
     
     // psi->ProjectGridFunction(*dsF);
@@ -106,7 +122,7 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     //     if ((*AvP)(vi) * Constants::dh < 1.0e-3) { (*AvP)(vi) = 0.0; }
     //     if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
     // }
-}
+// }
 
 void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction& grid_function, const mfem::Vector& element_volumes, double& local_total, double& global_total) {
     local_total = 0.0;

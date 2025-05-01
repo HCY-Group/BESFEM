@@ -9,7 +9,8 @@
 #include <optional>
 
 
-double BvP = 0.0; ///< Global variable for the boundary value of particle potential
+// double BvP = 0.0; ///< Global variable for the boundary value of particle potential
+double BvP = -0.1; ///< Global variable for the boundary value of particle potential
 
 PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
     : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_e_bdr(geo.dbc_e_bdr), gtPsi(para.gtPsi), ess_tdof_list_e(geo.ess_tdof_list_e)
@@ -46,7 +47,8 @@ void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
 void PotP::ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx){
     for (int vi = 0; vi < nV; vi++){
-        (*kap)(vi) = psx(vi) * (0.01929 + 0.7045 * tanh(2.399 * Cn(vi)) - 0.7238 * tanh(2.412 * Cn(vi)) - 4.2106e-6);
+        // (*kap)(vi) = psx(vi) * (0.01929 + 0.7045 * tanh(2.399 * Cn(vi)) - 0.7238 * tanh(2.412 * Cn(vi)) - 4.2106e-6);
+        (*kap)(vi) = 3.3 * psx(vi);
     }
 }
 

@@ -74,6 +74,9 @@ public:
     void StiffnessMatrix(std::shared_ptr<mfem::GridFunctionCoefficient> cDx, mfem::Array<int> boundary, 
                          mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, 
                          std::shared_ptr<mfem::HypreParMatrix> &Kmat, mfem::HypreParVector &RHS);
+
+    void StiffnessMatrix(mfem::Coefficient &cDx, mfem::Array<int> boundary, 
+                            std::shared_ptr<mfem::HypreParMatrix> &Kmat);
     
     void ForceTerm(mfem::ParGridFunction &parGF, mfem::ParLinearForm &F);
     void ForceTerm(mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, mfem::Array<int> &boundary, mfem::ProductCoefficient &m);

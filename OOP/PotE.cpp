@@ -10,7 +10,9 @@
 #include <optional>
 
 
-double BvE = 0.0; ///< Global variable for the boundary value of electrolyte potential
+// double BvE = 0.0; ///< Global variable for the boundary value of electrolyte potential
+double BvE = -0.4686; ///< Global variable for the boundary value of electrolyte potential
+
 
 PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para)
     : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_w_bdr(geo.dbc_w_bdr), gtPse(para.gtPse), ess_tdof_list_w(geo.ess_tdof_list_w)

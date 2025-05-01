@@ -223,6 +223,34 @@ void SolverSteps::StiffnessMatrix(std::shared_ptr<mfem::GridFunctionCoefficient>
     RHS *= Constants::dt;
 }
 
+
+void SolverSteps::StiffnessMatrix(mfem::Coefficient &cDx, mfem::Array<int> boundary, std::shared_ptr<mfem::HypreParMatrix> &Kmat){
+    mfem::ParFiniteElementSpace* local_fespace = fespace ? fespace.get() : raw_fespace;
+    if (!local_fespace) {
+        throw std::runtime_error("fespace is null");
+    }
+    // Create a parallel bilinear form for the finite element space
+    K = std::make_shared<mfem::ParBilinearForm>(local_fespace);
+
+    // Add a domain integrator for the diffusion term using the given diffusivity coefficient (cDx)
+    K->AddDomainIntegrator(new mfem::DiffusionIntegrator(cDx));
+
+    // Assemble the bilinear form into a sparse matrix
+    K->Assemble();
+
+    // Temporary matrix to hold the assembled stiffness matrix
+    mfem::HypreParMatrix Khpm;
+
+    // Form the linear system, considering boundary conditions, parallel grid function (concentration, voxel), and the force term (F)
+    K->FormSystemMatrix(boundary, Khpm);
+
+    // Convert the assembled stiffness matrix into a shared pointer for further use
+    Kmat = std::make_shared<mfem::HypreParMatrix>(Khpm);
+
+    // // Scale the right-hand side vector for time-stepping by multiplying with the time step constant (Constants::dt)
+    // RHS *= Constants::dt;
+}
+
 void SolverSteps::ForceTerm(mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, mfem::Array<int> &boundary, mfem::ProductCoefficient &m) {
     mfem::ParFiniteElementSpace* local_fespace = fespace ? fespace.get() : raw_fespace;
     if (!local_fespace) {

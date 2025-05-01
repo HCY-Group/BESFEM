@@ -53,6 +53,13 @@ public:
     mfem::ParGridFunction pse; ///< Potential field for the electrolyte
     mfem::ParGridFunction *CeT; ///< Temporary grid function for salt concentration calculations
 
+    mfem::Array<int> boundary_dofs; ///< Boundary degrees of freedom
+
+    int nE;                                         ///< Number of elements
+    int nC;                                         ///< Number of corners in each element
+    int nV;                                         ///< Number of vertices
+
+
 protected:
     mfem::ParMesh* pmesh;  ///< Pointer to the parallel mesh
     mfem::Mesh* gmesh;             // Global serial mesh
@@ -206,12 +213,12 @@ private:
     mfem::ParGridFunction *Ps_gf; ///< Grid function for the potential field
     mfem::GridFunctionCoefficient *cP; ///< Coefficient for the potential field
 
-    mfem::Array<int> boundary_dofs; ///< Boundary degrees of freedom
+    // mfem::Array<int> boundary_dofs; ///< Boundary degrees of freedom
     std::unique_ptr<mfem::ParGridFunction> TmpF; ///< Temporary grid function for intermediate calculations
 
-    int nE;                                         ///< Number of elements
-    int nC;                                         ///< Number of corners in each element
-    int nV;                                         ///< Number of vertices
+    // int nE;                                         ///< Number of elements
+    // int nC;                                         ///< Number of corners in each element
+    // int nV;                                         ///< Number of vertices
 
     const mfem::Vector& EVol;                       ///< Element volumes from MeshHandler
     double gtPsi;                                   ///< Total Psi from MeshHandler
