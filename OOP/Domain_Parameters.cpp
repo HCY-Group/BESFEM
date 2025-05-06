@@ -92,7 +92,7 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     }
     
 
-    AvP->Save("Results/AvP");
+    // AvP->Save("Results/AvP");
 }
 
     

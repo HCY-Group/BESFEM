@@ -34,6 +34,8 @@ private:
     mfem::ParGridFunction Mub, Mob;
     mfem::HypreParVector phV0, Lp1, Lp2, RHS, MuV;
 
+    mfem::ParGridFunction AvP; ///< Grid function for active particle surface area
+
     // Matrices
     std::shared_ptr<mfem::HypreParMatrix> M_phi;
     std::shared_ptr<mfem::HypreParMatrix> K_phi, K_mu;

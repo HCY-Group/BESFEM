@@ -166,7 +166,7 @@
  
  void Reaction::Initialize(mfem::ParGridFunction &Rx, double initial_value) {
      SetInitialReaction(Rx, initial_value);
-    //  Rx = AvP;
+     Rx *= AvP;
     //  Rx *= 1.0e-8;
  }
  
@@ -186,29 +186,17 @@
 
             double kfw = (*Kfw)(vi);
             double kbw = (*Kbw)(vi);
-            double cnp = std::max(Cn1(vi), 1.0e-6);
+            double cnp = std::max(Cn1(vi), 1.0e-6); // fix this
             double cne = Cn2(vi);
 
             double rxn = kfw * cne * std::exp(-Constants::alp * Constants::Cst1 * eta)
-            - kbw * cnp * std::exp(+Constants::alp * Constants::Cst1 * eta);
+            - kbw * cnp * std::exp(Constants::alp * Constants::Cst1 * eta);
 
             Rx(vi) = rxn;
-
-            if (!std::isfinite(rxn)) {
-            std::cerr << "[NaN in Rxn] vi=" << vi
-            << ", AvP=" << AvP(vi)
-            << ", Kfw=" << kfw
-            << ", Kbw=" << kbw
-            << ", Cn1=" << cnp
-            << ", Cn2=" << cne
-            << ", eta=" << eta
-            << ", Rx_val=" << rxn << std::endl;
-            }
-            } else {
-            Rx(vi) = 0.0;
         }
     }
 }
+    
 
  
  void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
@@ -226,7 +214,20 @@
              (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
         //  }
      }
+
+    //  for (int i = 0; i < Cn.Size(); i++) {
+    //     double cn_val = Cn(i);
+    //     (*i0C)(i) = InterpolateFromTable(cn_val, X_101, i0C_101) * 1.0e-3 ;
+    //     (*OCV)(i) = InterpolateFromTable(cn_val, X_101, OCV_101) ;
+    
+    // }
+    
+    // i0C->Save("Results2/ioc"); // save mobility values for debugging
+    // OCV->Save("Results2/ocv"); // save mobility values for debugging
  }
+
+
+
  
  void Reaction::TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_current){
      local_current = 0.0;
@@ -243,17 +244,17 @@
      MPI_Allreduce(&local_current, &global_current, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
  }
  
- void Reaction::WriteKfwToFile(const std::string &filename) const {
-    std::ofstream out(filename);
-    if (!out.is_open()) {
-        std::cerr << "Failed to open file " << filename << " for writing Kfw values.\n";
-        return;
-    }
+//  void Reaction::WriteKfwToFile(const std::string &filename) const {
+//     std::ofstream out(filename);
+//     if (!out.is_open()) {
+//         std::cerr << "Failed to open file " << filename << " for writing Kfw values.\n";
+//         return;
+//     }
 
-    for (int i = 0; i < Kfw->Size(); ++i) {
-        out << std::setprecision(12) << (*Kfw)(i) << "\n";
-    }
+//     for (int i = 0; i < Kfw->Size(); ++i) {
+//         out << std::setprecision(12) << (*Kfw)(i) << "\n";
+//     }
 
-    out.close();
-    std::cout << "Kfw values written to " << filename << "\n";
-}
+//     out.close();
+//     std::cout << "Kfw values written to " << filename << "\n";
+// }

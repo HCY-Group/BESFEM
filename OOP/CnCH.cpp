@@ -16,6 +16,10 @@
      
      {
 
+        // Ensure AvP is not null
+        MFEM_VERIFY(para.AvP != nullptr, "AvP pointer in Domain_Parameters is null.");
+        AvP = *para.AvP;
+
         phV0 = mfem::HypreParVector(fespace.get());
         Lp1 = mfem::HypreParVector(fespace.get());
         RHS = mfem::HypreParVector(fespace.get());
@@ -32,8 +36,14 @@
         std::ifstream myXfile("../C_Li_X_101.txt");
         std::ifstream mydFfile("../C_Li_M6_101.txt");
         std::ifstream myMBfile("../C_Li_Mb5_101.txt");
+        
         for (int i = 0; i < 101; i++) myXfile >> X_101(i);
         for (int i = 0; i < 101; i++) mydFfile >> dF_101(i);
+
+        for (int i = 0; i < 101; ++i) {
+            myMBfile >> Mb5_101(i);
+            Mb5_101(i) *= 1.0e2 * 2.0 / 3.0;  // Fortran scaling
+        }
 
         // for (int i = 0; i < 101; ++i) {
         //     myMBfile >> Mb5_101(i);
@@ -105,20 +115,15 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
     Mub.GetTrueDofs(MuV);
     MuV += Lp1; // mu = mu_b - Lp1; Eq 4 changed to - from +
 
-    // std::cout << "mu min: " << MuV.Min() << ", mu max: " << MuV.Max()
-    //       << ", mu norm: " << MuV.Norml2() << std::endl;
-
     for (int i = 0; i < Cn.Size(); i++) {
         double cn_val = Cn(i);
-        Mob(i) = std::max(0.0, Calculate_Mobility(cn_val, X_101, Mb5_101));
-        // Mob(i) *= psx(i); // multiply by psi 	pmN(0:ny+1,0:nx+1,0:nz+1) = psP(0:ny+1,0:nx+1,0:nz+1)*Mb(0:ny+1,0:nx+1,0:nz+1)
+        Mob(i) = Calculate_Mobility(cn_val, X_101, Mb5_101);
+        Mob(i) *= psx(i); // multiply by psi 	pmN(0:ny+1,0:nx+1,0:nz+1) = psP(0:ny+1,0:nx+1,0:nz+1)*Mb(0:ny+1,0:nx+1,0:nz+1)
     }
 
-    // Mob.Save("Results/Mobility"); // save mobility values for debugging
+    Mob.Save("Results2/Mobility"); // save mobility values for debugging
 
     mfem::GridFunctionCoefficient Mob_GFC(&Mob); // updated value
-
-    // std::cout << "mob min: " << Mob.Min() << ", max: " << Mob.Max() << ", norm: " << Mob.Norml2() << std::endl;
 
     // stiffness matrix for mu
     SolverSteps::StiffnessMatrix(Mob_GFC, boundary_dofs, K_mu);
@@ -132,22 +137,6 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
 	Lp2 += Rx;
 	Lp2 *= Constants::dt;
 
-    // int rank;
-    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    // // Only rank 0 prints
-    // if (rank == 0)
-    // {
-    // std::cout << "--- Sample of Lp2 values (first 20 entries) ---" << std::endl;
-    // for (int i = 0; i < std::min(20, Lp2.Size()); i++) {
-    //     std::cout << "Lp2[" << i << "] = " << Lp2(i) << std::endl;
-    // }
-    // std::cout << "Lp2 min = " << Lp2.Min()
-    //             << ", max = " << Lp2.Max()
-    //             << ", L2 norm = " << Lp2.Norml2() << std::endl;
-    // }
-
-
 	// right hand side; Eq 5
 	M_phi->Mult(phV0, RHS);
     RHS += Lp2; // RHS = M_phi * phV0 + Lp2
@@ -157,20 +146,15 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
     
     Cn.Distribute(phV0);
 
+    // try to move this outside of the loop -- into main after simulation
+    for (int i = 0; i < Cn.Size(); i++) {
+        if (psx(i) < 1.0e-5) {
+            Cn(i) = 0.02;
+        }
+    }
+
     // Degree of Lithiation
     Concentrations::LithiationCalculation(Cn, psx);
-
-    // static int step = 0; // track timestep count inside this method
-    // // int rank;
-    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    // if (step % 1 == 0 && rank == 0) {
-    //     double cn_min = Cn.Min();
-    //     double cn_max = Cn.Max();
-    //     std::cout << "Step " << step << ": cn_min = " << cn_min
-    //               << ", cn_max = " << cn_max << std::endl;
-    // }
-    // step++;
  
  }
  

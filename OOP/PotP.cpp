@@ -60,7 +60,7 @@ void PotP::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction
     SolverSteps::ForceTerm(*RpP, ftPotP); // false since not applying BCs
 
     Potentials::ForceVector(*K, ess_tdof_list_e, phx, ftPotP, *KmP, X1v, Fpb, dbc_e_Coef, dbc_e_bdr); // Force vector
-    Potentials::ErrorCalculation(phx, *cgPP_solver, Fpb, psx, error_P, gerror, gtPsi); // Compute global error
+    // Potentials::ErrorCalculation(phx, *cgPP_solver, Fpb, psx, error_P, gerror, gtPsi); // Compute global error
 }
 
 

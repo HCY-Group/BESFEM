@@ -116,8 +116,9 @@ int main(int argc, char *argv[]) {
     // Initialize the reaction with an empty reaction grid function and initial value
     Reaction reaction(geometry, domain_parameters);
     mfem::ParGridFunction Rxn_gf(geometry.parfespace.get());
-    reaction.Initialize(Rxn_gf, 0.0);
-    // reaction.Initialize(Rxn_gf, 1e-10);
+    reaction.Initialize(Rxn_gf, 1e-10);
+    // reaction.Initialize(Rxn_gf, 0.0);
+
 
     // // Initialize Current Class
 
@@ -138,7 +139,7 @@ int main(int argc, char *argv[]) {
     // int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 20.0)));
     
     // Perform simulation over time steps
-    for (int t = 0; t < 200 + 1; ++t) {
+    for (int t = 0; t < 2000 + 1; ++t) {
     // while ( VCell > Constants::VCut) {
 
         // if (rank == 0) {
@@ -147,37 +148,32 @@ int main(int argc, char *argv[]) {
         // Step 1: Update concentrations for both particle and electrolyte phases
         // particle_concentration.TimeStep(Rxn_gf, CnP_gf, *domain_parameters.psi);
         particle_concentration.TimeStep(Rxn_gf, CnCH_gf, *domain_parameters.psi);
-        check_nan("CnCH", CnCH_gf, t);
+        // check_nan("CnCH", CnCH_gf, t);
 
-        electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
-        check_nan("CnE", CnE_gf, t);
-
-        
-        // // // if (rank == 0) {
-        // // //     std::cout << "After timestep: Cn norm = " << CnCH_gf.Norml2() << std::endl;
-        // // // }
+        // electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
+        // check_nan("CnE", CnE_gf, t);
 
         // // // // if (t % t_skip == 0) {
         // // //     // Step 2: Update potentials for both particle and electrolyte phases
-            particle_potential.TimeStep(CnCH_gf, *domain_parameters.psi, phP_gf);
-            electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf);
-        // // // // }
+        //     particle_potential.TimeStep(CnCH_gf, *domain_parameters.psi, phP_gf);
+        //     electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf);
+        // // // // // }
 
         // // // Step 3: Compute rate constants and exchange current density at the interface     
-        reaction.ExchangeCurrentDensity(CnCH_gf); 
+        // reaction.ExchangeCurrentDensity(CnCH_gf); 
         // reaction.WriteKfwToFile("Kfw_output.txt");
 
 
         // // Step 4: Iteratively solve for global reaction rates using Butler-Volmer kinetics
-        double globalerror_P = 1.0; // Error for particle potential
-        double globalerror_E = 1.0; // Error for electrolyte potential
+        // double globalerror_P = 1.0; // Error for particle potential
+        // double globalerror_E = 1.0; // Error for electrolyte potential
 
         // // // if (t % t_skip == 0) {
             // while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
 
                 // Update reaction rates using the Butler-Volmer equation
-                reaction.ButlerVolmer(Rxn_gf, CnCH_gf, CnE_gf, phP_gf, phE_gf);
-                check_nan("Rxn", Rxn_gf, t);
+                // reaction.ButlerVolmer(Rxn_gf, CnCH_gf, CnE_gf, phP_gf, phE_gf);
+                // check_nan("Rxn", Rxn_gf, t);
 
 
         // //         // Calculate global errors for particle and electrolyte potentials
@@ -210,16 +206,16 @@ int main(int argc, char *argv[]) {
     // phE_gf *= *domain_parameters.pse;
 
     // Save simulation outputs
-    geometry.parallelMesh->Save("Results/pmesh");
-    domain_parameters.psi->Save("Results/psi");
-    domain_parameters.pse->Save("Results/pse");
+    geometry.parallelMesh->Save("Results3/pmesh");
+    domain_parameters.psi->Save("Results3/psi");
+    domain_parameters.pse->Save("Results3/pse");
 
     // CnP_gf.Save("Results/CnP");
-    CnCH_gf.Save("Results/CnCH");
-    CnE_gf.Save("Results/CnE");
-    phP_gf.Save("Results/phP");
-    phE_gf.Save("Results/phE");
-    Rxn_gf.Save("Results/Rxn");
+    CnCH_gf.Save("Results3/CnCH");
+    CnE_gf.Save("Results3/CnE");
+    phP_gf.Save("Results3/phP");
+    phE_gf.Save("Results3/phE");
+    Rxn_gf.Save("Results3/Rxn");
 
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();
