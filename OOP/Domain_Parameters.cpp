@@ -66,6 +66,7 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         } else if (strcmp(mesh_type, "d") == 0) {
             (*psi)(vi) = 0.5 * (1.0 + tanh(((*dsF)(vi)) / Constants::zeta)); // disk
             (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // disk
+            (*AvP)(vi) *= Constants::dh;
         
         } else if (strcmp(mesh_type, "v") == 0) {
             (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi))); // voxel

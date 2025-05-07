@@ -157,7 +157,7 @@ void SolverSteps::MassMatrix(mfem::ParGridFunction &psx, std::shared_ptr<mfem::H
     M->Assemble();
 
     mfem::Array<int> boundary_dofs;
-    boundary_dofs.SetSize(0); // ✅ Explicitly set to zero-length
+    boundary_dofs.SetSize(0); 
 
     // Construct the mass matrix and store it in HPM
     mfem::HypreParMatrix HPM;
@@ -187,7 +187,7 @@ void SolverSteps::MassMatrix(std::shared_ptr<mfem::HypreParMatrix> &Mmat) {
     M->Assemble();
 
     mfem::Array<int> boundary_dofs;
-    boundary_dofs.SetSize(0); // ✅ Explicitly set to zero-length
+    boundary_dofs.SetSize(0); 
 
     // Construct the mass matrix and store it in HPM
     mfem::HypreParMatrix HPM;

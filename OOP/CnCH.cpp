@@ -165,7 +165,16 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
 	// right hand side; Eq 5
 	// M_phi->Mult(phV0, RHS);
     M_phi->Mult(*CpV0, *RHCp);
-    (*RHCp) += Lp2;
+
+    for (int i = 0; i < CpV0->Size(); i++) {
+        if (PsVc(i) > 1.0e-5) {
+            double rhs_term = Lp2(i) + Rx(i) / Constants::rho;
+            rhs_term *= Constants::dt;
+            (*RHCp)(i) += rhs_term / PsVc(i);  // SBM normalization
+        }
+    }
+
+    // (*RHCp) += Lp2;
 
     // RHS += Lp2; // RHS = M_phi * phV0 + Lp2
   

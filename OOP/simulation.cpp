@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
     // int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 20.0)));
     
     // Perform simulation over time steps
-    for (int t = 0; t < 20000 + 1; ++t) {
+    for (int t = 0; t < 20 + 1; ++t) {
     // while ( VCell > Constants::VCut) {
 
         // if (rank == 0) {
