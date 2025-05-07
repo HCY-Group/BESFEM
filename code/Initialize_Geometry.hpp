@@ -67,6 +67,10 @@ public:
     int ei;                 // local element indices
 
     mfem::Array<int> nbc_w_bdr; ///< West Neumann Boundary Conditions
+    mfem::Array<int> nbc_s_bdr; ///< West Neumann Boundary Conditions
+    mfem::Array<int> nbc_e_bdr; ///< West Neumann Boundary Conditions
+    mfem::Array<int> nbc_n_bdr; ///< West Neumann Boundary Conditions
+
     
     mfem::Array<int> ess_tdof_list_w; ///< Total DOF West
     mfem::Array<int> ess_tdof_list_e; ///< Total DOF East

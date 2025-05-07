@@ -310,14 +310,55 @@ void Initialize_Geometry::PrintMeshInfo() {
     std::cout << "Number of corner vertices: " << nC << "\n";
 }
 
+// void Initialize_Geometry::SetupBoundaryConditions() {
+    
+//     // South 1 [0] ; East 2 [1]; North 3 [2]; West 4 [3]
+
+//     // Boundary attributes for Neumann BC on the west boundary for CnE
+//     nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+//     nbc_w_bdr = 0; 
+//     nbc_w_bdr[3] = 1;  // Applying Neumann BC to the west boundary
+
+//     // Dirichlet BC on the east boundary for CnP & phP
+//     dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+//     dbc_e_bdr = 0; 
+//     dbc_e_bdr[1] = 1;  // Applying Dirichlet BC to the east boundary
+
+//     // Extract essential true DOFs (Dirichlet BCs) on the east boundary
+//     mfem::Array<int> ess_tdof_list_e(0);
+//     parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+
+//     // Dirichlet BC on the west boundary for CnE & phE
+//     dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+//     dbc_w_bdr = 0; 
+//     dbc_w_bdr[3] = 1;  // Applying Dirichlet BC to the west boundary
+
+//     // Extract essential true DOFs (Dirichlet BCs) on the west boundary
+//     mfem::Array<int> ess_tdof_list_w(0);
+//     parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
+
+// }
+
 void Initialize_Geometry::SetupBoundaryConditions() {
     
     // South 1 [0] ; East 2 [1]; North 3 [2]; West 4 [3]
 
-    // Boundary attributes for Neumann BC on the west boundary for CnE
+    // Neumann BC on all sides for CnCH (natural boundary condition, e.g., zero flux)
+    nbc_s_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+    nbc_s_bdr = 0;
+    nbc_s_bdr[0] = 1;  // South
+
+    nbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+    nbc_e_bdr = 0;
+    nbc_e_bdr[1] = 1;  // East
+
+    nbc_n_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+    nbc_n_bdr = 0;
+    nbc_n_bdr[2] = 1;  // North
+
     nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-    nbc_w_bdr = 0; 
-    nbc_w_bdr[3] = 1;  // Applying Neumann BC to the west boundary
+    nbc_w_bdr = 0;
+    nbc_w_bdr[3] = 1;  // West
 
     // Dirichlet BC on the east boundary for CnP & phP
     dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
@@ -337,7 +378,11 @@ void Initialize_Geometry::SetupBoundaryConditions() {
     mfem::Array<int> ess_tdof_list_w(0);
     parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
 
+
+    // No Dirichlet BCs needed for symmetric CnCH update
+    // Leave dbc_*_bdr and ess_tdof_list_* unassigned or empty
 }
+
     
 
 

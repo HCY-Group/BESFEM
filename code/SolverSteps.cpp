@@ -156,6 +156,9 @@ void SolverSteps::MassMatrix(mfem::ParGridFunction &psx, std::shared_ptr<mfem::H
     // Assemble the bilinear form into a sparse matrix representation
     M->Assemble();
 
+    mfem::Array<int> boundary_dofs;
+    boundary_dofs.SetSize(0); // ✅ Explicitly set to zero-length
+
     // Construct the mass matrix and store it in HPM
     mfem::HypreParMatrix HPM;
     M->FormSystemMatrix(boundary_dofs, HPM); // should be form linear system
@@ -182,6 +185,9 @@ void SolverSteps::MassMatrix(std::shared_ptr<mfem::HypreParMatrix> &Mmat) {
     
     // Assemble the bilinear form into a sparse matrix representation
     M->Assemble();
+
+    mfem::Array<int> boundary_dofs;
+    boundary_dofs.SetSize(0); // ✅ Explicitly set to zero-length
 
     // Construct the mass matrix and store it in HPM
     mfem::HypreParMatrix HPM;

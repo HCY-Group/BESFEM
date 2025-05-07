@@ -44,6 +44,12 @@ private:
     std::shared_ptr<mfem::CGSolver> MCH_solver;
     mfem::HypreSmoother MCH_prec;
 
+    std::shared_ptr<mfem::HypreParVector> CpV0; ///< Initial particle concentration values
+    mfem::HypreParVector PsVc; ///< Vector for storing true degrees of freedom in the solid region
+    std::shared_ptr<mfem::HypreParVector> RHCp; ///< Right-hand-side vector at the current time step
+    std::shared_ptr<mfem::HypreParVector> CpVn; ///< Particle concentration values at the next time step
+
+
     // Interpolation tables
     mfem::Vector X_101 = mfem::Vector(101);
     mfem::Vector dF_101 = mfem::Vector(101);

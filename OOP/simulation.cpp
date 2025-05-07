@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
     // int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 20.0)));
     
     // Perform simulation over time steps
-    for (int t = 0; t < 2000 + 1; ++t) {
+    for (int t = 0; t < 20000 + 1; ++t) {
     // while ( VCell > Constants::VCut) {
 
         // if (rank == 0) {
@@ -206,16 +206,16 @@ int main(int argc, char *argv[]) {
     // phE_gf *= *domain_parameters.pse;
 
     // Save simulation outputs
-    geometry.parallelMesh->Save("Results3/pmesh");
-    domain_parameters.psi->Save("Results3/psi");
-    domain_parameters.pse->Save("Results3/pse");
+    geometry.parallelMesh->Save("Results/pmesh");
+    domain_parameters.psi->Save("Results/psi");
+    domain_parameters.pse->Save("Results/pse");
 
-    // CnP_gf.Save("Results/CnP");
-    CnCH_gf.Save("Results3/CnCH");
-    CnE_gf.Save("Results3/CnE");
-    phP_gf.Save("Results3/phP");
-    phE_gf.Save("Results3/phE");
-    Rxn_gf.Save("Results3/Rxn");
+    // // CnP_gf.Save("Results/CnP");
+    CnCH_gf.Save("Results/CnCH");
+    // CnE_gf.Save("Results3/CnE");
+    // phP_gf.Save("Results3/phP");
+    // phE_gf.Save("Results3/phE");
+    Rxn_gf.Save("Results/Rxn");
 
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();

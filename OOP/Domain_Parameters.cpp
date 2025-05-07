@@ -64,11 +64,9 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta), 2) - 1.0) / (2 * Constants::zeta); // circle
 
         } else if (strcmp(mesh_type, "d") == 0) {
-            double scalingFactor = 1/(Constants::dh); 
-            (*psi)(vi) = 0.5 * (1.0 + tanh(((*dsF)(vi)) / 1.0)); // disk
-            // use psi to calculate AvP in the future
-            (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh * scalingFactor)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // disk
- 
+            (*psi)(vi) = 0.5 * (1.0 + tanh(((*dsF)(vi)) / Constants::zeta)); // disk
+            (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // disk
+        
         } else if (strcmp(mesh_type, "v") == 0) {
             (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi))); // voxel
             (*AvP)(vi) = -(pow(tanh((*dsF)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
@@ -92,7 +90,14 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     }
     
 
-    // AvP->Save("Results/AvP");
+    AvP->Save("Results/AvP");
+
+    // std::ofstream out("Results/dsF_values.txt");
+    // for (int vi = 0; vi < nV; vi++) {
+    //     out << (*dsF)(vi) << "\n";
+    // }
+    // out.close();
+
 }
 
     
