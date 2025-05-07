@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
     // Initialize the reaction with an empty reaction grid function and initial value
     Reaction reaction(geometry, domain_parameters);
     mfem::ParGridFunction Rxn_gf(geometry.parfespace.get());
-    reaction.Initialize(Rxn_gf, 1e-10);
+    reaction.Initialize(Rxn_gf, 1e-8);
     // reaction.Initialize(Rxn_gf, 0.0);
 
 
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
     // int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 20.0)));
     
     // Perform simulation over time steps
-    for (int t = 0; t < 20000 + 1; ++t) {
+    for (int t = 0; t < 200000 + 1; ++t) {
     // while ( VCell > Constants::VCut) {
 
         // if (rank == 0) {

@@ -166,15 +166,22 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
 	// M_phi->Mult(phV0, RHS);
     M_phi->Mult(*CpV0, *RHCp);
 
-    for (int i = 0; i < CpV0->Size(); i++) {
-        if (PsVc(i) > 1.0e-5) {
-            double rhs_term = Lp2(i) + Rx(i) / Constants::rho;
-            rhs_term *= Constants::dt;
-            (*RHCp)(i) += rhs_term / PsVc(i);  // SBM normalization
-        }
-    }
+    // for (int i = 0; i < CpV0->Size(); i++) {
+    //     if (PsVc(i) > 1.0e-5) {
+    //         // double rhs_term = Lp2(i) + Rx(i) / Constants::rho;
+    //         double rhs_term = Lp2(i) + (Rx(i) / Constants::rho) * AvP(i);
+    //         rhs_term *= Constants::dt;
+    //         (*RHCp)(i) += rhs_term / PsVc(i);  // SBM normalization
+    //     }
+    // }
 
-    // (*RHCp) += Lp2;
+    // WHERE (psP(1:ny,1:nx,1:nz) > 1.0d-5)
+    // CnP(1:ny,1:nx,1:nz) = CnP(1:ny,1:nx,1:nz) + dt*(DvC(1:ny,1:nx,1:nz) + &
+    //     (Rxn(1:ny,1:nx,1:nz)/rho)*AvPx(1:ny,1:nx,1:nz))/psP(1:ny,1:nx,1:nz)
+    // END WHERE
+
+
+    (*RHCp) += Lp2;
 
     // RHS += Lp2; // RHS = M_phi * phV0 + Lp2
   

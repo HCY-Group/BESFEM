@@ -192,7 +192,9 @@
             double rxn = kfw * cne * std::exp(-Constants::alp * Constants::Cst1 * eta)
             - kbw * cnp * std::exp(Constants::alp * Constants::Cst1 * eta);
 
-            Rx(vi) = rxn;
+            // Rx(vi) = rxn;
+            Rx(vi) = AvP(vi) * rxn; // SBM: restrict reaction to interface
+
         }
     }
 }
