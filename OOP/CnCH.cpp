@@ -51,25 +51,18 @@
             myMBfile >> Mb5_101(i);
             Mb5_101(i) *= 1.0e2 * 2.0 / 3.0;  // Fortran scaling
         }
-
-        // for (int i = 0; i < 101; ++i) {
-        //     myMBfile >> Mb5_101(i);
-        //     Mb5_101(i) *= 1.0e2 * 2.0 / 3.0; // scaling from Fortran
-        //     Mob(i) = Mb5_101(i);        
-        // }
-
-        // for (int i = 0; i < 101; i++) myMBfile >> Mb5_101(i);
-
-        // // Scale mobility values to match the FORTRAN behavior
-        // // DTbl(2,1:101) = DTbl(2,1:101)*1.0d2*2/3	
-        // for (int i = 0; i < 101; i++) {
-        //     Mb5_101(i) *= 1.0e2 * 2.0 / 3.0;
-        // }
  
      }
 
 double CnCH::Calculate_dF(double ph, const mfem::Vector &X_101, const mfem::Vector &dF_101)
     {
+
+        if (ph < 0.0) {
+            ph = 1.0e-6;
+        } else if (ph > 1.0) {
+            ph = 1.0;
+        }
+
         int idx = std::floor(ph / 0.01);
         if (idx < 0) idx = 0;
         if (idx > 99) idx = 99;
@@ -78,10 +71,6 @@ double CnCH::Calculate_dF(double ph, const mfem::Vector &X_101, const mfem::Vect
 
 double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem::Vector &mob_101)
     {
-        // int idx = std::floor(cn / 0.01) + 0;  // +0 to match [0,100] index logic
-        // if (idx < 0) idx = 0;
-        // if (idx > 99) idx = 99;
-
         // Tbl_Chk_Pln_3DA
         // Fortran-style clamping
         if (cn < 0.0) {
@@ -100,17 +89,18 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
  void CnCH::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
     {
         Concentrations::SetInitialConcentration(Cn, initial_value); // initial value: 2.02d-2
-        Concentrations::SetUpSolver(psx, M_phi, *MCH_solver, MCH_prec); // sets up Mass Matrix & Conditions 
-    
-        psx.GetTrueDofs(PsVc); // Analog to PsVc in CnP
-        Cn.GetTrueDofs(*CpV0); // Save initial Cn into CpV0 (like CpV0 in CnP)
+        // Concentrations::SetUpSolver(psx, M_phi, *MCH_solver, MCH_prec); // sets up Mass Matrix & Conditions 
+        
+        SolverSteps::MassMatrix(M_phi);
+        SolverSteps::SolverConditions(M_phi, *MCH_solver, MCH_prec);
+
+        psx.GetTrueDofs(PsVc); // similar to PsVc in CnP
     }
  
  void CnCH::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
  {
     
     mfem::Array<int> boundary_dofs;  // Empty array = natural Neumann BCs
-
 
     // Extract current Cn values
     Cn.GetTrueDofs(*CpV0);
@@ -148,8 +138,6 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
 
     mfem::GridFunctionCoefficient Mob_GFC(&Mob); // updated value
 
-    // boundary_dofs.DeleteAll(); // reset to natural boundary
-
     // stiffness matrix for mu
     SolverSteps::StiffnessMatrix(Mob_GFC, boundary_dofs, K_mu);
 
@@ -159,29 +147,14 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
 
     // we need a HypreParVector for the reaction term. ==> Rxn
     // the forward and backward rate constants come from tabulating.
-	Lp2 += Rx;
-	Lp2 *= Constants::dt;
+	Lp2 += Rx; // comment out for now
+	Lp2 *= Constants::dt; // comment out for now
 
 	// right hand side; Eq 5
 	// M_phi->Mult(phV0, RHS);
     M_phi->Mult(*CpV0, *RHCp);
 
-    // for (int i = 0; i < CpV0->Size(); i++) {
-    //     if (PsVc(i) > 1.0e-5) {
-    //         // double rhs_term = Lp2(i) + Rx(i) / Constants::rho;
-    //         double rhs_term = Lp2(i) + (Rx(i) / Constants::rho) * AvP(i);
-    //         rhs_term *= Constants::dt;
-    //         (*RHCp)(i) += rhs_term / PsVc(i);  // SBM normalization
-    //     }
-    // }
-
-    // WHERE (psP(1:ny,1:nx,1:nz) > 1.0d-5)
-    // CnP(1:ny,1:nx,1:nz) = CnP(1:ny,1:nx,1:nz) + dt*(DvC(1:ny,1:nx,1:nz) + &
-    //     (Rxn(1:ny,1:nx,1:nz)/rho)*AvPx(1:ny,1:nx,1:nz))/psP(1:ny,1:nx,1:nz)
-    // END WHERE
-
-
-    (*RHCp) += Lp2;
+    (*RHCp) += Lp2; // comment out for now
 
     // RHS += Lp2; // RHS = M_phi * phV0 + Lp2
   
@@ -191,24 +164,21 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
 
     for (int i = 0; i < CpVn->Size(); i++) {
         if (PsVc(i) < 1.0e-5) {
-            (*CpVn)(i) = 0.02;
+            (*CpVn)(i) = 0.0202;
         }
     }
 
     Cn.Distribute(CpVn.get());
 
-
-    // Cn.Distribute(phV0);
-
-    // // try to move this outside of the loop -- into main after simulation
-    // for (int i = 0; i < Cn.Size(); i++) {
-    //     if (psx(i) < 1.0e-5) {
-    //         Cn(i) = 0.02;
-    //     }
-    // }
-
+    for (int i = 0; i < Cn.Size(); ++i) {
+        if (Cn(i) < 0.0) {
+            Cn(i) = 0.0;
+        } else if (Cn(i) > 1.0) {
+            Cn(i) = 1.0;
+        }
+    }
+    
     // Degree of Lithiation
     Concentrations::LithiationCalculation(Cn, psx);
  
  }
- 

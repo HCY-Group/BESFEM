@@ -111,6 +111,157 @@
 // }
 
 
+// /**
+//  * @file Reaction.cpp
+//  * @brief Implementation of the Reaction class for electrochemical reaction modeling in batteries.
+//  */
+
+//  #include "Reaction.hpp"
+//  #include "../code/Constants.hpp"
+//  #include "mfem.hpp"
+//  #include "CnE.hpp"
+//  #include "PotE.hpp"
+//  #include "PotP.hpp"
+//  #include <fstream>
+//  #include <cmath>
+ 
+//  Reaction::Reaction(Initialize_Geometry &geo, Domain_Parameters &para)
+//      : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para), AvP(*para.AvP), AvB(*para.AvB), EVol(para.EVol)
+//  {
+//      nE = geometry.nE; 
+//      nC = geometry.nC; 
+//      nV = geometry.nV; 
+ 
+//      i0C = std::make_unique<mfem::ParGridFunction>(fespace.get()); // exchange current density
+//      OCV = std::make_unique<mfem::ParGridFunction>(fespace.get()); // open circuit voltage
+//      Kfw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // forward reaction constant
+//      Kbw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // backward rection constant
+//      dPHE = std::make_unique<mfem::ParGridFunction>(fespace.get()); // voltage drop
+ 
+//      // Load table data for interpolation
+//      X_101.SetSize(101);
+//      i0C_101.SetSize(101);
+//      OCV_101.SetSize(101);
+ 
+//      std::ifstream myXfile("../C_Li_X_101.txt");
+//      std::ifstream myI0file("../C_Li_J2_101.txt");
+//      std::ifstream myOCVfile("../C_Li_O3_101.txt");
+ 
+//      for (int i = 0; i < 101; i++) myXfile >> X_101(i);
+//      for (int i = 0; i < 101; i++) myI0file >> i0C_101(i);    
+//      for (int i = 0; i < 101; i++) myOCVfile >> OCV_101(i);
+//  }
+ 
+//  double Reaction::InterpolateFromTable(double cn, const mfem::Vector &X_101, const mfem::Vector &table_101)
+//  {
+//      if (cn < 0.0) cn = 1.0e-6;
+//      if (cn > 1.0) cn = 1.0;
+ 
+//      int idx = std::floor(cn / 0.01);
+//      if (idx < 0) idx = 0;
+//      if (idx > 99) idx = 99;
+ 
+//      return table_101(idx) + (cn - X_101(idx)) / 0.01 * (table_101(idx + 1) - table_101(idx));
+//  }
+ 
+//  void Reaction::Initialize(mfem::ParGridFunction &Rx, double initial_value) {
+//      SetInitialReaction(Rx, initial_value);
+//     //  Rx += AvP;
+//     //  Rx *= 1.0e-8;
+//  }
+ 
+//  void Reaction::SetInitialReaction(mfem::ParGridFunction &Rx, double initial_value) {
+//      for (int i = 0; i < Rx.Size(); ++i) {
+//          Rx(i) = initial_value;
+//      }
+//  }
+ 
+//  void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, const mfem::ParGridFunction &Cn1,
+//                             const mfem::ParGridFunction &Cn2, const mfem::ParGridFunction &phx1,
+//                             const mfem::ParGridFunction &phx2) {
+//     for (int vi = 0; vi < nV; ++vi) {
+//         if (AvP(vi) > 0.01) {
+//             double eta = phx1(vi) - phx2(vi);
+//             (*dPHE)(vi) = eta;
+
+//             double kfw = (*Kfw)(vi);
+//             double kbw = (*Kbw)(vi);
+//             double cnp = std::max(Cn1(vi), 1.0e-6); // fix this
+//             double cne = Cn2(vi);
+
+//             double rxn = kfw * cne * std::exp(-Constants::alp * Constants::Cst1 * eta)
+//             - kbw * cnp * std::exp(Constants::alp * Constants::Cst1 * eta);
+
+//             Rx(vi) = rxn;
+//             // Rx(vi) = AvP(vi) * rxn; // SBM: restrict reaction to interface
+
+//         }
+//     }
+// }
+    
+
+ 
+//  void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
+//      for (int vi = 0; vi < nV; vi++){
+//         //  if(AvB(vi) * Constants::dh > 0.0){
+//              double cn_val = Cn(vi);
+//              cn_val = std::max(cn_val, 1.0e-6);  // Avoid division by zero
+
+//              double i0 = InterpolateFromTable(cn_val, X_101, i0C_101) * 1.0e-3; // Convert mA to A
+//              double ocv = InterpolateFromTable(cn_val, X_101, OCV_101);
+ 
+//              (*i0C)(vi) = i0;
+//              (*OCV)(vi) = ocv;
+//              (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
+//              (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
+//         //  }
+//      }
+
+//     //  for (int i = 0; i < Cn.Size(); i++) {
+//     //     double cn_val = Cn(i);
+//     //     (*i0C)(i) = InterpolateFromTable(cn_val, X_101, i0C_101) * 1.0e-3 ;
+//     //     (*OCV)(i) = InterpolateFromTable(cn_val, X_101, OCV_101) ;
+    
+//     // }
+    
+//     // i0C->Save("Results2/ioc"); // save mobility values for debugging
+//     // OCV->Save("Results2/ocv"); // save mobility values for debugging
+//  }
+
+
+
+ 
+//  void Reaction::TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_current){
+//      local_current = 0.0;
+//      mfem::Array<double> VtxVal(nC);
+//      mfem::Vector EAvg(nE);
+ 
+//      for (int ei = 0; ei < nE; ei++){
+//          Rx.GetNodalValues(ei,VtxVal);
+//          double val = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
+//          EAvg(ei) = val/nC;
+//          local_current += EAvg(ei)*EVol(ei);
+//      }
+ 
+//      MPI_Allreduce(&local_current, &global_current, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+//  }
+ 
+// //  void Reaction::WriteKfwToFile(const std::string &filename) const {
+// //     std::ofstream out(filename);
+// //     if (!out.is_open()) {
+// //         std::cerr << "Failed to open file " << filename << " for writing Kfw values.\n";
+// //         return;
+// //     }
+
+// //     for (int i = 0; i < Kfw->Size(); ++i) {
+// //         out << std::setprecision(12) << (*Kfw)(i) << "\n";
+// //     }
+
+// //     out.close();
+// //     std::cout << "Kfw values written to " << filename << "\n";
+// // }
+
+
 /**
  * @file Reaction.cpp
  * @brief Implementation of the Reaction class for electrochemical reaction modeling in batteries.
@@ -126,7 +277,8 @@
  #include <cmath>
  
  Reaction::Reaction(Initialize_Geometry &geo, Domain_Parameters &para)
-     : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para), AvP(*para.AvP), AvB(*para.AvB), EVol(para.EVol)
+     : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo),
+       domain_parameters(para), AvP(*para.AvP), AvB(*para.AvB), EVol(para.EVol)
  {
      nE = geometry.nE; 
      nC = geometry.nC; 
@@ -135,7 +287,7 @@
      i0C = std::make_unique<mfem::ParGridFunction>(fespace.get()); // exchange current density
      OCV = std::make_unique<mfem::ParGridFunction>(fespace.get()); // open circuit voltage
      Kfw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // forward reaction constant
-     Kbw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // backward rection constant
+     Kbw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // backward reaction constant
      dPHE = std::make_unique<mfem::ParGridFunction>(fespace.get()); // voltage drop
  
      // Load table data for interpolation
@@ -164,99 +316,75 @@
      return table_101(idx) + (cn - X_101(idx)) / 0.01 * (table_101(idx + 1) - table_101(idx));
  }
  
- void Reaction::Initialize(mfem::ParGridFunction &Rx, double initial_value) {
+ void Reaction::Initialize(mfem::ParGridFunction &Rx, double initial_value)
+ {
      SetInitialReaction(Rx, initial_value);
-     Rx *= AvP;
-    //  Rx *= 1.0e-8;
+     Rx *= AvP; // Scale by active particle surface area
  }
  
- void Reaction::SetInitialReaction(mfem::ParGridFunction &Rx, double initial_value) {
+ void Reaction::SetInitialReaction(mfem::ParGridFunction &Rx, double initial_value)
+ {
      for (int i = 0; i < Rx.Size(); ++i) {
          Rx(i) = initial_value;
      }
  }
  
- void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, const mfem::ParGridFunction &Cn1,
-                            const mfem::ParGridFunction &Cn2, const mfem::ParGridFunction &phx1,
-                            const mfem::ParGridFunction &phx2) {
-    for (int vi = 0; vi < nV; ++vi) {
-        if (AvP(vi) > 0.01) {
-            double eta = phx1(vi) - phx2(vi);
-            (*dPHE)(vi) = eta;
-
-            double kfw = (*Kfw)(vi);
-            double kbw = (*Kbw)(vi);
-            double cnp = std::max(Cn1(vi), 1.0e-6); // fix this
-            double cne = Cn2(vi);
-
-            double rxn = kfw * cne * std::exp(-Constants::alp * Constants::Cst1 * eta)
-            - kbw * cnp * std::exp(Constants::alp * Constants::Cst1 * eta);
-
-            // Rx(vi) = rxn;
-            Rx(vi) = AvP(vi) * rxn; // SBM: restrict reaction to interface
-
-        }
-    }
-}
-    
-
+ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx,
+                             const mfem::ParGridFunction &Cn1,
+                             const mfem::ParGridFunction &Cn2,
+                             const mfem::ParGridFunction &phx1,
+                             const mfem::ParGridFunction &phx2)
+ {
+     for (int vi = 0; vi < nV; ++vi) {
+         if (AvP(vi) > 0.01) {  // Only compute in interfacial region
+             double eta = phx1(vi) - phx2(vi);
+             (*dPHE)(vi) = eta;
  
- void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
-     for (int vi = 0; vi < nV; vi++){
-        //  if(AvB(vi) * Constants::dh > 0.0){
-             double cn_val = Cn(vi);
-             cn_val = std::max(cn_val, 1.0e-6);  // Avoid division by zero
-
-             double i0 = InterpolateFromTable(cn_val, X_101, i0C_101) * 1.0e-3; // Convert mA to A
-             double ocv = InterpolateFromTable(cn_val, X_101, OCV_101);
+             double cnp = std::max(Cn1(vi), 1.0e-6);
+             double cne = std::max(Cn2(vi), 1.0e-6);
  
-             (*i0C)(vi) = i0;
-             (*OCV)(vi) = ocv;
-             (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
-             (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
-        //  }
+             double kfw = (*Kfw)(vi);
+             double kbw = (*Kbw)(vi);
+ 
+             double rxn = kfw * cne * std::exp(-Constants::alp * Constants::Cst1 * eta)
+                        - kbw * cnp * std::exp(Constants::alp * Constants::Cst1 * eta);
+ 
+             Rx(vi) = rxn;  // No AvP here
+         } else {
+             Rx(vi) = 0.0;  // Zero outside the interface
+         }
      }
-
-    //  for (int i = 0; i < Cn.Size(); i++) {
-    //     double cn_val = Cn(i);
-    //     (*i0C)(i) = InterpolateFromTable(cn_val, X_101, i0C_101) * 1.0e-3 ;
-    //     (*OCV)(i) = InterpolateFromTable(cn_val, X_101, OCV_101) ;
-    
-    // }
-    
-    // i0C->Save("Results2/ioc"); // save mobility values for debugging
-    // OCV->Save("Results2/ocv"); // save mobility values for debugging
  }
-
-
-
  
- void Reaction::TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_current){
+ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn)
+ {
+     for (int vi = 0; vi < nV; ++vi) {
+         double cn_val = std::max(Cn(vi), 1.0e-6);  // Clamp to avoid zero
+ 
+         double i0 = InterpolateFromTable(cn_val, X_101, i0C_101) * 1.0e-3;  // mA -> A
+         double ocv = InterpolateFromTable(cn_val, X_101, OCV_101);
+ 
+         (*i0C)(vi) = i0;
+         (*OCV)(vi) = ocv;
+ 
+         (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * std::exp(Constants::alp * Constants::Cst1 * ocv);
+         (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * std::exp(-Constants::alp * Constants::Cst1 * ocv);
+     }
+ }
+ 
+ void Reaction::TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_current)
+ {
      local_current = 0.0;
      mfem::Array<double> VtxVal(nC);
      mfem::Vector EAvg(nE);
  
-     for (int ei = 0; ei < nE; ei++){
-         Rx.GetNodalValues(ei,VtxVal);
-         double val = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
-         EAvg(ei) = val/nC;
-         local_current += EAvg(ei)*EVol(ei);
+     for (int ei = 0; ei < nE; ++ei) {
+         Rx.GetNodalValues(ei, VtxVal);
+         double sum = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
+         EAvg(ei) = sum / nC;
+         local_current += EAvg(ei) * EVol(ei);
      }
  
      MPI_Allreduce(&local_current, &global_current, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
  }
  
-//  void Reaction::WriteKfwToFile(const std::string &filename) const {
-//     std::ofstream out(filename);
-//     if (!out.is_open()) {
-//         std::cerr << "Failed to open file " << filename << " for writing Kfw values.\n";
-//         return;
-//     }
-
-//     for (int i = 0; i < Kfw->Size(); ++i) {
-//         out << std::setprecision(12) << (*Kfw)(i) << "\n";
-//     }
-
-//     out.close();
-//     std::cout << "Kfw values written to " << filename << "\n";
-// }

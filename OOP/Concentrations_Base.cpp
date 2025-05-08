@@ -32,6 +32,7 @@ void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double i
 void Concentrations::SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::HypreSmoother &smoother) {
     
     SolverSteps::MassMatrix(psx, Mmat);
+    // SolverSteps::MassMatrix(Mmat);
     SolverSteps::SolverConditions(Mmat, solver, smoother);
     
 }

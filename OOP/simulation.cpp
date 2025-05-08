@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
     // int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 20.0)));
     
     // Perform simulation over time steps
-    for (int t = 0; t < 200000 + 1; ++t) {
+    for (int t = 0; t < 10000 + 1; ++t) {
     // while ( VCell > Constants::VCut) {
 
         // if (rank == 0) {
@@ -151,42 +151,42 @@ int main(int argc, char *argv[]) {
         // check_nan("CnCH", CnCH_gf, t);
 
         // electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
-        // check_nan("CnE", CnE_gf, t);
+        // // check_nan("CnE", CnE_gf, t);
 
-        // // // // if (t % t_skip == 0) {
-        // // //     // Step 2: Update potentials for both particle and electrolyte phases
-        //     particle_potential.TimeStep(CnCH_gf, *domain_parameters.psi, phP_gf);
-        //     electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf);
-        // // // // // }
+        // // // // // if (t % t_skip == 0) {
+        // // // //     // Step 2: Update potentials for both particle and electrolyte phases
+        //     // particle_potential.TimeStep(CnCH_gf, *domain_parameters.psi, phP_gf);
+        //     // electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf);
+        // // // // // // }
 
-        // // // Step 3: Compute rate constants and exchange current density at the interface     
+        // // // // Step 3: Compute rate constants and exchange current density at the interface     
         // reaction.ExchangeCurrentDensity(CnCH_gf); 
-        // reaction.WriteKfwToFile("Kfw_output.txt");
+        // // reaction.WriteKfwToFile("Kfw_output.txt");
 
 
-        // // Step 4: Iteratively solve for global reaction rates using Butler-Volmer kinetics
+        // // // Step 4: Iteratively solve for global reaction rates using Butler-Volmer kinetics
         // double globalerror_P = 1.0; // Error for particle potential
         // double globalerror_E = 1.0; // Error for electrolyte potential
 
-        // // // if (t % t_skip == 0) {
-            // while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
+        // // // // if (t % t_skip == 0) {
+        //     // while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
 
-                // Update reaction rates using the Butler-Volmer equation
+        //         // Update reaction rates using the Butler-Volmer equation
                 // reaction.ButlerVolmer(Rxn_gf, CnCH_gf, CnE_gf, phP_gf, phE_gf);
-                // check_nan("Rxn", Rxn_gf, t);
+        //         // check_nan("Rxn", Rxn_gf, t);
 
 
-        // //         // Calculate global errors for particle and electrolyte potentials
-                // particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
-                // electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
+        // // //         // Calculate global errors for particle and electrolyte potentials
+        //         // particle_potential.CalculateGlobalError(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
+        //         // electrolyte_potential.CalculateGlobalError(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
             
-            // }
-        // // }
+        //     // }
+        // // // }
 
-        // // Step 5: Compute the total reaction current
+        // // // Step 5: Compute the total reaction current
         // reaction.TotalReactionCurrent(Rxn_gf, global_current);
 
-        // // Step 6: Adjust the particle potential based on the target constant current
+        // // // Step 6: Adjust the particle potential based on the target constant current
         // current.Constant(phP_gf, global_current);
 
         // Step 7: Update the cell voltage based on the particle and electrolyte potentials
@@ -197,9 +197,10 @@ int main(int argc, char *argv[]) {
         t++;
 
     }
+    
 
     // // Multiply Grid Functions for Error Calculations
-    // CnP_gf *= *domain_parameters.psi;
+    CnCH_gf *= *domain_parameters.psi;
     // phP_gf *= *domain_parameters.psi;
 
     // CnE_gf *= *domain_parameters.pse;
@@ -212,7 +213,7 @@ int main(int argc, char *argv[]) {
 
     // // CnP_gf.Save("Results/CnP");
     CnCH_gf.Save("Results/CnCH");
-    // CnE_gf.Save("Results3/CnE");
+    // CnE_gf.Save("Results/CnE");
     // phP_gf.Save("Results3/phP");
     // phE_gf.Save("Results3/phE");
     Rxn_gf.Save("Results/Rxn");

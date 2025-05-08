@@ -12,7 +12,7 @@
 double gTrgI = 0.0;
 
 // Constructor
-Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo) 
+Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo)
     : geometry(geo), nV(geo.nV), nE(geo.nE), nC(geo.nC), dsF(geo.dsF.get()), pmesh(geo.parallelMesh.get()),
     fespace(geo.parfespace)
 {}
@@ -21,7 +21,7 @@ Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo)
 Domain_Parameters::~Domain_Parameters() {}
 
 void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
-        
+
     InitializeGridFunctions();
     InterpolateDomainParameters(mesh_type);
     CalculatePhasePotentialsAndTargetCurrent();
@@ -34,7 +34,7 @@ void Domain_Parameters::InitializeGridFunctions() {
     if (!fespace) {
         throw std::runtime_error("Finite element space is not initialized.");
     }
-    
+
     psi = make_unique<mfem::ParGridFunction>(fespace.get());
     pse = make_unique<mfem::ParGridFunction>(fespace.get());
     AvP = make_unique<mfem::ParGridFunction>(fespace.get());
@@ -43,7 +43,7 @@ void Domain_Parameters::InitializeGridFunctions() {
 }
 
 void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
-    
+
     if (mesh_type == nullptr) {
         std::cerr << "Error: Mesh type not specified. Use -t option to specify mesh type (r for rectangle, c for circle, v for voxel)." << std::endl;
         exit(EXIT_FAILURE);
@@ -66,8 +66,11 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         } else if (strcmp(mesh_type, "d") == 0) {
             (*psi)(vi) = 0.5 * (1.0 + tanh(((*dsF)(vi)) / Constants::zeta)); // disk
             (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // disk
-            (*AvP)(vi) *= Constants::dh;
-        
+            
+            // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta); // disk
+            // (*AvP)(vi) *= 1/Constants::dh;
+
+
         } else if (strcmp(mesh_type, "v") == 0) {
             (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi))); // voxel
             (*AvP)(vi) = -(pow(tanh((*dsF)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
@@ -82,6 +85,17 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         if ((*psi)(vi) < Constants::eps) { (*psi)(vi) = Constants::eps; }
         if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }
     }
+    
+    // for (int vi = 0; vi < nV; ++vi) {
+    //     if ((*AvP)(vi) < 1.0e-2) {
+    //         (*AvP)(vi) = 0.0;
+    //     }
+    // }
+
+    // // Apply dh scaling
+    // for (int vi = 0; vi < nV; ++vi) {
+    //     (*AvP)(vi) *= 1/Constants::dh;
+    // }
 
     AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
 
@@ -89,8 +103,10 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         if ((*AvP)(vi) * Constants::dh < 1.0e-3) { (*AvP)(vi) = 0.0; }
         if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
     }
-    
 
+    // mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
+    // AvP->ProjectCoefficient(AvP_coeff);
+    
     AvP->Save("Results/AvP");
 
     // std::ofstream out("Results/dsF_values.txt");
@@ -101,16 +117,16 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
 
 }
 
-    
+
     // psi->ProjectGridFunction(*dsF);
     // *psi -= 0.5;
 
     // // interpolate domain parameter from distance function
     // for (int vi = 0; vi < nV; vi++) {
-    //     // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // used for rectangle 
+    //     // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // used for rectangle
     //     // (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta)); // used for circle
     //     // (*psi)(vi) = 0.5 * (1.0 + tanh((*psi)(vi))); // used for voxel code
-        
+
     //     // (*pse)(vi) = 1.0 - (*psi)(vi);
 
     //     // AvP is the rate of change of psi; used in reaction rates
@@ -158,11 +174,11 @@ void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction& grid_functi
 }
 
 void Domain_Parameters::CalculateTotalPhaseField(const mfem::ParGridFunction& grid_function, double& total, double& global_total) {
-    
+
     EVol.SetSize(nE);
 	for (int ei = 0; ei < nE; ei++){
-        EVol(ei) = pmesh->GetElementVolume(ei);	
-	} 
+        EVol(ei) = pmesh->GetElementVolume(ei);
+	}
 
     // Call the general `CalculateTotals` method for any field
     CalculateTotals(grid_function, EVol, total, global_total);
@@ -170,7 +186,7 @@ void Domain_Parameters::CalculateTotalPhaseField(const mfem::ParGridFunction& gr
 }
 
 void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
-    
+
     // Calculate totals for Psi and Pse fields
     CalculateTotalPhaseField(*psi, tPsi, gtPsi);
     CalculateTotalPhaseField(*pse, tPse, gtPse);
@@ -180,7 +196,7 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
 }
 
 void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
-    
+
     // Compute target current based on total Psi, rho, Cr, and constants
     trgI = total_psi * Constants::rho * (0.9 - 0.3) / (3600.0 / Constants::Cr);
 

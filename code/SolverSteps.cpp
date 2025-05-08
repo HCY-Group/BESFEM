@@ -180,8 +180,10 @@ void SolverSteps::MassMatrix(std::shared_ptr<mfem::HypreParMatrix> &Mmat) {
     // Create a parallel bilinear form for the finite element space
     M = new mfem::ParBilinearForm(local_fespace);
 
+    mfem::ConstantCoefficient one(1.0);
+
     // Add a domain integrator to the bilinear form using the weighted mass integrator
-    M->AddDomainIntegrator(new mfem::MassIntegrator);
+    M->AddDomainIntegrator(new mfem::MassIntegrator(one));
     
     // Assemble the bilinear form into a sparse matrix representation
     M->Assemble();
@@ -248,7 +250,7 @@ void SolverSteps::StiffnessMatrix(mfem::Coefficient &cDx, mfem::Array<int> bound
     mfem::HypreParMatrix Khpm;
 
     // Form the linear system, considering boundary conditions, parallel grid function (concentration, voxel), and the force term (F)
-    K->FormSystemMatrix(boundary, Khpm);
+    K->FormSystemMatrix(boundary, Khpm); // need to use FormLinearSystem instead of FormSystemMatrix -- stop using FormSystemMatrix
 
     // Convert the assembled stiffness matrix into a shared pointer for further use
     Kmat = std::make_shared<mfem::HypreParMatrix>(Khpm);
