@@ -120,18 +120,17 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
     for (int i = 0; i < Cn.Size(); i++) {
         double val = Cn(i);  // get value at DOF i
         Mub(i) = Calculate_dF(val, X_101, dF_101);
-        // Mub(i) *= psx(i);
     }
 
     Mub.Save("Results/Mub"); // save mobility values for debugging
 
     Mub.GetTrueDofs(MuV);
+    Lp1 *= -1.0;
     MuV += Lp1; // mu = mu_b - Lp1; Eq 4 changed to - from +
 
     for (int i = 0; i < Cn.Size(); i++) {
         double cn_val = Cn(i);
         Mob(i) = Calculate_Mobility(cn_val, X_101, Mb5_101);
-        // Mob(i) *= psx(i); // multiply by psi 	pmN(0:ny+1,0:nx+1,0:nz+1) = psP(0:ny+1,0:nx+1,0:nz+1)*Mb(0:ny+1,0:nx+1,0:nz+1)
     }
 
     Mob.Save("Results/Mob"); // save mobility values for debugging
@@ -145,9 +144,13 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
     K_mu->Mult(MuV, Lp2);
     Lp2.Neg(); 
 
+    mfem::HypreParVector Rx_true_dofs(fespace.get());
+    Rx.GetTrueDofs(Rx_true_dofs);
+    Lp2 += Rx_true_dofs;
+
     // we need a HypreParVector for the reaction term. ==> Rxn
     // the forward and backward rate constants come from tabulating.
-	Lp2 += Rx; // comment out for now
+	// Lp2 += Rx; // comment out for now
 	Lp2 *= Constants::dt; // comment out for now
 
 	// right hand side; Eq 5

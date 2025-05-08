@@ -189,11 +189,13 @@ void SolverSteps::MassMatrix(std::shared_ptr<mfem::HypreParMatrix> &Mmat) {
     M->Assemble();
 
     mfem::Array<int> boundary_dofs;
-    boundary_dofs.SetSize(0); 
+    mfem::Vector X, B;
+    mfem::GridFunction dummy(local_fespace);
 
     // Construct the mass matrix and store it in HPM
     mfem::HypreParMatrix HPM;
-    M->FormSystemMatrix(boundary_dofs, HPM); // should be form linear system
+    // M->FormSystemMatrix(boundary_dofs, HPM); // should be form linear system
+    M->FormLinearSystem(boundary_dofs, dummy, dummy, HPM, X, B);
     
     // Assign the mass matrix to the shared pointer
     Mmat = std::make_shared<mfem::HypreParMatrix>(HPM);
@@ -249,8 +251,15 @@ void SolverSteps::StiffnessMatrix(mfem::Coefficient &cDx, mfem::Array<int> bound
     // Temporary matrix to hold the assembled stiffness matrix
     mfem::HypreParMatrix Khpm;
 
+    // Dummy solution and RHS for Form Linear System
+    mfem::GridFunction dummy_sol(local_fespace);
+    mfem::Vector dummy_rhs, dummy_X;
+
+    dummy_sol = 0.0;
+
     // Form the linear system, considering boundary conditions, parallel grid function (concentration, voxel), and the force term (F)
-    K->FormSystemMatrix(boundary, Khpm); // need to use FormLinearSystem instead of FormSystemMatrix -- stop using FormSystemMatrix
+    // K->FormSystemMatrix(boundary, Khpm); // need to use FormLinearSystem instead of FormSystemMatrix -- stop using FormSystemMatrix
+    K->FormLinearSystem(boundary, dummy_sol, dummy_sol, Khpm, dummy_X, dummy_rhs);
 
     // Convert the assembled stiffness matrix into a shared pointer for further use
     Kmat = std::make_shared<mfem::HypreParMatrix>(Khpm);
