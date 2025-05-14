@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 	// Output Advection Velocity to Paraview
 	ParGridFunction c(*solver_dg.GetAdvVel());
 	//c = c2;
-	solver.ParaviewSave("AdvVel","Vel",&c);
+	//solver.ParaviewSave("AdvVel","Vel",&c);
 
 
 	
@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
 			// Output Advection Velocity to Paraview
 			ParGridFunction c(*solver_dg2.GetAdvVel());
 			//c = c2;
-			solver.ParaviewSave("AdvVel_p","Vel_p",&c);
+			//solver.ParaviewSave("AdvVel_p","Vel_p",&c);
 		} else {
 			//solver.ParaviewSave("DstFun_e","Dst_e",&d2);
 			solver.ParaviewSave("DstFun_e","Dst_e",&psi2);
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 			// Output Advection Velocity to Paraview
 			ParGridFunction c(*solver_dg.GetAdvVel());
 			//c = c2;
-			solver.ParaviewSave("AdvVel_e","Vel_e",&c);
+			//solver.ParaviewSave("AdvVel_e","Vel_e",&c);
 		}
 
 	}
