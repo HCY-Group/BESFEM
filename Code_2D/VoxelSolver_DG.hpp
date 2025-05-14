@@ -20,6 +20,7 @@ private:
 	ParGridFunction *c = nullptr;
 	ParGridFunction *cx = nullptr;
 	ParGridFunction *cy = nullptr;
+	ParGridFunction *cz = nullptr;
 	ParGridFunction *sgn = nullptr;
 
 	ParBilinearForm *m = nullptr;

@@ -13,6 +13,10 @@ VoxelSolver_DG::VoxelSolver_DG(FiniteElementSpace *gfes, ParFiniteElementSpace *
 	this->c   = new ParGridFunction(dimfes_dg);
 	this->cx  = new ParGridFunction(fes_dg);
 	this->cy  = new ParGridFunction(fes_dg);
+	//cout << "VECTORDIM: " << this->c->VectorDim() << endl;
+	if ( this->c->VectorDim() == 3 ){
+		this->cz  = new ParGridFunction(fes_dg);
+	}
 	this->sgn = new ParGridFunction(fes_dg);
 }
 
@@ -34,24 +38,41 @@ void VoxelSolver_DG::CalcLevelSetVel() {
 	//gradient of d
 	ParGridFunction gdX(this->d->ParFESpace());
 	ParGridFunction gdY(this->d->ParFESpace());
+	ParGridFunction gdZ(this->d->ParFESpace());
 	this->d->GetDerivative(1,0,gdX);
 	this->d->GetDerivative(1,1,gdY);
-		
+	if ( this->c->VectorDim() == 3 ){
+		this->d->GetDerivative(1,2,gdZ);
+	}
 	//calculate c ("velocity")
 	ParGridFunction mgGd(this->d->ParFESpace());
 	for (int vi = 0; vi < mgGd.Size(); vi++){
 		// magnitude of gradient
-		mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
+		if ( this->c->VectorDim() ==  2 ){
+			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) );
+		}
+		if ( this->c->VectorDim() ==  3 ){
+			mgGd(vi) = sqrt( gdX(vi)*gdX(vi) + gdY(vi)*gdY(vi) + gdZ(vi)*gdZ(vi) );
+		}
 		// c_x
 		(*this->cx)(vi) = (*this->sgn)(vi)*gdX(vi)/mgGd(vi);
 		// c_y
 		(*this->cy)(vi) = (*this->sgn)(vi)*gdY(vi)/mgGd(vi);
+		if ( this->c->VectorDim() ==  3 ){
+			(*this->cz)(vi) = (*this->sgn)(vi)*gdZ(vi)/mgGd(vi);
+		}
 		if (mgGd(vi) < 1e-3){
 			(*this->cx)(vi) = 0.0;
 			(*this->cy)(vi) = 0.0;
+			if ( this->c->VectorDim() ==  3 ){
+				(*this->cz)(vi) = 0.0;
+			}
 		}
 		(*this->c)(vi) = (*this->cx)(vi);
 		(*this->c)(vi+mgGd.Size()) = (*this->cy)(vi);
+		if ( this->c->VectorDim() ==  3 ){
+			(*this->c)(vi+2*mgGd.Size()) = (*this->cz)(vi);
+		}
 	}
 		
 }

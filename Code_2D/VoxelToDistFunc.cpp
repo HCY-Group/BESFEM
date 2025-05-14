@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 	VoxelSolver solver(&*geometry.globalfespace, &*geometry.parfespace);
 	//solver.AssignGlobalValues(tiffdata);
 	solver.AssignGlobalValues(geometry.tiffData);
-	solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
+	//solver.ParaviewSave("gVoxelData","gVox",solver.GetGlobalVox());
 
 	//solver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
 	solver.MapGlobalToLocal(&*geometry.globalMesh,&*geometry.parallelMesh);
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 	//oper.~ConductionOperator();
 	
 	// Output Vox to Paraview
-	solver.ParaviewSave("SmoothVox","Vox",solver.GetGlobalVox());
+	solver.ParaviewSave("SmoothVox","Vox",solver.GetParallelVox());
 
 
 
