@@ -165,6 +165,7 @@ int main(int argc, char *argv[])
 	
 	// Output Distance to Paraview
 	ParGridFunction d(*solver_dg.GetDistFunc());
+	d -= 0.5; // Center about 0
 	//d = d2;
 	cout << "PRINTING OUT DistanceFunction" << endl;
 	solver.ParaviewSave("DstFun","Dst",&d);
@@ -185,7 +186,7 @@ int main(int argc, char *argv[])
 	//ParGridFunction psi(maker.GetParallelFESpace());
 	ParGridFunction psi(&*geometry.parfespace);
 	psi.ProjectGridFunction(d);
-	psi -= 0.5; // Center about 0
+	//psi -= 0.5; // Center about 0
 	//for (int vi = 0; vi < maker.GetParallelMesh()->GetNV(); vi++){
 	for (int vi = 0; vi < geometry.parallelMesh->GetNV(); vi++){
 		psi(vi) = 0.5*( tanh(psi(vi)) + 1.0 );
