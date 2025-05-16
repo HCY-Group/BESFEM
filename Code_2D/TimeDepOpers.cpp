@@ -129,6 +129,7 @@ void ConductionOperator::ImplicitSolve(const double dt,
    z.Neg();
    z += b;
    T_solver.Mult(z, du_dt);
+   delete T;
 }
 /*
 void ConductionOperator::SetParameters(const Vector &u)
