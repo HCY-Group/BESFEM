@@ -195,13 +195,14 @@ int main(int argc, char *argv[])
 	cout << "PRINTING OUT Electrolyte Concentration" << endl;
 	solver.ParaviewSave("psi","psi",&psi);
 	
-	//VoxelSolver ConnectSolver(maker.GetGlobalFESpace(),maker.GetParallelFESpace());
-	//VoxelSolver_DG solver_dg2(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
-	VoxelSolver ConnectSolver(&*geometry.globalfespace,&*geometry.parfespace);
-	VoxelSolver_DG solver_dg2(&*geometry.globalfespace, &*geometry.parfespace, &*geometry.parfespace_dg, &*geometry.pardimfespace_dg);
 		
 
 	for (int ConIter = 0; ConIter < 2; ConIter++){
+		//VoxelSolver ConnectSolver(maker.GetGlobalFESpace(),maker.GetParallelFESpace());
+		//VoxelSolver_DG solver_dg2(maker.GetGlobalFESpace(), maker.GetParallelFESpace(), maker.GetParallelFESpace_DG(), maker.GetParallelFESpace_DGdim());
+		VoxelSolver ConnectSolver(&*geometry.globalfespace,&*geometry.parfespace);
+		VoxelSolver_DG solver_dg2(&*geometry.globalfespace, &*geometry.parfespace, &*geometry.parfespace_dg, &*geometry.pardimfespace_dg);
+		
 		ConnectSolver.AssignGlobalValues(0.0);
 		//ConnectSolver.MapGlobalToLocal(maker.GetGlobalMesh(),maker.GetParallelMesh());
 		ConnectSolver.MapGlobalToLocal(&*geometry.globalMesh,&*geometry.parallelMesh);
