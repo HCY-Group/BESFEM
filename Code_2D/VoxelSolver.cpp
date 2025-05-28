@@ -192,7 +192,7 @@ void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, d
 	//cout << "Size Fct: " << Fct->Size() << ", Size Vox0: " << Vox0.Size() << endl;
 	oper->UpdateParams(Kmat, Fcb);
 	ode_solver->Step(X1v, t_ode, dt);
-	cout << "Max Vox0: " << X1v.Max() << ", Min Vox0:  " << X1v.Min() << endl;
+	//cout << "Max Vox0: " << X1v.Max() << ", Min Vox0:  " << X1v.Min() << endl;
 	K->RecoverFEMSolution(X1v, *Fct, *Vox);
 }
 

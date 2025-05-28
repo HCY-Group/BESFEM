@@ -168,7 +168,7 @@ void VoxelSolver_DG::UpdateMatricesAndSolve(Array<int> ess_tdof_list, double t_o
 	this->d->GetTrueDofs(X1v); //Set initial values
 	advec->UpdateParams(Kmat, Fcb);
 	ode_solver->Step(X1v, t_ode, dt);
-	cout << "Max d:  " << X1v.Max() << ", Min d:  " << X1v.Min() << endl;
+	//cout << "Max d:  " << X1v.Max() << ", Min d:  " << X1v.Min() << endl;
 	this->k->RecoverFEMSolution(X1v, *this->b, *this->d);
 	//ode_solver->Step(d, t_ode, dt);
 	//cout << "Max d:  " << d->Max() << ", Min d:  " << d->Min() << endl;

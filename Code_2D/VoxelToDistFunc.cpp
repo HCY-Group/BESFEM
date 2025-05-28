@@ -125,6 +125,15 @@ int main(int argc, char *argv[])
 		solver.UpdateLinearForm_DoubleWellPotential();
 		
 		solver.UpdateSystemAndSolve(boundary_dofs, t_ode, dt);
+		
+		double lVoxMax, lVoxMin, gVoxMax, gVoxMin;
+		lVoxMax = solver.GetParallelVox()->Max();
+		lVoxMin = solver.GetParallelVox()->Min();
+		MPI_Reduce(&lVoxMax, &gVoxMax, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&lVoxMin, &gVoxMin, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+		if (mfem::Mpi::WorldRank()==0){
+			cout << "Max Vox: " << gVoxMax << " Min Vox: " << gVoxMin << endl;
+		}
 	}
 	//oper.~ConductionOperator();
 	
@@ -154,12 +163,22 @@ int main(int argc, char *argv[])
 	solver_dg.FormMatrices(boundary_dofs);
 	// Time Stepping
 	t_ode = 0.0;
-	dt = 0.1;
-	for (int t = 0; t < 10; t++){
+	dt = 0.01;
+	//for (int t = 0; t < 500; t++){
+	for (int t = 0; t < 200; t++){
 		solver_dg.CalcLevelSetVel();
 		
 		
 		solver_dg.UpdateMatricesAndSolve(boundary_dofs, t_ode, dt);
+		
+		double lVoxMax, lVoxMin, gVoxMax, gVoxMin;
+		lVoxMax = solver_dg.GetDistFunc()->Max();
+		lVoxMin = solver_dg.GetDistFunc()->Min();
+		MPI_Reduce(&lVoxMax, &gVoxMax, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&lVoxMin, &gVoxMin, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+		if (mfem::Mpi::WorldRank()==0){
+			cout << "Max d: " << gVoxMax << " Min d: " << gVoxMin << endl;
+		}
 	}
 	
 	
@@ -233,6 +252,15 @@ int main(int argc, char *argv[])
 		for (int t = 0; t < 300; t++){
 			ConnectSolver.UpdateSystemAndSolve(*ConnectSolver.GetTDOF(), t_ode, dt);
 			ConnectSolver.AccelerateDiffusion(psi, *ConnectSolver.GetBCCoef(), *ConnectSolver.GetBCMarker());
+		
+			double lVoxMax, lVoxMin, gVoxMax, gVoxMin;
+			lVoxMax = ConnectSolver.GetParallelVox()->Max();
+			lVoxMin = ConnectSolver.GetParallelVox()->Min();
+			MPI_Reduce(&lVoxMax, &gVoxMax, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+			MPI_Reduce(&lVoxMin, &gVoxMin, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+			if (mfem::Mpi::WorldRank()==0){
+				cout << "Max Vox: " << gVoxMax << " Min Vox: " << gVoxMin << endl;
+			}
 		}
 		
 		//Multiply value by psi so the boundaries are closer to each other
@@ -259,12 +287,22 @@ int main(int argc, char *argv[])
 		solver_dg2.FormMatrices(boundary_dofs);
 		// Time Stepping
 		t_ode = 0.0;
-		dt = 0.1;
-		for (int t = 0; t < 10; t++){
+		dt = 0.01;
+		//for (int t = 0; t < 500; t++){
+		for (int t = 0; t < 200; t++){
 			solver_dg2.CalcLevelSetVel();
 			
 			
 			solver_dg2.UpdateMatricesAndSolve(boundary_dofs, t_ode, dt);
+		
+			double lVoxMax, lVoxMin, gVoxMax, gVoxMin;
+			lVoxMax = solver_dg2.GetDistFunc()->Max();
+			lVoxMin = solver_dg2.GetDistFunc()->Min();
+			MPI_Reduce(&lVoxMax, &gVoxMax, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+			MPI_Reduce(&lVoxMin, &gVoxMin, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+			if (mfem::Mpi::WorldRank()==0){
+				cout << "Max d: " << gVoxMax << " Min d: " << gVoxMin << endl;
+			}
 		}
 		
 		
