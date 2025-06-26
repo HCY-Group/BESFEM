@@ -40,6 +40,8 @@ public:
      * @param para Reference to the domain parameters object for accessing psi, pse, AvB, and AvP data
      */
     Concentrations(Initialize_Geometry &geo, Domain_Parameters &para);
+
+    double GetLithiation() const { return Xfr; }
     
     // /**
     //  * @brief Destructor for the Concentrations class
@@ -73,6 +75,7 @@ protected:
     double gCeC = 0.0; ///< Global salt concentration
     double CeAvg = 0.0; ///< Average salt concentration
     double Ce0 = 0.001; ///< Initial salt concentration
+    double Xfr; ///< Degree of lithiation
 
     double L_w; ///< West boundary size
 

@@ -16,11 +16,12 @@ LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \
             -L../../../../metis-4.0 -lmetis -lrt
 
 # Source files for the simulation
-SRC_FILES = simulation.cpp Constants.cpp Initialize_Geometry.cpp SolverSteps.cpp \
-            readtiff.cpp
+SRC_FILES = battery_simulation.cpp Constants.cpp Initialize_Geometry.cpp SolverSteps.cpp \
+            readtiff.cpp CoreComponentBase.cpp ../OOP/Domain_Parameters.cpp  \
+			C_CD2H.cpp DiffusionOperator.cpp
 
 # Output executable
-EXEC = simulation
+EXEC = battery_simulation
 
 LDFLAGS = -ltiff
 

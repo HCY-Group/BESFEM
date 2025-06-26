@@ -68,34 +68,48 @@ public:
     
     ~SolverSteps();
 
-    void MassMatrix(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat);
-    void MassMatrix(std::shared_ptr<mfem::HypreParMatrix> &Mmat);
+    void InitializeMassMatrix(mfem::Coefficient &coef, std::unique_ptr<mfem::ParBilinearForm> &M);
+    void InitializeStiffnessMatrix(mfem::Coefficient &coef, std::unique_ptr<mfem::ParBilinearForm> &K);
+    void InitializeForceTerm(mfem::Coefficient &coef, std::unique_ptr<mfem::ParLinearForm> &B);
     
-    void StiffnessMatrix(std::shared_ptr<mfem::GridFunctionCoefficient> cDx, mfem::Array<int> boundary, 
-                         mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, 
-                         std::shared_ptr<mfem::HypreParMatrix> &Kmat, mfem::HypreParVector &RHS);
+    
+    void FormSystemMatrix(std::unique_ptr<mfem::ParBilinearForm> &M, mfem::Array<int> &boundary_dofs, std::shared_ptr<mfem::HypreParMatrix> &MassMatrix);
+    void FormLinearSystem(std::unique_ptr<mfem::ParBilinearForm> &K, mfem::Array<int> &boundary_dofs, mfem::ParGridFunction &x, mfem::ParLinearForm &b, std::shared_ptr<mfem::HypreParMatrix> &StiffnessMatrix, mfem::HypreParVector &X, mfem::HypreParVector &B);
+    
+    void SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::HypreSmoother &smoother);
 
-    void StiffnessMatrix(mfem::Coefficient &cDx, mfem::Array<int> boundary, 
-                            std::shared_ptr<mfem::HypreParMatrix> &Kmat);
+    void Update(std::unique_ptr<mfem::ParLinearForm> &B);
+    void Update(std::unique_ptr<mfem::ParBilinearForm> &B);
     
-    void ForceTerm(mfem::ParGridFunction &parGF, mfem::ParLinearForm &F);
-    void ForceTerm(mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, mfem::Array<int> &boundary, mfem::ProductCoefficient &m);
+    // void MassMatrix(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat);
+
+    // void StiffnessMatrix(std::shared_ptr<mfem::GridFunctionCoefficient> cDx, mfem::Array<int> boundary, 
+    //                      mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, 
+    //                      std::shared_ptr<mfem::HypreParMatrix> &Kmat, mfem::HypreParVector &RHS);
+
+    // void StiffnessMatrix(mfem::Coefficient &cDx, mfem::Array<int> boundary, 
+    //                         std::shared_ptr<mfem::HypreParMatrix> &Kmat);
     
-    void SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, 
-                          mfem::HypreSmoother &smoother);
+    // void ForceTerm(mfem::ParGridFunction &parGF, mfem::ParLinearForm &F);
+    // void ForceTerm(mfem::ParGridFunction &parGF, mfem::ParLinearForm &F, mfem::Array<int> &boundary, mfem::ProductCoefficient &m);
+    
+    // void SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, 
+    //                       mfem::HypreSmoother &smoother);
 
     std::shared_ptr<mfem::ParBilinearForm> K;
+    // std::shared_ptr<mfem::ParLinearForm> B;
+    mfem::HypreParVector X1v;
 
 private:
     mfem::ParMesh *pmesh;
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
     mfem::ParFiniteElementSpace* raw_fespace; // Add this member variable
+    mfem::ParFiniteElementSpace* local_fespace; // Add this member variable
         
     mfem::ParBilinearForm *M = nullptr;
     std::unique_ptr<mfem::ParLinearForm> B;
     mfem::ParGridFunction *temp_ps = nullptr;
     mfem::GridFunctionCoefficient *coef = nullptr;
-    mfem::HypreParVector X1v;
     mfem::Array<int> boundary_dofs; ///< Boundary degrees of freedom
 };
 

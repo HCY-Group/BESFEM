@@ -64,12 +64,8 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta), 2) - 1.0) / (2 * Constants::zeta); // circle
 
         } else if (strcmp(mesh_type, "d") == 0) {
-            (*psi)(vi) = 0.5 * (1.0 + tanh(((*dsF)(vi)) / Constants::zeta)); // disk
-            (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // disk
-            
-            // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta); // disk
-            // (*AvP)(vi) *= 1/Constants::dh;
-
+            (*psi)(vi) = 0.5 * (1.0 + tanh(((*dsF)(vi)) / (Constants::zeta * Constants::dh))); // disk
+            (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // disk
 
         } else if (strcmp(mesh_type, "v") == 0) {
             (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi))); // voxel
@@ -86,17 +82,6 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }
     }
     
-    // for (int vi = 0; vi < nV; ++vi) {
-    //     if ((*AvP)(vi) < 1.0e-2) {
-    //         (*AvP)(vi) = 0.0;
-    //     }
-    // }
-
-    // // Apply dh scaling
-    // for (int vi = 0; vi < nV; ++vi) {
-    //     (*AvP)(vi) *= 1/Constants::dh;
-    // }
-
     AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
 
     for (int vi = 0; vi < nV; vi++) {
@@ -104,47 +89,13 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
     }
 
-    // mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
-    // AvP->ProjectCoefficient(AvP_coeff);
+    mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
+    AvP->ProjectCoefficient(AvP_coeff);
     
     AvP->Save("Results/AvP");
 
-    // std::ofstream out("Results/dsF_values.txt");
-    // for (int vi = 0; vi < nV; vi++) {
-    //     out << (*dsF)(vi) << "\n";
-    // }
-    // out.close();
-
 }
 
-
-    // psi->ProjectGridFunction(*dsF);
-    // *psi -= 0.5;
-
-    // // interpolate domain parameter from distance function
-    // for (int vi = 0; vi < nV; vi++) {
-    //     // (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi) / (Constants::zeta * Constants::dh))); // used for rectangle
-    //     // (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta)); // used for circle
-    //     // (*psi)(vi) = 0.5 * (1.0 + tanh((*psi)(vi))); // used for voxel code
-
-    //     // (*pse)(vi) = 1.0 - (*psi)(vi);
-
-    //     // AvP is the rate of change of psi; used in reaction rates
-    //     // (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
-    //     // (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta); // circle
-    //     // (*AvP)(vi) s= -(pow(tanh((*dsF)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // used for voxel code
-
-    //     if ((*psi)(vi) < Constants::eps) { (*psi)(vi) = Constants::eps; }
-    //     if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }
-    // }
-
-    // AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
-
-    // for (int vi = 0; vi < nV; vi++) {
-    //     if ((*AvP)(vi) * Constants::dh < 1.0e-3) { (*AvP)(vi) = 0.0; }
-    //     if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
-    // }
-// }
 
 void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction& grid_function, const mfem::Vector& element_volumes, double& local_total, double& global_total) {
     local_total = 0.0;
@@ -198,7 +149,8 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
 void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
 
     // Compute target current based on total Psi, rho, Cr, and constants
-    trgI = total_psi * Constants::rho * (0.9 - 0.3) / (3600.0 / Constants::Cr);
+    // trgI = total_psi * Constants::rho * (0.9 - 0.3) / (3600.0 / Constants::Cr);
+    trgI = total_psi * Constants::rho * (1.0 - 0.0) / (3600.0 / Constants::Cr);
 
     // Perform global MPI reduction to get the total target current
     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);

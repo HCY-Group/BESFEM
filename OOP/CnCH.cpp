@@ -12,68 +12,59 @@
  using namespace std;
  
  CnCH::CnCH(Initialize_Geometry &geo, Domain_Parameters &para)
-     : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), Mub(fespace.get()), Mob(fespace.get())
+     : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), Mub(fespace.get()), Mob(fespace.get()), Rxc(fespace.get())
      
      {
 
-        // Ensure AvP is not null
-        MFEM_VERIFY(para.AvP != nullptr, "AvP pointer in Domain_Parameters is null.");
-        AvP = *para.AvP;
-
-        phV0 = mfem::HypreParVector(fespace.get());
         Lp1 = mfem::HypreParVector(fespace.get());
-        RHS = mfem::HypreParVector(fespace.get());
         Lp2 = mfem::HypreParVector(fespace.get());
         MuV = mfem::HypreParVector(fespace.get());
 
         CpV0 = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
         RHCp = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
-        CpVn = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
 
         PsVc = mfem::HypreParVector(fespace.get());
-
     
-        M_phi = std::make_shared<mfem::HypreParMatrix>();
+        M_init = std::make_unique<mfem::ParBilinearForm>(fespace.get());
+        MmatCH = std::make_shared<mfem::HypreParMatrix>();
+
         MCH_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
         MCH_prec.SetType(mfem::HypreSmoother::Jacobi);
-
-        K_phi = std::make_shared<mfem::HypreParMatrix>();
-        K_mu = std::make_shared<mfem::HypreParMatrix>();
-
-        std::ifstream myXfile("../C_Li_X_101.txt");
-        std::ifstream mydFfile("../C_Li_M6_101.txt");
-        std::ifstream myMBfile("../C_Li_Mb5_101.txt");
         
-        for (int i = 0; i < 101; i++) myXfile >> X_101(i);
-        for (int i = 0; i < 101; i++) mydFfile >> dF_101(i);
+        Grad_MForm = std::make_unique<mfem::ParBilinearForm>(fespace.get());
+        Grad_MM = std::make_shared<mfem::HypreParMatrix>();
 
-        for (int i = 0; i < 101; ++i) {
-            myMBfile >> Mb5_101(i);
-            Mb5_101(i) *= 1.0e2 * 2.0 / 3.0;  // Fortran scaling
-        }
+        B_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
+
+        Grad_EForm = std::make_unique<mfem::ParBilinearForm>(fespace.get());
+        Grad_EM = std::make_shared<mfem::HypreParMatrix>();
+
+        Mob = mfem::ParGridFunction(fespace.get());
+        Mub = mfem::ParGridFunction(fespace.get());
+        Rxc = mfem::ParGridFunction(fespace.get());
+        Fct = mfem::ParLinearForm(fespace.get());
+        Fcb = mfem::HypreParVector(fespace.get());
+
+        cDp = mfem::GridFunctionCoefficient(&Mob);
+        cAp = mfem::GridFunctionCoefficient(&Rxc);
+
+        std::ifstream myXfile("../Inputs/C_Li_X_101.txt"); // ticks
+        std::ifstream mydFfile("../Inputs/C_Li_M6_101.txt"); // chemical potential
+        std::ifstream myMBfile("../Inputs/C_Li_Mb5_101.txt"); // mobility
+        std::ifstream myOCVfile("../Inputs/C_Li_O3_101.txt"); // OCV
+        std::ifstream myi0file("../Inputs/C_Li_J2_101.txt"); // i0
+        
+        for (int i = 0; i < 101; i++) myXfile >> Ticks(i);
+        for (int i = 0; i < 101; i++) mydFfile >> chmPot(i);
+        for (int i = 0; i < 101; i++) myMBfile >> Mobility(i);
+        for (int i = 0; i < 101; i++) myOCVfile >> OCV(i);
+        for (int i = 0; i < 101; i++) myi0file >> i0(i);
  
      }
 
-double CnCH::Calculate_dF(double ph, const mfem::Vector &X_101, const mfem::Vector &dF_101)
+double CnCH::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vector &data)
     {
-
-        if (ph < 0.0) {
-            ph = 1.0e-6;
-        } else if (ph > 1.0) {
-            ph = 1.0;
-        }
-
-        int idx = std::floor(ph / 0.01);
-        if (idx < 0) idx = 0;
-        if (idx > 99) idx = 99;
-        return dF_101(idx) + (ph - X_101(idx)) / 0.01 * (dF_101(idx + 1) - dF_101(idx));
-    }
-
-double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem::Vector &mob_101)
-    {
-        // Tbl_Chk_Pln_3DA
-        // Fortran-style clamping
-        if (cn < 0.0) {
+        if (cn < 1.0e-6) {
             cn = 1.0e-6;
         } else if (cn > 1.0) {
             cn = 1.0;
@@ -83,105 +74,190 @@ double CnCH::Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem
         if (idx < 0) idx = 0;
         if (idx > 99) idx = 99;
 
-        return mob_101(idx) + (cn - X_101(idx)) / 0.01 * (mob_101(idx + 1) - mob_101(idx));
+        return data(idx) + (cn - ticks(idx)) / 0.01 * (data(idx + 1) - data(idx));
     }
  
  void CnCH::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
     {
         Concentrations::SetInitialConcentration(Cn, initial_value); // initial value: 2.02d-2
-        // Concentrations::SetUpSolver(psx, M_phi, *MCH_solver, MCH_prec); // sets up Mass Matrix & Conditions 
-        
-        SolverSteps::MassMatrix(M_phi);
-        SolverSteps::SolverConditions(M_phi, *MCH_solver, MCH_prec);
+        Concentrations::LithiationCalculation(Cn, psx); // Calculate the initial concentration based on the potential field
 
-        psx.GetTrueDofs(PsVc); // similar to PsVc in CnP
+        mfem::GridFunctionCoefficient coef(&psx); 
+        SolverSteps::InitializeMassMatrix(coef, M_init); 
+        SolverSteps::FormSystemMatrix(M_init, boundary_dofs, MmatCH); // Form the system matrix from the bilinear form
+        SolverSteps::SolverConditions(MmatCH, *MCH_solver, MCH_prec); // Set up the solver conditions for the mass matrix
+
+        Mob = 1.0e-12; // Initialize mobility to a small value
+        Mob *= psx; // Scale
+
+        SolverSteps::InitializeStiffnessMatrix(cDp, Grad_MForm); // Initialize stiffness form for mobility
+
+        mfem::ConstantCoefficient varE(6.7600e-10);
+        SolverSteps::InitializeStiffnessMatrix(varE, Grad_EForm); // Initialize stiffness form for energy
+
+        SolverSteps::InitializeForceTerm(cAp, B_init);
+        Fct = std::move(*B_init);
+
+        SolverSteps::FormLinearSystem(Grad_EForm, boundary_dofs, Cn, Fct, Grad_EM, X1v, Fcb); // Form the linear system for energy
+        SolverSteps::FormLinearSystem(Grad_MForm, boundary_dofs, Mub, Fct, Grad_MM, X1v, Fcb); // Form the linear system for mobility
+
+        psx.GetTrueDofs(PsVc); 
     }
  
  void CnCH::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
- {
-    
-    mfem::Array<int> boundary_dofs;  // Empty array = natural Neumann BCs
+    {
+        Concentrations::CreateReaction(Rx, Rxc, (1.0/Constants::rho));
+        cAp.SetGridFunction(&Rxc); // Set the reaction term coefficient for the force term
 
-    // Extract current Cn values
-    Cn.GetTrueDofs(*CpV0);
+        SolverSteps::Update(B_init); // Update the force term with the current reaction term
+        Fct = std::move(*B_init); // Move the updated force term to Fct
 
-    // Cn.GetTrueDofs(phV0); // Extract true degrees of freedom in the potential field 
-    mfem::ConstantCoefficient kap(Constants::eps * Constants::eps); // Diffusion coefficient for the Laplacian term
-    
-    // boundary_dofs.DeleteAll(); // reset to natural boundary
+        // Tabulate the chemical potential and mobility values
+        for (int i = 0; i < Cn.Size(); i++) {
+            double val = Cn(i);  // get value at DOF i
+            Mub(i) = GetTableValues(val, Ticks, chmPot);
+        }
 
-    // stiffness matrix of phi
-    SolverSteps::StiffnessMatrix(kap, boundary_dofs, K_phi);
+        for (int i = 0; i < Cn.Size(); i++) {
+            double cn_val = Cn(i);
+            Mob(i) = psx(i) * GetTableValues(cn_val, Ticks, Mobility);
+        }
 
-    // K_phi->Mult(phV0, Lp1); // Lp1 = K_phi * phV0, KU=F, -Lap(u) = f
-    K_phi->Mult(*CpV0, Lp1);
+        Cn.GetTrueDofs(*CpV0);
 
+        // Lap phi
+        Grad_EM->Mult(*CpV0, Lp1); // Lp1 = Grad_EM * CpV0
+        Mub.GetTrueDofs(MuV); // Get the true degrees of freedom for mobility
+        MuV += Lp1; // Update MuV with the Laplacian of phi
 
-    for (int i = 0; i < Cn.Size(); i++) {
-        double val = Cn(i);  // get value at DOF i
-        Mub(i) = Calculate_dF(val, X_101, dF_101);
+        SolverSteps::Update(Grad_MForm);
+        SolverSteps::FormLinearSystem(Grad_MForm, boundary_dofs, Mub, Fct, Grad_MM, X1v, Fcb); // Form the linear system for mobility
+
+        Grad_MM->Mult(MuV, Lp2); // Lp2 = Grad_MM * MuV
+        Lp2.Neg(); // Negate Lp2 to account for the negative Lap
+        Lp2 *= Constants::dt; // Scale Lp2 by the time step
+
+        // Add the reaction term to the right-hand side vector
+        Fcb *= Constants::dt;
+        Lp2 += Fcb; // Add the free energy contributions to Lp2
+
+        // Update the right-hand side vector for the Cahn-Hilliard equation
+        MmatCH->Mult(*CpV0, *RHCp); // Multiply the mass matrix with the current concentration values
+        *RHCp += Lp2; // Add the reaction term to the right-hand side vector
+
+        MCH_solver->Mult(*RHCp, *CpV0); // Solve the system M·CpV0 = RHCp
+
+        
+        // Ensure that the concentration values are within the valid range
+        for (int i = 0; i < CpV0->Size(); i++) {
+            if (PsVc(i) < 1.0e-5) {
+                (*CpV0)(i) = 0.0202;
+            }
+        }
+
+        // update only the solid region concentrations
+        for (int i = 0; i < CpV0->Size(); ++i) {
+            if ((*CpV0)(i) < 0.0) {
+                (*CpV0)(i) = 0.0;
+            } else if ((*CpV0)(i) > 1.0) {
+                (*CpV0)(i) = 1.0;
+            }
+        }
+
+        // recover the GridFunction from the HypreParVector
+        Cn.Distribute(CpV0.get()); 
+
+        Concentrations::LithiationCalculation(Cn, psx); // Update the degree of lithiation based on the new concentration values
     }
 
-    Mub.Save("Results/Mub"); // save mobility values for debugging
 
-    Mub.GetTrueDofs(MuV);
-    Lp1 *= -1.0;
-    MuV += Lp1; // mu = mu_b - Lp1; Eq 4 changed to - from +
 
-    for (int i = 0; i < Cn.Size(); i++) {
-        double cn_val = Cn(i);
-        Mob(i) = Calculate_Mobility(cn_val, X_101, Mb5_101);
-    }
 
-    Mob.Save("Results/Mob"); // save mobility values for debugging
 
-    mfem::GridFunctionCoefficient Mob_GFC(&Mob); // updated value
 
-    // stiffness matrix for mu
-    SolverSteps::StiffnessMatrix(Mob_GFC, boundary_dofs, K_mu);
+    
+//     mfem::Array<int> boundary_dofs;  // Empty array = natural Neumann BCs
 
-    // Laplace of mu
-    K_mu->Mult(MuV, Lp2);
-    Lp2.Neg(); 
+//     // Extract current Cn values
+//     Cn.GetTrueDofs(*CpV0);
 
-    mfem::HypreParVector Rx_true_dofs(fespace.get());
-    Rx.GetTrueDofs(Rx_true_dofs);
-    Lp2 += Rx_true_dofs;
+//     // Cn.GetTrueDofs(phV0); // Extract true degrees of freedom in the potential field 
+//     mfem::ConstantCoefficient kap(Constants::eps * Constants::eps); // Diffusion coefficient for the Laplacian term
+    
+//     // boundary_dofs.DeleteAll(); // reset to natural boundary
 
-    // we need a HypreParVector for the reaction term. ==> Rxn
-    // the forward and backward rate constants come from tabulating.
-	// Lp2 += Rx; // comment out for now
-	Lp2 *= Constants::dt; // comment out for now
+//     // stiffness matrix of phi
+//     SolverSteps::StiffnessMatrix(kap, boundary_dofs, K_phi);
 
-	// right hand side; Eq 5
-	// M_phi->Mult(phV0, RHS);
-    M_phi->Mult(*CpV0, *RHCp);
+//     // K_phi->Mult(phV0, Lp1); // Lp1 = K_phi * phV0, KU=F, -Lap(u) = f
+//     K_phi->Mult(*CpV0, Lp1);
 
-    (*RHCp) += Lp2; // comment out for now
 
-    // RHS += Lp2; // RHS = M_phi * phV0 + Lp2
+//     Mub.GetTrueDofs(MuV);
+//     Lp1 *= -1.0;
+//     MuV += Lp1; // mu = mu_b - Lp1; Eq 4 changed to - from +
+
+
+//     // Mob.Save("Results/Mob"); // save mobility values for debugging
+
+//     mfem::GridFunctionCoefficient Mob_GFC(&Mob); // updated value
+
+//     // stiffness matrix for mu
+//     SolverSteps::StiffnessMatrix(Mob_GFC, boundary_dofs, K_mu);
+
+//     // Laplace of mu
+//     K_mu->Mult(MuV, Lp2);
+//     Lp2.Neg(); 
+
+//     mfem::HypreParVector Rx_true_dofs(fespace.get());
+//     Rx.GetTrueDofs(Rx_true_dofs);
+//     Lp2 += Rx_true_dofs;
+
+//     // // Add reaction term: (Rxn / rho) * AvP / psi
+//     // for (int i = 0; i < Lp2.Size(); i++) {
+//     //     if (psx(i) > 1e-5) {
+//     //         Lp2(i) += (Rx_true_dofs(i) / Constants::rho) / psx(i); // AvP already included in Rxn
+//     //     }
+//     // }
+//     // WHERE (psP(1:ny,1:nx,1:nz) > 1.0d-5)
+//     // CnP(1:ny,1:nx,1:nz) = CnP(1:ny,1:nx,1:nz) + dt*(DvC(1:ny,1:nx,1:nz) + &
+//     //     (Rxn(1:ny,1:nx,1:nz)/rho)*AvPx(1:ny,1:nx,1:nz))/psP(1:ny,1:nx,1:nz)
+//     // END WHERE
+
+//     // we need a HypreParVector for the reaction term. ==> Rxn
+//     // the forward and backward rate constants come from tabulating.
+// 	// Lp2 += Rx; // comment out for now
+// 	Lp2 *= Constants::dt; // comment out for now
+
+// 	// right hand side; Eq 5
+// 	// M_phi->Mult(phV0, RHS);
+//     M_phi->Mult(*CpV0, *RHCp);
+
+//     (*RHCp) += Lp2; // comment out for now
+
+//     // RHS += Lp2; // RHS = M_phi * phV0 + Lp2
   
-    // time update
-    // MCH_solver->Mult(RHS, phV0); // solve M_phi·phV0^{n+1} = RHS, A*x=B, phV0 = M_phi^-1 * RHS
-    MCH_solver->Mult(*RHCp, *CpVn);
+//     // time update
+//     // MCH_solver->Mult(RHS, phV0); // solve M_phi·phV0^{n+1} = RHS, A*x=B, phV0 = M_phi^-1 * RHS
+//     MCH_solver->Mult(*RHCp, *CpVn);
 
-    for (int i = 0; i < CpVn->Size(); i++) {
-        if (PsVc(i) < 1.0e-5) {
-            (*CpVn)(i) = 0.0202;
-        }
-    }
+//     for (int i = 0; i < CpVn->Size(); i++) {
+//         if (PsVc(i) < 1.0e-5) {
+//             (*CpVn)(i) = 0.0202;
+//         }
+//     }
 
-    Cn.Distribute(CpVn.get());
+//     Cn.Distribute(CpVn.get());
 
-    for (int i = 0; i < Cn.Size(); ++i) {
-        if (Cn(i) < 0.0) {
-            Cn(i) = 0.0;
-        } else if (Cn(i) > 1.0) {
-            Cn(i) = 1.0;
-        }
-    }
+//     for (int i = 0; i < Cn.Size(); ++i) {
+//         if (Cn(i) < 0.0) {
+//             Cn(i) = 0.0;
+//         } else if (Cn(i) > 1.0) {
+//             Cn(i) = 1.0;
+//         }
+//     }
     
-    // Degree of Lithiation
-    Concentrations::LithiationCalculation(Cn, psx);
+//     // Degree of Lithiation
+//     Concentrations::LithiationCalculation(Cn, psx);
  
- }
+//  }

@@ -31,35 +31,44 @@ private:
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
 
     // State vectors
-    mfem::ParGridFunction Mub, Mob;
+    mfem::ParGridFunction Mub, Mob, Rxc;
     mfem::HypreParVector phV0, Lp1, Lp2, RHS, MuV;
 
-    mfem::ParGridFunction AvP; ///< Grid function for active particle surface area
-
-    // Matrices
-    std::shared_ptr<mfem::HypreParMatrix> M_phi;
-    std::shared_ptr<mfem::HypreParMatrix> K_phi, K_mu;
+    std::unique_ptr<mfem::ParBilinearForm> M_init; 
+    std::shared_ptr<mfem::HypreParMatrix> MmatCH;
 
     // Solver and preconditioner
     std::shared_ptr<mfem::CGSolver> MCH_solver;
     mfem::HypreSmoother MCH_prec;
+
+    std::unique_ptr<mfem::ParBilinearForm> Grad_MForm;
+    std::shared_ptr<mfem::HypreParMatrix> Grad_MM; 
+
+    std::unique_ptr<mfem::ParLinearForm> B_init; 
+
+    std::unique_ptr<mfem::ParBilinearForm> Grad_EForm;
+    std::shared_ptr<mfem::HypreParMatrix> Grad_EM;
+
+    mfem::ParLinearForm Fct; ///< Linear form for free energy calculations
+    mfem::HypreParVector Fcb; ///< Vector for storing free energy contributions
+
+    mfem::GridFunctionCoefficient cDp;
+    mfem::GridFunctionCoefficient cAp;
 
     std::shared_ptr<mfem::HypreParVector> CpV0; ///< Initial particle concentration values
     mfem::HypreParVector PsVc; ///< Vector for storing true degrees of freedom in the solid region
     std::shared_ptr<mfem::HypreParVector> RHCp; ///< Right-hand-side vector at the current time step
     std::shared_ptr<mfem::HypreParVector> CpVn; ///< Particle concentration values at the next time step
 
-
     // Interpolation tables
-    mfem::Vector X_101 = mfem::Vector(101);
-    mfem::Vector dF_101 = mfem::Vector(101);
-    mfem::Vector Mb5_101 = mfem::Vector(101);
+    mfem::Vector Ticks = mfem::Vector(101);
+    mfem::Vector chmPot = mfem::Vector(101);
+    mfem::Vector Mobility = mfem::Vector(101);
+    mfem::Vector OCV = mfem::Vector(101);
+    mfem::Vector i0 = mfem::Vector(101);
 
-    /// Interpolates dF using table values
-    double Calculate_dF(double ph, const mfem::Vector &X_101, const mfem::Vector &dF_101);
-
-    /// Interpolates mobility using table values
-    double Calculate_Mobility(double cn, const mfem::Vector &X_101, const mfem::Vector &mob_101);
+    // Interpolates mobility using table values
+    double GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vector &data);
 
 
 };

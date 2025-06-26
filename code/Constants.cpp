@@ -6,10 +6,10 @@
  */
 namespace Constants {
 
-    // const char* mesh_file = "../Mesh_3x90_2.mesh";            ///< Path to the mesh file
-    // const char* dsF_file = "../dsF_3x90_2.txt";               ///< Path to the surface flux data file
-    const char* mesh_file = "../Code_2D/II_1_bin.tif";            ///< Path to the mesh file
-    const char* dsF_file = "../Code_2D/dsF_p.txt";               ///< Path to the surface flux data file
+    const char* mesh_file = "../Inputs/Mesh_96x96_P01.mesh";            ///< Path to the mesh file
+    const char* dsF_file = "../Inputs/dsF_97x97_P01.txt";               ///< Path to the surface flux data file
+    // const char* mesh_file = "../Code_2D/II_1_bin.tif";            ///< Path to the mesh file
+    // const char* dsF_file = "../Code_2D/dsF_p.txt";               ///< Path to the surface flux data file
 
     bool visualization = true;
     const int order = 1;                                    ///< Order of the finite element basis functions
@@ -22,8 +22,8 @@ namespace Constants {
 
     const double thres = 1.0e-3;                            ///< Threshold value for numerical operations
     
-    // const double eps = 1.0e-6;                              ///< Small epsilon value for numerical tolerance
-    const double eps = 6.75e-10;                              ///< Small epsilon value for numerical tolerance
+    const double eps = 1.0e-6;                              ///< Small epsilon value for numerical tolerance
+    // const double eps = 6.75e-10;                              ///< Small epsilon value for numerical tolerance
 
     
     // const double dt = 1.864558472553700e-01 / 40;           ///< Time step size
@@ -46,5 +46,7 @@ namespace Constants {
     // const double Vsr = 0.2;                                 ///< Voltage scanning rate
     const double Vsr = 0.009466;                                 ///< Voltage scanning rate
 
+    // const double VCut = 2.7;                                ///< Cut-off voltage
     const double VCut = 2.7;                                ///< Cut-off voltage
+
 }   

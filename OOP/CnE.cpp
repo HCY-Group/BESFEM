@@ -11,13 +11,13 @@
 
 
 CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), nbc_w_bdr(geo.nbc_w_bdr)
+    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), nbc_w_bdr(geo.nbc_w_bdr), Rxe(fespace.get()), De(fespace.get())
     
     {
 
-    RxE = std::make_unique<mfem::ParGridFunction>(fespace.get());
     PeR = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
+    Me_init = std::make_unique<mfem::ParBilinearForm>(fespace.get());
     Mmate = std::make_shared<mfem::HypreParMatrix>();
     Me_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
     Me_prec.SetType(mfem::HypreSmoother::Jacobi);
@@ -28,54 +28,83 @@ CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para)
     RHCe = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
     CeVn = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
 
+    De = mfem::ParGridFunction(fespace.get());
+    Rxe = mfem::ParGridFunction(fespace.get());
+    Fet = mfem::ParLinearForm(fespace.get());
+    Feb = mfem::HypreParVector(fespace.get());
+
+
     }
 
 void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
     Concentrations::SetInitialConcentration(Cn, initial_value);
-    Concentrations::SetUpSolver(psx, Mmate, *Me_solver, Me_prec); // sets up Mass Matrix & Conditions
 
-    // Apply Neumann boundary conditions to the reaction potential field
-    ImposeNeumannBC(psx, *PeR);
+    mfem::GridFunctionCoefficient coef(&psx);
+    SolverSteps::InitializeMassMatrix(coef, Me_init); 
+    SolverSteps::FormSystemMatrix(Me_init, boundary_dofs, Mmate); 
+    SolverSteps::SolverConditions(Mmate, *Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
 
-}
+    mfem::GridFunctionCoefficient cDe(&De);
+    SolverSteps::InitializeStiffnessMatrix(cDe, Ke2); // Initialize
 
-void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
-{
-    
-    // Scale the reaction field by the transference number
-    Concentrations::CreateReaction(Rx, *RxE, (-1.0 * Constants::t_minus));
-    Concentrations::TotalReaction(*RxE, eCrnt);
+    Concentrations::ImposeNeumannBC(psx, *PeR); // Apply Neumann boundary conditions to the reaction potential field
 
     // Set up coefficients for Neumann boundary conditions
     mfem::ConstantCoefficient nbcCoef(infx); 
     mfem::GridFunctionCoefficient matCoef_R(PeR.get());
     mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
-    
-    // Assemble the force term with boundary conditions applied
-    SolverSteps::ForceTerm(*RxE, ftE, nbc_w_bdr, m_nbcCoef);
-    
-    // Compute the diffusivity coefficient and stiffness matrix
-    std::shared_ptr<mfem::GridFunctionCoefficient> cDe = Concentrations::Diffusivity(psx, Cn, false); // false using other equation
-    eKx2 = std::make_shared<mfem::ParBilinearForm>(fespace.get());
 
-    eKx2->Update();
-    // Concentrations::KMatrix(boundary_dofs, Cn, ftE, Kmate, Feb, cDe);
-    SolverSteps::StiffnessMatrix(cDe, boundary_dofs, Cn, ftE, Kmate, Feb);
+    mfem::GridFunctionCoefficient cAe(&Rxe);
+    SolverSteps::InitializeForceTerm(cAe, Be_init); // Initialize the force term for the reaction potential
+    Fet = std::move(*Be_init); // Move the initialized force term to Fet
 
-    TmatR.reset(Add(1.0, *Mmate, -0.5 * Constants::dt, *Kmate));
-    TmatL.reset(Add(1.0, *Mmate,  0.5 * Constants::dt, *Kmate));
- 
-    // Solve for the next time step concentration
-    Cn.GetTrueDofs(*CeV0);	
-    TmatR->Mult(*CeV0, *RHCe);
-    *RHCe += Feb;
-    
-    Me_solver->SetOperator(*TmatL);
-    Me_solver->Mult(*RHCe, *CeVn) ;
+    SolverSteps::FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
 
-	Cn.Distribute(CeVn.get()); 
-    
-    // Update the total electrolyte salt conservation
-    Concentrations::SaltConservation(Cn, psx);	
+    // Concentrations::SetUpSolver(psx, Mmate, *Me_solver, Me_prec); // sets up Mass Matrix & Conditions
+    // SolverSteps::MassMatrix(psx, Mmate);
+    // SolverSteps::SolverConditions(Mmate, *Me_solver, Me_prec);
+    // // Apply Neumann boundary conditions to the reaction potential field
+    // ImposeNeumannBC(psx, *PeR);
+
 }
+
+// void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
+// {
+    
+//     // Scale the reaction field by the transference number
+//     Concentrations::CreateReaction(Rx, *RxE, (-1.0 * Constants::t_minus));
+//     Concentrations::TotalReaction(*RxE, eCrnt);
+
+//     // Set up coefficients for Neumann boundary conditions
+//     mfem::ConstantCoefficient nbcCoef(infx); 
+//     mfem::GridFunctionCoefficient matCoef_R(PeR.get());
+//     mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
+    
+//     // Assemble the force term with boundary conditions applied
+//     SolverSteps::ForceTerm(*RxE, ftE, nbc_w_bdr, m_nbcCoef);
+    
+//     // Compute the diffusivity coefficient and stiffness matrix
+//     std::shared_ptr<mfem::GridFunctionCoefficient> cDe = Concentrations::Diffusivity(psx, Cn, false); // false using other equation
+//     eKx2 = std::make_shared<mfem::ParBilinearForm>(fespace.get());
+
+//     eKx2->Update();
+//     // Concentrations::KMatrix(boundary_dofs, Cn, ftE, Kmate, Feb, cDe);
+//     SolverSteps::StiffnessMatrix(cDe, boundary_dofs, Cn, ftE, Kmate, Feb);
+
+//     TmatR.reset(Add(1.0, *Mmate, -0.5 * Constants::dt, *Kmate));
+//     TmatL.reset(Add(1.0, *Mmate,  0.5 * Constants::dt, *Kmate));
+ 
+//     // Solve for the next time step concentration
+//     Cn.GetTrueDofs(*CeV0);	
+//     TmatR->Mult(*CeV0, *RHCe);
+//     *RHCe += Feb;
+    
+//     Me_solver->SetOperator(*TmatL);
+//     Me_solver->Mult(*RHCe, *CeVn) ;
+
+// 	Cn.Distribute(CeVn.get()); 
+    
+//     // Update the total electrolyte salt conservation
+//     Concentrations::SaltConservation(Cn, psx);	
+// }

@@ -97,6 +97,8 @@ public:
     std::unique_ptr<mfem::H1_FECollection> pfec;
     std::unique_ptr<mfem::DG_FECollection> pfec_dg;
     
+    // mfem::Array<int> dummy_bdr;
+
 
 
 };

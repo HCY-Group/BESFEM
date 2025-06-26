@@ -31,7 +31,7 @@ void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double i
 
 void Concentrations::SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::HypreSmoother &smoother) {
     
-    SolverSteps::MassMatrix(psx, Mmat);
+    // SolverSteps::MassMatrix(psx, Mmat);
     // SolverSteps::MassMatrix(Mmat);
     SolverSteps::SolverConditions(Mmat, solver, smoother);
     
@@ -56,7 +56,7 @@ void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParG
 
     double gSum; // Global sum to aggregate contributions across all MPI processes
     MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); // Perform global reduction
-    double Xfr = gSum / gtPsi; // Calculate the degree of lithiation as the normalized sum
+    Xfr = gSum / gtPsi; // Calculate the degree of lithiation as the normalized sum
 }
 
 void Concentrations::ImposeNeumannBC(mfem::ParGridFunction &psx, mfem::ParGridFunction &PGF) {
@@ -78,7 +78,8 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
     // calculate the west boundary size
     mfem::Vector Rmin, Rmax;
     gmesh->GetBoundingBox(Rmin, Rmax);
-    L_w = Rmax(1) - Rmin(1);
+    // L_w = Rmax(1) - Rmin(1);
+    L_w = (Rmax(1) - Rmin(1)) + 2*(Rmax(0) - Rmin(0));
 
     for (int ei = 0; ei < nE; ei++) {
         Rx.GetNodalValues(ei, VtxVal); // Retrieve the nodal values of the reaction field for the current element

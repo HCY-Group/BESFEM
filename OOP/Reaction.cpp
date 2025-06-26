@@ -320,6 +320,7 @@
  {
      SetInitialReaction(Rx, initial_value);
      Rx *= AvP; // Scale by active particle surface area
+    //  Rx *= 1.0e-8; // Apply a scaling factor
  }
  
  void Reaction::SetInitialReaction(mfem::ParGridFunction &Rx, double initial_value)
