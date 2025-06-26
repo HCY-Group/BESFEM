@@ -152,6 +152,8 @@ void VoxelSolver::InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridF
 	cout << Fcb.Size() << endl;
 	oper = new ConductionOperator(DomPar, Kmat, Fcb, boundary_dofs);
 	ode_solver = new BackwardEulerSolver;
+	//ode_solver = new ForwardEulerSolver;
+	//ode_solver = new AM1Solver; //I think this is Crank-Nicholson
 	ode_solver->Init(*oper);
 }
 
@@ -177,6 +179,56 @@ void VoxelSolver::UpdateLinearForm_DoubleWellPotential() {
 	
 	UpdateLinearForm(Pot);
 	
+}
+
+void VoxelSolver::UpdateLinearForm_SBMDirichlet(ParGridFunction &DomPar) {
+	
+	ParGridFunction Pot(Vox->ParFESpace());
+	ParGridFunction PsiC(Vox->ParFESpace());
+	int nV = Pot.Size();
+	
+	// Calculate psi*C
+	for (int vi = 0; vi < nV; vi++){
+		PsiC(vi) = DomPar(vi)*(*Vox)(vi);
+	}
+	
+	//gradient of psi
+	ParGridFunction gdX_psi(DomPar.ParFESpace());
+	ParGridFunction gdY_psi(DomPar.ParFESpace());
+	ParGridFunction gdZ_psi(DomPar.ParFESpace());
+	DomPar.GetDerivative(1,0,gdX_psi);
+	DomPar.GetDerivative(1,1,gdY_psi);
+	gdZ_psi = 0;
+	if ( DomPar.ParFESpace()->GetMesh()->Dimension() == 3 ){
+		DomPar.GetDerivative(1,2,gdZ_psi);
+	}
+	//gradient of psi*C
+	ParGridFunction gdX_psiC(DomPar.ParFESpace());
+	ParGridFunction gdY_psiC(DomPar.ParFESpace());
+	ParGridFunction gdZ_psiC(DomPar.ParFESpace());
+	PsiC.GetDerivative(1,0,gdX_psiC);
+	PsiC.GetDerivative(1,1,gdY_psiC);
+	gdZ_psiC = 0;
+	if ( DomPar.ParFESpace()->GetMesh()->Dimension() == 3 ){
+		PsiC.GetDerivative(1,2,gdZ_psiC);
+	}
+	
+	//Source term: -(1/psi)*grad(psi) dot grad(psi*C) - psi
+	for (int vi = 0; vi < nV; vi++){
+		Pot(vi) = gdX_psi(vi)*gdX_psiC(vi) + gdY_psi(vi)*gdY_psiC(vi) + gdZ_psi(vi)*gdZ_psiC(vi);
+	}
+	Pot /= DomPar;
+	Pot.Add(-1.0,DomPar);
+	Pot.Neg();
+
+	//Pot = 0.0;
+	
+	ParaviewSave("RHStest","RHS",&Pot);
+	//ParaviewSave("RHStest1","gdX",&gdX_psi);
+	//ParaviewSave("RHStest2","gdY",&gdY_psi);
+	//ParaviewSave("RHStest3","gdZ",&gdZ_psi);
+	
+	UpdateLinearForm(Pot);
 }
 
 void VoxelSolver::UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, double dt) {

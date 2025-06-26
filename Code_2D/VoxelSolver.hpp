@@ -19,6 +19,7 @@ public:
 	void InitMatricesAndTimeDepOpers(Array<int> boundary_dofs, ParGridFunction &Diff, ParGridFunction &DomPar);
 	void UpdateLinearForm(ParGridFunction gf);
 	void UpdateLinearForm_DoubleWellPotential();
+	void UpdateLinearForm_SBMDirichlet(ParGridFunction &DomPar);
 	void UpdateSystemAndSolve(Array<int> boundary_dofs, double t_ode, double dt);
 	void AccelerateDiffusion(ParGridFunction &DomPar, GridFunctionCoefficient &Coef, Array<int> &bdr);
 	void NorthDirichletBCs(Mesh *mesh);

@@ -1,4 +1,6 @@
 #include "mfem.hpp"
+//#include "myHeatDistanceSolver.hpp"
+#include "dist_solver.hpp"
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -16,7 +18,8 @@ using namespace mfem;
 
 
 
-
+void ComputeScalarDistance(ParGridFunction &source, ParGridFunction &distance);
+void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance);
 
 int main(int argc, char *argv[])
 {
@@ -139,6 +142,110 @@ int main(int argc, char *argv[])
 	
 	// Output Vox to Paraview
 	solver.ParaviewSave("SmoothVox","Vox",solver.GetParallelVox());
+
+
+
+
+
+
+
+
+	// ======================================
+	// FIND DISTANCE FUNCTION using HeatDistancing in MFEM
+	// See the Distancing miniapp in MFEM
+	// This method is based on the article
+	// K. Crane, C. Weischedel, M. Weischedel
+	// Geodesics in Heat: A New Approach to Computing Distance Based on Heat Flow
+	// ACM Transactions on Graphics, Vol. 32, No. 5, October, 2013
+	// ======================================
+
+	/*
+	GridFunctionCoefficient ls_coeff(solver.GetParallelVox());
+	const real_t dx = geometry.GetParallelMesh()->GetElementSize(0);
+	real_t t_param = 1.0;
+	//DistanceSolver *dist_solver = NULL;
+	//auto ds = new HeatDistanceSolver(t_param*dx*dx);
+	HeatDistanceSolver ds(t_param*dx*dx);
+	//DistanceSolver *ds2 = new HeatDistanceSolver(t_param*dx*dx);
+	ParGridFunction distance_s(&*geometry.GetParFiniteElementSpace());
+	//ds.ComputeScalarDistance(ls_coeff, distance_s);  //<--- This line is giving 'vtable' errors...
+	*/
+
+	/*
+	// Define initial conditions
+	ParGridFunction u(*solver.GetParallelVox());
+	// Bump-like source term at boundary
+	for (int i = 0; i < u.Size(); i++){
+		real_t x = u(i);
+		u(i) = 4.0 * (1.0-x) * x;
+	}
+
+	ParGridFunction ds(u);
+	ds = 0.0;
+	ComputeScalarDistance(u, ds);
+   
+	cout << "MAX ds: " << ds.Max() << " MIN ds: " << ds.Min() << endl;
+	solver.ParaviewSave("HeatDst","Dst",&ds);
+	*/
+
+	// Find distance using my own...
+	cout << "My own distancing function" << endl;
+	
+	/*
+	ParGridFunction ds(*solver.GetParallelVox());
+	ds = 0.0;
+	MyComputeDistance(*solver.GetParallelVox(), ds);
+	*/
+	
+	//Normalize psi
+	//*solver.GetParallelVox() -= solver.GetParallelVox()->Min();
+	//*solver.GetParallelVox() += 1e-7;
+	/*
+	for (int i = 0; i < solver.GetParallelVox()->Size(); i++) {
+		if ( (*solver.GetParallelVox())(i) < 1e-5 ) {(*solver.GetParallelVox())(i) = 1e-5;}
+		if ( (*solver.GetParallelVox())(i) > 1.00 ) {(*solver.GetParallelVox())(i) = 1.00;}
+	}
+	*/
+	VoxelSolver solver_dist(&*geometry.globalfespace, &*geometry.parfespace);
+	solver_dist.AssignGlobalValues(0.0);
+	//solver_dist.AssignGlobalValues(1.0);
+	solver_dist.MapGlobalToLocal(&*geometry.globalMesh,&*geometry.parallelMesh);
+
+	//solver_dist.InitMatricesAndTimeDepOpers(boundary_dofs, *solver.GetParallelVox(), *solver.GetParallelVox());
+	solver_dist.InitMatricesAndTimeDepOpers(boundary_dofs, *solver.GetParallelVox(), ones);
+	
+	// time step
+	t_ode = 0.0;
+	dt = 1e-5;
+	dt = 0.05;
+	for (int t = 0; t < 100; t++){
+
+		solver_dist.UpdateLinearForm_SBMDirichlet(*solver.GetParallelVox());
+		
+		solver_dist.UpdateSystemAndSolve(boundary_dofs, t_ode, dt);
+		
+		double lVoxMax, lVoxMin, gVoxMax, gVoxMin;
+		lVoxMax = solver_dist.GetParallelVox()->Max();
+		lVoxMin = solver_dist.GetParallelVox()->Min();
+		MPI_Reduce(&lVoxMax, &gVoxMax, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&lVoxMin, &gVoxMin, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+		if (mfem::Mpi::WorldRank()==0){
+			cout << "Max Vox: " << gVoxMax << " Min Vox: " << gVoxMin << endl;
+		}
+	}
+	//oper.~ConductionOperator();
+	
+	// Output Vox to Paraview
+	solver_dist.ParaviewSave("PoissonVox","C",solver_dist.GetParallelVox());
+	
+
+	
+
+
+
+
+
+
 
 
 
@@ -349,3 +456,293 @@ int main(int argc, char *argv[])
 	return 0;
 
 }
+
+
+
+/*
+class NormalizedGradCoefficient : public VectorCoefficient
+{
+private:
+   const GridFunction &u;
+
+public:
+   NormalizedGradCoefficient(const GridFunction &u_gf, int dim)
+      : VectorCoefficient(dim), u(u_gf) { }
+
+   using VectorCoefficient::Eval;
+
+   void Eval(Vector &V, ElementTransformation &T, const IntegrationPoint &ip)
+   {
+      T.SetIntPoint(&ip);
+
+      u.GetGradient(T, V);
+      const double norm = V.Norml2() + 1e-12;
+      V /= -norm;
+   }
+};
+*/
+
+
+
+void ComputeScalarDistance(ParGridFunction &source, ParGridFunction &distance){
+   
+   int diffuse_iter = 1;
+   real_t parameter_t = 1;
+   int cg_print_lvl = 0;
+   int amg_print_lvl = 0;
+
+   ParFiniteElementSpace &pfes = *distance.ParFESpace();
+   ParMesh &pmesh = *pfes.GetParMesh();
+
+   // Solver.
+   CGSolver cg(MPI_COMM_WORLD);
+   cg.SetRelTol(1e-12);
+   cg.SetMaxIter(100);
+   cg.SetPrintLevel(cg_print_lvl);
+   OperatorPtr A;
+   Vector B, X;
+
+   // Step 1 - diffuse.
+   ParGridFunction diffused_source(&pfes);
+   for (int i = 0; i < diffuse_iter; i++)
+   {
+      // Set up RHS.
+      ParLinearForm b(&pfes);
+      GridFunctionCoefficient src_coeff(&source);
+      b.AddDomainIntegrator(new DomainLFIntegrator(src_coeff));
+      b.Assemble();
+
+      // Diffusion and mass terms in the LHS.
+      ParBilinearForm a_d(&pfes);
+      a_d.AddDomainIntegrator(new MassIntegrator);
+      ConstantCoefficient t_coeff(parameter_t);
+      a_d.AddDomainIntegrator(new DiffusionIntegrator(t_coeff));
+      a_d.Assemble();
+
+      // Solve with Dirichlet BC.
+      Array<int> ess_tdof_list;
+      if (pmesh.bdr_attributes.Size())
+      {
+         Array<int> ess_bdr(pmesh.bdr_attributes.Max());
+         ess_bdr = 1;
+         pfes.GetEssentialTrueDofs(ess_bdr, ess_tdof_list);
+      }
+      ParGridFunction u_dirichlet(&pfes);
+      u_dirichlet = 0.0;
+      a_d.FormLinearSystem(ess_tdof_list, u_dirichlet, b, A, X, B);
+      auto *prec = new HypreBoomerAMG;
+      prec->SetPrintLevel(amg_print_lvl);
+      cg.SetPreconditioner(*prec);
+      cg.SetOperator(*A);
+      cg.Mult(B, X);
+      a_d.RecoverFEMSolution(X, b, u_dirichlet);
+      delete prec;
+
+	cout << "HERE, end of Dirichlet" << endl;
+	cout << "MAX u: " << u_dirichlet.Max() << " MIN u: " << u_dirichlet.Min() << endl;
+
+      // Diffusion and mass terms in the LHS.
+      ParBilinearForm a_n(&pfes);
+      a_n.AddDomainIntegrator(new MassIntegrator);
+      a_n.AddDomainIntegrator(new DiffusionIntegrator(t_coeff));
+      a_n.Assemble();
+
+      // Solve with Neumann BC.
+      ParGridFunction u_neumann(&pfes);
+      ess_tdof_list.DeleteAll();
+      a_n.FormLinearSystem(ess_tdof_list, u_neumann, b, A, X, B);
+      auto *prec2 = new HypreBoomerAMG;
+      prec2->SetPrintLevel(amg_print_lvl);
+      cg.SetPreconditioner(*prec2);
+      cg.SetOperator(*A);
+      cg.Mult(B, X);
+      a_n.RecoverFEMSolution(X, b, u_neumann);
+      delete prec2;
+
+	cout << "HERE, end of Neumann" << endl;
+	cout << "MAX u: " << u_neumann.Max() << " MIN u: " << u_neumann.Min() << endl;
+
+      for (int ii = 0; ii < diffused_source.Size(); ii++)
+      {
+         // This assumes that the magnitudes of the two solutions are somewhat
+         // similar; otherwise one of the solutions would dominate and the BC
+         // won't look correct. To avoid this, it's good to have the source
+         // away from the boundary (i.e. have more resolution).
+         diffused_source(ii) = 0.5 * (u_neumann(ii) + u_dirichlet(ii));
+         diffused_source(ii) = u_neumann(ii);
+      }
+      source = diffused_source;
+   }
+   
+
+	ParaViewDataCollection *pd = NULL;
+	pd = new ParaViewDataCollection("dist_out1", diffused_source.FESpace()->GetMesh());
+	pd->RegisterField("diffsource", &diffused_source);
+	pd->SetLevelsOfDetail(1);
+	pd->SetDataFormat(VTKFormat::BINARY);
+	pd->SetHighOrderOutput(true);
+	pd->SetCycle(0);
+	pd->SetTime(0.0);
+	pd->Save();
+	delete pd;
+
+
+   // Step 2 - solve for the distance using the normalized gradient.
+   {
+      // RHS - normalized gradient.
+      ParLinearForm b2(&pfes);
+      NormalizedGradCoefficient grad_u(diffused_source, pmesh.Dimension());
+      b2.AddDomainIntegrator(new DomainLFGradIntegrator(grad_u));
+      b2.Assemble();
+
+      // LHS - diffusion.
+      ParBilinearForm a2(&pfes);
+      a2.AddDomainIntegrator(new DiffusionIntegrator);
+      a2.Assemble();
+
+      // No BC.
+      Array<int> no_ess_tdofs;
+
+      a2.FormLinearSystem(no_ess_tdofs, distance, b2, A, X, B);
+
+      auto *prec = new HypreBoomerAMG;
+      prec->SetPrintLevel(amg_print_lvl);
+      cg.SetPreconditioner(*prec);
+      cg.SetOperator(*A);
+      cg.Mult(B, X);
+      a2.RecoverFEMSolution(X, b2, distance);
+      delete prec;
+   }
+
+	cout << "HERE, end of Distance" << endl;
+	cout << "MAX u: " << distance.Max() << " MIN u: " << distance.Min() << endl;
+
+	//ParaViewDataCollection *pd = NULL;
+	pd = new ParaViewDataCollection("dist_out2", distance.FESpace()->GetMesh());
+	pd->RegisterField("dist", &distance);
+	pd->SetLevelsOfDetail(1);
+	pd->SetDataFormat(VTKFormat::BINARY);
+	pd->SetHighOrderOutput(true);
+	pd->SetCycle(0);
+	pd->SetTime(0.0);
+	pd->Save();
+	delete pd;
+   
+   // Shift the distance values to have minimum at zero.
+   double d_min_loc = distance.Min();
+   double d_min_glob;
+   MPI_Allreduce(&d_min_loc, &d_min_glob, 1, MPI_DOUBLE,
+                 MPI_MIN, pfes.GetComm());
+   distance -= d_min_glob;
+}
+
+
+
+void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
+   cout << "Min psi: " << psi.Min() << ", Max psi: " << psi.Max() << endl;
+   ParFiniteElementSpace &pfes = *distance.ParFESpace();
+   ParMesh &pmesh = *pfes.GetParMesh();
+
+   // Solve Lap(u) = -1, with Dirichlet BC u = 0
+   // A. Belyaev et al: "On Variational and PDE-based Distance Function Approximations", Section 7
+   // SBM formulation: div(psi grad(u)) - grad(psi)*grad(u) = -psi
+   // SBM formulation: -div(psi grad(u)) + grad(psi) dot grad(u) = psi
+   
+   for (int i = 0; i < psi.Size(); i++){
+      if (psi(i) < 1e-7) {psi(i) = 1e-7;}
+   }
+	ParaViewDataCollection *pd = NULL;
+	pd = new ParaViewDataCollection("MyDistTest_psi", psi.FESpace()->GetMesh());
+	pd->RegisterField("u", &psi);
+	pd->SetLevelsOfDetail(1);
+	pd->SetDataFormat(VTKFormat::BINARY);
+	pd->SetHighOrderOutput(true);
+	pd->SetCycle(0);
+	pd->SetTime(0.0);
+	pd->Save();
+	delete pd;
+   // Set RHS
+   ParLinearForm b(&pfes);
+   GridFunctionCoefficient psi_coef(&psi);
+   b.AddDomainIntegrator(new DomainLFIntegrator(psi_coef));
+   b.Assemble();
+	cout << "max b: " << b.Max() << " min b: " << b.Min() << endl;
+
+   // Set diffusion operator
+   ParBilinearForm a(&pfes);
+   a.AddDomainIntegrator(new DiffusionIntegrator(psi_coef));
+   //ParMixedBilinearForm a(&pfes);
+   //a.AddDomainIntegrator(new MixedGradGradIntegrator(psi_coef));
+   GradientGridFunctionCoefficient psigrad_coef(&psi);
+   a.AddDomainIntegrator(new ConvectionIntegrator(psigrad_coef));
+   a.Assemble();
+
+   //OperatorPtr A;
+   HypreParMatrix A;
+   HypreParVector B, X;
+   Array<int> ess_tdof_list;
+   ParGridFunction x(&pfes);
+   //x = psi;
+   a.FormLinearSystem(ess_tdof_list, x, b, A, X, B);
+
+/*
+   HypreSmoother prec;
+   prec.SetType(HypreSmoother::Jacobi);
+   //HypreSolver *amg = new HypreBoomerAMG;
+   //CGSolver cg(MPI_COMM_WORLD);
+   //GMRESSolver cg(MPI_COMM_WORLD);
+   FGMRESSolver cg(MPI_COMM_WORLD);
+   //BiCGSTABSolver cg(MPI_COMM_WORLD);
+   cg.SetRelTol(1e-12);
+   cg.SetMaxIter(3000);
+   //cg.SetPreconditioner(prec);
+   //cg.SetPreconditioner(*amg);
+   cg.SetOperator(A);
+   cg.SetPrintLevel(3);
+   cg.Mult(B, X);
+   a.RecoverFEMSolution(X, b, x);
+
+   //x -= x.Min();
+   //x *= psi;
+*/
+	// solve for psi dC/dt
+	HypreParVector dCdt(X);
+	A.Mult(X,dCdt);
+	cout << "here" << endl;
+	dCdt += B;
+	cout << "here" << endl;
+	a.RecoverFEMSolution(dCdt, b, x);
+	
+
+	cout << "My x max: " << x.Max() << " My x min: " << x.Min() << endl;
+
+	//ParaViewDataCollection *pd = NULL;
+	pd = new ParaViewDataCollection("MyDistTest", x.FESpace()->GetMesh());
+	//pd->RegisterField("u", &x);
+	pd->RegisterField("dCdt", &x);
+	pd->SetLevelsOfDetail(1);
+	pd->SetDataFormat(VTKFormat::BINARY);
+	pd->SetHighOrderOutput(true);
+	pd->SetCycle(0);
+	pd->SetTime(0.0);
+	pd->Save();
+	delete pd;
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
