@@ -47,6 +47,8 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     mfem::GridFunctionCoefficient coef(&psx);
     SolverSteps::InitializeMassMatrix(coef, Me_init); 
     SolverSteps::FormSystemMatrix(Me_init, boundary_dofs, Mmate); 
+    
+    Me_prec.SetType(mfem::HypreSmoother::Jacobi); // Configure the preconditioner using a Jacobi smoother
     SolverSteps::SolverConditions(Mmate, *Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
 
     SolverSteps::InitializeStiffnessMatrix(cDe, Ke2); // Initialize

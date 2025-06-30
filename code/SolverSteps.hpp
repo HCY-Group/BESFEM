@@ -76,7 +76,7 @@ public:
     void FormSystemMatrix(std::unique_ptr<mfem::ParBilinearForm> &M, mfem::Array<int> &boundary_dofs, std::shared_ptr<mfem::HypreParMatrix> &MassMatrix);
     void FormLinearSystem(std::unique_ptr<mfem::ParBilinearForm> &K, mfem::Array<int> &boundary_dofs, mfem::ParGridFunction &x, mfem::ParLinearForm &b, std::shared_ptr<mfem::HypreParMatrix> &StiffnessMatrix, mfem::HypreParVector &X, mfem::HypreParVector &B);
     
-    void SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::HypreSmoother &smoother);
+    void SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::Solver &preconditioner);
 
     void Update(std::unique_ptr<mfem::ParLinearForm> &B);
     void Update(std::unique_ptr<mfem::ParBilinearForm> &B);

@@ -100,15 +100,14 @@ void SolverSteps::Update(std::unique_ptr<mfem::ParBilinearForm> &B) {
     B->Assemble();
 }
 
-void SolverSteps::SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::HypreSmoother &smoother){
+void SolverSteps::SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::Solver &preconditioner){
     // Set up the solver for the mass matrix.
     solver.iterative_mode = false; // Use direct solving for the system matrix
     solver.SetRelTol(1e-7); // Set relative tolerance for the solver
     solver.SetAbsTol(0.0); // Set absolute tolerance for the solver
     solver.SetMaxIter(102); // Limit the maximum number of iterations
     solver.SetPrintLevel(0); // Suppress output from the solver
-    smoother.SetType(mfem::HypreSmoother::Jacobi); // Configure the preconditioner using a Jacobi smoother
-    solver.SetPreconditioner(smoother); // Attach the preconditioner to the solver
+    solver.SetPreconditioner(preconditioner); // Attach the preconditioner to the solver
     solver.SetOperator(*Mmat); // Set the mass matrix as the operator to solve
 }
 

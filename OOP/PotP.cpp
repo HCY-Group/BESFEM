@@ -50,6 +50,8 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     ph.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions 
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
+    
+    mfem::HypreBoomerAMG Mpp(*KmP); // Create a preconditioner for the stiffness matrix
     SolverSteps::SolverConditions(KmP, *cgPP_solver, Mpp); // Set up the solver conditions
 
     SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term
@@ -57,6 +59,22 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system
 }
+
+
+// void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
+// {
+
+
+
+
+
+
+
+// }
+
+
+
+
 
 
 // void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)

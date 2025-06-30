@@ -53,6 +53,8 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     ph.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions 
 
     SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, ph, B1t, Kml, X1v, B1v); // Assemble the linear system
+    
+    mfem::HypreBoomerAMG Mpe(*Kml);
     SolverSteps::SolverConditions(Kml, *cgPE_solver, Mpe); // Set up the solver conditions
 
     SolverSteps::InitializeForceTerm(cRe, Bl2); // Initialize the force term
@@ -64,6 +66,25 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     SolverSteps::FormLinearSystem(Kl1, boundary_dofs, ph, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
 
 }
+
+// void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
+// {
+//     ElectrolyteConductivity(Cn, psx); // Update conductivity and diffusivity
+//     cDm.SetGridFunction(&Dmp); // Set the diffusivity coefficient
+
+//     SolverSteps::Update(Kl1); // Update the diffusivity matrix
+//     SolverSteps::FormLinearSystem(Kl1, boundary_dofs, potential, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
+
+//     Cn.GetTrueDofs(*CeVn); // Get the true degrees of freedom for concentration
+//     Kdm->Mult(*CeVn, *LpCe); // Multiply concentration by diffus
+
+//     cKe.SetGridFunction(&kpl); // Set the conductivity coefficient
+//     SolverSteps::Update(Kl2); // Update the conductivity matrix
+
+//     mfem::ConstantCoefficient dbc_w_Coef(BvE); // Coefficient for Dirichlet boundary conditions
+
+
+// }
 
 // void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
 // {

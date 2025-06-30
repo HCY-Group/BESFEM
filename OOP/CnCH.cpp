@@ -85,6 +85,8 @@ double CnCH::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Ve
         mfem::GridFunctionCoefficient coef(&psx); 
         SolverSteps::InitializeMassMatrix(coef, M_init); 
         SolverSteps::FormSystemMatrix(M_init, boundary_dofs, MmatCH); // Form the system matrix from the bilinear form
+        
+        MCH_prec.SetType(mfem::HypreSmoother::Jacobi); // Configure the preconditioner using a Jacobi smoother
         SolverSteps::SolverConditions(MmatCH, *MCH_solver, MCH_prec); // Set up the solver conditions for the mass matrix
 
         Mob = 1.0e-12; // Initialize mobility to a small value
@@ -129,6 +131,8 @@ double CnCH::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Ve
         Grad_EM->Mult(*CpV0, Lp1); // Lp1 = Grad_EM * CpV0
         Mub.GetTrueDofs(MuV); // Get the true degrees of freedom
         MuV += Lp1; // Update MuV with the Laplacian of phi
+
+        cDp.SetGridFunction(&Mob); // Set the mobility coefficient for the stiffness matrix
 
         SolverSteps::Update(Grad_MForm);
         SolverSteps::FormLinearSystem(Grad_MForm, boundary_dofs, Mub, Fct, Grad_MM, X1v, Fcb); // Form the linear system for updated chemical potential
