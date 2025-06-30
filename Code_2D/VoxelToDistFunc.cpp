@@ -237,10 +237,72 @@ int main(int argc, char *argv[])
 	
 	// Output Vox to Paraview
 	solver_dist.ParaviewSave("PoissonVox","C",solver_dist.GetParallelVox());
+
+
+	ParGridFunction newpsi(*solver.GetParallelVox());
+	newpsi.Neg();
+	newpsi += 1.0;
+	VoxelSolver solver_dist2(&*geometry.globalfespace, &*geometry.parfespace);
+	solver_dist2.AssignGlobalValues(0.0);
+	//solver_dist2.AssignGlobalValues(1.0);
+	solver_dist2.MapGlobalToLocal(&*geometry.globalMesh,&*geometry.parallelMesh);
+
+	//solver_dist2.InitMatricesAndTimeDepOpers(boundary_dofs, *solver.GetParallelVox(), *solver.GetParallelVox());
+	solver_dist2.InitMatricesAndTimeDepOpers(boundary_dofs, newpsi, ones);
 	
+	// time step
+	t_ode = 0.0;
+	dt = 1e-5;
+	dt = 0.05;
+	for (int t = 0; t < 100; t++){
+
+		solver_dist2.UpdateLinearForm_SBMDirichlet(newpsi);
+		
+		solver_dist2.UpdateSystemAndSolve(boundary_dofs, t_ode, dt);
+		
+		double lVoxMax, lVoxMin, gVoxMax, gVoxMin;
+		lVoxMax = solver_dist2.GetParallelVox()->Max();
+		lVoxMin = solver_dist2.GetParallelVox()->Min();
+		MPI_Reduce(&lVoxMax, &gVoxMax, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&lVoxMin, &gVoxMin, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+		if (mfem::Mpi::WorldRank()==0){
+			cout << "Max Vox: " << gVoxMax << " Min Vox: " << gVoxMin << endl;
+		}
+	}
+	//oper.~ConductionOperator();
+	
+	// Output Vox to Paraview
+	solver_dist2.ParaviewSave("PoissonVox","C",solver_dist2.GetParallelVox());
+
 
 	
 
+	
+	ParFiniteElementSpace pfes_dim(solver_dist.GetParallelVox()->ParFESpace()->GetParMesh(),
+					solver_dist.GetParallelVox()->ParFESpace()->FEColl(),
+					solver_dist.GetParallelVox()->ParFESpace()->GetMesh()->Dimension());
+	ParGridFunction X(&pfes_dim);
+	ParGridFunction gdX_u1(*solver_dist.GetParallelVox());
+	ParGridFunction gdY_u1(*solver_dist.GetParallelVox());
+	solver_dist.GetParallelVox()->GetDerivative(1,0,gdX_u1);
+	solver_dist.GetParallelVox()->GetDerivative(1,1,gdY_u1);
+	ParGridFunction gdX_u2(*solver_dist2.GetParallelVox());
+	ParGridFunction gdY_u2(*solver_dist2.GetParallelVox());
+	solver_dist2.GetParallelVox()->GetDerivative(1,0,gdX_u2);
+	solver_dist2.GetParallelVox()->GetDerivative(1,1,gdY_u2);
+	for (int i = 0; i < gdX_u1.Size(); i++){
+		if ( (*solver.GetParallelVox())(i) > 0.5 ){
+			X(i) = gdX_u1(i);
+			X(i+gdX_u1.Size()) = gdY_u1(i);
+		} else{
+			X(i) = gdX_u2(i);
+			X(i+gdX_u1.Size()) = gdY_u2(i);
+		}
+	}
+	
+	solver_dist2.ParaviewSave("X","X",&X);
+	
+	
 
 
 
