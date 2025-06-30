@@ -40,7 +40,7 @@ public:
     //  * @param psx Psi potential field
     //  * @param phx Electrolyte potential field
     //  */
-    // void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
+    void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential, mfem::HypreParVector &CeVn);
     
     // /**
     //  * @brief Calculates the global error in the electrolyte potential solution
@@ -98,7 +98,9 @@ private:
     mfem::ParLinearForm Flt; ///< Linear form for the force term in electrolyte potential calculations
     mfem::Array<int> boundary_dofs; ///< Array of boundary degrees of freedom   
 
-    // void ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx); ///< Computes electrolyte conductivity and diffusivity
+    mfem::HypreParVector LpCe; ///< Pointer to the vector for concentration degrees of freedom
+
+    void ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx); ///< Computes electrolyte conductivity and diffusivity
 
 };
 

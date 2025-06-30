@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
 
         // particle_potential.TimeStep(CnCH_gf, *domain_parameters.psi, phP_gf);
-        // electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf);
+        electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf, *electrolyte_concentration.CeVn);
 
         if (t % 50 == 0 && mfem::Mpi::WorldRank() == 0) {
             std::cout << "timestep: " << t
