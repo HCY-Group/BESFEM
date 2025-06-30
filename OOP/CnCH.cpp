@@ -127,11 +127,11 @@ double CnCH::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Ve
 
         // Lap phi
         Grad_EM->Mult(*CpV0, Lp1); // Lp1 = Grad_EM * CpV0
-        Mub.GetTrueDofs(MuV); // Get the true degrees of freedom for mobility
+        Mub.GetTrueDofs(MuV); // Get the true degrees of freedom
         MuV += Lp1; // Update MuV with the Laplacian of phi
 
         SolverSteps::Update(Grad_MForm);
-        SolverSteps::FormLinearSystem(Grad_MForm, boundary_dofs, Mub, Fct, Grad_MM, X1v, Fcb); // Form the linear system for mobility
+        SolverSteps::FormLinearSystem(Grad_MForm, boundary_dofs, Mub, Fct, Grad_MM, X1v, Fcb); // Form the linear system for updated chemical potential
 
         Grad_MM->Mult(MuV, Lp2); // Lp2 = Grad_MM * MuV
         Lp2.Neg(); // Negate Lp2 to account for the negative Lap
@@ -147,7 +147,6 @@ double CnCH::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Ve
 
         MCH_solver->Mult(*RHCp, *CpV0); // Solve the system M·CpV0 = RHCp
 
-        
         // Ensure that the concentration values are within the valid range
         for (int i = 0; i < CpV0->Size(); i++) {
             if (PsVc(i) < 1.0e-5) {
@@ -169,95 +168,3 @@ double CnCH::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Ve
 
         Concentrations::LithiationCalculation(Cn, psx); // Update the degree of lithiation based on the new concentration values
     }
-
-
-
-
-
-
-    
-//     mfem::Array<int> boundary_dofs;  // Empty array = natural Neumann BCs
-
-//     // Extract current Cn values
-//     Cn.GetTrueDofs(*CpV0);
-
-//     // Cn.GetTrueDofs(phV0); // Extract true degrees of freedom in the potential field 
-//     mfem::ConstantCoefficient kap(Constants::eps * Constants::eps); // Diffusion coefficient for the Laplacian term
-    
-//     // boundary_dofs.DeleteAll(); // reset to natural boundary
-
-//     // stiffness matrix of phi
-//     SolverSteps::StiffnessMatrix(kap, boundary_dofs, K_phi);
-
-//     // K_phi->Mult(phV0, Lp1); // Lp1 = K_phi * phV0, KU=F, -Lap(u) = f
-//     K_phi->Mult(*CpV0, Lp1);
-
-
-//     Mub.GetTrueDofs(MuV);
-//     Lp1 *= -1.0;
-//     MuV += Lp1; // mu = mu_b - Lp1; Eq 4 changed to - from +
-
-
-//     // Mob.Save("Results/Mob"); // save mobility values for debugging
-
-//     mfem::GridFunctionCoefficient Mob_GFC(&Mob); // updated value
-
-//     // stiffness matrix for mu
-//     SolverSteps::StiffnessMatrix(Mob_GFC, boundary_dofs, K_mu);
-
-//     // Laplace of mu
-//     K_mu->Mult(MuV, Lp2);
-//     Lp2.Neg(); 
-
-//     mfem::HypreParVector Rx_true_dofs(fespace.get());
-//     Rx.GetTrueDofs(Rx_true_dofs);
-//     Lp2 += Rx_true_dofs;
-
-//     // // Add reaction term: (Rxn / rho) * AvP / psi
-//     // for (int i = 0; i < Lp2.Size(); i++) {
-//     //     if (psx(i) > 1e-5) {
-//     //         Lp2(i) += (Rx_true_dofs(i) / Constants::rho) / psx(i); // AvP already included in Rxn
-//     //     }
-//     // }
-//     // WHERE (psP(1:ny,1:nx,1:nz) > 1.0d-5)
-//     // CnP(1:ny,1:nx,1:nz) = CnP(1:ny,1:nx,1:nz) + dt*(DvC(1:ny,1:nx,1:nz) + &
-//     //     (Rxn(1:ny,1:nx,1:nz)/rho)*AvPx(1:ny,1:nx,1:nz))/psP(1:ny,1:nx,1:nz)
-//     // END WHERE
-
-//     // we need a HypreParVector for the reaction term. ==> Rxn
-//     // the forward and backward rate constants come from tabulating.
-// 	// Lp2 += Rx; // comment out for now
-// 	Lp2 *= Constants::dt; // comment out for now
-
-// 	// right hand side; Eq 5
-// 	// M_phi->Mult(phV0, RHS);
-//     M_phi->Mult(*CpV0, *RHCp);
-
-//     (*RHCp) += Lp2; // comment out for now
-
-//     // RHS += Lp2; // RHS = M_phi * phV0 + Lp2
-  
-//     // time update
-//     // MCH_solver->Mult(RHS, phV0); // solve M_phi·phV0^{n+1} = RHS, A*x=B, phV0 = M_phi^-1 * RHS
-//     MCH_solver->Mult(*RHCp, *CpVn);
-
-//     for (int i = 0; i < CpVn->Size(); i++) {
-//         if (PsVc(i) < 1.0e-5) {
-//             (*CpVn)(i) = 0.0202;
-//         }
-//     }
-
-//     Cn.Distribute(CpVn.get());
-
-//     for (int i = 0; i < Cn.Size(); ++i) {
-//         if (Cn(i) < 0.0) {
-//             Cn(i) = 0.0;
-//         } else if (Cn(i) > 1.0) {
-//             Cn(i) = 1.0;
-//         }
-//     }
-    
-//     // Degree of Lithiation
-//     Concentrations::LithiationCalculation(Cn, psx);
- 
-//  }

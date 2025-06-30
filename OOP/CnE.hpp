@@ -62,18 +62,20 @@ private:
     mfem::HypreSmoother Me_prec; ///< Preconditioner for the mass matrix solver
     std::unique_ptr<mfem::ParBilinearForm> Ke2;
 
+    mfem::GridFunctionCoefficient cAe;
+    mfem::GridFunctionCoefficient cDe;
     mfem::ParGridFunction De; ///< Grid function for the electrolyte diffusivity
     mfem::ParGridFunction Rxe; ///< Grid function for the reaction values of the electrolyte
 
-    // double eCrnt; ///< Current reaction value for the electrolyte
+    double eCrnt; ///< Current reaction value for the electrolyte
 
     std::shared_ptr<mfem::HypreParMatrix> Kmate; ///< Stiffness matrix for diffusion calculations
 
     mfem::HypreParVector Feb; ///< Right-hand-side vector for the system of equations
     // mfem::HypreParVector X1v; ///< Temporary vector used during assembly
 
-    // std::unique_ptr<mfem::HypreParMatrix> TmatR; ///< System matrix for the right-hand-side calculation (Crank-Nicolson)
-    // std::unique_ptr<mfem::HypreParMatrix> TmatL; ///< System matrix for the left-hand-side calculation (Crank-Nicolson)
+    std::unique_ptr<mfem::HypreParMatrix> TmatR; ///< System matrix for the right-hand-side calculation (Crank-Nicolson)
+    std::unique_ptr<mfem::HypreParMatrix> TmatL; ///< System matrix for the left-hand-side calculation (Crank-Nicolson)
 
     std::shared_ptr<mfem::HypreParVector> CeV0; ///< Initial electrolyte concentration values
     std::shared_ptr<mfem::HypreParVector> RHCe; ///< Right-hand-side vector at the current time step

@@ -5,13 +5,13 @@
 #include "../code/Initialize_Geometry.hpp"
 #include "Domain_Parameters.hpp"
 #include "Concentrations_Base.hpp"
-// #include "Potentials_Base.hpp"
+#include "Potentials_Base.hpp"
 #include "CnP.hpp"
 #include "CnE.hpp"
 #include "CnCH.hpp"
-// #include "PotP.hpp"
-// #include "PotE.hpp"
-// #include "Reaction.hpp"
+#include "PotP.hpp"
+#include "PotE.hpp"
+#include "Reaction.hpp"
 // #include "Current.hpp"
 
 #include <chrono>
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     // mfem::ParGridFunction CnP_gf(geometry.parfespace.get());
     // particle_concentration.Initialize(CnP_gf, 0.3, *domain_parameters.psi); 
 
-    // // Particle concentration initialization with a grid function and initial value
+    // Particle concentration initialization with a grid function and initial value
     CnCH particle_concentration(geometry, domain_parameters);
     mfem::ParGridFunction CnCH_gf(geometry.parfespace.get());
     particle_concentration.Initialize(CnCH_gf, 0.02, *domain_parameters.psi);  // initial value: 2.02d-2
@@ -77,40 +77,37 @@ int main(int argc, char *argv[]) {
     mfem::ParGridFunction CnE_gf(geometry.parfespace.get());
     electrolyte_concentration.Initialize(CnE_gf, 0.001, *domain_parameters.pse); 
 
-    // // Initialize Potential Classes
+    // Initialize Potential Classes
 
-    // // Particle potential initialization with a grid function and initial value
-    // PotP particle_potential(geometry, domain_parameters);
-    // mfem::ParGridFunction phP_gf(geometry.parfespace.get());
-    // // particle_potential.Initialize(phP_gf, 2.9395);
-    // particle_potential.Initialize(phP_gf, -0.1);
+    // Particle potential initialization with a grid function and initial value
+    PotP particle_potential(geometry, domain_parameters);
+    mfem::ParGridFunction phP_gf(geometry.parfespace.get());
+    // particle_potential.Initialize(phP_gf, 2.9395);
+    particle_potential.Initialize(phP_gf, -0.1, *domain_parameters.psi);
 
-
-    // // Electrolyte potential initialization with a grid function and initial value
-    // PotE electrolyte_potential(geometry, domain_parameters);
-    // mfem::ParGridFunction phE_gf(geometry.parfespace.get());
-    // // electrolyte_potential.Initialize(phE_gf, -1.0);
-    // electrolyte_potential.Initialize(phE_gf, -0.4686);
+    // Electrolyte potential initialization with a grid function and initial value
+    PotE electrolyte_potential(geometry, domain_parameters);
+    mfem::ParGridFunction phE_gf(geometry.parfespace.get());
+    // electrolyte_potential.Initialize(phE_gf, -1.0);
+    electrolyte_potential.Initialize(phE_gf, -0.4686, *domain_parameters.pse);
 
     
-    // // Initialize Reaction Class
+    // Initialize Reaction Class
 
-    // // Initialize the reaction with an empty reaction grid function and initial value
-    // Reaction reaction(geometry, domain_parameters);
+    // Initialize the reaction with an empty reaction grid function and initial value
+    Reaction reaction(geometry, domain_parameters);
     mfem::ParGridFunction Rxn_gf(geometry.parfespace.get());
-    Rxn_gf = 1.0e-5; // Initialize with a small value to avoid division by zero in Butler-Volmer equation
-    // reaction.Initialize(Rxn_gf, 1e-8);
-    // // reaction.Initialize(Rxn_gf, 0.0);
-
+    reaction.Initialize(Rxn_gf, 0.0);
 
     // // // Initialize Current Class
 
     // // Create the Current class to control current based on particle potential
     // Current current(geometry, domain_parameters);
 
-    // // // Set initial global current and cell voltage values  
-    // double global_current = 0.0;
-    // double VCell = BvP - BvE;
+    // Set initial global current and cell voltage values  
+    double global_current = 0.0;
+    double VCell = particle_potential.BvP - electrolyte_potential.BvE;
+
 
     // Main Simulation Loop
 
@@ -121,13 +118,15 @@ int main(int argc, char *argv[]) {
     // MPI_Allreduce(&local_nE, &global_nE, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     // int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 20.0)));
     
-    // // Perform simulation over time steps
-    for (int t = 0; t < 200000 + 1; ++t) {
+    // Perform simulation over time steps
+    for (int t = 0; t < 1000 + 1; ++t) {
         particle_concentration.TimeStep(Rxn_gf, CnCH_gf, *domain_parameters.psi);
+        electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
 
-        if (t % 500 == 0 && mfem::Mpi::WorldRank() == 0) {
+        if (t % 50 == 0 && mfem::Mpi::WorldRank() == 0) {
             std::cout << "timestep: " << t
                     << ", Xfr = " << particle_concentration.GetLithiation()
+                    << ", VCell = " << VCell
                     << std::endl;
         }
 
@@ -201,16 +200,16 @@ int main(int argc, char *argv[]) {
     // // CnE_gf *= *domain_parameters.pse;
     // // phE_gf *= *domain_parameters.pse;
 
-    // // Save simulation outputs
-    geometry.parallelMesh->Save("Results/pmesh");
-    domain_parameters.psi->Save("Results/psi");
-    domain_parameters.pse->Save("Results/pse");
+    // // // Save simulation outputs
+    // geometry.parallelMesh->Save("Results/pmesh");
+    // domain_parameters.psi->Save("Results/psi");
+    // domain_parameters.pse->Save("Results/pse");
 
-    // // // CnP_gf.Save("Results/CnP");
-    CnCH_gf.Save("Results/CnCH");
-    // // CnE_gf.Save("Results/CnE");
-    // // phP_gf.Save("Results3/phP");
-    // // phE_gf.Save("Results3/phE");
+    // // // // // CnP_gf.Save("Results/CnP");
+    // CnCH_gf.Save("Results/CnCH");
+    // CnE_gf.Save("Results/CnE");
+    // // // phP_gf.Save("Results3/phP");
+    // // // phE_gf.Save("Results3/phE");
     // Rxn_gf.Save("Results/Rxn");
 
     // Finalize HYPRE processing

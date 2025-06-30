@@ -319,8 +319,8 @@
  void Reaction::Initialize(mfem::ParGridFunction &Rx, double initial_value)
  {
      SetInitialReaction(Rx, initial_value);
-     Rx *= AvP; // Scale by active particle surface area
-    //  Rx *= 1.0e-8; // Apply a scaling factor
+     Rx = AvP; // Scale by active particle surface area
+     Rx *= 8.0e-10 * 0.99 * 2.25; // Apply a scaling factor
  }
  
  void Reaction::SetInitialReaction(mfem::ParGridFunction &Rx, double initial_value)
@@ -329,63 +329,84 @@
          Rx(i) = initial_value;
      }
  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  
- void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx,
-                             const mfem::ParGridFunction &Cn1,
-                             const mfem::ParGridFunction &Cn2,
-                             const mfem::ParGridFunction &phx1,
-                             const mfem::ParGridFunction &phx2)
- {
-     for (int vi = 0; vi < nV; ++vi) {
-         if (AvP(vi) > 0.01) {  // Only compute in interfacial region
-             double eta = phx1(vi) - phx2(vi);
-             (*dPHE)(vi) = eta;
  
-             double cnp = std::max(Cn1(vi), 1.0e-6);
-             double cne = std::max(Cn2(vi), 1.0e-6);
+//  void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx,
+//                              const mfem::ParGridFunction &Cn1,
+//                              const mfem::ParGridFunction &Cn2,
+//                              const mfem::ParGridFunction &phx1,
+//                              const mfem::ParGridFunction &phx2)
+//  {
+//      for (int vi = 0; vi < nV; ++vi) {
+//          if (AvP(vi) > 0.01) {  // Only compute in interfacial region
+//              double eta = phx1(vi) - phx2(vi);
+//              (*dPHE)(vi) = eta;
  
-             double kfw = (*Kfw)(vi);
-             double kbw = (*Kbw)(vi);
+//              double cnp = std::max(Cn1(vi), 1.0e-6);
+//              double cne = std::max(Cn2(vi), 1.0e-6);
  
-             double rxn = kfw * cne * std::exp(-Constants::alp * Constants::Cst1 * eta)
-                        - kbw * cnp * std::exp(Constants::alp * Constants::Cst1 * eta);
+//              double kfw = (*Kfw)(vi);
+//              double kbw = (*Kbw)(vi);
  
-             Rx(vi) = rxn;  // No AvP here
-         } else {
-             Rx(vi) = 0.0;  // Zero outside the interface
-         }
-     }
- }
+//              double rxn = kfw * cne * std::exp(-Constants::alp * Constants::Cst1 * eta)
+//                         - kbw * cnp * std::exp(Constants::alp * Constants::Cst1 * eta);
  
- void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn)
- {
-     for (int vi = 0; vi < nV; ++vi) {
-         double cn_val = std::max(Cn(vi), 1.0e-6);  // Clamp to avoid zero
+//              Rx(vi) = rxn;  // No AvP here
+//          } else {
+//              Rx(vi) = 0.0;  // Zero outside the interface
+//          }
+//      }
+//  }
  
-         double i0 = InterpolateFromTable(cn_val, X_101, i0C_101) * 1.0e-3;  // mA -> A
-         double ocv = InterpolateFromTable(cn_val, X_101, OCV_101);
+//  void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn)
+//  {
+//      for (int vi = 0; vi < nV; ++vi) {
+//          double cn_val = std::max(Cn(vi), 1.0e-6);  // Clamp to avoid zero
  
-         (*i0C)(vi) = i0;
-         (*OCV)(vi) = ocv;
+//          double i0 = InterpolateFromTable(cn_val, X_101, i0C_101) * 1.0e-3;  // mA -> A
+//          double ocv = InterpolateFromTable(cn_val, X_101, OCV_101);
  
-         (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * std::exp(Constants::alp * Constants::Cst1 * ocv);
-         (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * std::exp(-Constants::alp * Constants::Cst1 * ocv);
-     }
- }
+//          (*i0C)(vi) = i0;
+//          (*OCV)(vi) = ocv;
  
- void Reaction::TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_current)
- {
-     local_current = 0.0;
-     mfem::Array<double> VtxVal(nC);
-     mfem::Vector EAvg(nE);
+//          (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * std::exp(Constants::alp * Constants::Cst1 * ocv);
+//          (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * std::exp(-Constants::alp * Constants::Cst1 * ocv);
+//      }
+//  }
  
-     for (int ei = 0; ei < nE; ++ei) {
-         Rx.GetNodalValues(ei, VtxVal);
-         double sum = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
-         EAvg(ei) = sum / nC;
-         local_current += EAvg(ei) * EVol(ei);
-     }
+//  void Reaction::TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_current)
+//  {
+//      local_current = 0.0;
+//      mfem::Array<double> VtxVal(nC);
+//      mfem::Vector EAvg(nE);
  
-     MPI_Allreduce(&local_current, &global_current, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
- }
+//      for (int ei = 0; ei < nE; ++ei) {
+//          Rx.GetNodalValues(ei, VtxVal);
+//          double sum = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
+//          EAvg(ei) = sum / nC;
+//          local_current += EAvg(ei) * EVol(ei);
+//      }
+ 
+//      MPI_Allreduce(&local_current, &global_current, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+//  }
  

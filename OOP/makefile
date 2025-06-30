@@ -27,7 +27,8 @@ LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \
 #             Potentials_Base.cpp PotP.cpp PotE.cpp Reaction.cpp Current.cpp
 
 SRC_FILES = simulation.cpp ../code/Constants.cpp ../code/Initialize_Geometry.cpp readtiff.cpp Domain_Parameters.cpp \
-            Concentrations_Base.cpp CnE.cpp CnCH.cpp ../code/SolverSteps.cpp  \
+            Concentrations_Base.cpp CnE.cpp CnCH.cpp Reaction.cpp ../code/SolverSteps.cpp  \
+            Potentials_Base.cpp PotP.cpp PotE.cpp
             
 
 # Output executable
