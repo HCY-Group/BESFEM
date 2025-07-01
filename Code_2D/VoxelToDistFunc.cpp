@@ -191,11 +191,11 @@ int main(int argc, char *argv[])
 	// Find distance using my own...
 	cout << "My own distancing function" << endl;
 	
-	/*
+	
 	ParGridFunction ds(*solver.GetParallelVox());
 	ds = 0.0;
 	MyComputeDistance(*solver.GetParallelVox(), ds);
-	*/
+	
 	
 	//Normalize psi
 	//*solver.GetParallelVox() -= solver.GetParallelVox()->Min();
@@ -784,7 +784,13 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
    // Set RHS
    ParLinearForm b(&pfes);
    GridFunctionCoefficient psi_coef(&psi);
-   b.AddDomainIntegrator(new DomainLFIntegrator(psi_coef));
+   ProductCoefficient psisq_coef(psi_coef, psi_coef);
+   ProductCoefficient psi3_coef(psisq_coef, psi_coef);
+   ProductCoefficient alphapsi_coef(1e-8,psisq_coef);
+   //b.AddDomainIntegrator(new DomainLFIntegrator(psi_coef));
+   //b.AddDomainIntegrator(new DomainLFIntegrator(psisq_coef));
+   b.AddDomainIntegrator(new DomainLFIntegrator(alphapsi_coef));
+   //b.AddDomainIntegrator(new DomainLFIntegrator(psi3_coef));
    b.Assemble();
 	cout << "max b: " << b.Max() << " min b: " << b.Min() << endl;
 
@@ -794,7 +800,11 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
    //ParMixedBilinearForm a(&pfes);
    //a.AddDomainIntegrator(new MixedGradGradIntegrator(psi_coef));
    GradientGridFunctionCoefficient psigrad_coef(&psi);
-   a.AddDomainIntegrator(new ConvectionIntegrator(psigrad_coef));
+   ScalarVectorProductCoefficient psigradpsi_coef(psi_coef, psigrad_coef);
+   //ScalarVectorProductCoefficient psigradpsi_coef(psisq_coef, psigrad_coef);
+   //ScalarVectorProductCoefficient psigradpsi_coef(psi3_coef, psigrad_coef);
+   //a.AddDomainIntegrator(new ConvectionIntegrator(psigrad_coef));
+   a.AddDomainIntegrator(new ConvectionIntegrator(psigradpsi_coef));
    a.Assemble();
 
    //OperatorPtr A;
@@ -805,16 +815,15 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
    //x = psi;
    a.FormLinearSystem(ess_tdof_list, x, b, A, X, B);
 
-/*
    HypreSmoother prec;
    prec.SetType(HypreSmoother::Jacobi);
-   //HypreSolver *amg = new HypreBoomerAMG;
-   //CGSolver cg(MPI_COMM_WORLD);
+   HypreSolver *amg = new HypreBoomerAMG;
+   CGSolver cg(MPI_COMM_WORLD);
    //GMRESSolver cg(MPI_COMM_WORLD);
-   FGMRESSolver cg(MPI_COMM_WORLD);
+   //FGMRESSolver cg(MPI_COMM_WORLD);
    //BiCGSTABSolver cg(MPI_COMM_WORLD);
    cg.SetRelTol(1e-12);
-   cg.SetMaxIter(3000);
+   cg.SetMaxIter(50000);
    //cg.SetPreconditioner(prec);
    //cg.SetPreconditioner(*amg);
    cg.SetOperator(A);
@@ -824,15 +833,6 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
 
    //x -= x.Min();
    //x *= psi;
-*/
-	// solve for psi dC/dt
-	HypreParVector dCdt(X);
-	A.Mult(X,dCdt);
-	cout << "here" << endl;
-	dCdt += B;
-	cout << "here" << endl;
-	a.RecoverFEMSolution(dCdt, b, x);
-	
 
 	cout << "My x max: " << x.Max() << " My x min: " << x.Min() << endl;
 
