@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
     Reaction reaction(geometry, domain_parameters);
     mfem::ParGridFunction Rxn_gf(geometry.parfespace.get());
     reaction.Initialize(Rxn_gf, 0.0);
+    // reaction.Initialize(Rxn_gf, 1e-8);
 
     // // // Initialize Current Class
 
@@ -119,19 +120,45 @@ int main(int argc, char *argv[]) {
     // int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 20.0)));
     
     // Perform simulation over time steps
-    for (int t = 0; t < 1000 + 1; ++t) {
+    for (int t = 0; t < 2000 + 1; ++t) {
         particle_concentration.TimeStep(Rxn_gf, CnCH_gf, *domain_parameters.psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
 
-        // particle_potential.TimeStep(CnCH_gf, *domain_parameters.psi, phP_gf);
+        particle_potential.TimeStep(CnCH_gf, *domain_parameters.psi, phP_gf);
         electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf, *electrolyte_concentration.CeVn);
 
+        reaction.ExchangeCurrentDensity(CnCH_gf);
+
+        double globalerror_P = 1.0; // Error for particle potential
+        double globalerror_E = 1.0; // Error for electrolyte potential
+        
+        while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
+            // Update reaction rates using the Butler-Volmer equation
+            reaction.ButlerVolmer(Rxn_gf, CnCH_gf, CnE_gf, phP_gf, phE_gf);
+
+            particle_potential.Advance(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
+            electrolyte_potential.Advance(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
+
+            // std::cout << "timestep: " << t << ", globalerror_P: " << globalerror_P 
+            // << ", globalerror_E: " << globalerror_E << std::endl;
+            
+        }
+
+        reaction.TotalReactionCurrent(Rxn_gf, global_current);
+
+        double sgn = copysign(1.0, domain_parameters.gTrgI - global_current);
+        double dV = Constants::dt * Constants::Vsr * sgn;
+        particle_potential.BvP -= dV; // Adjust particle potential based on target current
+        phP_gf -= dV; // Update the grid function for particle potential
+        
         if (t % 50 == 0 && mfem::Mpi::WorldRank() == 0) {
             std::cout << "timestep: " << t
                     << ", Xfr = " << particle_concentration.GetLithiation()
-                    << ", VCell = " << VCell
+                    << ", VCell = " << VCell << ", BvP = " << particle_potential.BvP
                     << std::endl;
         }
+
+        VCell = particle_potential.BvP - electrolyte_potential.BvE;
 
 
     }
@@ -197,7 +224,7 @@ int main(int argc, char *argv[]) {
     
 
     // // // Multiply Grid Functions for Error Calculations
-    // // CnCH_gf *= *domain_parameters.psi;
+    // CnCH_gf *= *domain_parameters.psi;
     // // phP_gf *= *domain_parameters.psi;
 
     // // CnE_gf *= *domain_parameters.pse;
@@ -210,9 +237,9 @@ int main(int argc, char *argv[]) {
 
     // // // // // CnP_gf.Save("Results/CnP");
     // CnCH_gf.Save("Results/CnCH");
-    // CnE_gf.Save("Results/CnE");
-    // // // phP_gf.Save("Results3/phP");
-    // // // phE_gf.Save("Results3/phE");
+    // // CnE_gf.Save("Results/CnE");
+    // // // // phP_gf.Save("Results3/phP");
+    // // // // phE_gf.Save("Results3/phE");
     // Rxn_gf.Save("Results/Rxn");
 
     // Finalize HYPRE processing

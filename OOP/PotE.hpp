@@ -41,7 +41,7 @@ public:
     //  * @param phx Electrolyte potential field
     //  */
     void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential, mfem::HypreParVector &CeVn);
-    
+    void Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
     // /**
     //  * @brief Calculates the global error in the electrolyte potential solution
     //  * @param Rx Reaction field
@@ -88,12 +88,16 @@ private:
     mfem::GridFunctionCoefficient cDm; ///< Coefficient for the diffusivity field
     mfem::GridFunctionCoefficient cRe; ///< Coefficient for the reaction field
     mfem::ParGridFunction RpE; ///< Reaction field for the electrolyte potential
+    mfem::HypreParVector Xe0; ///< Solution vector for electrolyte potential
+    mfem::ParGridFunction pE0; ///< Electrolyte potential grid function
+    mfem::HypreParVector RHSl; ///< Right-hand side vector for electrolyte potential
 
     std::unique_ptr<mfem::ParBilinearForm> Kl1; ///< Bilinear form for electrolyte potential conductivity
     std::unique_ptr<mfem::ParBilinearForm> Kl2; ///< Bilinear form for electrolyte potential conductivity
     std::shared_ptr<mfem::HypreParMatrix> Kml; ///< Stiffness matrix for electrolyte potential conductivity
     std::shared_ptr<mfem::HypreParMatrix> Kdm; /// Stiffness matrix for diffusivity
     std::unique_ptr<mfem::ParLinearForm> Bl2; ///< Linear form for the reaction term
+
 
     mfem::ParLinearForm Flt; ///< Linear form for the force term in electrolyte potential calculations
     mfem::Array<int> boundary_dofs; ///< Array of boundary degrees of freedom   

@@ -15,7 +15,7 @@
 
 PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para)
     : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_w_bdr(geo.dbc_w_bdr), gtPse(para.gtPse), 
-    ess_tdof_list_w(geo.ess_tdof_list_w), kpl(fespace.get()), RpE(fespace.get()), Dmp(fespace.get())
+    ess_tdof_list_w(geo.ess_tdof_list_w), kpl(fespace.get()), RpE(fespace.get()), Dmp(fespace.get()), pE0(fespace.get())
     
     {
 
@@ -41,6 +41,10 @@ PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para)
     Kml = std::make_shared<mfem::HypreParMatrix>(); // Initialize the stiffness matrix for conductivity
     Kdm = std::make_shared<mfem::HypreParMatrix>(); // Initialize the stiffness matrix for conductivity
 
+    pE0 = mfem::ParGridFunction(fespace.get()); // Initialize the potential grid function
+    Xe0 = mfem::HypreParVector(fespace.get()); // Initialize the solution vector for potential
+    RHSl = mfem::HypreParVector(fespace.get()); // Initialize the right-hand side vector for potential
+
     }
 
 void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx)
@@ -52,6 +56,9 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
     mfem::ConstantCoefficient dbc_w_Coef(BvE); // Coefficient for Dirichlet boundary conditions
     ph.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions 
+
+    fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w); // Get essential true degrees of freedom for Dirichlet boundary conditions
+    // std::cout << "[PotE::Initialize] Essential DOFs: " << ess_tdof_list_w.Size() << std::endl;
 
     SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, ph, B1t, Kml, X1v, B1v); // Assemble the linear system
     
@@ -84,12 +91,41 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     mfem::ConstantCoefficient dbc_w_Coef(BvE); // Coefficient for Dirichlet boundary conditions
     potential.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
+
+    fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w); // Get essential true degrees of freedom for Dirichlet boundary conditions
+
     SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system
 
     Mpe.SetOperator(*Kml); // Set the operator for the preconditioner
     cgPE_solver->SetPreconditioner(Mpe); // Attach the preconditioner to the solver
     cgPE_solver->SetOperator(*Kml); // Set the operator for the solver
 
+}
+
+void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
+{
+
+    Potentials::AssembleForceVector(Rx, RpE, -1.0, cRe, Bl2, Flt); // Create reaction field
+    
+    mfem::ConstantCoefficient dbc_w_Coef(BvE); // Coefficient for Dirichlet boundary conditions
+    phx.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
+    
+    fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w); // Get essential true degrees of freedom for Dirichlet boundary conditions
+    
+    SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, phx, Flt, Kml, X1v, Flb); // Assemble the force term system
+
+    RHSl = Flb;
+    RHSl += LpCe;
+
+    pE0 = phx; // Store the current potential field
+    pE0.GetTrueDofs(Xe0); // Extract degrees of freedom
+    Mpe.SetOperator(*Kml); // Set the preconditioner operator
+    cgPE_solver->SetPreconditioner(Mpe); // Attach the preconditioner to the solver
+    cgPE_solver->SetOperator(*Kml); // Set the operator for the solver 
+    cgPE_solver->Mult(RHSl, Xe0); // Solve for the error term
+    phx.Distribute(Xe0); // Distribute the updated values
+
+    Potentials::ComputeGlobalError(pE0, phx, psx, gerror, gtPse); // Compute global error
 }
 
 // void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)

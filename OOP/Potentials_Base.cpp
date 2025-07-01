@@ -11,16 +11,17 @@
  * @brief Constructor: Initializes the Potentials object.
  */
 Potentials::Potentials(Initialize_Geometry &geo, Domain_Parameters &para)
-    : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), SolverSteps(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol)
+    : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), SolverSteps(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol), px0(fespace.get()),
+    TmpF(fespace.get())
 
 {
     nE = geometry.nE; 
     nC = geometry.nC; 
     nV = geometry.nV; 
 
-    px0 = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    Rxx = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    X0 = std::shared_ptr<mfem::HypreParVector>(new mfem::HypreParVector(fespace.get()));
+    X0 = mfem::HypreParVector(fespace.get()); // Initialize the potential vector
+    px0 = mfem::ParGridFunction(fespace.get()); // Initialize the potential grid function
+    TmpF = mfem::ParGridFunction(fespace.get()); // Temporary grid function for error calculations
 }
 
 
@@ -29,6 +30,55 @@ void Potentials::SetInitialPotentials(mfem::ParGridFunction &ph, double initial_
         ph(i) = initial_value; // Assign the initial value to each DoF
     }
 }
+
+
+void Potentials::AssembleForceVector(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value, mfem::GridFunctionCoefficient &coef, std::unique_ptr<mfem::ParLinearForm> &rhs_form, mfem::ParLinearForm &rhs_form2)
+{ 
+    Rx2 = Rx1;  // Copy the input field
+    Rx2 *= value; // Scale the field by the provided factor
+
+    coef.SetGridFunction(&Rx2); // Set the coefficient to the scaled field
+    SolverSteps::Update(rhs_form); // Update the linear form with the new coefficient
+
+    rhs_form2 = std::move(*rhs_form); // Move the updated linear form to the right-hand side vector
+
+}
+
+
+
+void Potentials::ComputeGlobalError(mfem::ParGridFunction &px0, mfem::ParGridFunction &potential, mfem::ParGridFunction &psx, 
+                                    double &globalerror, double gtPsx)
+{
+    // Compute squared error using the auxiliary field
+    for (int vi = 0; vi < nV; vi++){
+        TmpF(vi) = pow(px0(vi) - potential(vi),2) * psx(vi);
+    }
+
+    double error_X = 0.0; // Initialize error accumulator
+    mfem::Array<double> VtxVal(nC);
+    mfem::Vector EAvg(nE);
+
+    // Calculate error contributions across all elements
+    for (int ei = 0; ei < nE; ei++){
+        TmpF.GetNodalValues(ei,VtxVal) ;
+        double val = 0.0;
+        for (int vt = 0; vt < nC; vt++){
+            val += VtxVal[vt];
+        }
+        EAvg(ei) = val/nC;	
+        error_X += EAvg(ei)*EVol(ei) ;					
+    }	
+	
+    MPI_Allreduce(&error_X, &globalerror, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+			
+    globalerror /= gtPsx; // Normalize the error
+    globalerror = pow(globalerror, 0.5); // Compute the root mean square error
+
+}
+
+
+
+
 
 // void Potentials::SetUpSolver(mfem::CGSolver &solver, double value_1, double value_2) {
 //     solver.SetRelTol(value_1); // Set the relative tolerance

@@ -8,7 +8,7 @@
 
 using namespace std;
 
-extern double gTrgI;
+// extern double gTrgI;
 
 class Domain_Parameters {
 
@@ -29,6 +29,7 @@ public:
 
     double gtPsi; ///< Global total for Psi
     double gtPse; ///< Global total for Pse
+    double gTrgI; ///< Global target current
     mfem::Vector EVol; ///< Element volumes
 
 

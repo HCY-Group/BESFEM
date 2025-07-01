@@ -39,6 +39,11 @@ public:
      */
     void ExchangeCurrentDensity(mfem::ParGridFunction &Cn);
 
+
+
+    void ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2);
+    void TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_current);
+
     /**
      * @brief Applies the Butler-Volmer equation to calculate reaction rates
      * @param Rx Reaction rate grid function
@@ -50,19 +55,19 @@ public:
     // void ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2);
 
 
-    void ButlerVolmer(mfem::ParGridFunction &Rx, const mfem::ParGridFunction &Cn1,
-        const mfem::ParGridFunction &Cn2, const mfem::ParGridFunction &phx1,
-        const mfem::ParGridFunction &phx2);
-    /**
-     * @brief Computes the total reaction current over the domain
-     * @param Rx Reaction rate grid function
-     * @param global_current Output: Global reaction current across the domain
-     */
-    void TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_current);
+    // void ButlerVolmer(mfem::ParGridFunction &Rx, const mfem::ParGridFunction &Cn1,
+    //     const mfem::ParGridFunction &Cn2, const mfem::ParGridFunction &phx1,
+    //     const mfem::ParGridFunction &phx2);
+    // /**
+    //  * @brief Computes the total reaction current over the domain
+    //  * @param Rx Reaction rate grid function
+    //  * @param global_current Output: Global reaction current across the domain
+    //  */
+    // void TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_current);
 
-    double global_current;     ///< Global reaction current
+    // double global_current;     ///< Global reaction current
 
-    void WriteKfwToFile(const std::string &filename) const;
+    // void WriteKfwToFile(const std::string &filename) const;
 
 
 private:
@@ -95,11 +100,13 @@ private:
     const mfem::Vector& EVol; ///< Element volumes from the mesh handler
 
     // Interpolation tables
-    mfem::Vector X_101 = mfem::Vector(101);
-    mfem::Vector i0C_101 = mfem::Vector(101);
-    mfem::Vector OCV_101 = mfem::Vector(101);
+    mfem::Vector Ticks = mfem::Vector(101);
+    mfem::Vector chmPot = mfem::Vector(101);
+    mfem::Vector Mobility = mfem::Vector(101);
+    mfem::Vector OCV_file = mfem::Vector(101);
+    mfem::Vector i0_file = mfem::Vector(101);
 
-    double InterpolateFromTable(double cn, const mfem::Vector &X_101, const mfem::Vector &table_101);
+    double GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vector &data);
 
 
 

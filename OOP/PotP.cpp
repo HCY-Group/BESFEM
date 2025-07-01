@@ -14,7 +14,7 @@
 
 PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
     : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_e_bdr(geo.dbc_e_bdr), gtPsi(para.gtPsi), 
-    ess_tdof_list_e(geo.ess_tdof_list_e), kap(fespace.get()), RpP(fespace.get())
+    ess_tdof_list_e(geo.ess_tdof_list_e), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get())
     
     {
     cgPP_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
@@ -22,6 +22,7 @@ PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
     X1v = mfem::HypreParVector(fespace.get());
     B1v = mfem::HypreParVector(fespace.get());
     Fpb = mfem::HypreParVector(fespace.get());
+    Xs0 = mfem::HypreParVector(fespace.get()); // Initialize the solution vector for particle potential
     RpP = mfem::ParGridFunction(fespace.get());
 
     Bp2 = std::make_unique<mfem::ParLinearForm>(fespace.get());
@@ -34,6 +35,7 @@ PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
     Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Initialize the bilinear form for conductivity
     KmP = std::make_shared<mfem::HypreParMatrix>(); // Initialize the stiffness matrix for conductivity
 
+    pP0 = mfem::ParGridFunction(fespace.get()); // Initialize the potential grid function
     }
 
 
@@ -47,7 +49,11 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     SolverSteps::InitializeStiffnessMatrix(cKp, Kp2); // Initialize the stiffness matrix
     
     mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
-    ph.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions 
+    ph.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
+    
+    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+    std::cout << "[PotP::Initialize] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
+
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
     
@@ -61,16 +67,49 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 }
 
 
-// void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
-// {
+void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
+{
+    ParticleConductivity(Cn, psx); // Update conductivity
+    cKp.SetGridFunction(&kap); // Set the conductivity coefficient
 
+    SolverSteps::Update(Kp2); // Update the stiffness matrix
+    mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
+    potential.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
+    
+    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+    // std::cout << "[PotP::TimeStep] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
+    
+    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
 
+    Mpp.SetOperator(*KmP); // Set the preconditioner operator
+    cgPP_solver->SetPreconditioner(Mpp); // Attach the preconditioner to the solver
+    cgPP_solver->SetOperator(*KmP); // Set the operator for the solver 
 
+}
 
+void PotP::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
+{
 
+    Potentials::AssembleForceVector(Rx, RpP, Constants::Frd, cRp, Bp2, Fpt); // Create reaction field
+    
+    mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
+    phx.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
+    
+    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+    // std::cout << "[PotP::Advance] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
+    
+    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
 
+    pP0 = phx; // Store the current potential field
+    pP0.GetTrueDofs(Xs0); // Extract degrees of freedom
+    Mpp.SetOperator(*KmP); // Set the preconditioner operator
+    cgPP_solver->SetPreconditioner(Mpp); // Attach the preconditioner to the solver
+    cgPP_solver->SetOperator(*KmP); // Set the operator for the solver 
+    cgPP_solver->Mult(Fpb, Xs0); // Solve for the error term
+    phx.Distribute(Xs0); // Distribute the updated values
 
-// }
+    Potentials::ComputeGlobalError(pP0, phx, psx, gerror, gtPsi); // Compute global error
+}
 
 
 
@@ -87,12 +126,12 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 //     Potentials::PCG_Solver(Mpp, *cgPP_solver, *KmP); // Solve the system
 // }
 
-// void PotP::ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx){
-//     for (int vi = 0; vi < nV; vi++){
-//         // (*kap)(vi) = psx(vi) * (0.01929 + 0.7045 * tanh(2.399 * Cn(vi)) - 0.7238 * tanh(2.412 * Cn(vi)) - 4.2106e-6);
-//         (*kap)(vi) = 3.3 * psx(vi);
-//     }
-// }
+void PotP::ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx){
+    for (int vi = 0; vi < nV; vi++){
+        kap(vi) = psx(vi) * (0.01929 + 0.7045 * tanh(2.399 * Cn(vi)) - 0.7238 * tanh(2.412 * Cn(vi)) - 4.2106e-6);
+        // kap(vi) = 3.3 * psx(vi);
+    }
+}
 
 // void PotP::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror) 
 // {

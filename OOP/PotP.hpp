@@ -54,7 +54,8 @@ public:
     //  * @param psx Psi potential field
     //  * @param phx Particle potential field
     //  */
-    // void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
+    void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
+    void Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
 
     // /**
     //  * @brief Calculates the global error in the particle potential solution
@@ -81,7 +82,7 @@ public:
 
 private:
 
-    // void ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx); ///< Computes particle conductivity
+    void ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx); ///< Computes particle conductivity
 
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
@@ -91,18 +92,19 @@ private:
     mfem::HypreParVector X1v; ///< Solution vector
     mfem::HypreParVector B1v; ///< Right-hand-side vector
     mfem::HypreParVector Fpb; ///< Right-hand-side vector
+    mfem::HypreParVector Xs0; ///< Solution vector for particle potential
     mfem::HypreSmoother Mpp; ///< Preconditioner for the solver
 
     double gtPsi; ///< Total Psi from MeshHandler
 
     mfem::Array<int> ess_tdof_list_e; ///< List of essential true degrees of freedom for Dirichlet boundary conditions
-    // mfem::ConstantCoefficient dbc_e_Coef; ///< Coefficient for Dirichlet boundary conditions
     mfem::Array<int> dbc_e_bdr; ///< Array marking Dirichlet boundary attributes
 
     mfem::ParGridFunction kap; ///< Conductivity field for particle potential
     mfem::GridFunctionCoefficient cKp; ///< Coefficient for the conductivity field
     mfem::GridFunctionCoefficient cRp; ///< Coefficient for the reaction field
     mfem::ParGridFunction RpP; ///< Reaction field for the particle potential
+    mfem::ParGridFunction pP0; ///< Particle potential grid function
 
     std::unique_ptr<mfem::ParBilinearForm> Kp2; ///< Bilinear form for particle potential conductivity
     std::shared_ptr<mfem::HypreParMatrix> KmP; ///< Stiffness matrix for particle potential conductivity
