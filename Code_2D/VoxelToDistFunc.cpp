@@ -206,6 +206,11 @@ int main(int argc, char *argv[])
 		if ( (*solver.GetParallelVox())(i) > 1.00 ) {(*solver.GetParallelVox())(i) = 1.00;}
 	}
 	*/
+
+	// SOLVE Lap(u) = -1 with u=0 on boundary IN PSI REGION
+	// A. Belyaev et al: "On Variational and PDE-based Distance Function Approximations", Section 7
+	// (We have found that solving transient equation until steady state is more robust
+	//  than solving steady state equation directly, probably due to the SBM dirichlet boundary term.)
 	VoxelSolver solver_dist(&*geometry.globalfespace, &*geometry.parfespace);
 	solver_dist.AssignGlobalValues(0.0);
 	//solver_dist.AssignGlobalValues(1.0);
@@ -238,7 +243,7 @@ int main(int argc, char *argv[])
 	// Output Vox to Paraview
 	solver_dist.ParaviewSave("PoissonVox","C",solver_dist.GetParallelVox());
 
-
+	// SOLVE Lap(u) = -1 with u=0 on boundary IN (1-PSI) REGION
 	ParGridFunction newpsi(*solver.GetParallelVox());
 	newpsi.Neg();
 	newpsi += 1.0;
@@ -276,20 +281,27 @@ int main(int argc, char *argv[])
 
 
 	
-
+	// Evaluate the (normalized) vector field X=grad(u)/|grad(u)|
+	// K. Crane, C. Weischedel, M. Weischedel
+	// Geodesics in Heat: A New Approach to Computing Distance Based on Heat Flow
+	// ACM Transactions on Graphics, Vol. 32, No. 5, October, 2013
 	
+	/*
 	ParFiniteElementSpace pfes_dim(solver_dist.GetParallelVox()->ParFESpace()->GetParMesh(),
 					solver_dist.GetParallelVox()->ParFESpace()->FEColl(),
 					solver_dist.GetParallelVox()->ParFESpace()->GetMesh()->Dimension());
 	ParGridFunction X(&pfes_dim);
+	// grad(u) in psi region
 	ParGridFunction gdX_u1(*solver_dist.GetParallelVox());
 	ParGridFunction gdY_u1(*solver_dist.GetParallelVox());
 	solver_dist.GetParallelVox()->GetDerivative(1,0,gdX_u1);
 	solver_dist.GetParallelVox()->GetDerivative(1,1,gdY_u1);
+	// grad(u) in (1-psi) region
 	ParGridFunction gdX_u2(*solver_dist2.GetParallelVox());
 	ParGridFunction gdY_u2(*solver_dist2.GetParallelVox());
 	solver_dist2.GetParallelVox()->GetDerivative(1,0,gdX_u2);
 	solver_dist2.GetParallelVox()->GetDerivative(1,1,gdY_u2);
+	// combine grad(u) from both regions
 	for (int i = 0; i < gdX_u1.Size(); i++){
 		if ( (*solver.GetParallelVox())(i) > 0.5 ){
 			X(i) = gdX_u1(i);
@@ -299,15 +311,61 @@ int main(int argc, char *argv[])
 			X(i+gdX_u1.Size()) = gdY_u2(i);
 		}
 	}
-	
 	solver_dist2.ParaviewSave("X","X",&X);
+	// Normalize
+	*/
 	
+	// combine u from both regions
+	ParGridFunction u(&*geometry.parfespace);
+	for (int i = 0; i < solver_dist.GetParallelVox()->Size(); i++){
+		if ( (*solver.GetParallelVox())(i) > 0.5 ){
+			u(i) = (*solver_dist.GetParallelVox())(i);
+		} else{
+			u(i) = (*solver_dist2.GetParallelVox())(i);
+		}
+	}
+	// get grad(u)/|grad(u)| for RHS
+	// grad(u)
+	GradientGridFunctionCoefficient gradu_coef(&u);
+	// grad(u)/|grad(u)|
+	NormalizedVectorCoefficient normgradu_coef(gradu_coef);
+	// set as RHS
+	ParLinearForm b(&*geometry.parfespace);
+	b.AddDomainIntegrator(new DomainLFGradIntegrator(normgradu_coef));
+	b.Assemble();
 	
+	// Set LHS (diffusion)
+	ParBilinearForm a(&*geometry.parfespace);
+	a.AddDomainIntegrator(new DiffusionIntegrator);
+	a.Assemble();
 
+	// No BCs
+	Array<int> no_ess_tdofs;
 
+	// set up system	
+	HypreParMatrix A;
+	HypreParVector B, X;
+	ParGridFunction distance(&*geometry.parfespace);
+	a.FormLinearSystem(no_ess_tdofs, distance, b, A, X, B);
 
+	// Solve
+   HypreSmoother prec;
+   prec.SetType(HypreSmoother::Jacobi);
+   //HypreSolver *amg = new HypreBoomerAMG;
+   CGSolver cg(MPI_COMM_WORLD);
+   //GMRESSolver cg(MPI_COMM_WORLD);
+   //FGMRESSolver cg(MPI_COMM_WORLD);
+   //BiCGSTABSolver cg(MPI_COMM_WORLD);
+   cg.SetRelTol(1e-12);
+   cg.SetMaxIter(3000);
+   //cg.SetPreconditioner(prec);
+   //cg.SetPreconditioner(*amg);
+   cg.SetOperator(A);
+   cg.SetPrintLevel(3);
+   cg.Mult(B, X);
+   a.RecoverFEMSolution(X, b, distance);
 
-
+	solver_dist2.ParaviewSave("MyDistFinal","dist",&distance);
 
 
 
