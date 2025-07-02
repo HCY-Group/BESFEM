@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     // Electrolyte concentration initialization with a grid function and initial value
     CnE electrolyte_concentration(geometry, domain_parameters);
     mfem::ParGridFunction CnE_gf(geometry.parfespace.get());
-    electrolyte_concentration.Initialize(CnE_gf, 0.001, *domain_parameters.pse); 
+    electrolyte_concentration.Initialize(CnE_gf, 0.001005, *domain_parameters.pse); 
 
     // Initialize Potential Classes
 
@@ -100,9 +100,9 @@ int main(int argc, char *argv[]) {
     reaction.Initialize(Rxn_gf, 0.0);
     // reaction.Initialize(Rxn_gf, 1e-8);
 
-    // // // Initialize Current Class
+    // Initialize Current Class
 
-    // // Create the Current class to control current based on particle potential
+    // Create the Current class to control current based on particle potential
     // Current current(geometry, domain_parameters);
 
     // Set initial global current and cell voltage values  
@@ -112,15 +112,12 @@ int main(int argc, char *argv[]) {
 
     // Main Simulation Loop
 
-    // int t = 0;
-    // int local_nE = geometry.nE;  // Local number of elements on this MPI process
-    // int global_nE = 0;
-
-    // MPI_Allreduce(&local_nE, &global_nE, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    // int t_skip = std::max(1, static_cast<int>(std::ceil(global_nE / 20.0)));
+    int t = 0;
     
     // Perform simulation over time steps
-    for (int t = 0; t < 2000 + 1; ++t) {
+    // while (VCell > Constants::VCut) {
+    // while (particle_concentration.GetLithiation() < 0.98) {
+    for (int t = 0; t < 200000 + 1; ++t) {
         particle_concentration.TimeStep(Rxn_gf, CnCH_gf, *domain_parameters.psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
 
@@ -150,7 +147,11 @@ int main(int argc, char *argv[]) {
         double dV = Constants::dt * Constants::Vsr * sgn;
         particle_potential.BvP -= dV; // Adjust particle potential based on target current
         phP_gf -= dV; // Update the grid function for particle potential
-        
+
+        VCell = particle_potential.BvP - electrolyte_potential.BvE;
+
+        // t += 1;
+
         if (t % 50 == 0 && mfem::Mpi::WorldRank() == 0) {
             std::cout << "timestep: " << t
                     << ", Xfr = " << particle_concentration.GetLithiation()
@@ -158,10 +159,17 @@ int main(int argc, char *argv[]) {
                     << std::endl;
         }
 
-        VCell = particle_potential.BvP - electrolyte_potential.BvE;
-
-
     }
+
+
+
+
+
+
+
+
+
+
     // // while ( VCell > Constants::VCut) {
     // while ( Xfr < 0.98 ) {
 
@@ -223,24 +231,24 @@ int main(int argc, char *argv[]) {
     // }
     
 
-    // // // Multiply Grid Functions for Error Calculations
-    // CnCH_gf *= *domain_parameters.psi;
-    // // phP_gf *= *domain_parameters.psi;
+    // Multiply Grid Functions for Error Calculations
+    CnCH_gf *= *domain_parameters.psi;
+    phP_gf *= *domain_parameters.psi;
 
-    // // CnE_gf *= *domain_parameters.pse;
-    // // phE_gf *= *domain_parameters.pse;
+    CnE_gf *= *domain_parameters.pse;
+    phE_gf *= *domain_parameters.pse;
 
-    // // // Save simulation outputs
-    // geometry.parallelMesh->Save("Results/pmesh");
-    // domain_parameters.psi->Save("Results/psi");
-    // domain_parameters.pse->Save("Results/pse");
+    // Save simulation outputs
+    geometry.parallelMesh->Save("Results/pmesh");
+    domain_parameters.psi->Save("Results/psi");
+    domain_parameters.pse->Save("Results/pse");
 
     // // // // // CnP_gf.Save("Results/CnP");
-    // CnCH_gf.Save("Results/CnCH");
-    // // CnE_gf.Save("Results/CnE");
-    // // // // phP_gf.Save("Results3/phP");
-    // // // // phE_gf.Save("Results3/phE");
-    // Rxn_gf.Save("Results/Rxn");
+    CnCH_gf.Save("Results/CnCH");
+    CnE_gf.Save("Results/CnE");
+    phP_gf.Save("Results/phP");
+    phE_gf.Save("Results/phE");
+    Rxn_gf.Save("Results/Rxn");
 
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();

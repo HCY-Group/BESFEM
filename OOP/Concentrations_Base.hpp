@@ -60,6 +60,7 @@ public:
     int nE;                                         ///< Number of elements
     int nC;                                         ///< Number of corners in each element
     int nV;                                         ///< Number of vertices
+    double Xfr; ///< Degree of lithiation
 
 
 protected:
@@ -75,7 +76,7 @@ protected:
     double gCeC = 0.0; ///< Global salt concentration
     double CeAvg = 0.0; ///< Average salt concentration
     double Ce0 = 0.001; ///< Initial salt concentration
-    double Xfr; ///< Degree of lithiation
+    // double Xfr; ///< Degree of lithiation
 
     double L_w; ///< West boundary size
 

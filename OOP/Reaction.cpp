@@ -305,11 +305,8 @@
  
 double Reaction::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vector &data)
     {
-        if (cn < 1.0e-6) {
-            cn = 1.0e-6;
-        } else if (cn > 1.0) {
-            cn = 1.0;
-        }
+        if (cn < 1.0e-6) cn = 1.0e-6;
+        if (cn > 0.999999) cn = 0.999999;
 
         int idx = std::floor(cn / 0.01);
         if (idx < 0) idx = 0;

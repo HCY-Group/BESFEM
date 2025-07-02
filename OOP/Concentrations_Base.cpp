@@ -29,14 +29,6 @@ void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double i
 
 }
 
-void Concentrations::SetUpSolver(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat, mfem::CGSolver &solver, mfem::HypreSmoother &smoother) {
-    
-    // SolverSteps::MassMatrix(psx, Mmat);
-    // SolverSteps::MassMatrix(Mmat);
-    SolverSteps::SolverConditions(Mmat, solver, smoother);
-    
-}
-
 void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {
     
     // Temporary grid function to store the product of concentration and potential

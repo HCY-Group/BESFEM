@@ -64,11 +64,8 @@
 
 double CnCH::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vector &data)
     {
-        if (cn < 1.0e-6) {
-            cn = 1.0e-6;
-        } else if (cn > 1.0) {
-            cn = 1.0;
-        }
+        if (cn < 1.0e-6) cn = 1.0e-6;
+        if (cn > 0.999999) cn = 0.999999;
 
         int idx = std::floor(cn / 0.01);
         if (idx < 0) idx = 0;
@@ -154,7 +151,7 @@ double CnCH::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Ve
         // Ensure that the concentration values are within the valid range
         for (int i = 0; i < CpV0->Size(); i++) {
             if (PsVc(i) < 1.0e-5) {
-                (*CpV0)(i) = 0.0202;
+                (*CpV0)(i) = 0.02;
             }
         }
 
