@@ -191,11 +191,9 @@ int main(int argc, char *argv[])
 	// Find distance using my own...
 	cout << "My own distancing function" << endl;
 	
-	
 	ParGridFunction ds(*solver.GetParallelVox());
 	ds = 0.0;
 	MyComputeDistance(*solver.GetParallelVox(), ds);
-	
 	
 	//Normalize psi
 	//*solver.GetParallelVox() -= solver.GetParallelVox()->Min();
@@ -223,6 +221,7 @@ int main(int argc, char *argv[])
 	t_ode = 0.0;
 	dt = 1e-5;
 	dt = 0.05;
+	dt = 0.1;
 	for (int t = 0; t < 100; t++){
 
 		solver_dist.UpdateLinearForm_SBMDirichlet(*solver.GetParallelVox());
@@ -259,6 +258,7 @@ int main(int argc, char *argv[])
 	t_ode = 0.0;
 	dt = 1e-5;
 	dt = 0.05;
+	dt = 0.1;
 	for (int t = 0; t < 100; t++){
 
 		solver_dist2.UpdateLinearForm_SBMDirichlet(newpsi);
@@ -768,9 +768,12 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
    // SBM formulation: div(psi grad(u)) - grad(psi)*grad(u) = -psi
    // SBM formulation: -div(psi grad(u)) + grad(psi) dot grad(u) = psi
    
-   for (int i = 0; i < psi.Size(); i++){
-      if (psi(i) < 1e-7) {psi(i) = 1e-7;}
-   }
+   //for (int i = 0; i < psi.Size(); i++){
+   //   if (psi(i) < 1e-7) {psi(i) = 1e-7;}
+   //}
+   //psi -= psi.Min();
+   //psi += 1e-7;
+
 	ParaViewDataCollection *pd = NULL;
 	pd = new ParaViewDataCollection("MyDistTest_psi", psi.FESpace()->GetMesh());
 	pd->RegisterField("u", &psi);
@@ -786,10 +789,10 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
    GridFunctionCoefficient psi_coef(&psi);
    ProductCoefficient psisq_coef(psi_coef, psi_coef);
    ProductCoefficient psi3_coef(psisq_coef, psi_coef);
-   ProductCoefficient alphapsi_coef(1e-8,psisq_coef);
+   ProductCoefficient alphapsi_coef(1e-8,psi_coef);
    //b.AddDomainIntegrator(new DomainLFIntegrator(psi_coef));
-   //b.AddDomainIntegrator(new DomainLFIntegrator(psisq_coef));
-   b.AddDomainIntegrator(new DomainLFIntegrator(alphapsi_coef));
+   b.AddDomainIntegrator(new DomainLFIntegrator(psisq_coef));
+   //b.AddDomainIntegrator(new DomainLFIntegrator(alphapsi_coef));
    //b.AddDomainIntegrator(new DomainLFIntegrator(psi3_coef));
    b.Assemble();
 	cout << "max b: " << b.Max() << " min b: " << b.Min() << endl;
@@ -823,7 +826,7 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
    //FGMRESSolver cg(MPI_COMM_WORLD);
    //BiCGSTABSolver cg(MPI_COMM_WORLD);
    cg.SetRelTol(1e-12);
-   cg.SetMaxIter(50000);
+   cg.SetMaxIter(10);
    //cg.SetPreconditioner(prec);
    //cg.SetPreconditioner(*amg);
    cg.SetOperator(A);
