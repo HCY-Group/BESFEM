@@ -92,7 +92,7 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
     AvP->ProjectCoefficient(AvP_coeff);
     
-    AvP->Save("/outputs/Results/AvP");
+    AvP->Save("../outputs/Results/AvP");
 
 }
 

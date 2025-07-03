@@ -26,16 +26,16 @@ LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \
 #             Concentrations_Base.cpp CnP.cpp CnE.cpp CnCH.cpp ../code/SolverSteps.cpp  \
 #             Potentials_Base.cpp PotP.cpp PotE.cpp Reaction.cpp Current.cpp
 
-SRC_FILES = simulation.cpp ../code/Constants.cpp ../code/Initialize_Geometry.cpp readtiff.cpp Domain_Parameters.cpp \
-            Concentrations_Base.cpp CnE.cpp CnCH.cpp Reaction.cpp ../code/SolverSteps.cpp  \
-            Potentials_Base.cpp PotP.cpp PotE.cpp
+# SRC_FILES = simulation.cpp ../code/Constants.cpp ../code/Initialize_Geometry.cpp readtiff.cpp Domain_Parameters.cpp \
+#             Concentrations_Base.cpp CnE.cpp CnCH.cpp Reaction.cpp ../code/SolverSteps.cpp  \
+#             Potentials_Base.cpp PotP.cpp PotE.cpp
 
-# SRC_FILES = Anna_ex_BESFEM_2D_Par_H2_gr.cpp 
+SRC_FILES = Anna_ex_BESFEM_2D_Par_H2_gr.cpp 
             
 
 # Output executable
-EXEC = simulation
-# EXEC = serial_simulation
+# EXEC = simulation
+EXEC = serial_simulation
 
 # Tiff reading
 LDFLAGS = -ltiff

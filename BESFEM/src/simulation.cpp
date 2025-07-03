@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+{
     // Default values
     const char* mesh_file = Constants::mesh_file;
     const char* dsF_file = Constants::dsF_file;
@@ -117,7 +118,7 @@ int main(int argc, char *argv[]) {
     // Perform simulation over time steps
     // while (VCell > Constants::VCut) {
     // while (particle_concentration.GetLithiation() < 0.98) {
-    for (int t = 0; t < 200 + 1; ++t) {
+    for (int t = 0; t < 20000 + 1; ++t) {
         particle_concentration.TimeStep(Rxn_gf, CnCH_gf, *domain_parameters.psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
 
@@ -128,6 +129,8 @@ int main(int argc, char *argv[]) {
 
         double globalerror_P = 1.0; // Error for particle potential
         double globalerror_E = 1.0; // Error for electrolyte potential
+        int inner_it = 0;
+
         
         while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
             // Update reaction rates using the Butler-Volmer equation
@@ -135,10 +138,6 @@ int main(int argc, char *argv[]) {
 
             particle_potential.Advance(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
             electrolyte_potential.Advance(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
-
-            // std::cout << "timestep: " << t << ", globalerror_P: " << globalerror_P 
-            // << ", globalerror_E: " << globalerror_E << std::endl;
-            
         }
 
         reaction.TotalReactionCurrent(Rxn_gf, global_current);
@@ -169,16 +168,18 @@ int main(int argc, char *argv[]) {
     phE_gf *= *domain_parameters.pse;
 
     // Save simulation outputs
-    geometry.parallelMesh->Save("outputs/Results/pmesh");
-    domain_parameters.psi->Save("outputs/Results/psi");
-    domain_parameters.pse->Save("outputs/Results/pse");
+    geometry.parallelMesh->Save("../outputs/Results/pmesh");
+    domain_parameters.psi->Save("../outputs/Results/psi");
+    domain_parameters.pse->Save("../outputs/Results/pse");
 
     // // // // // CnP_gf.Save("Results/CnP");
-    CnCH_gf.Save("outputs/Results/CnCH");
-    CnE_gf.Save("outputs/Results/CnE");
-    phP_gf.Save("outputs/Results/phP");
-    phE_gf.Save("outputs/Results/phE");
-    Rxn_gf.Save("outputs/Results/Rxn");
+    CnCH_gf.Save("../outputs/Results/CnCH");
+    CnE_gf.Save("../outputs/Results/CnE");
+    phP_gf.Save("../outputs/Results/phP");
+    phE_gf.Save("../outputs/Results/phE");
+    Rxn_gf.Save("../outputs/Results/Rxn");
+
+}
 
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();

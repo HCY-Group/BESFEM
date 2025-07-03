@@ -57,7 +57,9 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
     
-    mfem::HypreBoomerAMG Mpp(*KmP); // Create a preconditioner for the stiffness matrix
+    // Mpp.SetOperator(*KmP);
+    Mpp.SetPrintLevel(0);
+
     SolverSteps::SolverConditions(KmP, *cgPP_solver, Mpp); // Set up the solver conditions
 
     SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term
@@ -69,21 +71,21 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
 void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
 {
-    ParticleConductivity(Cn, psx); // Update conductivity
-    cKp.SetGridFunction(&kap); // Set the conductivity coefficient
+    // ParticleConductivity(Cn, psx); // Update conductivity
+    // cKp.SetGridFunction(&kap); // Set the conductivity coefficient
 
-    SolverSteps::Update(Kp2); // Update the stiffness matrix
+    // SolverSteps::Update(Kp2); // Update the stiffness matrix
     mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
     potential.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
     
     fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
     // std::cout << "[PotP::TimeStep] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
     
-    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
+    // SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
 
-    Mpp.SetOperator(*KmP); // Set the preconditioner operator
-    cgPP_solver->SetPreconditioner(Mpp); // Attach the preconditioner to the solver
-    cgPP_solver->SetOperator(*KmP); // Set the operator for the solver 
+    // Mpp.SetOperator(*KmP); // Set the preconditioner operator
+    // cgPP_solver->SetPreconditioner(Mpp); // Attach the preconditioner to the solver
+    // cgPP_solver->SetOperator(*KmP); // Set the operator for the solver 
 
 }
 
@@ -99,10 +101,15 @@ void PotP::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     // std::cout << "[PotP::Advance] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
     
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
+    // Kp2->FormLinearSystem(ess_tdof_list_e, phx, Fpt, *KmP, X1v, Fpb);
+
 
     pP0 = phx; // Store the current potential field
     pP0.GetTrueDofs(Xs0); // Extract degrees of freedom
+    
     Mpp.SetOperator(*KmP); // Set the preconditioner operator
+    Mpp.SetPrintLevel(0);
+
     cgPP_solver->SetPreconditioner(Mpp); // Attach the preconditioner to the solver
     cgPP_solver->SetOperator(*KmP); // Set the operator for the solver 
     cgPP_solver->Mult(Fpb, Xs0); // Solve for the error term

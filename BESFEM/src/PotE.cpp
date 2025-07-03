@@ -62,7 +62,8 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
     SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, ph, B1t, Kml, X1v, B1v); // Assemble the linear system
     
-    mfem::HypreBoomerAMG Mpe(*Kml);
+    // mfem::HypreBoomerAMG Mpe(*Kml);
+    Mpe.SetPrintLevel(0);
     SolverSteps::SolverConditions(Kml, *cgPE_solver, Mpe); // Set up the solver conditions
 
     SolverSteps::InitializeForceTerm(cRe, Bl2); // Initialize the force term
@@ -97,6 +98,8 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
     SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system
 
     Mpe.SetOperator(*Kml); // Set the operator for the preconditioner
+    Mpe.SetPrintLevel(0);
+
     cgPE_solver->SetPreconditioner(Mpe); // Attach the preconditioner to the solver
     cgPE_solver->SetOperator(*Kml); // Set the operator for the solver
 
@@ -120,6 +123,8 @@ void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     pE0 = phx; // Store the current potential field
     pE0.GetTrueDofs(Xe0); // Extract degrees of freedom
     Mpe.SetOperator(*Kml); // Set the preconditioner operator
+    Mpe.SetPrintLevel(0);
+
     cgPE_solver->SetPreconditioner(Mpe); // Attach the preconditioner to the solver
     cgPE_solver->SetOperator(*Kml); // Set the operator for the solver 
     cgPE_solver->Mult(RHSl, Xe0); // Solve for the error term

@@ -78,7 +78,10 @@ private:
     mfem::HypreParVector X1v; ///< Solution vector
     mfem::HypreParVector B1v; ///< Right-hand-side vector
     mfem::HypreParVector Flb; ///< Right-hand-side vector
-    mfem::HypreSmoother Mpe; ///< Preconditioner for the solver
+    // mfem::HypreSmoother Mpe; ///< Preconditioner for the solver
+    mfem::HypreBoomerAMG Mpe;
+
+    
 
     double gtPse; ///< Total Psi from MeshHandler
 
