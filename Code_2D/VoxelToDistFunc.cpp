@@ -816,7 +816,11 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
    Array<int> ess_tdof_list;
    ParGridFunction x(&pfes);
    //x = psi;
-   a.FormLinearSystem(ess_tdof_list, x, b, A, X, B);
+
+   for (int i = 0; i < 1e3; i++){
+   a.FormLinearSystem(ess_tdof_list, x, b, A, X, B, 1);
+	cout << "My X max: " << X.Max() << " My X min: " << X.Min() << endl;
+	cout << "My x max: " << x.Max() << " My x min: " << x.Min() << endl;
 
    HypreSmoother prec;
    prec.SetType(HypreSmoother::Jacobi);
@@ -826,7 +830,8 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
    //FGMRESSolver cg(MPI_COMM_WORLD);
    //BiCGSTABSolver cg(MPI_COMM_WORLD);
    cg.SetRelTol(1e-12);
-   cg.SetMaxIter(10);
+   cg.SetMaxIter(1);
+   //cg.SetMaxIter(100);
    //cg.SetPreconditioner(prec);
    //cg.SetPreconditioner(*amg);
    cg.SetOperator(A);
@@ -835,10 +840,11 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
    a.RecoverFEMSolution(X, b, x);
 
    //x -= x.Min();
-   //x *= psi;
+   x *= psi;
 
 	cout << "My x max: " << x.Max() << " My x min: " << x.Min() << endl;
-
+	cout << "iterative?" << cg.iterative_mode << endl;
+   }
 	//ParaViewDataCollection *pd = NULL;
 	pd = new ParaViewDataCollection("MyDistTest", x.FESpace()->GetMesh());
 	//pd->RegisterField("u", &x);
