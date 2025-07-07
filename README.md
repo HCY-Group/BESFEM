@@ -3,9 +3,9 @@
 
 ## How to Run the Code
 1. Clone the repository
-2. cd BESFEM
-3. make (you may need to update the Makefile to point to your MFEM installation)
-4. cd bin
+2. `cd BESFEM`
+3. `make` (you may need to update the Makefile to point to your MFEM installation)
+4. `cd bin`
 5. Run a simulation: `mpirun -np 4 ./simulation -t d`
 
 ## Additional Command-Line Options
