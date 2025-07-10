@@ -774,90 +774,169 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
    //psi -= psi.Min();
    //psi += 1e-7;
 
-	ParaViewDataCollection *pd = NULL;
-	pd = new ParaViewDataCollection("MyDistTest_psi", psi.FESpace()->GetMesh());
-	pd->RegisterField("u", &psi);
-	pd->SetLevelsOfDetail(1);
-	pd->SetDataFormat(VTKFormat::BINARY);
-	pd->SetHighOrderOutput(true);
-	pd->SetCycle(0);
-	pd->SetTime(0.0);
-	pd->Save();
-	delete pd;
-   // Set RHS
-   ParLinearForm b(&pfes);
-   GridFunctionCoefficient psi_coef(&psi);
-   ProductCoefficient psisq_coef(psi_coef, psi_coef);
-   ProductCoefficient psi3_coef(psisq_coef, psi_coef);
-   ProductCoefficient alphapsi_coef(1e-8,psi_coef);
-   //b.AddDomainIntegrator(new DomainLFIntegrator(psi_coef));
-   b.AddDomainIntegrator(new DomainLFIntegrator(psisq_coef));
-   //b.AddDomainIntegrator(new DomainLFIntegrator(alphapsi_coef));
-   //b.AddDomainIntegrator(new DomainLFIntegrator(psi3_coef));
-   b.Assemble();
-	cout << "max b: " << b.Max() << " min b: " << b.Min() << endl;
 
-   // Set diffusion operator
-   ParBilinearForm a(&pfes);
-   a.AddDomainIntegrator(new DiffusionIntegrator(psi_coef));
-   //ParMixedBilinearForm a(&pfes);
-   //a.AddDomainIntegrator(new MixedGradGradIntegrator(psi_coef));
-   GradientGridFunctionCoefficient psigrad_coef(&psi);
-   ScalarVectorProductCoefficient psigradpsi_coef(psi_coef, psigrad_coef);
-   //ScalarVectorProductCoefficient psigradpsi_coef(psisq_coef, psigrad_coef);
-   //ScalarVectorProductCoefficient psigradpsi_coef(psi3_coef, psigrad_coef);
-   //a.AddDomainIntegrator(new ConvectionIntegrator(psigrad_coef));
-   a.AddDomainIntegrator(new ConvectionIntegrator(psigradpsi_coef));
-   a.Assemble();
+   ParaViewDataCollection *pd = NULL;
+   pd = new ParaViewDataCollection("MyDistTest_psi", psi.FESpace()->GetMesh());
+   pd->RegisterField("u", &psi);
+   pd->SetLevelsOfDetail(1);
+   pd->SetDataFormat(VTKFormat::BINARY);
+   pd->SetHighOrderOutput(true);
+   pd->SetCycle(0);
+   pd->SetTime(0.0);
+   pd->Save();
+   delete pd;
 
-   //OperatorPtr A;
-   HypreParMatrix A;
-   HypreParVector B, X;
-   Array<int> ess_tdof_list;
-   ParGridFunction x(&pfes);
-   //x = psi;
+   ParGridFunction u(&pfes);
+   
+   for (int iter = 0; iter < 2; iter++) {
+	   if (iter>0) {
+		psi.Neg();
+		psi += 1.0;
+	   }
+	   // Set RHS
+	   ParLinearForm b(&pfes);
+	   GridFunctionCoefficient psi_coef(&psi);
+	   ProductCoefficient psisq_coef(psi_coef, psi_coef);
+	   ProductCoefficient psi3_coef(psisq_coef, psi_coef);
+	   ProductCoefficient alphapsi_coef(1e-8,psi_coef);
+	   b.AddDomainIntegrator(new DomainLFIntegrator(psi_coef));
+	   //b.AddDomainIntegrator(new DomainLFIntegrator(psisq_coef));
+	   //b.AddDomainIntegrator(new DomainLFIntegrator(alphapsi_coef));
+	   //b.AddDomainIntegrator(new DomainLFIntegrator(psi3_coef));
+	   b.Assemble();
+	   cout << "max b: " << b.Max() << " min b: " << b.Min() << endl;
 
-   for (int i = 0; i < 1e3; i++){
-   a.FormLinearSystem(ess_tdof_list, x, b, A, X, B, 1);
-	cout << "My X max: " << X.Max() << " My X min: " << X.Min() << endl;
-	cout << "My x max: " << x.Max() << " My x min: " << x.Min() << endl;
+	   // Set diffusion operator
+	   ParBilinearForm a(&pfes);
+	   a.AddDomainIntegrator(new DiffusionIntegrator(psi_coef));
+	   //ParMixedBilinearForm a(&pfes);
+	   //a.AddDomainIntegrator(new MixedGradGradIntegrator(psi_coef));
+	   GradientGridFunctionCoefficient psigrad_coef(&psi);
+	   ScalarVectorProductCoefficient psigradpsi_coef(psi_coef, psigrad_coef);
+	   //ScalarVectorProductCoefficient psigradpsi_coef(psisq_coef, psigrad_coef);
+	   //ScalarVectorProductCoefficient psigradpsi_coef(psi3_coef, psigrad_coef);
+	   a.AddDomainIntegrator(new ConvectionIntegrator(psigrad_coef));
+	   //a.AddDomainIntegrator(new ConvectionIntegrator(psigradpsi_coef));
+	   a.Assemble();
 
+	   //OperatorPtr A;
+	   HypreParMatrix A;
+	   HypreParVector B, X;
+	   Array<int> ess_tdof_list;
+	   ParGridFunction x(&pfes);
+	   //x = psi;
+
+	   for (int i = 0; i < 1e3; i++){
+	      a.FormLinearSystem(ess_tdof_list, x, b, A, X, B, 1);
+	      cout << "My X max: " << X.Max() << " My X min: " << X.Min() << endl;
+	      cout << "My x max: " << x.Max() << " My x min: " << x.Min() << endl;
+
+	      HypreSmoother prec;
+	      prec.SetType(HypreSmoother::Jacobi);
+	      HypreSolver *amg = new HypreBoomerAMG;
+	      CGSolver cg(MPI_COMM_WORLD);
+	      //GMRESSolver cg(MPI_COMM_WORLD);
+	      //FGMRESSolver cg(MPI_COMM_WORLD);
+	      //BiCGSTABSolver cg(MPI_COMM_WORLD);
+	      cg.SetRelTol(1e-12);
+	      cg.SetMaxIter(1);
+	      //cg.SetMaxIter(100);
+	      //cg.SetPreconditioner(prec);
+	      //cg.SetPreconditioner(*amg);
+	      cg.SetOperator(A);
+	      cg.SetPrintLevel(3);
+	      cg.Mult(B, X);
+	      a.RecoverFEMSolution(X, b, x);
+
+	      //x -= x.Min();
+	      x *= psi;
+
+	      cout << "My x max: " << x.Max() << " My x min: " << x.Min() << endl;
+	      cout << "iterative?" << cg.iterative_mode << endl;
+	   }
+   
+
+	   //ParaViewDataCollection *pd = NULL;
+	   pd = new ParaViewDataCollection("MyDistTest", x.FESpace()->GetMesh());
+	   //pd->RegisterField("u", &x);
+	   pd->RegisterField("dCdt", &x);
+	   pd->SetLevelsOfDetail(1);
+	   pd->SetDataFormat(VTKFormat::BINARY);
+	   pd->SetHighOrderOutput(true);
+	   pd->SetCycle(0);
+	   pd->SetTime(0.0);
+	   pd->Save();
+	   delete pd;
+
+	   // combine u from both regions
+	   for (int i = 0; i < x.Size(); i++){
+		if ( psi(i) >= 0.5 ){
+			u(i) = x(i);
+		}
+	   }
+   }
+
+	// get grad(u)/|grad(u)| for RHS
+	// grad(u)
+	GradientGridFunctionCoefficient gradu_coef(&u);
+	// grad(u)/|grad(u)|
+	NormalizedVectorCoefficient normgradu_coef(gradu_coef);
+	// set as RHS
+	ParLinearForm b(&pfes);
+	b.AddDomainIntegrator(new DomainLFGradIntegrator(normgradu_coef));
+	b.Assemble();
+	
+	// Set LHS (diffusion)
+	ParBilinearForm a(&pfes);
+	a.AddDomainIntegrator(new DiffusionIntegrator);
+	a.Assemble();
+
+	// No BCs
+	Array<int> no_ess_tdofs;
+
+	// set up system	
+	HypreParMatrix A;
+	HypreParVector B, X;
+	a.FormLinearSystem(no_ess_tdofs, distance, b, A, X, B);
+
+	// Solve
    HypreSmoother prec;
    prec.SetType(HypreSmoother::Jacobi);
-   HypreSolver *amg = new HypreBoomerAMG;
+   //HypreSolver *amg = new HypreBoomerAMG;
    CGSolver cg(MPI_COMM_WORLD);
    //GMRESSolver cg(MPI_COMM_WORLD);
    //FGMRESSolver cg(MPI_COMM_WORLD);
    //BiCGSTABSolver cg(MPI_COMM_WORLD);
    cg.SetRelTol(1e-12);
-   cg.SetMaxIter(1);
-   //cg.SetMaxIter(100);
+   cg.SetMaxIter(3000);
    //cg.SetPreconditioner(prec);
    //cg.SetPreconditioner(*amg);
    cg.SetOperator(A);
    cg.SetPrintLevel(3);
    cg.Mult(B, X);
-   a.RecoverFEMSolution(X, b, x);
-
-   //x -= x.Min();
-   x *= psi;
-
-	cout << "My x max: " << x.Max() << " My x min: " << x.Min() << endl;
-	cout << "iterative?" << cg.iterative_mode << endl;
+   a.RecoverFEMSolution(X, b, distance);
+	   
+   //make minimum distance zero (solution is unique up to a constant, so subtract the constant)
+   distance -= distance.Min();
+	   
+   // convert unsigned distance to signed distance
+   for (int i = 0; i < distance.Size(); i++){
+	if ( psi(i) >= 0.5 ){
+		distance(i) = -distance(i);
+	}
    }
-	//ParaViewDataCollection *pd = NULL;
-	pd = new ParaViewDataCollection("MyDistTest", x.FESpace()->GetMesh());
-	//pd->RegisterField("u", &x);
-	pd->RegisterField("dCdt", &x);
-	pd->SetLevelsOfDetail(1);
-	pd->SetDataFormat(VTKFormat::BINARY);
-	pd->SetHighOrderOutput(true);
-	pd->SetCycle(0);
-	pd->SetTime(0.0);
-	pd->Save();
-	delete pd;
 
-
+   //ParaViewDataCollection *pd = NULL;
+   pd = new ParaViewDataCollection("MyDistTest_end", distance.FESpace()->GetMesh());
+   //pd->RegisterField("u", &x);
+   pd->RegisterField("dist", &distance);
+   pd->SetLevelsOfDetail(1);
+   pd->SetDataFormat(VTKFormat::BINARY);
+   pd->SetHighOrderOutput(true);
+   pd->SetCycle(0);
+   pd->SetTime(0.0);
+   pd->Save();
+   delete pd;
 
 
 
