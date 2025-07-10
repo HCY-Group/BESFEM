@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 	
 	ParGridFunction ds(*solver.GetParallelVox());
 	ds = 0.0;
-	MyComputeDistance(*solver.GetParallelVox(), ds);
+	//MyComputeDistance(*solver.GetParallelVox(), ds);
 	
 	//Normalize psi
 	//*solver.GetParallelVox() -= solver.GetParallelVox()->Min();
@@ -364,6 +364,17 @@ int main(int argc, char *argv[])
    cg.SetPrintLevel(3);
    cg.Mult(B, X);
    a.RecoverFEMSolution(X, b, distance);
+
+   
+   //make minimum distance zero (solution is unique up to a constant, so subtract the constant)
+   distance -= distance.Min();
+	   
+   // convert unsigned distance to signed distance
+   for (int i = 0; i < distance.Size(); i++){
+	if ( (*solver.GetParallelVox())(i) >= 0.5 ){
+		distance(i) = -distance(i);
+	}
+   }
 
 	solver_dist2.ParaviewSave("MyDistFinal","dist",&distance);
 
@@ -925,6 +936,12 @@ void MyComputeDistance(ParGridFunction &psi, ParGridFunction &distance){
 		distance(i) = -distance(i);
 	}
    }
+
+/*
+   // change psi back
+   psi.Neg();
+   psi += 1.0;
+*/
 
    //ParaViewDataCollection *pd = NULL;
    pd = new ParaViewDataCollection("MyDistTest_end", distance.FESpace()->GetMesh());
