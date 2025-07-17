@@ -782,7 +782,7 @@ int main(int argc, char *argv[])
 				(chmPot[indxTick+1]-chmPot[indxTick]);
 			Mob(vi) = Mobil[indxTick] + (Ctmp-Ticks[indxTick])/d_X * 
 				(Mobil[indxTick+1]-Mobil[indxTick]);
-			Mob(vi) *= psi(vi);	
+			// Mob(vi) *= psi(vi);	
 		}
 
 		// vector of CnP	
