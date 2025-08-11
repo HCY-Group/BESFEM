@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
     // Perform simulation over time steps
     // while (VCell > Constants::VCut) {
     // while (particle_concentration.GetLithiation() < 0.98) {
-    for (int t = 0; t < 30000 + 1; ++t) {
+    for (int t = 0; t < 50000 + 1; ++t) {
 
         particle_concentration.TimeStep(Rxn_gf, CnCH_gf, *domain_parameters.psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);

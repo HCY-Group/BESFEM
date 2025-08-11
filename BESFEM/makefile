@@ -48,9 +48,10 @@ SRC_FILES = \
 # Output executable
 # EXEC = simulation
 # EXEC = serial_simulation
-# EXEC_DIR = bin
+EXEC_DIR = bin
 EXEC_NAME = simulation
-EXEC = $(EXEC_NAME)
+EXEC = $(EXEC_DIR)/$(EXEC_NAME)
+
 
 # Tiff reading
 LDFLAGS = -ltiff
