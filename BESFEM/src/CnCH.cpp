@@ -57,6 +57,7 @@
         for (int i = 0; i < 101; i++) myXfile >> Ticks(i);
         for (int i = 0; i < 101; i++) mydFfile >> chmPot(i);
         for (int i = 0; i < 101; i++) myMBfile >> Mobility(i);
+        for (int i = 0; i < 101; i++) Mobility(i) *= 100.0 * 2.0/3.0;
         for (int i = 0; i < 101; i++) myOCVfile >> OCV(i);
         for (int i = 0; i < 101; i++) myi0file >> i0(i);
  
@@ -91,7 +92,7 @@ double CnCH::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Ve
 
         SolverSteps::InitializeStiffnessMatrix(cDp, Grad_MForm); // Initialize stiffness form for mobility
 
-        mfem::ConstantCoefficient varE(6.7600e-10);
+        mfem::ConstantCoefficient varE(0.32); // dx2 is in M matrix in MFEM, not in K matrix
         SolverSteps::InitializeStiffnessMatrix(varE, Grad_EForm); // Initialize stiffness form for energy
 
         SolverSteps::InitializeForceTerm(cAp, B_init);

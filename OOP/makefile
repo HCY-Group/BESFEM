@@ -8,6 +8,7 @@ CONFIG_MK = $(MFEM_BUILD_DIR)/config/config.mk
 
 # Compiler and Flags
 CXX = mpicxx
+# CXX = g++
 CXXFLAGS = -g -O3 -std=c++14
 INCLUDE_FLAGS = -I$(MFEM_DIR) -I$(MFEM_BUILD_DIR) \
                 -I../../../../hypre/src/hypre/include
@@ -30,12 +31,18 @@ LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \
 #             Concentrations_Base.cpp CnE.cpp CnCH.cpp Reaction.cpp ../code/SolverSteps.cpp  \
 #             Potentials_Base.cpp PotP.cpp PotE.cpp
 
-SRC_FILES = Anna_ex_BESFEM_2D_Par_H2_gr.cpp 
+SRC_FILES = Anna_ex_BESFEM_2D_Par_H2_gr.cpp
+
+# SRC_FILES = ex_CnP_CnE_03_A_3D_Ser.cpp 
+# SRC_FILES = ex_Poisson_Solver_A1_2.cpp
+
+# SRC_FILES = fem_demo.cpp
             
 
 # Output executable
-# EXEC = simulation
-EXEC = serial_simulation
+EXEC = linear_simulation
+# EXEC = poisson
+# EXEC = demo
 
 # Tiff reading
 LDFLAGS = -ltiff

@@ -42,14 +42,40 @@ void SolverSteps::InitializeStiffnessMatrix(mfem::Coefficient &coef, std::unique
 
 }
 
-void SolverSteps::InitializeForceTerm(mfem::Coefficient &coef, std::unique_ptr<mfem::ParLinearForm> &B) {
+// void SolverSteps::InitializeForceTerm(mfem::Coefficient &coef, std::unique_ptr<mfem::ParLinearForm> &B) {
 
+//     B = std::make_unique<mfem::ParLinearForm>(local_fespace);
+//     B->AddDomainIntegrator(new mfem::DomainLFIntegrator(coef));
+//     B->Assemble();
+
+//     std::cout << "Free energy initialized." << std::endl;
+// }
+
+void SolverSteps::InitializeForceTerm(
+    mfem::Coefficient &coef,
+    std::unique_ptr<mfem::ParLinearForm> &B,
+    mfem::Coefficient *boundary_coef,
+    mfem::Array<int> *boundary_attr)
+{
     B = std::make_unique<mfem::ParLinearForm>(local_fespace);
+
+    // Domain term
     B->AddDomainIntegrator(new mfem::DomainLFIntegrator(coef));
+
+    // Optional boundary term
+    if (boundary_coef && boundary_attr)
+    {
+        B->AddBoundaryIntegrator(
+            new mfem::BoundaryLFIntegrator(*boundary_coef),
+            *boundary_attr
+        );
+    }
+
     B->Assemble();
 
-    std::cout << "Free energy initialized." << std::endl;
+    // std::cout << "Force term initialized." << std::endl;
 }
+
 
 void SolverSteps::FormSystemMatrix(std::unique_ptr<mfem::ParBilinearForm> &M, mfem::Array<int> &boundary_dofs, std::shared_ptr<mfem::HypreParMatrix> &MassMatrix) {
     if (!M) {
@@ -109,6 +135,16 @@ void SolverSteps::SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, 
     solver.SetPrintLevel(0); // Suppress output from the solver
     solver.SetPreconditioner(preconditioner); // Attach the preconditioner to the solver
     solver.SetOperator(*Mmat); // Set the mass matrix as the operator to solve
+}
+
+void SolverSteps::SolverConditions(mfem::CGSolver &solver, mfem::Solver &preconditioner){
+    // Set up the solver for the mass matrix.
+    solver.iterative_mode = false; // Use direct solving for the system matrix
+    solver.SetRelTol(1e-7); // Set relative tolerance for the solver
+    solver.SetAbsTol(0.0); // Set absolute tolerance for the solver
+    solver.SetMaxIter(102); // Limit the maximum number of iterations
+    solver.SetPrintLevel(0); // Suppress output from the solver
+    solver.SetPreconditioner(preconditioner); // Attach the preconditioner to the solver
 }
 
 // void SolverSteps::MassMatrix(mfem::ParGridFunction &psx, std::shared_ptr<mfem::HypreParMatrix> &Mmat) {

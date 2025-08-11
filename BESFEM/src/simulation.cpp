@@ -36,7 +36,6 @@ int main(int argc, char *argv[]) {
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
 {
     // Default values
     const char* mesh_file = Constants::mesh_file;
@@ -118,9 +117,15 @@ int main(int argc, char *argv[]) {
     // Perform simulation over time steps
     // while (VCell > Constants::VCut) {
     // while (particle_concentration.GetLithiation() < 0.98) {
-    for (int t = 0; t < 20000 + 1; ++t) {
+    for (int t = 0; t < 30000 + 1; ++t) {
+
         particle_concentration.TimeStep(Rxn_gf, CnCH_gf, *domain_parameters.psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
+
+        // Only call SaltConservation every 500 timesteps
+        if (t > 0 && t % 500 == 0){
+                electrolyte_concentration.SaltConservation(CnE_gf, *domain_parameters.pse);
+        }
 
         particle_potential.TimeStep(CnCH_gf, *domain_parameters.psi, phP_gf);
         electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf, *electrolyte_concentration.CeVn);
@@ -129,9 +134,7 @@ int main(int argc, char *argv[]) {
 
         double globalerror_P = 1.0; // Error for particle potential
         double globalerror_E = 1.0; // Error for electrolyte potential
-        int inner_it = 0;
-
-        
+ 
         while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
             // Update reaction rates using the Butler-Volmer equation
             reaction.ButlerVolmer(Rxn_gf, CnCH_gf, CnE_gf, phP_gf, phE_gf);
@@ -149,9 +152,9 @@ int main(int argc, char *argv[]) {
 
         VCell = particle_potential.BvP - electrolyte_potential.BvE;
 
-        // t += 1;
+        // // t += 1;
 
-        if (t % 50 == 0 && mfem::Mpi::WorldRank() == 0) {
+        if (t % 200 == 0 && mfem::Mpi::WorldRank() == 0) {
             std::cout << "timestep: " << t
                     << ", Xfr = " << particle_concentration.GetLithiation()
                     << ", VCell = " << VCell << ", BvP = " << particle_potential.BvP
@@ -180,7 +183,6 @@ int main(int argc, char *argv[]) {
     Rxn_gf.Save("../outputs/Results/Rxn");
 
 }
-
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();
 

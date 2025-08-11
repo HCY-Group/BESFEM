@@ -64,8 +64,8 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF)(vi)) / Constants::zeta), 2) - 1.0) / (2 * Constants::zeta); // circle
 
         } else if (strcmp(mesh_type, "d") == 0) {
-            (*psi)(vi) = 0.5 * (1.0 + tanh(((*dsF)(vi)) / (Constants::zeta * Constants::dh))); // disk
-            (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // disk
+            (*psi)(vi) = 0.5 * (1.0 + tanh(((*dsF)(vi)) / (Constants::zeta))); // disk
+            (*AvP)(vi) = -(pow(tanh((*dsF)(vi) / (Constants::zeta)), 2) - 1.0) / (2 * Constants::zeta); // disk
 
         } else if (strcmp(mesh_type, "v") == 0) {
             (*psi)(vi) = 0.5 * (1.0 + tanh((*dsF)(vi))); // voxel
@@ -84,15 +84,29 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     
     AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
 
-    for (int vi = 0; vi < nV; vi++) {
-        if ((*AvP)(vi) * Constants::dh < 1.0e-3) { (*AvP)(vi) = 0.0; }
-        if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
+    if(strcmp(mesh_type, "d") == 0) 
+        for (int vi = 0; vi < nV; vi++) {
+            if ((*AvP)(vi) < 1.0e-3) { (*AvP)(vi) = 0.0; }
+            if ((*AvB)(vi) < 1.0e-6) { (*AvB)(vi) = 0.0; }
+        }    
+    else {
+        for (int vi = 0; vi < nV; vi++) {
+            if ((*AvP)(vi) * Constants::dh < 1.0e-3) { (*AvP)(vi) = 0.0; }
+            if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
+        }
+    }
+    
+
+
+    if(strcmp(mesh_type, "d") == 0) {
+        *AvP /= Constants::dh;
     }
 
     mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
     AvP->ProjectCoefficient(AvP_coeff);
     
     AvP->Save("../outputs/Results/AvP");
+    AvB->Save("../outputs/Results/AvB");
 
 }
 

@@ -58,6 +58,7 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
     
     // Mpp.SetOperator(*KmP);
+    mfem::HypreBoomerAMG Mpp(*KmP); // Initialize the preconditioner for the solver
     Mpp.SetPrintLevel(0);
 
     SolverSteps::SolverConditions(KmP, *cgPP_solver, Mpp); // Set up the solver conditions

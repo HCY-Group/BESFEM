@@ -45,6 +45,10 @@ public:
  
     mfem::ParLinearForm Fet; ///< Linear form for the force term related to electrolyte concentration
     mfem::Array<int> nbc_w_bdr; ///< Boundary markers for Neumann boundary conditions
+    std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef;
+    // mfem::ProductCoefficient m_nbcCoef; ///< Product coefficient for Neumann boundary conditions
+    mfem::ConstantCoefficient nbcCoef;
+    mfem::GridFunctionCoefficient matCoef_R;
     // std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef; ///< Product coefficient for Neumann boundary conditions
     // mfem::Array<int> boundary_dofs; ///< Array to store boundary degrees of freedom
 

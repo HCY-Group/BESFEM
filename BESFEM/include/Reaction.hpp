@@ -69,6 +69,12 @@ public:
 
     // void WriteKfwToFile(const std::string &filename) const;
 
+    std::unique_ptr<mfem::ParGridFunction> Kfw; ///< Open circuit voltage field
+    std::unique_ptr<mfem::ParGridFunction> Kbw; ///< Backward reaction rate constant field
+
+    mfem::ParGridFunction AvP; ///< Grid function for active particle surface area
+    mfem::ParGridFunction AvB; ///< Grid function for active boundary area
+
 
 private:
 
@@ -82,8 +88,8 @@ private:
     mfem::ParMesh *pmesh; ///< Pointer to the parallel mesh
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
-    mfem::ParGridFunction AvP; ///< Grid function for active particle surface area
-    mfem::ParGridFunction AvB; ///< Grid function for active boundary area
+    // mfem::ParGridFunction AvP; ///< Grid function for active particle surface area
+    // mfem::ParGridFunction AvB; ///< Grid function for active boundary area
 
     int nE;                                         ///< Number of elements in the mesh
     int nC;                                         ///< Number of corners per element
@@ -93,8 +99,8 @@ private:
 
     std::unique_ptr<mfem::ParGridFunction> i0C; ///< Exchange current density field
     std::unique_ptr<mfem::ParGridFunction> OCV; ///< Open circuit voltage field
-    std::unique_ptr<mfem::ParGridFunction> Kfw; ///< Open circuit voltage field
-    std::unique_ptr<mfem::ParGridFunction> Kbw; ///< Backward reaction rate constant field
+    // std::unique_ptr<mfem::ParGridFunction> Kfw; ///< Open circuit voltage field
+    // std::unique_ptr<mfem::ParGridFunction> Kbw; ///< Backward reaction rate constant field
     std::unique_ptr<mfem::ParGridFunction> dPHE; ///< Voltage drop field
 
     const mfem::Vector& EVol; ///< Element volumes from the mesh handler

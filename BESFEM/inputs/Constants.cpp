@@ -15,8 +15,8 @@ namespace Constants {
     const int order = 1;                                    ///< Order of the finite element basis functions
     
     // const double dh = 0.5e-4;                               ///< Mesh element size
-    const double dh = 0.0000325;                               ///< Mesh element size
-
+    const double dh = 0.0000325; 
+    
     // const double zeta = 1.0 * 0.375;                        ///< Interfacial thickness
     const double zeta = 1.0;                        ///< Interfacial thickness
 
@@ -47,6 +47,6 @@ namespace Constants {
     const double Vsr = 0.009466;                                 ///< Voltage scanning rate
 
     // const double VCut = 2.7;                                ///< Cut-off voltage
-    const double VCut = 2.7;                                ///< Cut-off voltage
+    const double VCut = 0.0;                                ///< Cut-off voltage
 
 }   

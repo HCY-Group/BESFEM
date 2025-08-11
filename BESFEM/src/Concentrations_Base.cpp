@@ -63,7 +63,7 @@ void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFun
 
 }
 
-void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
+void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double &xCrnt) {
     
     xCrnt = 0.0; // Initialize the local total reaction value to zero
 
@@ -75,7 +75,8 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double xCrnt) {
 
     for (int ei = 0; ei < nE; ei++) {
         Rx.GetNodalValues(ei, VtxVal); // Retrieve the nodal values of the reaction field for the current element
-        double val = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
+        double val = 0.0;
+        for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
         EAvg(ei) = val / nC; // Calculate the average reaction value for the element
         xCrnt += EAvg(ei) * EVol(ei); // Weight by the element volume and add to the total reaction
     }
@@ -131,9 +132,9 @@ void Concentrations::SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFu
     // Loop through all elements to calculate the average concentration for each element
     for (int ei = 0; ei < nE; ei++){
         CeT.GetNodalValues(ei,VtxVal); // Retrieve the nodal values for the current element 
-        EAvg(ei) = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0) / nC;
-        // EAvg(ei) = val/nC; // Compute the average concentration for the element
-    
+        double val = 0.0;
+        for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}        
+        EAvg(ei) = val/nC; // Compute the average concentration for the element
         // Update the total salt concentration by adding the weighted average for the element
         CeC += EAvg(ei)*EVol(ei); 
     }
@@ -143,7 +144,7 @@ void Concentrations::SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFu
     
     // Compute the average concentration across the entire electrolyte
     CeAvg = gCeC/gtPse;	
-    
+
     // Adjust the concentration field by normalizing the average concentration with the initial value
     Cn -= (CeAvg-Ce0);
     MPI_Barrier(MPI_COMM_WORLD);

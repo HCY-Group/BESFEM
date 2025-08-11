@@ -342,32 +342,89 @@ double Reaction::GetTableValues(double cn, const mfem::Vector &ticks, const mfem
 //     }
 // }
 
+// void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn)
+// {
+
+//     for (int vi = 0; vi < nV; vi++) {
+//         double cn_val = Cn(vi);
+
+//         double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
+//         double ocv = GetTableValues(cn_val, Ticks, OCV_file);
+
+//         (*i0C)(vi) = i0;
+//         (*OCV)(vi) = ocv;
+//         (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
+//         (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
+    
+//     }
+
+
+// }
+
 void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn)
 {
     for (int vi = 0; vi < nV; vi++) {
         double cn_val = Cn(vi);
 
-        double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
+        double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3;
         double ocv = GetTableValues(cn_val, Ticks, OCV_file);
+
+        double Kfw_val = i0 / (Constants::Frd * 0.001)
+                       * exp(Constants::alp * Constants::Cst1 * ocv);
+
+        double Kbw_val = i0 / (Constants::Frd * cn_val)
+                       * exp(-Constants::alp * Constants::Cst1 * ocv);
 
         (*i0C)(vi) = i0;
         (*OCV)(vi) = ocv;
-        (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
-        (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
+        (*Kfw)(vi) = Kfw_val;
+        (*Kbw)(vi) = Kbw_val;
     }
 }
 
-void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2)
+
+// void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2)
+// {
+//     for (int vi = 0; vi < nV; vi++){
+//         if ( AvB(vi) * Constants::dh > 0.0 ){ // Check for interface presence
+//             (*dPHE)(vi) = phx1(vi) - phx2(vi); // Voltage drop across the interface
+//             Rx(vi) = AvP(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
+// 					                   (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
+
+//         }
+//     }
+// }
+
+
+void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx,
+                            mfem::ParGridFunction &Cn1,
+                            mfem::ParGridFunction &Cn2,
+                            mfem::ParGridFunction &phx1,
+                            mfem::ParGridFunction &phx2)
 {
-    for (int vi = 0; vi < nV; vi++){
-        if ( AvB(vi) * Constants::dh > 0.0 ){ // Check for interface presence
-            (*dPHE)(vi) = phx1(vi) - phx2(vi); // Voltage drop across the interface
-            Rx(vi) = AvP(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
-					                   (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
+    for (int vi = 0; vi < nV; vi++) {
+        if (AvB(vi) * Constants::dh > 0.0) {
+            double eta = phx1(vi) - phx2(vi);
+            (*dPHE)(vi) = eta;
+
+            double kfw = (*Kfw)(vi);
+            double kbw = (*Kbw)(vi);
+            double cnp = Cn1(vi);
+            double cne = Cn2(vi);
+
+            double exp_fwd = std::exp(-Constants::alp * Constants::Cst1 * eta);
+            double exp_bwd = std::exp( Constants::alp * Constants::Cst1 * eta);
+
+            double rxn = AvP(vi) *
+                         (kfw * cne * exp_fwd
+                          - kbw * cnp * exp_bwd);
+
+            Rx(vi) = rxn;
 
         }
     }
 }
+
 
 
 

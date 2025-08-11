@@ -61,6 +61,18 @@ public:
     int nC;                                         ///< Number of corners in each element
     int nV;                                         ///< Number of vertices
     double Xfr; ///< Degree of lithiation
+    double infx = 0.0; ///< Reaction current density
+    // mfem::Array<double> VtxVal;
+    mfem::Vector EAvg;
+    const mfem::Vector& EVol;                       ///< Element volumes from MeshHandler
+    double geCrnt; ///< Global current
+
+
+
+
+    void SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+
+
 
 
 protected:
@@ -71,7 +83,7 @@ protected:
     std::shared_ptr<mfem::CGSolver> solver; ///< Shared pointer to the conjugate gradient solver
     mfem::HypreSmoother smoother; ///< Smoother for preconditioning
 
-    double infx; ///< Reaction current density
+    // double infx; ///< Reaction current density
     double CeC = 0.0; ///< Total salt concentration
     double gCeC = 0.0; ///< Global salt concentration
     double CeAvg = 0.0; ///< Average salt concentration
@@ -154,7 +166,7 @@ protected:
      * @param Rx Reference to the ParGridFunction representing the reaction field (e.g., reaction rates)
      * @param xCrnt Reference to a double that will store the computed total reaction value for the current process
      */
-    void TotalReaction(mfem::ParGridFunction &Rx, double xCrnt);
+    void TotalReaction(mfem::ParGridFunction &Rx, double &xCrnt);
     
     /**
      * @brief Computes the diffusivity field for the particle or electrolyte
@@ -197,7 +209,7 @@ protected:
      * @param Cn Reference to the ParGridFunction representing the concentration field of the electrolyte
      * @param psx Reference to the ParGridFunction representing the potential field of the electrolyte
      */
-    void SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+    // void SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
     
     /**
      * @brief Calculates the degree of lithiation
@@ -224,18 +236,18 @@ private:
     // int nC;                                         ///< Number of corners in each element
     // int nV;                                         ///< Number of vertices
 
-    const mfem::Vector& EVol;                       ///< Element volumes from MeshHandler
+    // const mfem::Vector& EVol;                       ///< Element volumes from MeshHandler
     double gtPsi;                                   ///< Total Psi from MeshHandler
     double gtPse;                                   ///< Total Pse from MeshHandler
 
     mfem::ParGridFunction *Rxx; ///< Grid function for reaction terms
     mfem::GridFunctionCoefficient *cXx; ///< Coefficient for the reaction term
 
-    double geCrnt; ///< Global current
+    // double geCrnt; ///< Global current
     double inv_nC;
 
     mfem::Array<double> VtxVal;
-    mfem::Vector EAvg;
+    // mfem::Vector EAvg;
     std::unique_ptr<mfem::ParLinearForm> Bx2;
     std::shared_ptr<mfem::GridFunctionCoefficient> last_cDx;
 
