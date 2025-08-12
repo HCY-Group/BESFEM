@@ -18,10 +18,7 @@
 #include <iostream>
 #include <cmath>
 
-// Sample runs:  mpirun -np 2 simulation
-//               mpirun -np 1 simulation -m ../Mesh_3x90_T3.mesh
-//               mpirun -np 6 simulation -m ../Mesh_40x30_3.mesh
-//               mpirun -np 4 simulation -m ../Code_2D/II_1_bin.tif -d ../Code_2D/dsF_p.txt
+// Sample run: mpirun -np 6 simulation -m ../inputs/disk_Mesh_80x80x6_01.mesh -d ../inputs/disk_dsF_81x81x7_01.txt -t d
 
 
 int main(int argc, char *argv[]) {
