@@ -342,150 +342,62 @@ double Reaction::GetTableValues(double cn, const mfem::Vector &ticks, const mfem
 //     }
 // }
 
-// void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn)
-// {
-
-//     for (int vi = 0; vi < nV; vi++) {
-//         double cn_val = Cn(vi);
-
-//         double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
-//         double ocv = GetTableValues(cn_val, Ticks, OCV_file);
-
-//         (*i0C)(vi) = i0;
-//         (*OCV)(vi) = ocv;
-//         (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
-//         (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
-    
-//     }
-
-
-// }
-
 void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn)
 {
+
     for (int vi = 0; vi < nV; vi++) {
         double cn_val = Cn(vi);
 
-        double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3;
+        double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
         double ocv = GetTableValues(cn_val, Ticks, OCV_file);
-
-        double Kfw_val = i0 / (Constants::Frd * 0.001)
-                       * exp(Constants::alp * Constants::Cst1 * ocv);
-
-        double Kbw_val = i0 / (Constants::Frd * cn_val)
-                       * exp(-Constants::alp * Constants::Cst1 * ocv);
 
         (*i0C)(vi) = i0;
         (*OCV)(vi) = ocv;
-        (*Kfw)(vi) = Kfw_val;
-        (*Kbw)(vi) = Kbw_val;
+        (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
+        (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
+    
     }
+
+    // Kfw->Save("../outputs/Results/kfw"); // save mobility values for debugging
+    // Kbw->Save("../outputs/Results/kbw"); // save mobility values for debugging
+    // i0C->Save("../outputs/Results/ioc"); // save mobility values for debugging
+    // OCV->Save("../outputs/Results/ocv"); // save mobility values for debugging
+
+
 }
 
 
-// void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2)
-// {
-//     for (int vi = 0; vi < nV; vi++){
-//         if ( AvB(vi) * Constants::dh > 0.0 ){ // Check for interface presence
-//             (*dPHE)(vi) = phx1(vi) - phx2(vi); // Voltage drop across the interface
-//             Rx(vi) = AvP(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
-// 					                   (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
-
-//         }
-//     }
-// }
-
-
-void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx,
-                            mfem::ParGridFunction &Cn1,
-                            mfem::ParGridFunction &Cn2,
-                            mfem::ParGridFunction &phx1,
-                            mfem::ParGridFunction &phx2)
+void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2)
 {
-    for (int vi = 0; vi < nV; vi++) {
-        if (AvB(vi) * Constants::dh > 0.0) {
-            double eta = phx1(vi) - phx2(vi);
-            (*dPHE)(vi) = eta;
 
-            double kfw = (*Kfw)(vi);
-            double kbw = (*Kbw)(vi);
-            double cnp = Cn1(vi);
-            double cne = Cn2(vi);
-
-            double exp_fwd = std::exp(-Constants::alp * Constants::Cst1 * eta);
-            double exp_bwd = std::exp( Constants::alp * Constants::Cst1 * eta);
-
-            double rxn = AvP(vi) *
-                         (kfw * cne * exp_fwd
-                          - kbw * cnp * exp_bwd);
-
-            Rx(vi) = rxn;
+    for (int vi = 0; vi < nV; vi++){
+        if ( AvB(vi) * Constants::dh > 0.0 ){ // Check for interface presence
+            (*dPHE)(vi) = phx1(vi) - phx2(vi); // Voltage drop across the interface
+            Rx(vi) = AvP(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
+					                   (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
 
         }
+        else {
+            Rx(vi) = 0.0; // No reaction if no interface
+        }
     }
+
+    std::ofstream outFile("dPHE_values_OOP.txt"); // open file for writing
+    if (!outFile) {
+        std::cerr << "Error: Could not open output file.\n";
+    } else {
+        outFile << std::setprecision(12); // optional for more digits
+        outFile << "dPHE values:\n";
+        for (int vi = 0; vi < nV; ++vi) {
+            outFile << (*dPHE)(vi) << "\n";
+        }
+        outFile << "\n";
+        outFile.close();
+    }
+
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
- 
-//  void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx,
-//                              const mfem::ParGridFunction &Cn1,
-//                              const mfem::ParGridFunction &Cn2,
-//                              const mfem::ParGridFunction &phx1,
-//                              const mfem::ParGridFunction &phx2)
-//  {
-//      for (int vi = 0; vi < nV; ++vi) {
-//          if (AvP(vi) > 0.01) {  // Only compute in interfacial region
-//              double eta = phx1(vi) - phx2(vi);
-//              (*dPHE)(vi) = eta;
- 
-//              double cnp = std::max(Cn1(vi), 1.0e-6);
-//              double cne = std::max(Cn2(vi), 1.0e-6);
- 
-//              double kfw = (*Kfw)(vi);
-//              double kbw = (*Kbw)(vi);
- 
-//              double rxn = kfw * cne * std::exp(-Constants::alp * Constants::Cst1 * eta)
-//                         - kbw * cnp * std::exp(Constants::alp * Constants::Cst1 * eta);
- 
-//              Rx(vi) = rxn;  // No AvP here
-//          } else {
-//              Rx(vi) = 0.0;  // Zero outside the interface
-//          }
-//      }
-//  }
- 
-//  void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn)
-//  {
-//      for (int vi = 0; vi < nV; ++vi) {
-//          double cn_val = std::max(Cn(vi), 1.0e-6);  // Clamp to avoid zero
- 
-//          double i0 = InterpolateFromTable(cn_val, X_101, i0C_101) * 1.0e-3;  // mA -> A
-//          double ocv = InterpolateFromTable(cn_val, X_101, OCV_101);
- 
-//          (*i0C)(vi) = i0;
-//          (*OCV)(vi) = ocv;
- 
-//          (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * std::exp(Constants::alp * Constants::Cst1 * ocv);
-//          (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * std::exp(-Constants::alp * Constants::Cst1 * ocv);
-//      }
-//  }
- 
  void Reaction::TotalReactionCurrent(mfem::ParGridFunction &Rx, double &global_current)
  {
      local_current = 0.0;

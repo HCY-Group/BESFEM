@@ -38,9 +38,10 @@ void Potentials::AssembleForceVector(mfem::ParGridFunction &Rx1, mfem::ParGridFu
     Rx2 *= value; // Scale the field by the provided factor
 
     coef.SetGridFunction(&Rx2); // Set the coefficient to the scaled field
-    SolverSteps::Update(rhs_form); // Update the linear form with the new coefficient
 
-    rhs_form2 = std::move(*rhs_form); // Move the updated linear form to the right-hand side vector
+    rhs_form->Assemble();
+
+    rhs_form2 = *rhs_form; // Move the updated linear form to the right-hand side vector
 
 }
 

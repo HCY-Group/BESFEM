@@ -53,7 +53,8 @@ void Initialize_Geometry::InitializeGlobalMesh(const char* meshFile) {
         globalMesh = CreateGlobalMeshFromTiffData(tiffData); // generate mesh from voxel data
     } 
     else if (fileExtension == "mesh") {
-        std::cout << "Creating global mesh using .mesh file" << std::endl;
+        if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
+        {std::cout << "Creating global mesh using .mesh file" << std::endl;}
         globalMesh = std::make_unique<mfem::Mesh>(meshFile);
     } 
     else {
@@ -102,7 +103,9 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
     
     if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
         // Process the .tif file
+        if (mfem::Mpi::WorldRank() == 0){ // only print on rank 0 
         cout << "Reading .tif file for voxel data" << endl;
+        }
 
     if (!globalfespace) {
         throw std::runtime_error("Global finite element space (globalfespace) must be initialized before assigning global values.");
@@ -121,8 +124,9 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
                 }
             }
         }
-    
+    if (mfem::Mpi::WorldRank() == 0) { // only print on rank 0
     cout << "Reading .dsF file for global distance function for tif case" << endl;
+    }
         gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
         std::ifstream myfile(distanceFile);
         if (myfile.is_open()) {
@@ -153,7 +157,9 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
 
     } else if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "mesh") {
     
-    cout << "Reading .dsF file for global distance function for mesh case" << endl;
+    if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
+    { cout << "Reading .dsF file for global distance function for mesh case" << endl; }
+
         gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
         ifstream myfile(distanceFile);
         if (myfile.is_open()) {
@@ -201,7 +207,8 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
     // Determine file type based on extension
     std::string meshFileStr(meshFile);  // Convert to std::string
     if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
-        cout << "Reading .tif file for mapping global to local grid function" << endl;
+        if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
+        {cout << "Reading .tif file for mapping global to local grid function" << endl;}
 
         Vox = std::make_unique<mfem::ParGridFunction>(parfespace.get()); // used in Vox code
         dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
@@ -224,7 +231,8 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
 
     } else if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "mesh") {
         // Handle .mesh file
-        cout << "Reading .mesh file for mapping global to local grid function" << endl;
+        if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
+        {cout << "Reading .mesh file for mapping global to local grid function" << endl;}
 
         // Assuming dsF is a ParGridFunction for the mesh file
         dsF = make_unique<mfem::ParGridFunction>(parfespace.get());
@@ -305,40 +313,36 @@ void Initialize_Geometry::PrintMeshInfo() {
         return;
     }
 
-    std::cout << "Number of vertices: " << nV << "\n";
-    std::cout << "Number of elements: " << nE << "\n";
-    std::cout << "Number of corner vertices: " << nC << "\n";
+    // std::cout << "Number of vertices: " << nV << "\n";
+    // std::cout << "Number of elements: " << nE << "\n";
+    // std::cout << "Number of corner vertices: " << nC << "\n";
 }
 
 void Initialize_Geometry::SetupBoundaryConditions() {
     
-    // South 1 [0] ; East 2 [1]; North 3 [2]; West 4 [3]
-
     // Boundary attributes for Neumann BC on the west boundary for CnE
     nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
     nbc_w_bdr = 0;
-    nbc_w_bdr[1] = 1; 
     nbc_w_bdr[2] = 1;
-    nbc_w_bdr[3] = 1;  
 
     // Dirichlet BC on the east boundary for CnP & phP
     dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
     dbc_e_bdr = 0; 
-    dbc_e_bdr[0] = 1;  // Applying Dirichlet BC to the east boundary
+    dbc_e_bdr[0] = 1;  // Applying Dirichlet BC to the west boundary
 
     // Extract essential true DOFs (Dirichlet BCs) on the east boundary
-    mfem::Array<int> ess_tdof_list_e(0);
+    // mfem::Array<int> ess_tdof_list_e(0);
+    ess_tdof_list_e.SetSize(0);
     parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
 
     // Dirichlet BC on the west boundary for CnE & phE
     dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
     dbc_w_bdr = 0;
-    dbc_w_bdr[1] = 1;
-    dbc_w_bdr[2] = 1;   
-    dbc_w_bdr[3] = 1;  
+    dbc_w_bdr[2] = 1;   // east
 
     // Extract essential true DOFs (Dirichlet BCs) on the west boundary
-    mfem::Array<int> ess_tdof_list_w(0);
+    // mfem::Array<int> ess_tdof_list_w(0);
+    ess_tdof_list_w.SetSize(0); 
     parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
 
 }

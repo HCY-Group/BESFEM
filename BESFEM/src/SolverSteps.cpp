@@ -28,7 +28,7 @@ void SolverSteps::InitializeMassMatrix(mfem::Coefficient &coef, std::unique_ptr<
     M->AddDomainIntegrator(new mfem::MassIntegrator(coef));
     M->Assemble();
 
-    std::cout << "Mass matrix initialized." << std::endl;
+    // std::cout << "Mass matrix initialized." << std::endl;
 
 }
 
@@ -38,7 +38,7 @@ void SolverSteps::InitializeStiffnessMatrix(mfem::Coefficient &coef, std::unique
     K->AddDomainIntegrator(new mfem::DiffusionIntegrator(coef));
     K->Assemble();
 
-    std::cout << "Stiffness matrix initialized." << std::endl;
+    // std::cout << "Stiffness matrix initialized." << std::endl;
 
 }
 
@@ -89,7 +89,7 @@ void SolverSteps::FormSystemMatrix(std::unique_ptr<mfem::ParBilinearForm> &M, mf
     M->FormSystemMatrix(boundary_dofs, A);
     MassMatrix = std::make_shared<mfem::HypreParMatrix>(A);
     
-    std::cout << "System matrix formed." << std::endl;
+    // std::cout << "System matrix formed." << std::endl;
 }
 
 void SolverSteps::FormLinearSystem(std::unique_ptr<mfem::ParBilinearForm> &K, mfem::Array<int> &boundary_dofs, mfem::ParGridFunction &x, mfem::ParLinearForm &b, std::shared_ptr<mfem::HypreParMatrix> &StiffnessMatrix, mfem::HypreParVector &X, mfem::HypreParVector &B) {
@@ -131,7 +131,7 @@ void SolverSteps::SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, 
     solver.iterative_mode = false; // Use direct solving for the system matrix
     solver.SetRelTol(1e-7); // Set relative tolerance for the solver
     solver.SetAbsTol(0.0); // Set absolute tolerance for the solver
-    solver.SetMaxIter(102); // Limit the maximum number of iterations
+    solver.SetMaxIter(80); // Limit the maximum number of iterations
     solver.SetPrintLevel(0); // Suppress output from the solver
     solver.SetPreconditioner(preconditioner); // Attach the preconditioner to the solver
     solver.SetOperator(*Mmat); // Set the mass matrix as the operator to solve

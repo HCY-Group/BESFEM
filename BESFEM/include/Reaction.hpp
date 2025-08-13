@@ -71,7 +71,8 @@ public:
 
     std::unique_ptr<mfem::ParGridFunction> Kfw; ///< Open circuit voltage field
     std::unique_ptr<mfem::ParGridFunction> Kbw; ///< Backward reaction rate constant field
-
+    std::unique_ptr<mfem::ParGridFunction> i0C; ///< Exchange current density field
+    std::unique_ptr<mfem::ParGridFunction> OCV; ///< Open circuit voltage field
     mfem::ParGridFunction AvP; ///< Grid function for active particle surface area
     mfem::ParGridFunction AvB; ///< Grid function for active boundary area
 
@@ -97,8 +98,8 @@ private:
 
     double local_current; ///< Local reaction current for each MPI process
 
-    std::unique_ptr<mfem::ParGridFunction> i0C; ///< Exchange current density field
-    std::unique_ptr<mfem::ParGridFunction> OCV; ///< Open circuit voltage field
+    // std::unique_ptr<mfem::ParGridFunction> i0C; ///< Exchange current density field
+    // std::unique_ptr<mfem::ParGridFunction> OCV; ///< Open circuit voltage field
     // std::unique_ptr<mfem::ParGridFunction> Kfw; ///< Open circuit voltage field
     // std::unique_ptr<mfem::ParGridFunction> Kbw; ///< Backward reaction rate constant field
     std::unique_ptr<mfem::ParGridFunction> dPHE; ///< Voltage drop field

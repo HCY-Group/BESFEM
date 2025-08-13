@@ -24,6 +24,8 @@ public:
 
     void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
+    // mfem::ParGridFunction Mub, Mob, Rxc;
+    
 private:
     // Geometry and domain references
     Initialize_Geometry &geometry;

@@ -78,15 +78,22 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
 
         (*pse)(vi) = 1.0 - (*psi)(vi);
 
-        if ((*psi)(vi) < Constants::eps) { (*psi)(vi) = Constants::eps; }
-        if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }
+        if ((*psi)(vi) < 0) { (*psi)(vi) = 0; }
+        if ((*psi)(vi) > 1) { (*psi)(vi) = 1; }
+
+        if ((*pse)(vi) < 0) { (*pse)(vi) = 0; }
+        if ((*pse)(vi) > 1) { (*pse)(vi) = 1; }
+
+        (*psi)(vi) += 1.0e-6; // Avoid zero values
+        (*pse)(vi) += 1.0e-6; // Avoid zero values
+
     }
     
     AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
 
     if(strcmp(mesh_type, "d") == 0) 
         for (int vi = 0; vi < nV; vi++) {
-            if ((*AvP)(vi) < 1.0e-3) { (*AvP)(vi) = 0.0; }
+            if ((*AvP)(vi) < 1.0e-2) { (*AvP)(vi) = 0.0; }
             if ((*AvB)(vi) < 1.0e-6) { (*AvB)(vi) = 0.0; }
         }    
     else {
@@ -105,8 +112,8 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
     AvP->ProjectCoefficient(AvP_coeff);
     
-    AvP->Save("../outputs/Results/AvP");
-    AvB->Save("../outputs/Results/AvB");
+    // AvP->Save("../outputs/Results/AvP");
+    // AvB->Save("../outputs/Results/AvB");
 
 }
 
@@ -171,9 +178,10 @@ void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
 }
 
 void Domain_Parameters::PrintInfo() {
-
-    cout << "Total Psi: " << gtPsi << endl;
-    cout << "Total Pse: " << gtPse << endl;
-    cout << "Target Current: " << gTrgI << endl;
-
+    if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
+    {
+        cout << "Total Psi: " << gtPsi << endl;
+        cout << "Total Pse: " << gtPse << endl;
+        cout << "Target Current: " << gTrgI << endl;
+    }
 }

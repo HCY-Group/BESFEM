@@ -55,8 +55,11 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
 
     SolverSteps::InitializeStiffnessMatrix(cDe, Ke2); // Initialize
 
-    Concentrations::ImposeNeumannBC(psx, *PeR); // Apply Neumann boundary conditions to the reaction potential field
+    // Concentrations::ImposeNeumannBC(psx, *PeR); // Apply Neumann boundary conditions to the reaction potential field
 
+    *PeR = psx;
+    PeR->Neg();
+    
     nbcCoef = mfem::ConstantCoefficient(0.0);  // initialize with zero
     matCoef_R = mfem::GridFunctionCoefficient(PeR.get());
     m_nbcCoef = std::make_unique<mfem::ProductCoefficient>(matCoef_R, nbcCoef);
@@ -113,11 +116,11 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 
 	    Cn.Distribute(CeVn.get()); 
 
-        // After updating CnE:
-        for (int vi = 0; vi < nV; vi++) {
-            if (Cn(vi) < 0.0) Cn(vi) = 0.0;
-            if (Cn(vi) > 1.0) Cn(vi) = 1.0;
-        }
+        // // After updating CnE:
+        // for (int vi = 0; vi < nV; vi++) {
+        //     if (Cn(vi) < 0.0) Cn(vi) = 0.0;
+        //     if (Cn(vi) > 1.0) Cn(vi) = 1.0;
+        // }
         
     }	
 

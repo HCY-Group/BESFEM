@@ -72,6 +72,7 @@ private:
     mfem::ParGridFunction Rxe; ///< Grid function for the reaction values of the electrolyte
 
     double eCrnt; ///< Current reaction value for the electrolyte
+    // double infx;
 
     std::shared_ptr<mfem::HypreParMatrix> Kmate; ///< Stiffness matrix for diffusion calculations
 

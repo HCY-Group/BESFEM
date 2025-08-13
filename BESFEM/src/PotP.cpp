@@ -41,30 +41,53 @@ PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
 
 void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx)
 {
+
+
+    // dbc_e_bdr = 0; 
+    // dbc_e_bdr[0] = 1;
+	// mfem::Array<int> ess_tdof_list_e(0);
+
     BvP = initial_value; // Set the boundary value
     Potentials::SetInitialPotentials(ph, BvP); // Initialize potentials
 
     kap = psx; // Set the conductivity field to the particle concentration field
     kap *= 3.3;
+    // cKp.SetGridFunction(&kap); // Set the conductivity coefficient
     SolverSteps::InitializeStiffnessMatrix(cKp, Kp2); // Initialize the stiffness matrix
     
     mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
     ph.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
     
     fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
-    std::cout << "[PotP::Initialize] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
-
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
     
     // Mpp.SetOperator(*KmP);
-    mfem::HypreBoomerAMG Mpp(*KmP); // Initialize the preconditioner for the solver
+    // mfem::HypreBoomerAMG Mpp(*KmP); // Initialize the preconditioner for the solver
+    
+    // Mpp.SetPrintLevel(0);
+    // Mpp.SetOperator(*KmP);
+    // SolverSteps::SolverConditions(KmP, *cgPP_solver, Mpp); // Set up the solver conditions
+
+    Mpp.SetOperator(*KmP);            // build AMG hierarchy once on first matrix
     Mpp.SetPrintLevel(0);
 
-    SolverSteps::SolverConditions(KmP, *cgPP_solver, Mpp); // Set up the solver conditions
+    cgPP_solver->SetRelTol(1e-7);
+    cgPP_solver->SetAbsTol(0.0);
+    cgPP_solver->SetMaxIter(80);
+    cgPP_solver->SetPrintLevel(0);
+    // cgPE_solver->SetIterativeMode(true);  // <-- IMPORTANT: use Xe0 as initial guess
 
+    cgPP_solver->SetPreconditioner(Mpp);  // attach once (object stays the same)
+    cgPP_solver->SetOperator(*KmP);       // bind initial operator
+
+
+
+    // cRp.SetGridFunction(&RpP); // Set the reaction field coefficient
     SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term
-    Fpt = std::move(*Bp2); // Move the force term
+    SolverSteps::Update(Bp2); // Assemble the force term
+    // Fpt = std::move(*Bp2); // Move the force term
+    Fpt = *Bp2; // Assign the force term
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system
 }
@@ -72,51 +95,103 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
 void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
 {
-    // ParticleConductivity(Cn, psx); // Update conductivity
-    // cKp.SetGridFunction(&kap); // Set the conductivity coefficient
 
-    // SolverSteps::Update(Kp2); // Update the stiffness matrix
-    mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
-    potential.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
-    
-    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
-    // std::cout << "[PotP::TimeStep] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
-    
-    // SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
 
-    // Mpp.SetOperator(*KmP); // Set the preconditioner operator
-    // cgPP_solver->SetPreconditioner(Mpp); // Attach the preconditioner to the solver
-    // cgPP_solver->SetOperator(*KmP); // Set the operator for the solver 
+    // // dbc_e_bdr = 0; 
+    // // dbc_e_bdr[0] = 1;
+	// // mfem::Array<int> ess_tdof_list_e(0);
+
+    // // ParticleConductivity(Cn, psx); // Update conductivity
+    // // cKp.SetGridFunction(&kap); // Set the conductivity coefficient
+
+    // // SolverSteps::Update(Kp2); // Update the stiffness matrix
+    // mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
+    // potential.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
+    
+    // fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+    // // std::cout << "[PotP::TimeStep] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
+    
+    // // SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
+
+    // // Mpp.SetOperator(*KmP); // Set the preconditioner operator
+    // // cgPP_solver->SetPreconditioner(Mpp); // Attach the preconditioner to the solver
+    // // cgPP_solver->SetOperator(*KmP); // Set the operator for the solver 
+
+	mfem::ConstantCoefficient dbc_e_Coef(BvP);	
+
+
 
 }
 
 void PotP::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
 {
+    RpP = Rx;
+    RpP *= Constants::Frd; // Scale the reaction field
 
-    Potentials::AssembleForceVector(Rx, RpP, Constants::Frd, cRp, Bp2, Fpt); // Create reaction field
-    
-    mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
+    Bp2 -> Assemble();
+    Fpt = *Bp2; // Assign the force term
+
+    cout << "BvP: " << BvP << endl;
+    mfem::ConstantCoefficient dbc_e_Coef(BvP);	
+
     phx.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
-    
-    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
-    // std::cout << "[PotP::Advance] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
-    
+    // Kp2->FormLinearSystem(ess_tdof_list_e, phx, Fpt, *KmP, X1v, Fpb); // Assemble the force term system
+
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
-    // Kp2->FormLinearSystem(ess_tdof_list_e, phx, Fpt, *KmP, X1v, Fpb);
 
 
     pP0 = phx; // Store the current potential field
     pP0.GetTrueDofs(Xs0); // Extract degrees of freedom
-    
-    Mpp.SetOperator(*KmP); // Set the preconditioner operator
-    Mpp.SetPrintLevel(0);
 
-    cgPP_solver->SetPreconditioner(Mpp); // Attach the preconditioner to the solver
-    cgPP_solver->SetOperator(*KmP); // Set the operator for the solver 
+    // Rebind operator & preconditioner to this KmP **every time**
+    Mpp.SetOperator(*KmP);
+    // cgPP_solver->SetPreconditioner(Mpp);
+    cgPP_solver->SetOperator(*KmP);
+    // cgPP_solver->iterative_mode = false;
+
     cgPP_solver->Mult(Fpb, Xs0); // Solve for the error term
     phx.Distribute(Xs0); // Distribute the updated values
 
     Potentials::ComputeGlobalError(pP0, phx, psx, gerror, gtPsi); // Compute global error
+    
+    
+    
+    
+    
+    
+    
+    
+    // dbc_e_bdr = 0; 
+    // dbc_e_bdr[0] = 1;
+	// mfem::Array<int> ess_tdof_list_e(0);
+
+    // Potentials::AssembleForceVector(Rx, RpP, Constants::Frd, cRp, Bp2, Fpt); // Create reaction field
+    
+    // mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
+    // phx.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
+    
+    // fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+    // // std::cout << "[PotP::Advance] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
+    
+    // SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
+    // // Kp2->FormLinearSystem(ess_tdof_list_e, phx, Fpt, *KmP, X1v, Fpb);
+
+
+    // pP0 = phx; // Store the current potential field
+    // pP0.GetTrueDofs(Xs0); // Extract degrees of freedom
+    
+    // Mpp.SetOperator(*KmP); // Set the preconditioner operator
+    // // Mpp.SetPrintLevel(0);
+
+    // // cgPP_solver->SetPreconditioner(Mpp); // Attach the preconditioner to the solver
+    // // cgPP_solver->SetOperator(*KmP); // Set the operator for the solver 
+    
+    // SolverSteps::SolverConditions(KmP, *cgPP_solver, Mpp); // Set up the solver conditions
+
+    // cgPP_solver->Mult(Fpb, Xs0); // Solve for the error term
+    // phx.Distribute(Xs0); // Distribute the updated values
+
+    // Potentials::ComputeGlobalError(pP0, phx, psx, gerror, gtPsi); // Compute global error
 }
 
 

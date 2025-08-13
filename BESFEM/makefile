@@ -8,7 +8,7 @@ CONFIG_MK = $(MFEM_BUILD_DIR)/config/config.mk
 
 # Compiler and Flags
 CXX = mpicxx
-CXXFLAGS = -g -O3 -std=c++14
+CXXFLAGS = -g -O3 -std=c++17
 INCLUDE_FLAGS = -I$(MFEM_DIR) -I$(MFEM_BUILD_DIR) \
                 -I../../../../hypre/src/hypre/include
 LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \

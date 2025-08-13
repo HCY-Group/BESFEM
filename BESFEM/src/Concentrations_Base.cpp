@@ -51,10 +51,10 @@ void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParG
     Xfr = gSum / gtPsi; // Calculate the degree of lithiation as the normalized sum
 }
 
-void Concentrations::ImposeNeumannBC(mfem::ParGridFunction &psx, mfem::ParGridFunction &PGF) {
-    PGF = psx; // Copy the input potential field to the target grid function
-    PGF.Neg(); // Negate all values in the target grid function
-}
+// void Concentrations::ImposeNeumannBC(mfem::ParGridFunction &psx, mfem::ParGridFunction &PGF) {
+//     PGF = psx; // Copy the input potential field to the target grid function
+//     PGF.Neg(); // Negate all values in the target grid function
+// }
 
 void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value) {
 

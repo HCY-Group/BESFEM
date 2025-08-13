@@ -33,8 +33,8 @@ int main(int argc, char *argv[])
 	// const char *mesh_file = "../Inputs/Mesh_81x81x6_disk.mesh";
 	// // const char *dsF_file =  "../Inputs/DSTFB_81x81x6.txt";
 
-	const char *mesh_file = "../Inputs/HCY_Mesh_80x80x16_01.mesh";
-	const char *dsF_file =  "../Inputs/HCY_dsF_81x81x17_01.txt";
+	// const char *mesh_file = "../Inputs/HCY_Mesh_80x80x16_01.mesh";
+	// const char *dsF_file =  "../Inputs/HCY_dsF_81x81x17_01.txt";
 
 	// const char *mesh_file = "../Inputs/Mesh_80x80x5_3D_disk.mesh";
 	// const char *dsF_file =  "../Inputs/dsF_80x80x5_3D_disk.txt";
@@ -42,8 +42,8 @@ int main(int argc, char *argv[])
 	// const char *mesh_file = "../Inputs/HCY_Mesh_10x10x2_01.mesh";
 	// const char *dsF_file =  "../Inputs/HCY_dsF_11x11x3_01.txt";
 
-	// const char *mesh_file = "../Inputs/Mesh_96x96_P01.mesh";
-	// const char *dsF_file =  "../Inputs/dsF_97x97_P01.txt";
+	const char *mesh_file = "../Inputs/disk_Mesh_80x80x6.mesh";
+	const char *dsF_file =  "../Inputs/disk_dsF_81x81x7.txt";
 	
 
 
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
 	// 	if (pse(vi) < eps) { pse(vi) = eps; }
 	// }
 
-	psi += 1.0e-7;
+	psi += 1.0e-6;
 	pse += 1.0e-6;
 
 	// output psi
@@ -372,6 +372,7 @@ int main(int argc, char *argv[])
 	double gtPse;
 	MPI_Allreduce(&tPse, &gtPse, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
+
 	// Target Current
 	double trgI = tPsi*rho*(1.0-0.0)/(3600.0/Cr);
 	double gTrgI = 0.0;
@@ -379,6 +380,10 @@ int main(int argc, char *argv[])
 	
 	double sCrnt = 0.0;	
 	double gCrnt = 0.0;	
+
+	cout << "Total psi = " << gtPsi << endl;
+	cout << "Total pse = " << gtPse << endl;
+	cout << "Target current = " << gTrgI << endl;
 
 	pmesh.PrintInfo();
 
@@ -448,29 +453,29 @@ int main(int argc, char *argv[])
 	fespace.GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
 
 		// Get psi values at all true DOFs
-	Vector psi_vals;
-	psi.GetTrueDofs(psi_vals);
+	// Vector psi_vals;
+	// psi.GetTrueDofs(psi_vals);
 
 	// Get raw essential DOFs
-	Array<int> raw_ess_phP, raw_ess_phE;
-	fespace.GetEssentialTrueDofs(dbc_e_bdr, raw_ess_phP);
-	fespace.GetEssentialTrueDofs(dbc_w_bdr, raw_ess_phE);
+	// Array<int> raw_ess_phP, raw_ess_phE;
+	// fespace.GetEssentialTrueDofs(dbc_e_bdr, raw_ess_phP);
+	// fespace.GetEssentialTrueDofs(dbc_w_bdr, raw_ess_phE);
 
-	// Filter based on psi
-	for (int i = 0; i < raw_ess_phP.Size(); i++) {
-		int dof = raw_ess_phP[i];
-		if (psi_vals[dof] > 0.5)
-			ess_tdof_list_e.Append(dof);  // graphite only
-	}
+	// // Filter based on psi
+	// for (int i = 0; i < raw_ess_phP.Size(); i++) {
+	// 	int dof = raw_ess_phP[i];
+	// 	if (psi_vals[dof] > 0.5)
+	// 		ess_tdof_list_e.Append(dof);  // graphite only
+	// }
 
-	for (int i = 0; i < raw_ess_phE.Size(); i++) {
-		int dof = raw_ess_phE[i];
-		if (psi_vals[dof] < 0.5)
-			ess_tdof_list_w.Append(dof);  // electrolyte only
-	}
+	// for (int i = 0; i < raw_ess_phE.Size(); i++) {
+	// 	int dof = raw_ess_phE[i];
+	// 	if (psi_vals[dof] < 0.5)
+	// 		ess_tdof_list_w.Append(dof);  // electrolyte only
+	// }
 
-	cout << "phP essential tdofs: " << ess_tdof_list_e.Size() << endl;
-	cout << "phE essential tdofs: " << ess_tdof_list_w.Size() << endl;
+	// cout << "phP essential tdofs: " << ess_tdof_list_e.Size() << endl;
+	// cout << "phE essential tdofs: " << ess_tdof_list_w.Size() << endl;
 
 
 			
@@ -857,7 +862,7 @@ int main(int argc, char *argv[])
 	GridFunctionCoefficient cKe(&kpl) ;	
 	
 	ParGridFunction RpE(&fespace);		// reaction rate for electrolyte
-	RpE.Neg();	
+	// RpE.Neg();	
 	GridFunctionCoefficient cRe(&RpE) ;	
 
 	double BvE = -0.4686;
@@ -916,7 +921,8 @@ int main(int argc, char *argv[])
 
 	HypreParVector LpCe(&fespace), Xe0(&fespace);
 	HypreParVector RHSl(&fespace);
-
+	
+	Rxn = 0.0;
 	Rxn = AvP; 
 	Rxn *= 8.0e-10 * 0.99 *2.25;
 	
@@ -964,7 +970,7 @@ int main(int argc, char *argv[])
 		
 	// timestepping
 	int t = 0;
-	for (int t = 0; t < 20000 + 1; t++){
+	for (int t = 0; t < 1; t++){
 	// 	while ( Vcell > Vcut){
 	// while ( Xfr < 0.971 ){
 	
@@ -1006,6 +1012,9 @@ int main(int argc, char *argv[])
 		}
 
 		Mob *= psi;		// multiply by psi for correct mobility
+
+		Mob.Save("Results/mob");
+		Mub.Save("Results/mu");
 
 		// try
 		GridFunction smoothMu(&fespace);
@@ -1298,6 +1307,11 @@ int main(int argc, char *argv[])
 			Kbw(vi) = i0C(vi)/(Frd*Ctmp)*exp(-alp*Cst1*OCV(vi)) ;
 		}
 
+		OCV.Save("Results/OCV");
+		i0C.Save("Results/i0");
+		Kfw.Save("Results/Kfw");
+		Kbw.Save("Results/Kbw");
+
 		// convergence residuals
 		gErrP = 1.0;
 		gErrE = 1.0;
@@ -1305,8 +1319,8 @@ int main(int argc, char *argv[])
 
 		// if (t % 100 == 0) {
 
-		// internal loop
-		while (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){
+		// // internal loop
+		// // while (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){
 
 			// Butler-Volmer Equation for Reaction Rate
 			for (int vi = 0; vi < nV; vi++){
@@ -1320,6 +1334,51 @@ int main(int argc, char *argv[])
 					Rxn(vi) = 0.0;
 				}
 			}
+
+		// 	    std::ofstream outFile("dPHE_values_NOOP.txt"); // open file for writing
+		// 		if (!outFile) {
+		// 			std::cerr << "Error: Could not open output file.\n";
+		// 		} else {
+		// 			outFile << std::setprecision(12); // optional for more digits
+		// 			outFile << "dPHE values:\n";
+		// 			for (int vi = 0; vi < nV; ++vi) {
+		// 				outFile << dPHE(vi) << "\n";
+		// 			}
+		// 			outFile << "\n";
+		// 			outFile.close();
+		// 		}
+
+			// cout << "min Rxn: " << Rxn.Min() << endl;
+			// cout << "max Rxn: " << Rxn.Max() << endl;
+
+			// cout << "min AvB: " << AvB.Min() << endl;
+			// cout << "max AvB: " << AvB.Max() << endl;
+
+			// cout << "min dPHE: " << dPHE.Min() << endl;
+			// cout << "max dPHE: " << dPHE.Max() << endl;
+
+			// cout << "avg phP: " << phP.Norml2() << endl;
+			// cout << "avg phE: " << phE.Norml2() << endl;
+
+			// cout << "min phP: " << phP.Min() << endl;
+			// cout << "max phP: " << phP.Max() << endl;
+			// cout << "min phE: " << phE.Min() << endl;
+			// cout << "max phE: " << phE.Max() << endl;
+
+			// cout << "min CnE: " << CnE.Min() << endl;
+			// cout << "max CnE: " << CnE.Max() << endl;
+
+			// cout << "min CnP: " << CnP.Min() << endl;
+			// cout << "max CnP: " << CnP.Max() << endl;
+
+			// cout << "min OCV: " << OCV.Min() << endl;
+			// cout << "max OCV: " << OCV.Max() << endl;
+			// cout << "min i0C: " << i0C.Min() << endl;
+			// cout << "max i0C: " << i0C.Max() << endl;
+			// cout << "min Kfw: " << Kfw.Min() << endl;
+			// cout << "max Kfw: " << Kfw.Max() << endl;
+			// cout << "min Kbw: " << Kbw.Min() << endl;
+			// cout << "max Kbw: " << Kbw.Max() << endl;
 
 
 			// ========================================
@@ -1339,7 +1398,10 @@ int main(int argc, char *argv[])
 			RpP *= Frd;	
 		
 			Bp2->Assemble();
-			Fpt = *Bp2;	
+			Fpt = *Bp2;
+			
+			cout << "BvP: " << BvP << endl;
+
 
 			// project values to DBC nodes
 			phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
@@ -1374,39 +1436,50 @@ int main(int argc, char *argv[])
 			gErrP = pow(gErrP, 0.5);
 			
 			
-			// ========================================
-			// // 	              _     ______ 
-			// // 	             | |   |  ____|
-			// // 	  _ __   ___ | |_  | |__   
-			// // 	 | '_ \ / _ \| __| |  __|  
-			// // 	 | |_) | (_) | |_  | |____ 
-			// // 	 | .__/ \___/ \__| |______|
-			// // 	 | |                       
-			// // 	 |_|                       
-			// ========================================
+	// 		// ========================================
+	// 		// // 	              _     ______ 
+	// 		// // 	             | |   |  ____|
+	// 		// // 	  _ __   ___ | |_  | |__   
+	// 		// // 	 | '_ \ / _ \| __| |  __|  
+	// 		// // 	 | |_) | (_) | |_  | |____ 
+	// 		// // 	 | .__/ \___/ \__| |______|
+	// 		// // 	 | |                       
+	// 		// // 	 |_|                       
+	// 		// ========================================
 		
 		
 			RpE = Rxn;
 			RpE.Neg();	
+
+			// cout << "min RpE: " << RpE.Min() << endl;
+			// cout << "max RpE: " << RpE.Max() << endl;
 
 			Bl2->Assemble();		
 			Flt = *Bl2;
 
 			phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
 			Kl2->FormLinearSystem(ess_tdof_list_w, phE, Flt, Kml, X1v, Flb);
-			
-			// phE.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr);
-			// Kl2->FormLinearSystem(ess_tdof_list_e, phE, Flt, Kml, X1v, Flb);		
 
-						
+			cout << "min Flb: " << Flb.Min() << endl;
+			cout << "max Flb: " << Flb.Max() << endl;
+		
+			// cout << "Essential dofs: " << ess_tdof_list_w.Size() << endl;
+
 			RHSl = Flb;
 			RHSl += LpCe;
 
+    		cout << "norml2 RHSl: " << RHSl.Norml2() << endl;
+			cout << "max RHSl: " << RHSl.Max() << endl;
+
 			pE0 = phE;
 			pE0.GetTrueDofs(Xe0);
-			cgPE.Mult(RHSl, Xe0);   
+
+			cgPE.Mult(RHSl, Xe0);
 			
-			// recover
+			cout << "min Xe0: " << Xe0.Min() << endl;
+			cout << "max Xe0: " << Xe0.Max() << endl;
+			
+			// // recover
 			phE.Distribute(Xe0);		
 
 			for (int vi = 0; vi < nV; vi++){
@@ -1426,11 +1499,11 @@ int main(int argc, char *argv[])
 			gErrE /= gtPse;
 			gErrE = pow(gErrE,0.5);
 			
-			inlp += 1;
+			// inlp += 1;
 
-		} // internal loop
+		// } // internal loop
 
-	// }
+	// // }
 
 
 		// total reaction current
@@ -1532,12 +1605,12 @@ int main(int argc, char *argv[])
 // // 	// 	" " << gCrnt << " -- " << gTrgI << endl;}
 // // // 	if (myid == 1 ){cout << t << "  " << Xfr << "  " << tm << "  " << Vcell << endl;}
 		
-// // 		if (t % 100 == 0 && myid == 0) {
-// //             std::cout << "timestep: " << t
-// //                     << ", Xfr = " << Xfr
-// //                     << ", VCell = " << Vcell << ", BvP = " << BvP
-// //                     << std::endl;
-// //         }
+		if (t % 100 == 0 && myid == 0) {
+            std::cout << "timestep: " << t
+                    << ", Xfr = " << Xfr
+                    << ", VCell = " << Vcell << ", BvP = " << BvP
+                    << std::endl;
+        }
 
 
 
@@ -1566,17 +1639,16 @@ int main(int argc, char *argv[])
     phP.Save("Results/phP");
     phE.Save("Results/phE");    
 
-	// CnP *= psi;
     phP *= psi;
-
-    // CnE *= pse;
+    CnE *= pse;
     phE *= pse;
 	CnP *= psi;
+
     CnP.Save("Results/pCnCH");
-//     CnE.Save("Results/pCnE");
+    CnE.Save("Results/pCnE");
     phP.Save("Results/pphP");
     phE.Save("Results/pphE");
-    Rxc.Save("Results/Rxn");
+    Rxn.Save("Results/Rxn");
 
 	ParGridFunction muField(&fespace);
 	muField.SetFromTrueDofs(MuV);  // transfer MuV to nodal field

@@ -123,12 +123,15 @@ double CnCH::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Ve
             Mob(i) = psx(i) * GetTableValues(cn_val, Ticks, Mobility);
         }
 
+        // Mob.Save("../outputs/Results/mob"); // save mobility values for debugging
+        // Mub.Save("../outputs/Results/mub"); // save chemical potential values for debugging
+
         Cn.GetTrueDofs(*CpV0);
 
         // Lap phi
         Grad_EM->Mult(*CpV0, Lp1); // Lp1 = Grad_EM * CpV0
         Mub.GetTrueDofs(MuV); // Get the true degrees of freedom
-        MuV += Lp1; // Update MuV with the Laplacian of phi
+        MuV -= Lp1; // Update MuV with the Laplacian of phi
 
         cDp.SetGridFunction(&Mob); // Set the mobility coefficient for the stiffness matrix
 
@@ -152,7 +155,7 @@ double CnCH::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Ve
         // Ensure that the concentration values are within the valid range
         for (int i = 0; i < CpV0->Size(); i++) {
             if (PsVc(i) < 1.0e-5) {
-                (*CpV0)(i) = 0.02;
+                (*CpV0)(i) = 2.02e-2;
             }
         }
 
