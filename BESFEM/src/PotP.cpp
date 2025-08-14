@@ -69,19 +69,21 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     // Mpp.SetOperator(*KmP);
     // SolverSteps::SolverConditions(KmP, *cgPP_solver, Mpp); // Set up the solver conditions
 
-    Mpp.SetOperator(*KmP);            // build AMG hierarchy once on first matrix
+    // Mpp.SetOperator(*KmP);            // build AMG hierarchy once on first matrix
+    // Mpp.SetPrintLevel(0);
+
+    // cgPP_solver->SetRelTol(1e-7);
+    // cgPP_solver->SetAbsTol(0.0);
+    // cgPP_solver->SetMaxIter(80);
+    // cgPP_solver->SetPrintLevel(0);
+    // // cgPE_solver->SetIterativeMode(true);  // <-- IMPORTANT: use Xe0 as initial guess
+
+    // cgPP_solver->SetPreconditioner(Mpp);  // attach once (object stays the same)
+    // cgPP_solver->SetOperator(*KmP);       // bind initial operator
+
+    Mpp.SetOperator(*KmP); // Set the operator for the preconditioner
     Mpp.SetPrintLevel(0);
-
-    cgPP_solver->SetRelTol(1e-7);
-    cgPP_solver->SetAbsTol(0.0);
-    cgPP_solver->SetMaxIter(80);
-    cgPP_solver->SetPrintLevel(0);
-    // cgPE_solver->SetIterativeMode(true);  // <-- IMPORTANT: use Xe0 as initial guess
-
-    cgPP_solver->SetPreconditioner(Mpp);  // attach once (object stays the same)
-    cgPP_solver->SetOperator(*KmP);       // bind initial operator
-
-
+    SolverSteps::SolverConditions(KmP, *cgPP_solver, Mpp); // Set up the solver conditions
 
     // cRp.SetGridFunction(&RpP); // Set the reaction field coefficient
     SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term
@@ -131,7 +133,7 @@ void PotP::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     Bp2 -> Assemble();
     Fpt = *Bp2; // Assign the force term
 
-    cout << "BvP: " << BvP << endl;
+    // cout << "BvP: " << BvP << endl;
     mfem::ConstantCoefficient dbc_e_Coef(BvP);	
 
     phx.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions

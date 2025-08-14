@@ -970,7 +970,7 @@ int main(int argc, char *argv[])
 		
 	// timestepping
 	int t = 0;
-	for (int t = 0; t < 1; t++){
+	for (int t = 0; t < 30; t++){
 	// 	while ( Vcell > Vcut){
 	// while ( Xfr < 0.971 ){
 	
@@ -1400,7 +1400,7 @@ int main(int argc, char *argv[])
 			Bp2->Assemble();
 			Fpt = *Bp2;
 			
-			cout << "BvP: " << BvP << endl;
+			// cout << "BvP: " << BvP << endl;
 
 
 			// project values to DBC nodes
@@ -1460,24 +1460,24 @@ int main(int argc, char *argv[])
 			phE.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 		
 			Kl2->FormLinearSystem(ess_tdof_list_w, phE, Flt, Kml, X1v, Flb);
 
-			cout << "min Flb: " << Flb.Min() << endl;
-			cout << "max Flb: " << Flb.Max() << endl;
+			// cout << "min Flb: " << Flb.Min() << endl;
+			// cout << "max Flb: " << Flb.Max() << endl;
 		
 			// cout << "Essential dofs: " << ess_tdof_list_w.Size() << endl;
 
 			RHSl = Flb;
 			RHSl += LpCe;
 
-    		cout << "norml2 RHSl: " << RHSl.Norml2() << endl;
-			cout << "max RHSl: " << RHSl.Max() << endl;
+    		// cout << "norml2 RHSl: " << RHSl.Norml2() << endl;
+			// cout << "max RHSl: " << RHSl.Max() << endl;
 
 			pE0 = phE;
 			pE0.GetTrueDofs(Xe0);
 
 			cgPE.Mult(RHSl, Xe0);
 			
-			cout << "min Xe0: " << Xe0.Min() << endl;
-			cout << "max Xe0: " << Xe0.Max() << endl;
+			// cout << "min Xe0: " << Xe0.Min() << endl;
+			// cout << "max Xe0: " << Xe0.Max() << endl;
 			
 			// // recover
 			phE.Distribute(Xe0);		
@@ -1605,7 +1605,7 @@ int main(int argc, char *argv[])
 // // 	// 	" " << gCrnt << " -- " << gTrgI << endl;}
 // // // 	if (myid == 1 ){cout << t << "  " << Xfr << "  " << tm << "  " << Vcell << endl;}
 		
-		if (t % 100 == 0 && myid == 0) {
+		if (t % 1 == 0 && myid == 0) {
             std::cout << "timestep: " << t
                     << ", Xfr = " << Xfr
                     << ", VCell = " << Vcell << ", BvP = " << BvP

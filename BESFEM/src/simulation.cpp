@@ -213,7 +213,6 @@ int main(int argc, char *argv[]) {
     phP_gf.Save((outdir + "/phP").c_str());
     phE_gf.Save((outdir + "/phE").c_str());
 
-
     // Multiply Grid Functions for Error Calculations
     CnCH_gf *= *domain_parameters.psi;
     phP_gf *= *domain_parameters.psi;
@@ -226,13 +225,6 @@ int main(int argc, char *argv[]) {
     domain_parameters.pse->Save((outdir + "/pse").c_str());
     domain_parameters.AvB->Save((outdir + "/AvB").c_str());
     domain_parameters.AvP->Save((outdir + "/AvP").c_str());
-
-    // particle_concentration.Mob.Save((outdir + "/Mob").c_str());
-    // particle_concentration.Mub.Save((outdir + "/Mub").c_str());
-    reaction.Kfw->Save((outdir + "/Kfw").c_str());
-    reaction.Kbw->Save((outdir + "/Kbw").c_str());
-    reaction.i0C->Save((outdir + "/i0C").c_str());
-    reaction.OCV->Save((outdir + "/OCV").c_str());
 
     CnCH_gf.Save((outdir + "/CnCH").c_str());
     CnE_gf.Save((outdir + "/CnE").c_str());
