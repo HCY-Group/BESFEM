@@ -970,7 +970,7 @@ int main(int argc, char *argv[])
 		
 	// timestepping
 	int t = 0;
-	for (int t = 0; t < 30; t++){
+	for (int t = 0; t < 10000; t++){
 	// 	while ( Vcell > Vcut){
 	// while ( Xfr < 0.971 ){
 	
@@ -1129,6 +1129,8 @@ int main(int argc, char *argv[])
 		} 	
 		MPI_Allreduce(&eCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 		infx = geCrnt/L_w;
+
+		// need to fix nbcCoef and BCs for Neumann CnE
 
 		nbcCoef.constant = infx;
 		Be2->Assemble();
@@ -1605,7 +1607,7 @@ int main(int argc, char *argv[])
 // // 	// 	" " << gCrnt << " -- " << gTrgI << endl;}
 // // // 	if (myid == 1 ){cout << t << "  " << Xfr << "  " << tm << "  " << Vcell << endl;}
 		
-		if (t % 1 == 0 && myid == 0) {
+		if (t % 200 == 0 && myid == 0) {
             std::cout << "timestep: " << t
                     << ", Xfr = " << Xfr
                     << ", VCell = " << Vcell << ", BvP = " << BvP

@@ -51,11 +51,10 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     SolverSteps::FormSystemMatrix(Me_init, boundary_dofs, Mmate); 
     
     Me_prec.SetType(mfem::HypreSmoother::Jacobi); // Configure the preconditioner using a Jacobi smoother
-    SolverSteps::SolverConditions(Mmate, *Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
+    SolverSteps::SolverConditions(*Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
+    // SolverSteps::SolverConditions(Mmate, *Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
 
     SolverSteps::InitializeStiffnessMatrix(cDe, Ke2); // Initialize
-
-    // Concentrations::ImposeNeumannBC(psx, *PeR); // Apply Neumann boundary conditions to the reaction potential field
 
     *PeR = psx;
     PeR->Neg();
@@ -84,6 +83,10 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 		cAe.SetGridFunction(&Rxe);
         
         Concentrations::TotalReaction(Rxe, eCrnt);
+
+        // !!!!!!!
+        // remake boundary condition for Neumann CnE
+        // is the Neumann BC being updated and used correctly in each timestep?
 
         nbcCoef = mfem::ConstantCoefficient(infx);
 		mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);

@@ -139,7 +139,7 @@ void SolverSteps::SolverConditions(std::shared_ptr<mfem::HypreParMatrix> &Mmat, 
 
 void SolverSteps::SolverConditions(mfem::CGSolver &solver, mfem::Solver &preconditioner){
     // Set up the solver for the mass matrix.
-    solver.iterative_mode = false; // Use direct solving for the system matrix
+    // solver.iterative_mode = false; // Use direct solving for the system matrix
     solver.SetRelTol(1e-7); // Set relative tolerance for the solver
     solver.SetAbsTol(0.0); // Set absolute tolerance for the solver
     solver.SetMaxIter(102); // Limit the maximum number of iterations
