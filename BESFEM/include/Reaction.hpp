@@ -34,10 +34,17 @@ public:
     void Initialize(mfem::ParGridFunction &Rx, double initial_value);
 
     /**
+     * @brief Computes the exchange current density and rate constants at the interface using interpolation tables
+     * @param Cn Concentration field at the interface
+     */
+    void TableExchangeCurrentDensity(mfem::ParGridFunction &Cn);
+
+    /**
      * @brief Computes the exchange current density and rate constants at the interface
      * @param Cn Concentration field at the interface
      */
     void ExchangeCurrentDensity(mfem::ParGridFunction &Cn);
+
 
 
     /**

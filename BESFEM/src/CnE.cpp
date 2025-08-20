@@ -63,9 +63,9 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
         nbcCoef.constant = infx;
 		mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
 
-        // Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
-        // Be_init->AddDomainIntegrator(new mfem::DomainLFIntegrator(cAe));
-        // Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(m_nbcCoef), nbc_w_bdr);
+        Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
+        Be_init->AddDomainIntegrator(new mfem::DomainLFIntegrator(cAe));
+        Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(m_nbcCoef), nbc_w_bdr);
 
         Be_init->Assemble();
         Fet = *Be_init; // Assign the updated linear form to Fet

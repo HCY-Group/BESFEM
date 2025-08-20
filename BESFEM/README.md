@@ -1,9 +1,13 @@
 # BESFEM
 
 ## Things to Consider for Code Review
+- Other ways to organize the code into classes?
+- Somewhere I am doing unnecessary calculations because OOP is MUCH slower than the non-OOP version.
+- Memory management with pointers: unique vs shared?
 - Ideas on handling boundary conditions for different geometries (where should the user specify?)
 - Concentrations Base currently inherits SolverSteps, should this just be usage rather than inheritance?
 - How should users make changes? Through terminal command lines, editing Constant.cpp file, GUI?
+- Best way to switch particle concentration between diffusion and Cahn-Hilliard?
 
 
 
@@ -12,7 +16,14 @@
 1. Clone the repository
 3. `make` (you may need to update the Makefile to point to your MFEM installation)
 4. `cd bin`
-5. Run a simulation: `mpirun -np 1 simulation -m ../inputs/disk_Mesh_80x80x6.mesh -d ../inputs/disk_dsF_81x81x7.txt -t d -n 6`
+5. Run a disk Cahn-Hilliard simulation: `mpirun -np 1 simulation -m ../inputs/disk_Mesh_80x80x6.mesh -d ../inputs/disk_dsF_81x81x7.txt -t d -n 6`
+6. Run a rectangle diffusion simulation: 
+    - ⚠️ make sure you go to `Constants.cpp` file and uncomment the section for rectangle
+    - ⚠️ change `particle_concentration` in `simulation.cpp` to start with `CnP`and NOT `CnCH`
+    - ⚠️ change all of the `Initialize` lines in `simulation.cpp` to the line underneath
+    - `mpirun -np 1 simulation -m ../inputs/Mesh_3x90_r.mesh -d ../inputs/dsF_3x90_r.txt -t r -n 3`
+
+
 
 ## Additional Command-Line Options
 
@@ -40,3 +51,10 @@
     - `mesh_path = "outputs/Results/20250820_092154__nsteps=3__mesh=Mesh_3x90_r/pmesh.000000"`
     - `field_path = "outputs/Results/20250820_092154__nsteps=3__mesh=Mesh_3x90_r/pCnCH.000000"`
 5. `Run All` and scroll down to the graph
+
+
+## How to Remove Unwanted Results Files
+
+1. `cd outputs/Results`
+2. `rm -rf 2025*/`
+

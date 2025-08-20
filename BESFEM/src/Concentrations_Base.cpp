@@ -62,9 +62,13 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double &xCrnt) {
     // calculate the west boundary size
     mfem::Vector Rmin, Rmax;
     gmesh->GetBoundingBox(Rmin, Rmax);
-    // L_w = Rmax(1) - Rmin(1);
+
+    int dim = gmesh->Dimension();
+   
+    if (dim == 2) L_w =  Rmax(1) - Rmin(1);
+    else if (dim == 3) L_w = (Rmax(1) - Rmin(1))*(Rmax(2) - Rmin(2));
     // L_w = (Rmax(1) - Rmin(1)) + 2*(Rmax(0) - Rmin(0));
-    L_w = (Rmax(1) - Rmin(1))*(Rmax(2) - Rmin(2)); //3D
+    // L_w = (Rmax(1) - Rmin(1))*(Rmax(2) - Rmin(2)); //3D
 
     for (int ei = 0; ei < nE; ei++) {
         Rx.GetNodalValues(ei, VtxVal); // Retrieve the nodal values of the reaction field for the current element

@@ -3,6 +3,9 @@
 
 #include "Concentrations_Base.hpp"
 
+class Initialize_Geometry;
+class Domain_Parameters;
+
 /**
  * @class CnP
  * @brief Derived class implementing particle concentration models for battery simulations.
@@ -21,9 +24,7 @@ public:
      * @param mh Reference to the mesh handler
      */
     CnP(Initialize_Geometry &geo, Domain_Parameters &para);
-    
-    Initialize_Geometry &geometry;
-    Domain_Parameters &domain_parameters;
+
 
     /**
      * @brief Initializes particle concentration values and solver components
@@ -41,16 +42,20 @@ public:
      */
     void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
-    std::unique_ptr<mfem::ParGridFunction> RxP; ///< Pointer to a grid function storing reaction values
-
 
 
 private:
 
+    Initialize_Geometry &geometry;
+    Domain_Parameters &domain_parameters;
+
     mfem::HypreParVector PsVc; ///< Vector for storing true degrees of freedom in the solid region
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
-    std::shared_ptr<mfem::CGSolver> Mp_solver; ///< Solver for the mass matrix
+    mfem::ParGridFunction Dp; ///< Grid function for particle diffusivity
+    mfem::ParGridFunction RxP; ///< Pointer to a grid function storing reaction values
+
+    mfem::CGSolver Mp_solver; ///< Solver for the mass matrix
     std::shared_ptr<mfem::HypreParMatrix> Mmatp; ///< Mass matrix for particle concentrations
     mfem::HypreSmoother Mp_prec; ///< Preconditioner for the mass matrix solver
 
@@ -58,7 +63,9 @@ private:
 
     std::shared_ptr<mfem::HypreParMatrix> Kmatp; ///< Stiffness matrix for diffusion calculations 
 
-    mfem::HypreParVector Fcb; ///< Right-hand-side vector for the system of equations
+    mfem::HypreParVector Fcb; ///< Vector for storing the force term contributions
+    mfem::ParLinearForm Fct; ///< Linear form for the force term related to particle concentrations
+
     mfem::Array<int> boundary_dofs; ///< Array to store boundary degrees of freedom
     mfem::HypreParVector X1v; ///< Temporary vector used during assembly
 
@@ -67,8 +74,12 @@ private:
     std::shared_ptr<mfem::HypreParVector> RHCp; ///< Right-hand-side vector at the current time step
     std::unique_ptr<mfem::HypreParMatrix> Tmatp; ///< System matrix for time-stepping
 
-    std::shared_ptr<mfem::ParBilinearForm> pKx2;
+    std::unique_ptr<mfem::ParBilinearForm> Mt; ///< Mass matrix for particle concentrations
 
+    mfem::GridFunctionCoefficient cAp; ///< Coefficient for the reaction term
+    mfem::GridFunctionCoefficient cDp; ///< Coefficient for the diffusivity term
+    std::unique_ptr<mfem::ParLinearForm> Bc2; ///< Linear form for the force term related to particle concentrations
+    std::unique_ptr<mfem::ParBilinearForm> Kc2; ///< Stiffness form for particle potential
 };
 
 #endif // CNP_HPP

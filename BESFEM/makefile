@@ -36,6 +36,7 @@ SRC_FILES = \
     src/Concentrations_Base.cpp \
     src/CnE.cpp \
     src/CnCH.cpp \
+    src/CnP.cpp \
     src/Reaction.cpp \
     src/SolverSteps.cpp \
     src/Potentials_Base.cpp \

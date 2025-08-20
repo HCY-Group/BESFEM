@@ -98,6 +98,7 @@ private:
     double tc2 = Constants::Cst1 / (2*Constants::t_minus*(1.0 - Constants::t_minus));               ///< Transport factor 2.
 
     double dffe = 0.0; ///< Scratch for conductivity/reaction calculations.
+    double gtPse = 0.0; ///< Global total for Pse (electrolyte phase).
 
     // ---------- Solver / preconditioner ----------
     mfem::CGSolver       cgPE_solver; ///< Conjugate gradient solver.
@@ -132,6 +133,7 @@ private:
     mfem::Array<int>     boundary_dofs; ///< Boundary DOFs list.
 
     mfem::HypreParVector LpCe; ///< Concentration true-DoF vector (coupling).
+    
 
     /**
      * @brief Recompute electrolyte conductivity/diffusivity fields and coefficients.

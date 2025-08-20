@@ -17,7 +17,6 @@ PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
     ess_tdof_list_e(geo.ess_tdof_list_e), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get())
     
     {
-    // cgPP_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
     cgPP_solver = mfem::CGSolver(MPI_COMM_WORLD);
     B1t = mfem::ParLinearForm(fespace.get());
     X1v = mfem::HypreParVector(fespace.get());
@@ -34,7 +33,6 @@ PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
     Fpt = mfem::ParLinearForm(fespace.get());
 
     Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Initialize the bilinear form for conductivity
-    // KmP = mfem::HypreParMatrix; // Initialize the stiffness matrix for conductivity
 
     pP0 = mfem::ParGridFunction(fespace.get()); // Initialize the potential grid function
     }
@@ -43,17 +41,11 @@ PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
 void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx)
 {
 
-
-    // dbc_e_bdr = 0; 
-    // dbc_e_bdr[0] = 1;
-	// mfem::Array<int> ess_tdof_list_e(0);
-
     BvP = initial_value; // Set the boundary value
     Potentials::SetInitialPotentials(ph, BvP); // Initialize potentials
 
     kap = psx; // Set the conductivity field to the particle concentration field
     kap *= 3.3;
-    // cKp.SetGridFunction(&kap); // Set the conductivity coefficient
     SolverSteps::InitializeStiffnessMatrix(cKp, Kp2); // Initialize the stiffness matrix
     
     mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
@@ -63,25 +55,6 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
     
-    // Mpp.SetOperator(*KmP);
-    // mfem::HypreBoomerAMG Mpp(*KmP); // Initialize the preconditioner for the solver
-    
-    // Mpp.SetPrintLevel(0);
-    // Mpp.SetOperator(*KmP);
-    // SolverSteps::SolverConditions(KmP, *cgPP_solver, Mpp); // Set up the solver conditions
-
-    // Mpp.SetOperator(*KmP);            // build AMG hierarchy once on first matrix
-    // Mpp.SetPrintLevel(0);
-
-    // cgPP_solver->SetRelTol(1e-7);
-    // cgPP_solver->SetAbsTol(0.0);
-    // cgPP_solver->SetMaxIter(80);
-    // cgPP_solver->SetPrintLevel(0);
-    // // cgPE_solver->SetIterativeMode(true);  // <-- IMPORTANT: use Xe0 as initial guess
-
-    // cgPP_solver->SetPreconditioner(Mpp);  // attach once (object stays the same)
-    // cgPP_solver->SetOperator(*KmP);       // bind initial operator
-
     Mpp.SetOperator(KmP); // Set the operator for the preconditioner
     Mpp.SetPrintLevel(0);
     SolverSteps::SolverConditions(KmP, cgPP_solver, Mpp); // Set up the solver conditions
@@ -89,7 +62,6 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     // cRp.SetGridFunction(&RpP); // Set the reaction field coefficient
     SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term
     SolverSteps::Update(Bp2); // Assemble the force term
-    // Fpt = std::move(*Bp2); // Move the force term
     Fpt = *Bp2; // Assign the force term
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system
@@ -98,31 +70,19 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
 void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
 {
+	mfem::ConstantCoefficient dbc_e_Coef(BvP);
 
+    // comment out for Cahn-Hilliard Disk!
 
-    // // dbc_e_bdr = 0; 
-    // // dbc_e_bdr[0] = 1;
-	// // mfem::Array<int> ess_tdof_list_e(0);
+    ParticleConductivity(Cn, psx); // Update conductivity
+    SolverSteps::Update(Kp2); // Update the stiffness matrix
 
-    // // ParticleConductivity(Cn, psx); // Update conductivity
-    // // cKp.SetGridFunction(&kap); // Set the conductivity coefficient
+    potential.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
 
-    // // SolverSteps::Update(Kp2); // Update the stiffness matrix
-    // mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
-    // potential.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
-    
-    // fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
-    // // std::cout << "[PotP::TimeStep] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
-    
-    // // SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
+    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
 
-    // // Mpp.SetOperator(*KmP); // Set the preconditioner operator
-    // // cgPP_solver->SetPreconditioner(Mpp); // Attach the preconditioner to the solver
-    // // cgPP_solver->SetOperator(*KmP); // Set the operator for the solver 
-
-	mfem::ConstantCoefficient dbc_e_Coef(BvP);	
-
-
+    Mpp.SetOperator(KmP); // Set the preconditioner operator
+    cgPP_solver.SetOperator(KmP); // Set the operator for the solver
 
 }
 
@@ -156,35 +116,11 @@ void PotP::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
 
 
 
-
-
-
-// void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
-// {
-//     ParticleConductivity(Cn, psx); // Update conductivity
-//     auto cKp = std::make_shared<mfem::GridFunctionCoefficient>(kap.get());
-
-//     Potentials::ImplementBoundaryConditions(dbc_e_Coef, BvP, potential, dbc_e_bdr); // Apply BCs
-//     SolverSteps::StiffnessMatrix(cKp, ess_tdof_list_e, potential, B1t, KmP, B1v);
-//     Potentials::PCG_Solver(Mpp, *cgPP_solver, *KmP); // Solve the system
-// }
-
 void PotP::ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx){
     for (int vi = 0; vi < nV; vi++){
         kap(vi) = psx(vi) * (0.01929 + 0.7045 * tanh(2.399 * Cn(vi)) - 0.7238 * tanh(2.412 * Cn(vi)) - 4.2106e-6);
-        // kap(vi) = 3.3 * psx(vi);
     }
 }
 
-// void PotP::CalculateGlobalError(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror) 
-// {
-//     Potentials::CreateReaction(Rx, *RpP, Constants::Frd); // Create reaction field
-
-//     // Assemble the force term without applying boundary conditions
-//     SolverSteps::ForceTerm(*RpP, ftPotP); // false since not applying BCs
-
-//     Potentials::ForceVector(*K, ess_tdof_list_e, phx, ftPotP, *KmP, X1v, Fpb, dbc_e_Coef, dbc_e_bdr); // Force vector
-//     // Potentials::ErrorCalculation(phx, *cgPP_solver, Fpb, psx, error_P, gerror, gtPsi); // Compute global error
-// }
 
 

@@ -321,7 +321,14 @@ void Initialize_Geometry::PrintMeshInfo() {
 }
 
 void Initialize_Geometry::SetupBoundaryConditions() {
+
+    int dim = parallelMesh->Dimension();
+
+    if (dim == 3) {
+
+    std::cout << "Setting up boundary conditions for 3D mesh" << std::endl;
     
+    // DISK
     // Boundary attributes for Neumann BC on the west boundary for CnE
     nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
     nbc_w_bdr = 0;
@@ -344,6 +351,32 @@ void Initialize_Geometry::SetupBoundaryConditions() {
     // Extract essential true DOFs (Dirichlet BCs) on the west boundary
     ess_tdof_list_w.SetSize(0); 
     parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
+
+    } else if (dim == 2) {
+
+    std::cout << "Setting up boundary conditions for 2D mesh" << std::endl;
+
+    // 2D Rectangle
+	// Neumann BC on the west boundary. CnE
+	nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+	nbc_w_bdr = 0; nbc_w_bdr[0] = 1;
+
+	// Dirichlet BC on the east boundary. phP
+	dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+	dbc_e_bdr = 0; dbc_e_bdr[2] = 1;
+	// use dbc_e_bdr array to extract all node labels of Dirichlet BC
+	ess_tdof_list_e.SetSize(0);			
+	parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+	
+	// Dirichlet BC on the west boundary. phE
+	dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+	dbc_w_bdr = 0; dbc_w_bdr[0] = 1;
+	// use dbc_w_bdr array to extract all node labels of Dirichlet BC
+	ess_tdof_list_w.SetSize(0);			
+	parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
+
+    }
+
 
 }
 

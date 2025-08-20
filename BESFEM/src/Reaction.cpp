@@ -330,19 +330,19 @@ double Reaction::GetTableValues(double cn, const mfem::Vector &ticks, const mfem
  }
 
 // rate constants and exchange current density at interface
-// void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
-//     for (int vi = 0; vi < nV; vi++){
-//         if(AvB(vi) * Constants::dh > 0.0){ 
-//             double val = -0.2 * (Cn(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn(vi) - 3.195);
-//             (*i0C)(vi) = pow(10.0, val) * 1.0e-3; // Exchange current density
-//             (*OCV)(vi) = 1.095 * Cn(vi) * Cn(vi) - 8.324e-7 * exp(14.31 * Cn(vi)) + 4.692 * exp(-0.5389 * Cn(vi)); // open circuit voltage
-//             (*Kfw)(vi) = (*i0C)(vi) / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * (*OCV)(vi)); // forward reaction constant
-//             (*Kbw)(vi) = (*i0C)(vi) / (Constants::Frd * Cn(vi)) * exp(-Constants::alp * Constants::Cst1 * (*OCV)(vi)); // backward rection constant
-//         }
-//     }
-// }
+void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
+    for (int vi = 0; vi < nV; vi++){
+        if(AvB(vi) * Constants::dh > 0.0){ 
+            double val = -0.2 * (Cn(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn(vi) - 3.195);
+            (*i0C)(vi) = pow(10.0, val) * 1.0e-3; // Exchange current density
+            (*OCV)(vi) = 1.095 * Cn(vi) * Cn(vi) - 8.324e-7 * exp(14.31 * Cn(vi)) + 4.692 * exp(-0.5389 * Cn(vi)); // open circuit voltage
+            (*Kfw)(vi) = (*i0C)(vi) / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * (*OCV)(vi)); // forward reaction constant
+            (*Kbw)(vi) = (*i0C)(vi) / (Constants::Frd * Cn(vi)) * exp(-Constants::alp * Constants::Cst1 * (*OCV)(vi)); // backward rection constant
+        }
+    }
+}
 
-void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn)
+void Reaction::TableExchangeCurrentDensity(mfem::ParGridFunction &Cn)
 {
 
     for (int vi = 0; vi < nV; vi++) {
@@ -358,11 +358,6 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn)
     
     }
 
-    // Kfw->Save("../outputs/Results/kfw"); // save mobility values for debugging
-    // Kbw->Save("../outputs/Results/kbw"); // save mobility values for debugging
-    // i0C->Save("../outputs/Results/ioc"); // save mobility values for debugging
-    // OCV->Save("../outputs/Results/ocv"); // save mobility values for debugging
-
 
 }
 
@@ -377,22 +372,6 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn
 					                   (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
 
         }
-        // else {
-        //     Rx(vi) = 0.0; // No reaction if no interface
-        // }
-    }
-
-    std::ofstream outFile("dPHE_values_OOP.txt"); // open file for writing
-    if (!outFile) {
-        std::cerr << "Error: Could not open output file.\n";
-    } else {
-        outFile << std::setprecision(12); // optional for more digits
-        outFile << "dPHE values:\n";
-        for (int vi = 0; vi < nV; ++vi) {
-            outFile << (*dPHE)(vi) << "\n";
-        }
-        outFile << "\n";
-        outFile.close();
     }
 
 }

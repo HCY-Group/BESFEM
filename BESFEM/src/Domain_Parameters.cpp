@@ -166,8 +166,8 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
 void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
 
     // Compute target current based on total Psi, rho, Cr, and constants
-    // trgI = total_psi * Constants::rho * (0.9 - 0.3) / (3600.0 / Constants::Cr);
-    trgI = total_psi * Constants::rho * (1.0 - 0.0) / (3600.0 / Constants::Cr);
+    trgI = total_psi * Constants::rho * (0.9 - 0.3) / (3600.0 / Constants::Cr);
+    // trgI = total_psi * Constants::rho * (1.0 - 0.0) / (3600.0 / Constants::Cr);
 
     // Perform global MPI reduction to get the total target current
     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
