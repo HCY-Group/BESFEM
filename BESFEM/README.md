@@ -37,6 +37,6 @@
 2. Within `outputs`, create another folder called `Results`
 3. When you run the code, the results will spit out inside another folder in `Results`
 4. Edit the path to which you would like to plot in `mfem_plot.ipynb`:
-    `mesh_path = "outputs/Results/20250820_092154__nsteps=3__mesh=Mesh_3x90_r/pmesh.000000"`
-    `field_path = "outputs/Results/20250820_092154__nsteps=3__mesh=Mesh_3x90_r/pCnCH.000000"`
+    - `mesh_path = "outputs/Results/20250820_092154__nsteps=3__mesh=Mesh_3x90_r/pmesh.000000"`
+    - `field_path = "outputs/Results/20250820_092154__nsteps=3__mesh=Mesh_3x90_r/pCnCH.000000"`
 5. `Run All` and scroll down to the graph
