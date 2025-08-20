@@ -15,3 +15,10 @@
 - `-o Order` This will allow you to change the polynomial degree order
 - `-t MeshType` This will allow you to change the type of mesh (r = rectangle, d = disk, v = voxel, c = circle)
 - `-n NumberOfTimeSteps` This will allow you to change the number of timesteps that the simulation runs
+
+
+## How To Get Doxygen
+
+1. Run `doxygen Doxyfile`
+2. cd `html`
+3. To view online when using VSCode: `python3 -m http.server 8000 --bind 127.0.0.1`
