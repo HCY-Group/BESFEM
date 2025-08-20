@@ -1,7 +1,4 @@
-/**
- * @file Concentrations_Base.cpp
- * @brief Implementation of the Concentrations class methods for battery simulations.
- */
+
 
 #include "../include/Concentrations_Base.hpp"
 #include "../inputs/Constants.hpp"
@@ -40,21 +37,15 @@ void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParG
     // Iterate over mesh elements efficiently
     for (int ei = 0; ei < nE; ++ei) {
         TmpF->GetNodalValues(ei, VtxVal); // Retrieve nodal values for the element
-        // Use std::accumulate for faster summation
         double val = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
         EAvg(ei) = val / nC;
         lSum += EAvg(ei) * EVol(ei);
     }
 
-    double gSum; // Global sum to aggregate contributions across all MPI processes
-    MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); // Perform global reduction
+    double gSum; 
+    MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
     Xfr = gSum / gtPsi; // Calculate the degree of lithiation as the normalized sum
 }
-
-// void Concentrations::ImposeNeumannBC(mfem::ParGridFunction &psx, mfem::ParGridFunction &PGF) {
-//     PGF = psx; // Copy the input potential field to the target grid function
-//     PGF.Neg(); // Negate all values in the target grid function
-// }
 
 void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value) {
 
@@ -62,6 +53,7 @@ void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFun
     Rx2 *= value; // Scale the output reaction field by the specified factor
 
 }
+
 
 void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double &xCrnt) {
     
@@ -71,7 +63,8 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double &xCrnt) {
     mfem::Vector Rmin, Rmax;
     gmesh->GetBoundingBox(Rmin, Rmax);
     // L_w = Rmax(1) - Rmin(1);
-    L_w = (Rmax(1) - Rmin(1)) + 2*(Rmax(0) - Rmin(0));
+    // L_w = (Rmax(1) - Rmin(1)) + 2*(Rmax(0) - Rmin(0));
+    L_w = (Rmax(1) - Rmin(1))*(Rmax(2) - Rmin(2)); //3D
 
     for (int ei = 0; ei < nE; ei++) {
         Rx.GetNodalValues(ei, VtxVal); // Retrieve the nodal values of the reaction field for the current element
@@ -88,7 +81,6 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double &xCrnt) {
     infx = geCrnt / (L_w);
 
 }
-
 
 std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
     

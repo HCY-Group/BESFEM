@@ -10,12 +10,14 @@
 
 using namespace std;
 
+
 // Constructor
 Initialize_Geometry::Initialize_Geometry() 
 {}
 
 // Destructor
 Initialize_Geometry::~Initialize_Geometry() {}
+
 
 void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order) {
 
@@ -331,7 +333,6 @@ void Initialize_Geometry::SetupBoundaryConditions() {
     dbc_e_bdr[0] = 1;  // Applying Dirichlet BC to the west boundary
 
     // Extract essential true DOFs (Dirichlet BCs) on the east boundary
-    // mfem::Array<int> ess_tdof_list_e(0);
     ess_tdof_list_e.SetSize(0);
     parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
 
@@ -341,7 +342,6 @@ void Initialize_Geometry::SetupBoundaryConditions() {
     dbc_w_bdr[2] = 1;   // east
 
     // Extract essential true DOFs (Dirichlet BCs) on the west boundary
-    // mfem::Array<int> ess_tdof_list_w(0);
     ess_tdof_list_w.SetSize(0); 
     parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
 

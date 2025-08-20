@@ -30,6 +30,7 @@ namespace Constants {
     extern const double Cr;
     extern const double Vsr;
     extern const double VCut;
+    extern const double gc;
 }
 
 #endif // CONSTANTS_HPP

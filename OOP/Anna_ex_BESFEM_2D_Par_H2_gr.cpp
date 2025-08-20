@@ -59,12 +59,13 @@ int main(int argc, char *argv[])
 	// double dh = 2.6e-4;
 
 	double zeta = 1.0;				    // interfacial thickness
-	double thres = 1.0e-3;					// AvP musk
+	double thres = 1.0e-2;					// AvP musk
 	double eps = 1.0e-6;					// var-epsilon			
 	double dt = 0.0105625 * 1.0;	// time step
 	// double dt = 0.00792188;
 	// double dt = 0.00528125;
-	double tm = 0.0;						// time
+	double tm = 0.0;		
+	double gc = 3.3800e-10 *2;			// gradient coefficient				
 	
 	double t_minus = 7.619047619047619e-01; // transference number
 	double D0 = 0.00489; 					// base diffusivity	
@@ -94,7 +95,7 @@ int main(int argc, char *argv[])
 	Mesh gmesh(mesh_file);
 	gmesh.EnsureNCMesh(true);	
 
-	cout << "Mesh dimension = " << gmesh.Dimension() << endl;
+	// cout << "Mesh dimension = " << gmesh.Dimension() << endl;
 	// cout << "Boundary attributes in mesh: " << gmesh.bdr_attributes << endl;
 	
 
@@ -114,7 +115,7 @@ int main(int argc, char *argv[])
 
 	double min_dsF = gDsF.Min();
 	double max_dsF = gDsF.Max();
-	cout << "dsF range: " << min_dsF << " to " << max_dsF << endl;
+	// cout << "dsF range: " << min_dsF << " to " << max_dsF << endl;
 
 	
 	// AMR =========================================
@@ -193,8 +194,9 @@ int main(int argc, char *argv[])
 	Vector Rmin, Rmax;
 	gmesh.GetBoundingBox(Rmin,Rmax);
 	// double L_w = Rmax(1) - Rmin(1);
-	double L_w = (Rmax(1) - Rmin(1)) + 2*(Rmax(0) - Rmin(0));
+	// double L_w = (Rmax(1) - Rmin(1)) + 2*(Rmax(0) - Rmin(0));
 	// double L_w = (Rmax(1) - Rmin(1))*(Rmax(2) - Rmin(2));
+	double L_w = (Rmax(1) - Rmin(1))*(Rmax(2) - Rmin(2)); //3D
 	
 	// local (parallel) mesh 
 	ParMesh pmesh(MPI_COMM_WORLD, gmesh);
@@ -527,7 +529,7 @@ int main(int argc, char *argv[])
 	MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);		
 	Xfr = gSum/gtPsi;
 	
-	std::cout << "Initial degree of lithiation Xfr = " << Xfr << std::endl;
+	// std::cout << "Initial degree of lithiation Xfr = " << Xfr << std::endl;
 	
 	// SBM mass matrix	
 	HypreParMatrix Mmatp;
@@ -542,15 +544,15 @@ int main(int argc, char *argv[])
  	Mt->Assemble();
  	Mt->FormSystemMatrix(boundary_dofs, Mmatp);
 	
-	// HypreSmoother Mp_prec;
-	// Mp_prec.SetType(HypreSmoother::Jacobi);
+	HypreSmoother Mp_prec;
+	Mp_prec.SetType(HypreSmoother::Jacobi);
 
-	HypreBoomerAMG Mp_prec;
-	Mp_prec.SetPrintLevel(0);
+	// HypreBoomerAMG Mp_prec;
+	// Mp_prec.SetPrintLevel(0);
 	
 	CGSolver Mp_solver(MPI_COMM_WORLD);	
-	Mp_solver.iterative_mode = false;
-	Mp_solver.SetRelTol(1e-7);
+	// Mp_solver.iterative_mode = false;
+	Mp_solver.SetRelTol(1e-6);
 	Mp_solver.SetAbsTol(0);
 	Mp_solver.SetMaxIter(102);
 	Mp_solver.SetPrintLevel(0);
@@ -560,8 +562,8 @@ int main(int argc, char *argv[])
 	// SBM stiffness matrix
 	ParGridFunction Mob(&fespace);	
 		
-	Mob = 1.0e-12; // avg 6.0e-12
-	Mob *= psi;
+	// Mob = 1.0e-12; // avg 6.0e-12
+	// Mob *= psi;
 	
 	GridFunctionCoefficient cDp(&Mob) ;	
 
@@ -580,7 +582,7 @@ int main(int argc, char *argv[])
 	// ConstantCoefficient varE(0.32 * (dh * dh) * 2); // eps in fortran interfacial thickness
 	// try varE(6.7600e-8) new and varE(6.76e-10) original; 
 	// ConstantCoefficient varE(6.7600e-8); // eps in fortran
-	ConstantCoefficient varE(0.32); // dx2 is in M matrix in MFEM, not in K matrix
+	ConstantCoefficient  varE(gc/pow(dh,pmesh.Dimension())); // <== note here 
 	ParGridFunction Mub(&fespace);
 
 	// double varE_val = 1.2 * (dh * dh);
@@ -706,14 +708,14 @@ int main(int argc, char *argv[])
  	Me->Assemble();
  	Me->FormSystemMatrix(boundary_dofs, Mmate);
  	
-	// HypreSmoother Me_prec;
-	// Me_prec.SetType(HypreSmoother::Jacobi);
-	HypreBoomerAMG Me_prec;
-	Me_prec.SetPrintLevel(0);
+	HypreSmoother Me_prec;
+	Me_prec.SetType(HypreSmoother::Jacobi);
+	// HypreBoomerAMG Me_prec;
+	// Me_prec.SetPrintLevel(0);
 	
 	CGSolver Me_solver(MPI_COMM_WORLD);	
-	Me_solver.iterative_mode = false;
-	Me_solver.SetRelTol(1e-7);
+	// Me_solver.iterative_mode = false;
+	Me_solver.SetRelTol(1e-6);
 	Me_solver.SetAbsTol(0);
 	Me_solver.SetMaxIter(100);
 	Me_solver.SetPrintLevel(0);
@@ -817,7 +819,7 @@ int main(int argc, char *argv[])
 	Mpp.SetPrintLevel(0);
 	
 	CGSolver cgPP(MPI_COMM_WORLD);
-	cgPP.SetRelTol(1e-7);
+	cgPP.SetRelTol(1e-6);
 	cgPP.SetMaxIter(82);
 	cgPP.SetPreconditioner(Mpp);
 	cgPP.SetOperator(KmP);
@@ -862,7 +864,7 @@ int main(int argc, char *argv[])
 	GridFunctionCoefficient cKe(&kpl) ;	
 	
 	ParGridFunction RpE(&fespace);		// reaction rate for electrolyte
-	// RpE.Neg();	
+	RpE.Neg();	
 	GridFunctionCoefficient cRe(&RpE) ;	
 
 	double BvE = -0.4686;
@@ -889,7 +891,7 @@ int main(int argc, char *argv[])
 	Mpe.SetPrintLevel(0);
 		
 	CGSolver cgPE(MPI_COMM_WORLD);
-	cgPE.SetRelTol(1e-7);
+	cgPE.SetRelTol(1e-6);
 	cgPE.SetMaxIter(80);
 	cgPE.SetPreconditioner(Mpe);	
 	cgPE.SetOperator(Kml);
@@ -923,8 +925,8 @@ int main(int argc, char *argv[])
 	HypreParVector RHSl(&fespace);
 	
 	Rxn = 0.0;
-	Rxn = AvP; 
-	Rxn *= 8.0e-10 * 0.99 *2.25;
+	// Rxn = AvP; 
+	// Rxn *= 8.0e-10 * 0.99 *2.25;
 	
 	double Vcell = BvP - BvE;
 
@@ -970,7 +972,7 @@ int main(int argc, char *argv[])
 		
 	// timestepping
 	int t = 0;
-	for (int t = 0; t < 10000; t++){
+	for (int t = 0; t < 20; t++){
 	// 	while ( Vcell > Vcut){
 	// while ( Xfr < 0.971 ){
 	
@@ -984,6 +986,8 @@ int main(int argc, char *argv[])
 		// // 	  \_____|_| |_|_|     
 		// // 	==============================
 	
+		mfem::StopWatch sw;
+		sw.Start();
 			
 		Rxc = Rxn;
 		Rxc /= rho;
@@ -1009,24 +1013,25 @@ int main(int argc, char *argv[])
 				(chmPot[indxTick+1]-chmPot[indxTick]);
 			Mob(vi) = Mobil[indxTick] + (Ctmp-Ticks[indxTick])/d_X * 
 				(Mobil[indxTick+1]-Mobil[indxTick]);
+			Mob(vi) *= psi(vi); // multiply by psi for correct mobility
 		}
 
-		Mob *= psi;		// multiply by psi for correct mobility
+		// Mob *= psi;		// multiply by psi for correct mobility
 
-		Mob.Save("Results/mob");
-		Mub.Save("Results/mu");
+		// Mob.Save("Results/mob");
+		// Mub.Save("Results/mu");
 
-		// try
-		GridFunction smoothMu(&fespace);
-		GridFunction smoothMob(&fespace);
-		smoothMu.ProjectGridFunction(Mub);
-		smoothMob.ProjectGridFunction(Mob);
+		// // try
+		// GridFunction smoothMu(&fespace);
+		// GridFunction smoothMob(&fespace);
+		// smoothMu.ProjectGridFunction(Mub);
+		// smoothMob.ProjectGridFunction(Mob);
 
-		cDp.SetGridFunction(&smoothMob);	// update the coefficient for the stiffness matrix
+		// cDp.SetGridFunction(&smoothMob);	// update the coefficient for the stiffness matrix
 
-		Kx2->Update();
-		Kx2->Assemble();
-		Kx2->FormLinearSystem(boundary_dofs, CnP, Fct, KmX, X1v, Fcb);		
+		// Kx2->Update();
+		// Kx2->Assemble();
+		// Kx2->FormLinearSystem(boundary_dofs, CnP, Fct, KmX, X1v, Fcb);		
 
 
 		// cDp.SetGridFunction(&Mob);	// update the coefficient for the stiffness matrix
@@ -1037,18 +1042,18 @@ int main(int argc, char *argv[])
 		// Lap phi			
 		KmX.Mult(CpV0, Lp1);
 
-		smoothMu.GetTrueDofs(MuV);
+		Mub.GetTrueDofs(MuV);
 		// Mub.GetTrueDofs(MuV); try
 
 		// MuV += Lp1; // mu = mu_b - Lp1	
-		MuV -= Lp1; // mu = mu_b - Lp1
+		MuV += Lp1; // mu = mu_b - Lp1
 					
 		// K matrix		
 		Kc2->Update();
    		Kc2->Assemble();
    		
 		
-		Kc2->FormLinearSystem(boundary_dofs, smoothMu, Fct, Kmatp, X1v, Fcb);
+		Kc2->FormLinearSystem(boundary_dofs, Mub, Fct, Kmatp, X1v, Fcb);
 		// Kc2->FormLinearSystem(boundary_dofs, Mub, Fct, Kmatp, X1v, Fcb);
    		
 		// MuV *= PsVc;  // where PsVc is the nodal vector of psi
@@ -1074,8 +1079,8 @@ int main(int argc, char *argv[])
 			}
 			// double C_min = 1.0e-8;
 			// double C_max = 0.999999;
-			if (CpV0(p) < 0.0) { CpV0(p) = 0.0; }
-			if (CpV0(p) > 1.0) { CpV0(p) = 1.0; }
+			// if (CpV0(p) < 0.0) { CpV0(p) = 0.0; }
+			// if (CpV0(p) > 1.0) { CpV0(p) = 1.0; }
 		}
 		
 		// Recover the GridFunction from Vector.
@@ -1117,6 +1122,8 @@ int main(int argc, char *argv[])
 
 		Rxe = Rxn;
 		Rxe *= (-1.0*t_minus);	
+
+		cAe.SetGridFunction(&Rxe);
 		
 		// total reaction
 		eCrnt = 0.0;
@@ -1130,9 +1137,13 @@ int main(int argc, char *argv[])
 		MPI_Allreduce(&eCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 		infx = geCrnt/L_w;
 
-		// need to fix nbcCoef and BCs for Neumann CnE
+		// std::cout << "L_w = " << L_w << ", infx = " << infx << ", t = " << t << std::endl;
 
-		nbcCoef.constant = infx;
+		// need to fix nbcCoef and BCs for Neumann CnE
+		// Neumann BC
+		ConstantCoefficient nbcCoef(infx);
+		ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
+
 		Be2->Assemble();
 		Fet = *Be2;
 				
@@ -1141,6 +1152,8 @@ int main(int argc, char *argv[])
 			// appendix equation A-21
 			De(vi) = pse(vi)*D0*exp(-7.02-830*CnE(vi)+50000*CnE(vi)*CnE(vi));
 		}
+
+		cDe.SetGridFunction(&De);	// update the coefficient for the stiffness matrix
 		
  		// K matrix		
 		Ke2->Update();
@@ -1165,10 +1178,20 @@ int main(int argc, char *argv[])
 		Me_solver.Mult(RHSe, CeVn) ;
 		
 		// recover
-		CnE.Distribute(CeVn);    	
+		CnE.Distribute(CeVn); 
+		
+		sw.Stop();
+		if (myid == 0) {
+			std::cout << "Concentration timestep: " << t 
+					<< ", time taken  = " << sw.RealTime() 
+					<< " seconds" << std::endl; }
+
+
+		mfem::StopWatch sw2;
+		sw2.Start();
 
 		// check conservation of salt
-		if (t%500 == 0){
+		if (t%100 == 0){
 			CeC = 0.0;
 			CeT = CnE;
 			CeT *= pse;
@@ -1189,7 +1212,13 @@ int main(int argc, char *argv[])
 			
 			// if (myid==0){cout << CeAvg << " " << L_w << endl;}
 
-		}	
+		}
+		
+		sw2.Stop();
+		if (myid == 0) {
+			std::cout << "Salt Conservation timestep: " << t
+					<< ", time taken  = " << sw2.RealTime() 
+					<< " seconds" << std::endl; }
 		
 		delete TmatR;
 		delete TmatL;
@@ -1204,6 +1233,8 @@ int main(int argc, char *argv[])
 		// // 	 |_|  \___|\__,_|\___|\__|_|\___/|_| |_|
 		// ==============================================	
  
+		mfem::StopWatch sw3;
+		sw3.Start();
 
 		// electrolyte conductivity and RHS	
 		for (int vi = 0; vi < nV; vi++){
@@ -1211,6 +1242,7 @@ int main(int argc, char *argv[])
 			Dmp(vi) = pse(vi)*tc1*D0*dffe;
 			kpl(vi) = pse(vi)*tc2*D0*dffe*CnE(vi);
 		}
+		cDm.SetGridFunction(&Dmp);	// update the coefficient for the stiffness matrix
 
 		// Laplace of CnE for the RHS
 		Kl1->Update();
@@ -1220,6 +1252,8 @@ int main(int argc, char *argv[])
 		// Vector of CnE
 		CnE.GetTrueDofs(CeVn) ;
 		Kdm.Mult(CeVn, LpCe) ;
+
+		cKe.SetGridFunction(&kpl);	// update the coefficient for the stiffness matrix
 
 		Kl2->Update();
 		Kl2->Assemble();	
@@ -1309,20 +1343,29 @@ int main(int argc, char *argv[])
 			Kbw(vi) = i0C(vi)/(Frd*Ctmp)*exp(-alp*Cst1*OCV(vi)) ;
 		}
 
-		OCV.Save("Results/OCV");
-		i0C.Save("Results/i0");
-		Kfw.Save("Results/Kfw");
-		Kbw.Save("Results/Kbw");
+		// OCV.Save("Results/OCV");
+		// i0C.Save("Results/i0");
+		// Kfw.Save("Results/Kfw");
+		// Kbw.Save("Results/Kbw");
 
 		// convergence residuals
 		gErrP = 1.0;
 		gErrE = 1.0;
 		inlp = 0;
 
+		sw3.Stop();
+		if (myid == 0) {
+			std::cout << "Potential timestep: " << t
+					<< ", time taken  = " << sw3.RealTime() 
+					<< " seconds" << std::endl; }
+
 		// if (t % 100 == 0) {
 
+		mfem::StopWatch sw4;
+		sw4.Start();
+
 		// // internal loop
-		// // while (gErrP > 1.0e-9 || gErrE > 1.0e-9 ){
+		while (gErrP > 1.0e-8 || gErrE > 1.0e-8 ){
 
 			// Butler-Volmer Equation for Reaction Rate
 			for (int vi = 0; vi < nV; vi++){
@@ -1332,9 +1375,9 @@ int main(int argc, char *argv[])
 					Rxn(vi) = AvP(vi)*(Kfw(vi)*CnE(vi)*exp(-alp*Cst1*dPHE(vi)) - \
 					                   Kbw(vi)*CnP(vi)*exp( alp*Cst1*dPHE(vi)));
 				}
-				else {
-					Rxn(vi) = 0.0;
-				}
+				// else {
+				// 	Rxn(vi) = 0.0;
+				// }
 			}
 
 		// 	    std::ofstream outFile("dPHE_values_NOOP.txt"); // open file for writing
@@ -1398,6 +1441,7 @@ int main(int argc, char *argv[])
 			// force vector
 			RpP = Rxn;
 			RpP *= Frd;	
+			cRp.SetGridFunction(&RpP);
 		
 			Bp2->Assemble();
 			Fpt = *Bp2;
@@ -1451,7 +1495,8 @@ int main(int argc, char *argv[])
 		
 		
 			RpE = Rxn;
-			RpE.Neg();	
+			RpE.Neg();
+			cRe.SetGridFunction(&RpE);	
 
 			// cout << "min RpE: " << RpE.Min() << endl;
 			// cout << "max RpE: " << RpE.Max() << endl;
@@ -1503,7 +1548,13 @@ int main(int argc, char *argv[])
 			
 			// inlp += 1;
 
-		// } // internal loop
+		} // internal loop
+
+		sw4.Stop();
+		if (myid == 0) {
+			std::cout << "Reaction and Potential Advance timestep: " << t
+					<< ", time taken  = " << sw4.RealTime() 
+					<< " seconds" << std::endl; }
 
 	// // }
 
@@ -1518,18 +1569,36 @@ int main(int argc, char *argv[])
 			sCrnt += EAvg(ei)*EVol(ei) ;
 		} 			
 		MPI_Allreduce(&sCrnt, &gCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+
+
+		// dCrnt = abs(gCrnt - gTrgI);
+		// if (dCrnt < abs(gTrgI)*0.05){Vsr = 0.025*Vsr0;}
+		// else if (dCrnt < abs(gTrgI)*0.10){Vsr = 0.25*Vsr0;}		
+		// else {Vsr = 1*Vsr0;}	
+		// if (Xfr < 0.051 && gCrnt - gTrgI < 0.0){Vsr = 4*Vsr;}
 					
 		// adjust BvP for constant C rate loading
 		sgn = copysign(1, gTrgI - gCrnt);
 		dV = dt*Vsr*sgn;
-		BvP -= dV;
-		phP -= dV;
+		// BvP -= dV;
+		// phP -= dV;
+
+		BvE += dV;
+		phE += dV;
 		
 		Vcell = BvP - BvE;
 
 // // 		cout << myid << " " << sgn << " " << gTrgI-gCrnt << endl;
 		
 		tm = tm + dt;
+
+		std::cout << "timestep: " << t 
+				<< ", VCell = " << Vcell 
+				<< ", BvP = " << BvP 
+				<< ", BvE = " << BvE 
+				<< ", gCrnt = " << gCrnt 
+				<< std::endl;
 
 	
 

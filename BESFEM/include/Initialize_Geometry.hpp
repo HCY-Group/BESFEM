@@ -8,63 +8,119 @@
 
 using namespace std;
 
-
+/**
+ * @class Initialize_Geometry
+ * @brief Handles mesh, finite element space, and boundary condition initialization 
+ *        for parallel finite element battery simulations.
+ *
+ * This class provides methods to load mesh data, set up serial and parallel
+ * finite element spaces, assign global values, and configure boundary conditions.
+ */
 class Initialize_Geometry {
 private:
-    //std::vector<std::vector<std::vector<int>>> tiffData;
-    bool tiffDataLoaded = false;
+    bool tiffDataLoaded = false; ///< Flag indicating whether TIFF mesh data has been loaded.
 
 protected:
 
-    mfem::Vector elementVolumes;                       // Element volumes
-    mfem::Array<int> boundaryMarkers;                  // Boundary markers
-    std::vector<std::vector<std::vector<int>>> data;
+    mfem::Vector elementVolumes;                       ///< Volumes of mesh elements
+    mfem::Array<int> boundaryMarkers;                  ///< Boundary markers for applying conditions
+    std::vector<std::vector<std::vector<int>>> data;  ///< 3D voxel data container
 
 
 public:
     Initialize_Geometry();
     virtual ~Initialize_Geometry();
 
+    /**
+     * @brief Initializes mesh and associated distance functions.
+     * @param meshFile Path to mesh file.
+     * @param distanceFile Path to distance function file.
+     * @param comm MPI communicator.
+     * @param order Finite element polynomial order.
+     */
     void InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order);
 
-    // Mesh initialization
+    /**
+     * @brief Initializes a global serial mesh from a file.
+     * @param meshFile Path to mesh file.
+     */
     void InitializeGlobalMesh(const char* meshFile);
+
+    /**
+     * @brief Initializes a parallel mesh from the global mesh.
+     * @param comm MPI communicator.
+     */
     void InitializeParallelMesh(MPI_Comm comm);
+
+    /**
+     * @brief Reads TIFF image data for voxelized mesh creation.
+     * @param meshFile Path to TIFF file.
+     * @return 3D vector of voxel data.
+     */
     std::vector<std::vector<std::vector<int>>>ReadTiffFile(const char* meshFile);
+
+    /**
+     * @brief Creates a global mesh from voxelized TIFF data.
+     * @param tiffData 3D voxel data.
+     * @return Unique pointer to a new mfem::Mesh.
+     */
     std::unique_ptr<mfem::Mesh>CreateGlobalMeshFromTiffData(const std::vector<std::vector<std::vector<int>>>& tiffData);
 
-    // Finite element space setup
+    /**
+     * @brief Sets up the serial finite element space.
+     * @param order Polynomial order.
+     */
     void SetupFiniteElementSpace(int order);
 
-    // Parallel finite element space setup
+    /**
+     * @brief Sets up the parallel finite element space.
+     * @param order Polynomial order.
+     */
     void SetupParFiniteElementSpace(int order);
 
-    // Assign global values
+    /**
+     * @brief Assigns global values such as distance functions and voxel data.
+     * @param mesh_file Path to mesh file.
+     * @param distanceFile Path to distance function file.
+     */
     void AssignGlobalValues(const char* mesh_file, const char* distanceFile);
 
-    // Map global values to local
+    /**
+     * @brief Maps global values to local parallel data structures.
+     * @param meshFile Path to mesh file.
+     */
     void MapGlobalToLocal(const char* meshFile);
 
-    // Boundary condition setup
+    /**
+     * @brief Sets up boundary condition markers for Dirichlet and Neumann boundaries.
+     */
     void SetupBoundaryConditions();
 
-    // // Output functions
-    // void OutputToParaview(const std::string &fileName, const std::string &varName, mfem::GridFunction *gf);
-
-    // Print Mesh Information
+    /**
+     * @brief Prints information about the mesh (elements, vertices, etc.).
+     */
     void PrintMeshInfo();
 
-    // Getters for derived classes
+    /**
+     * @brief Returns the parallel mesh pointer.
+     * @return Pointer to parallel mesh.
+     */
     mfem::ParMesh *GetParallelMesh() const { return parallelMesh.get(); }
+
+    /**
+     * @brief Returns the parallel finite element space.
+     * @return Shared pointer to mfem::ParFiniteElementSpace.
+     */
     std::shared_ptr<mfem::ParFiniteElementSpace> GetParFiniteElementSpace() const {
         return parfespace;
     }
+
     int nV; ///< Number of vertices
     int nE; ///< Number of elements
     int nC; ///< Number of corners per element
 
-    int gei;                // global element indices
-    int ei;                 // local element indices
+    int gei; ///< Global element index.
+    int ei;  ///< Local element index.
 
     mfem::Array<int> nbc_w_bdr; ///< West Neumann Boundary Conditions
     mfem::Array<int> nbc_s_bdr; ///< West Neumann Boundary Conditions
@@ -77,27 +133,26 @@ public:
 
     mfem::Array<int> dbc_w_bdr; ///< West Dirichlet Boundary Conditions
     mfem::Array<int> dbc_e_bdr; ///< East Dirichlet Boundary Conditions
-
-    std::unique_ptr<mfem::Mesh> globalMesh;             // Global serial mesh
-    std::unique_ptr<mfem::ParMesh> parallelMesh;        // Parallel mesh
-    std::shared_ptr<mfem::FiniteElementSpace> feSpace;  // Serial finite element space
-    std::shared_ptr<mfem::FiniteElementSpace> globalfespace; // Parallel finite element space
-    std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; // Parallel finite element space
-    std::shared_ptr<mfem::ParFiniteElementSpace> parfespace_dg;
-    std::shared_ptr<mfem::ParFiniteElementSpace> pardimfespace_dg;
-
-    double Onm; ///< Number of grid function entries
-    std::unique_ptr<mfem::GridFunction> gDsF; ///< Global distance function grid
-    std::unique_ptr<mfem::ParGridFunction> dsF; ///< distance function grid
-    std::unique_ptr<mfem::GridFunction> gVox; ///< Global vox function grid
-    std::unique_ptr<mfem::ParGridFunction> Vox; ///< Vox function grid
-
-    std::vector<std::vector<std::vector<int>>> tiffData;
-    std::unique_ptr<mfem::H1_FECollection> gfec;
-    std::unique_ptr<mfem::H1_FECollection> pfec;
-    std::unique_ptr<mfem::DG_FECollection> pfec_dg;
     
-    // mfem::Array<int> dummy_bdr;
+    std::unique_ptr<mfem::Mesh> globalMesh;              ///< Global serial mesh.
+    std::unique_ptr<mfem::ParMesh> parallelMesh;         ///< Parallel mesh.
+    std::shared_ptr<mfem::FiniteElementSpace> feSpace;   ///< Serial finite element space.
+    std::shared_ptr<mfem::FiniteElementSpace> globalfespace; ///< Global finite element space.
+    std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; ///< Parallel finite element space.
+    std::shared_ptr<mfem::ParFiniteElementSpace> parfespace_dg; ///< Parallel DG finite element space.
+    std::shared_ptr<mfem::ParFiniteElementSpace> pardimfespace_dg; ///< Parallel DG FE space (dim).
+
+
+    double Onm; ///< Number of grid function entries.
+    std::unique_ptr<mfem::GridFunction> gDsF; ///< Global distance function.
+    std::unique_ptr<mfem::ParGridFunction> dsF; ///< Parallel distance function.
+    std::unique_ptr<mfem::GridFunction> gVox; ///< Global voxel function.
+    std::unique_ptr<mfem::ParGridFunction> Vox; ///< Parallel voxel function.
+
+    std::vector<std::vector<std::vector<int>>> tiffData; ///< TIFF voxel data.
+    std::unique_ptr<mfem::H1_FECollection> gfec; ///< Global H1 finite element collection.
+    std::unique_ptr<mfem::H1_FECollection> pfec; ///< Parallel H1 finite element collection.
+    std::unique_ptr<mfem::DG_FECollection> pfec_dg; ///< Parallel DG finite element collection.
 
 
 

@@ -4,75 +4,149 @@
 
 #include "mfem.hpp"
 #include "Concentrations_Base.hpp"
-// #include "../code/Initialize_Geometry.hpp"
-// #include "..Domain_Parameters.hpp"
-// #include "../code/SolverSteps.hpp"
 #include <memory>
 #include <vector>
 
 /**
- * @class CnCH
- * @brief Implements Cahn-Hilliard concentration evolution for battery simulations.
+ * @file CnCH.hpp
+ * @brief Cahn–Hilliard concentration evolution for battery simulations.
+ *
+ * This class advances a concentration field with a Cahn–Hilliard formulation.
  */
+
+class Initialize_Geometry;
+class Domain_Parameters;
+
+/**
+ * @defgroup concentrations Concentration Modules
+ * @brief Classes that advance concentration fields in the simulation.
+ * @{
+ */
+
+/**
+ * @class CnCH
+ * @brief Cahn–Hilliard concentration solver (solid electrode phase).
+ * @ingroup concentrations
+ *
+ * @details
+ * Implements a Cahn–Hilliard update for the concentration field:
+ * - Builds/maintains mass and stiffness operators in parallel (MFEM/Hypre).
+ * - Uses grid-function coefficients for mobility and reaction terms.
+ * - Pulls chemical potential and mobility from tabulated data and linearly
+ *   interpolates them per-DoF.
+ *
+ * Typical usage:
+ * 1. Construct with geometry and domain parameters.
+ * 2. Call Initialize() with the initial concentration and phase field \p psx.
+ * 3. Repeatedly call TimeStep() each timestep.
+ */
+
 class CnCH : public Concentrations {
 public:
-    // Constructor
+    /**
+     * @brief Construct the Cahn–Hilliard concentration solver.
+     *
+     * @param geo  Geometry/space container (mesh, parallel FESpace, boundary DOFs).
+     * @param para Domain/physics parameters (time step, material scales, etc.).
+     */
     CnCH(Initialize_Geometry &geo, Domain_Parameters &para);
 
-    // Initialize with initial concentration and psi
+    /**
+     * @brief Assemble operators and prepare the solver.
+     *
+     * Sets the initial concentration value, computes initial lithiation from \p psx,
+     * assembles the mass matrix and stiffness operators, and configures the CG
+     * solver and preconditioner.
+     *
+     * @param Cn            Concentration field (solid) to initialize.
+     * @param initial_value Initial scalar value used for Cn before masking.
+     * @param psx           Phase field ψ (used for masking/region weighting).
+     */
     void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
 
+    /**
+     * @brief Advance the concentration by one timestep (Cahn–Hilliard update).
+     *
+     * Uses tabulated \e μ(C) and \e M(C) (mobility) to build the linear systems,
+     * solves for the new concentration, and clamps void-region values.
+     *
+     * @param Rx  Reaction source field (input field used to assemble \e Rxc).
+     * @param Cn  Concentration field (in/out).
+     * @param psx Phase field ψ (masking/solid-region weighting).
+     */
     void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
-    // mfem::ParGridFunction Mub, Mob, Rxc;
     
 private:
-    // Geometry and domain references
-    Initialize_Geometry &geometry;
-    Domain_Parameters &domain_parameters;
-    std::shared_ptr<mfem::ParFiniteElementSpace> fespace;
+    // ---------- Geometry / spaces ----------
+    Initialize_Geometry &geometry;                              ///< Geometry/mesh owner
+    Domain_Parameters   &domain_parameters;                     ///< Domain/physics parameters
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace;       ///< Parallel FESpace 
+    mfem::ParMesh *pmesh;                                       ///< Parallel mesh
 
-    // State vectors
-    mfem::ParGridFunction Mub, Mob, Rxc;
-    mfem::HypreParVector phV0, Lp1, Lp2, RHS, MuV;
+    // ---------- State fields (grid functions) ----------
+    mfem::ParGridFunction Mub;   ///< Chemical potential field μ(C) 
+    mfem::ParGridFunction Mob;   ///< Mobility field M(C)·ψ 
+    mfem::ParGridFunction Rxc;   ///< Reaction source term mapped to grid
 
-    std::unique_ptr<mfem::ParBilinearForm> M_init; 
-    std::shared_ptr<mfem::HypreParMatrix> MmatCH;
+    // ---------- Work vectors (true DoFs / Hypre) ----------
+    mfem::HypreParVector phV0;   ///< Generic scratch vector.
+    mfem::HypreParVector Lp1;    ///< Laplacian( C ) intermediate.
+    mfem::HypreParVector Lp2;    ///< Accumulated RHS contributions.
+    mfem::HypreParVector RHS;    ///< Generic RHS buffer.
+    mfem::HypreParVector MuV;    ///< True-DoF chemical potential vector.
+    mfem::HypreParVector PsVc;   ///< True-DoF phase-field mask ψ.
 
-    // Solver and preconditioner
-    std::shared_ptr<mfem::CGSolver> MCH_solver;
-    mfem::HypreSmoother MCH_prec;
+    mfem::HypreParVector CpV0;   ///< Current concentration (true DoFs).
+    mfem::HypreParVector RHCp;   ///< Mass-matrix product + source (RHS).
+    mfem::HypreParVector CpVn;   ///< Previous-step concentration (optional).
 
-    std::unique_ptr<mfem::ParBilinearForm> Grad_MForm;
-    std::shared_ptr<mfem::HypreParMatrix> Grad_MM; 
+    // ---------- Operators (forms and matrices) ----------
+    std::unique_ptr<mfem::ParBilinearForm> M_init;  ///< Mass form (assembled once, updated if needed).
+    mfem::HypreParMatrix MmatCH;                    ///< Mass matrix M for Cahn–Hilliard.
 
-    std::unique_ptr<mfem::ParLinearForm> B_init; 
+    mfem::CGSolver       MCH_solver;                ///< CG solver for the mass solve M x = b.
+    mfem::HypreSmoother  MCH_prec;                  ///< Jacobi smoother (or other) as preconditioner.
 
-    std::unique_ptr<mfem::ParBilinearForm> Grad_EForm;
-    std::shared_ptr<mfem::HypreParMatrix> Grad_EM;
+    std::unique_ptr<mfem::ParBilinearForm> Grad_MForm; ///< Stiffness form for mobility-weighted operator.
+    mfem::HypreParMatrix Grad_MM;                      ///< Stiffness matrix with mobility (K_M).
 
-    mfem::ParLinearForm Fct; ///< Linear form for free energy calculations
-    mfem::HypreParVector Fcb; ///< Vector for storing free energy contributions
+    std::unique_ptr<mfem::ParLinearForm>   B_init;     ///< Linear form for reaction/forcing terms.
 
-    mfem::GridFunctionCoefficient cDp;
-    mfem::GridFunctionCoefficient cAp;
+    std::unique_ptr<mfem::ParBilinearForm> Grad_EForm; ///< Stiffness form for energy operator.
+    mfem::HypreParMatrix Grad_EM;                      ///< Energy matrix (e.g., Laplacian scaling).
 
-    std::shared_ptr<mfem::HypreParVector> CpV0; ///< Initial particle concentration values
-    mfem::HypreParVector PsVc; ///< Vector for storing true degrees of freedom in the solid region
-    std::shared_ptr<mfem::HypreParVector> RHCp; ///< Right-hand-side vector at the current time step
-    std::shared_ptr<mfem::HypreParVector> CpVn; ///< Particle concentration values at the next time step
+    mfem::ParLinearForm Fct;  ///< Assembled linear form for free-energy / reaction contributions.
+    mfem::HypreParVector Fcb; ///< True-DoF vector holding assembled linear-form values.
 
-    // Interpolation tables
-    mfem::Vector Ticks = mfem::Vector(101);
-    mfem::Vector chmPot = mfem::Vector(101);
-    mfem::Vector Mobility = mfem::Vector(101);
-    mfem::Vector OCV = mfem::Vector(101);
-    mfem::Vector i0 = mfem::Vector(101);
+    // ---------- Coefficients ----------
+    mfem::GridFunctionCoefficient cDp; ///< Mobility coefficient wrapper (binds to @ref Mob).
+    mfem::GridFunctionCoefficient cAp; ///< Reaction coefficient wrapper (binds to @ref Rxc).
 
-    // Interpolates mobility using table values
+    // ---------- Tabulated material data (size = 101) ----------
+    mfem::Vector Ticks   = mfem::Vector(101); ///< Concentration ticks in [0,1].
+    mfem::Vector chmPot  = mfem::Vector(101); ///< Chemical potential μ(C) table.
+    mfem::Vector Mobility= mfem::Vector(101); ///< Mobility M(C) table (scaled).
+    mfem::Vector OCV     = mfem::Vector(101); ///< Open-circuit voltage table.
+    mfem::Vector i0      = mfem::Vector(101); ///< Exchange-current-density table.
+
+    /**
+     * @brief Linear interpolation utility for tabulated data.
+     *
+     * Bounds \p cn to (1e-6, 0.999999) and performs linear interpolation on
+     * the provided \p data using uniform tick spacing (0.01).
+     *
+     * @param cn    Concentration value in [0,1].
+     * @param ticks Tick vector (expected 0.00, 0.01, ..., 1.00).
+     * @param data  Data values aligned with \p ticks.
+     * @return Interpolated value at concentration \p cn.
+     */    
     double GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vector &data);
 
 
 };
+
+/** @} */ // end of group concentrations
+
 
 #endif // CNCH_HPP

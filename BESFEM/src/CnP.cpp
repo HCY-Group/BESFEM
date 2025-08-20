@@ -1,7 +1,4 @@
-/**
- * @file CnP.cpp
- * @brief Implementation of the particle concentration class for battery simulations.
- */
+
 
 #include "../include/CnP.hpp"
 #include "../inputs/Constants.hpp"

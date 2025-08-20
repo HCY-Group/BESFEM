@@ -1,7 +1,3 @@
-/**
- * @file Current.cpp
- * @brief Implementation of the Current class for controlling current in battery simulations.
- */
 
 #include "../include/Current.hpp"
 #include "../include/Initialize_Geometry.hpp"
@@ -26,8 +22,7 @@ void Current::Constant(mfem::ParGridFunction &phx, double &global_current){
     // Adjust the boundary value and particle potential
     BvP -= dV; 
     phx -= dV;
-
-    
+   
 }
 
 

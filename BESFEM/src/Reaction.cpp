@@ -318,8 +318,8 @@ double Reaction::GetTableValues(double cn, const mfem::Vector &ticks, const mfem
  void Reaction::Initialize(mfem::ParGridFunction &Rx, double initial_value)
  {
      SetInitialReaction(Rx, initial_value);
-     Rx = AvP; // Scale by active particle surface area
-     Rx *= 8.0e-10 * 0.99 * 2.25; // Apply a scaling factor
+    //  Rx = AvP; // Scale by active particle surface area
+    //  Rx *= 8.0e-10 * 0.99 * 2.25; // Apply a scaling factor
  }
  
  void Reaction::SetInitialReaction(mfem::ParGridFunction &Rx, double initial_value)
@@ -377,9 +377,9 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn
 					                   (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
 
         }
-        else {
-            Rx(vi) = 0.0; // No reaction if no interface
-        }
+        // else {
+        //     Rx(vi) = 0.0; // No reaction if no interface
+        // }
     }
 
     std::ofstream outFile("dPHE_values_OOP.txt"); // open file for writing

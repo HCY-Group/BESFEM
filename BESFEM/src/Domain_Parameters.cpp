@@ -9,9 +9,9 @@
 #include <stdexcept>
 #include <vector>
 
+
 double gTrgI = 0.0;
 
-// Constructor
 Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo)
     : geometry(geo), nV(geo.nV), nE(geo.nE), nC(geo.nC), dsF(geo.dsF.get()), pmesh(geo.parallelMesh.get()),
     fespace(geo.parfespace)
@@ -111,12 +111,8 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
 
     mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
     AvP->ProjectCoefficient(AvP_coeff);
-    
-    // AvP->Save("../outputs/Results/AvP");
-    // AvB->Save("../outputs/Results/AvB");
 
 }
-
 
 void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction& grid_function, const mfem::Vector& element_volumes, double& local_total, double& global_total) {
     local_total = 0.0;
@@ -176,6 +172,7 @@ void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
     // Perform global MPI reduction to get the total target current
     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 }
+
 
 void Domain_Parameters::PrintInfo() {
     if (mfem::Mpi::WorldRank() == 0) // only print on rank 0

@@ -16,6 +16,8 @@ namespace Constants {
     
     // const double dh = 0.5e-4;                               ///< Mesh element size
     const double dh = 0.0000325; 
+
+    const double gc = 3.3800e-10 *2;			// gradient coefficient
     
     // const double zeta = 1.0 * 0.375;                        ///< Interfacial thickness
     const double zeta = 1.0;                        ///< Interfacial thickness
@@ -28,6 +30,7 @@ namespace Constants {
     
     // const double dt = 1.864558472553700e-01 / 40;           ///< Time step size
     const double dt = 0.0105625;
+    // const double dt = 0.02880695
 
     const double tm = 0.0;                                  ///< Initial simulation time
     const double t_minus = 7.619047619047619e-01;           ///< Transference number (ratio of cation conductivity to total conductivity)

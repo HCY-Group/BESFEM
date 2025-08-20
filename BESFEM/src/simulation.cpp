@@ -116,31 +116,62 @@ int main(int argc, char *argv[]) {
     // // Particle concentration initialization with a grid function and initial value
     // CnP particle_concentration(geometry, domain_parameters);
     // mfem::ParGridFunction CnP_gf(geometry.parfespace.get());
-    // particle_concentration.Initialize(CnP_gf, 0.3, *domain_parameters.psi); 
+    // particle_concentration.Initialize(CnP_gf, 0.3, *domain_parameters.psi);
+    
+    // mfem::StopWatch sw;
+    // sw.Start();
 
     // Particle concentration initialization with a grid function and initial value
     CnCH particle_concentration(geometry, domain_parameters);
     mfem::ParGridFunction CnCH_gf(geometry.parfespace.get());
     particle_concentration.Initialize(CnCH_gf, 2.02e-2, *domain_parameters.psi);  // initial value: 2.02d-2
 
+    // sw.Stop();
+    // if (mfem::Mpi::WorldRank() == 0) {
+    //     std::cout << "CnCH initialization time: " << sw.RealTime() << " seconds" << std::endl;
+    // }
+
+    // mfem::StopWatch sw2;
+    // sw2.Start();
+
     // Electrolyte concentration initialization with a grid function and initial value
     CnE electrolyte_concentration(geometry, domain_parameters);
     mfem::ParGridFunction CnE_gf(geometry.parfespace.get());
     electrolyte_concentration.Initialize(CnE_gf, 0.001005, *domain_parameters.pse); 
 
+    // sw2.Stop();
+    // if (mfem::Mpi::WorldRank() == 0) {
+    //     std::cout << "CnE initialization time: " << sw2.RealTime() << " seconds" << std::endl;
+    // }
+
     // Initialize Potential Classes
+
+    // mfem::StopWatch sw3;
+    // sw3.Start();
 
     // Particle potential initialization with a grid function and initial value
     PotP particle_potential(geometry, domain_parameters);
     mfem::ParGridFunction phP_gf(geometry.parfespace.get());
-    // particle_potential.Initialize(phP_gf, 2.9395);
     particle_potential.Initialize(phP_gf, -0.1, *domain_parameters.psi);
+
+    // sw3.Stop();
+    // if (mfem::Mpi::WorldRank() == 0) {
+    //     std::cout << "PotP initialization time: " << sw3.RealTime() << " seconds" << std::endl;
+    // }   
+
+
+    // mfem::StopWatch sw4;
+    // sw4.Start();
 
     // Electrolyte potential initialization with a grid function and initial value
     PotE electrolyte_potential(geometry, domain_parameters);
     mfem::ParGridFunction phE_gf(geometry.parfespace.get());
-    // electrolyte_potential.Initialize(phE_gf, -1.0);
     electrolyte_potential.Initialize(phE_gf, -0.4686, *domain_parameters.pse);
+
+    // sw4.Stop();
+    // if (mfem::Mpi::WorldRank() == 0) {
+    //     std::cout << "PotE initialization time: " << sw4.RealTime() << " seconds" << std::endl;
+    // }
 
     // Initialize Reaction Class
 
@@ -148,7 +179,7 @@ int main(int argc, char *argv[]) {
     Reaction reaction(geometry, domain_parameters);
     mfem::ParGridFunction Rxn_gf(geometry.parfespace.get());
     reaction.Initialize(Rxn_gf, 0.0);
-    // reaction.Initialize(Rxn_gf, 1e-8);
+    // reaction.Initialize(Rxn_gf, 1.0e-8);
 
     // Initialize Current Class
 
@@ -159,6 +190,8 @@ int main(int argc, char *argv[]) {
     double global_current = 0.0;
     double VCell = particle_potential.BvP - electrolyte_potential.BvE;
 
+    // std::cout << "Initial VCell = " << VCell << std::endl;
+
     // Main Simulation Loop
 
     int t = 0;
@@ -168,56 +201,86 @@ int main(int argc, char *argv[]) {
     // while (particle_concentration.GetLithiation() < 0.98) {
     for (int t = 0; t < num_timesteps; ++t) {
 
+        // mfem::StopWatch sw5;
+        // sw5.Start();
+
         particle_concentration.TimeStep(Rxn_gf, CnCH_gf, *domain_parameters.psi);
         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
 
-        // Only call SaltConservation every 500 timesteps
-        if (t > 0 && t % 500 == 0){
+        // sw5.Stop();
+        // if (mfem::Mpi::WorldRank() == 0) {
+        //     std::cout << "Concentration Time step " << t << " took " << sw5.RealTime() << " seconds" << std::endl;
+        // }
+
+        // mfem::StopWatch sw6;
+        // sw6.Start();
+
+        // Only call SaltConservation every 100 timesteps
+        if (t > 0 && t % 100 == 0){
                 electrolyte_concentration.SaltConservation(CnE_gf, *domain_parameters.pse);
         }
 
+        // sw6.Stop();
+        // if (mfem::Mpi::WorldRank() == 0) {
+        //     std::cout << "Salt Conservation Time step " << t << " took " << sw6.RealTime() << " seconds" << std::endl;
+        // }
+
+        // mfem::StopWatch sw7;
+        // sw7.Start();
+
         particle_potential.TimeStep(CnCH_gf, *domain_parameters.psi, phP_gf);
-        electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf, *electrolyte_concentration.CeVn);
+        electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf, electrolyte_concentration.CeVn);
+
+        // sw7.Stop();
+        // if (mfem::Mpi::WorldRank() == 0) {
+        //     std::cout << "Potential Time step " << t << " took " << sw7.RealTime() << " seconds" << std::endl;
+        // }   
 
         reaction.ExchangeCurrentDensity(CnCH_gf);
 
         double globalerror_P = 1.0; // Error for particle potential
         double globalerror_E = 1.0; // Error for electrolyte potential
+
+        // mfem::StopWatch sw8;
+        // sw8.Start();
  
-        // // while (globalerror_P > 1.0e-9 || globalerror_E > 1.0e-9) {
-        //     // Update reaction rates using the Butler-Volmer equation
+        while (globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8) {
+            // Update reaction rates using the Butler-Volmer equation
             reaction.ButlerVolmer(Rxn_gf, CnCH_gf, CnE_gf, phP_gf, phE_gf);
 
             particle_potential.Advance(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
             electrolyte_potential.Advance(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
-        // // }
+        }
+
+        // sw8.Stop();
+        // if (mfem::Mpi::WorldRank() == 0) {
+        //     std::cout << "Reaction and Potential Advance Time step " << t << " took " << sw8.RealTime() << " seconds" << std::endl;
 
         reaction.TotalReactionCurrent(Rxn_gf, global_current);
+        // }
 
         double sgn = copysign(1.0, domain_parameters.gTrgI - global_current);
         double dV = Constants::dt * Constants::Vsr * sgn;
-        particle_potential.BvP -= dV; // Adjust particle potential based on target current
-        phP_gf -= dV; // Update the grid function for particle potential
+        electrolyte_potential.BvE += dV; // Adjust electrolyte potential based on target current
+        phE_gf += dV; // Update the grid function for electrolyte potential
 
         VCell = particle_potential.BvP - electrolyte_potential.BvE;
+
+        // std::cout << "particle potential BvP = " << particle_potential.BvP
+        //           << ", electrolyte potential BvE = " << electrolyte_potential.BvE
+        //           << ", VCell = " << VCell
+        //           << ", global current = " << global_current
+        //           << std::endl;
 
         if (t % 200 == 0 && mfem::Mpi::WorldRank() == 0) {
             std::cout << "timestep: " << t
                     << ", Xfr = " << particle_concentration.GetLithiation()
-                    << ", VCell = " << VCell << ", BvP = " << particle_potential.BvP
+                    << ", VCell = " << VCell << ", BvE = " << electrolyte_potential.BvE
+                    << ", current = " << global_current
                     << std::endl;
         }
 
     }
-
-    phP_gf.Save((outdir + "/phP").c_str());
-    phE_gf.Save((outdir + "/phE").c_str());
-
-    // Multiply Grid Functions for Error Calculations
-    CnCH_gf *= *domain_parameters.psi;
-    phP_gf *= *domain_parameters.psi;
-    CnE_gf *= *domain_parameters.pse;
-    phE_gf *= *domain_parameters.pse;
 
     // Save outputs into the timestamped folder
     geometry.parallelMesh->Save((outdir + "/pmesh").c_str());
@@ -225,12 +288,23 @@ int main(int argc, char *argv[]) {
     domain_parameters.pse->Save((outdir + "/pse").c_str());
     domain_parameters.AvB->Save((outdir + "/AvB").c_str());
     domain_parameters.AvP->Save((outdir + "/AvP").c_str());
-
+    
     CnCH_gf.Save((outdir + "/CnCH").c_str());
     CnE_gf.Save((outdir + "/CnE").c_str());
+    phP_gf.Save((outdir + "/phP").c_str());
+    phE_gf.Save((outdir + "/phE").c_str());
+    Rxn_gf.Save((outdir + "/Rxn").c_str());
+
+    // Multiply Grid Functions for Error Calculations
+    CnCH_gf *= *domain_parameters.psi;
+    phP_gf *= *domain_parameters.psi;
+    CnE_gf *= *domain_parameters.pse;
+    phE_gf *= *domain_parameters.pse;
+
+    CnCH_gf.Save((outdir + "/pCnCH").c_str());
+    CnE_gf.Save((outdir + "/pCnE").c_str());
     phP_gf.Save((outdir + "/pphP").c_str());
     phE_gf.Save((outdir + "/pphE").c_str());
-    Rxn_gf.Save((outdir + "/Rxn").c_str());
 
 }
     // Finalize HYPRE processing
@@ -249,5 +323,7 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
+
 
 

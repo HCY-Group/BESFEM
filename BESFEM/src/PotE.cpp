@@ -19,7 +19,7 @@ PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para)
     
     {
 
-    cgPE_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
+    cgPE_solver = mfem::CGSolver(MPI_COMM_WORLD);
     
     B1t = mfem::ParLinearForm(fespace.get());
     X1v = mfem::HypreParVector(fespace.get());
@@ -39,8 +39,10 @@ PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para)
 
     Kl1 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Initialize the bilinear form for conductivity
     Kl2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Initialize the bilinear form for conductivity
-    Kml = std::make_shared<mfem::HypreParMatrix>(); // Initialize the stiffness matrix for conductivity
-    Kdm = std::make_shared<mfem::HypreParMatrix>(); // Initialize the stiffness matrix for conductivity
+    // Kml = std::make_shared<mfem::HypreParMatrix>(); // Initialize the stiffness matrix for conductivity
+    // Kdm = std::make_shared<mfem::HypreParMatrix>(); // Initialize the stiffness matrix for conductivity
+    // Kml = mfem::HypreParMatrix; // Initialize the stiffness matrix for conductivity
+    // Kdm = mfem::HypreParMatrix; // Initialize the stiffness matrix for diffus
 
     pE0 = mfem::ParGridFunction(fespace.get()); // Initialize the potential grid function
     Xe0 = mfem::HypreParVector(fespace.get()); // Initialize the solution vector for potential
@@ -88,9 +90,9 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     // cgPE_solver->SetPreconditioner(Mpe);  // attach once (object stays the same)
     // cgPE_solver->SetOperator(*Kml);       // bind initial operator
 
-    Mpe.SetOperator(*Kml);
+    Mpe.SetOperator(Kml);
     Mpe.SetPrintLevel(0); // Set the print level for the preconditioner
-    SolverSteps::SolverConditions(Kml, *cgPE_solver, Mpe); // Set up the solver conditions
+    SolverSteps::SolverConditions(Kml, cgPE_solver, Mpe); // Set up the solver conditions
 
     SolverSteps::InitializeForceTerm(cRe, Bl2); // Initialize the force term
     SolverSteps::Update(Bl2); // Update the force term
@@ -113,7 +115,7 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
     SolverSteps::FormLinearSystem(Kl1, boundary_dofs, potential, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
 
     Cn.GetTrueDofs(CeVn); // Get the true degrees of freedom for concentration
-    Kdm->Mult(CeVn, LpCe); 
+    Kdm.Mult(CeVn, LpCe); 
 
     // cKe.SetGridFunction(&kpl); // Set the conductivity coefficient
     SolverSteps::Update(Kl2); // Update the conductivity matrix
@@ -125,19 +127,19 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system
 
-    Mpe.SetOperator(*Kml); // Set the operator for the preconditioner
+    Mpe.SetOperator(Kml); // Set the operator for the preconditioner
     // Mpe.SetPrintLevel(0);
 
     // cgPE_solver->SetPreconditioner(Mpe); // Attach the preconditioner to the solver
-    cgPE_solver->SetOperator(*Kml); // Set the operator for the solver
+    cgPE_solver.SetOperator(Kml); // Set the operator for the solver
 
 }
 
 void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
 {
-    Potentials::AssembleForceVector(Rx, RpE, -1.0, cRe, Bl2, Flt); // Create reaction field
-    // RpE = Rx;
-    // RpE.Neg();
+    // Potentials::AssembleForceVector(Rx, RpE, -1.0, cRe, Bl2, Flt); // Create reaction field
+    RpE = Rx;
+    RpE.Neg();
 
     // cout << "Min Rx: " << Rx.Min() << endl;
     // cout << "Max Rx: " << Rx.Max() << endl;
@@ -145,8 +147,8 @@ void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     // // cout << "Min RpE: " << RpE.Min() << endl;
     // // cout << "Max RpE: " << RpE.Max() << endl;
 
-    // Bl2->Assemble();
-    // Flt = *Bl2;
+    Bl2->Assemble();
+    Flt = *Bl2;
 
     mfem::ConstantCoefficient dbc_w_Coef(BvE); // Coefficient for Dirichlet boundary conditions
     phx.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
@@ -161,19 +163,27 @@ void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     // cout << "min Flb: " << Flb.Min() << endl;
     // cout << "max Flb: " << Flb.Max() << endl;
 
+    // cout << "completed assembling the force term system." << endl;
+
     RHSl = Flb;
     RHSl += LpCe;
-
-    // cout << "norml2 RHSl: " << RHSl.Norml2() << endl;
-    // cout << "max RHSl: " << RHSl.Max() << endl;
 
     pE0 = phx; // Store the current potential field
     pE0.GetTrueDofs(Xe0); // Extract degrees of freedom
 
-    Mpe.SetOperator(*Kml);
-    cgPE_solver->SetOperator(*Kml);
+    // cout << "completed extracting degrees of freedom." << endl;
 
-    cgPE_solver->Mult(RHSl, Xe0); // Solve for the error term
+    Mpe.SetOperator(Kml);
+
+    // cout << "Setting up the CG solver..." << endl;
+
+    cgPE_solver.SetOperator(Kml);
+
+    // cout << "Solving the system..." << endl;
+
+    cgPE_solver.Mult(RHSl, Xe0); // Solve for the error term
+
+    // cout << "completed solving for the error term." << endl;
 
     // cout << "min Xe0: " << Xe0.Min() << endl;
     // cout << "max Xe0: " << Xe0.Max() << endl;

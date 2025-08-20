@@ -6,8 +6,6 @@
 #include "Initialize_Geometry.hpp"
 #include "Domain_Parameters.hpp"
 
-// #include "Concentrations_Base.hpp"
-
 /**
  * @class Current
  * @brief Class for handling current control in battery simulations
@@ -53,8 +51,6 @@ private:
     double sgn; ///< Sign of the difference between the target and global current
     double dV; ///< Voltage adjustment step based on the target current
  
-
-
 };
 
 

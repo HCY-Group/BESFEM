@@ -17,7 +17,8 @@ PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
     ess_tdof_list_e(geo.ess_tdof_list_e), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get())
     
     {
-    cgPP_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
+    // cgPP_solver = std::make_shared<mfem::CGSolver>(MPI_COMM_WORLD);
+    cgPP_solver = mfem::CGSolver(MPI_COMM_WORLD);
     B1t = mfem::ParLinearForm(fespace.get());
     X1v = mfem::HypreParVector(fespace.get());
     B1v = mfem::HypreParVector(fespace.get());
@@ -33,7 +34,7 @@ PotP::PotP(Initialize_Geometry &geo, Domain_Parameters &para)
     Fpt = mfem::ParLinearForm(fespace.get());
 
     Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Initialize the bilinear form for conductivity
-    KmP = std::make_shared<mfem::HypreParMatrix>(); // Initialize the stiffness matrix for conductivity
+    // KmP = mfem::HypreParMatrix; // Initialize the stiffness matrix for conductivity
 
     pP0 = mfem::ParGridFunction(fespace.get()); // Initialize the potential grid function
     }
@@ -81,9 +82,9 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     // cgPP_solver->SetPreconditioner(Mpp);  // attach once (object stays the same)
     // cgPP_solver->SetOperator(*KmP);       // bind initial operator
 
-    Mpp.SetOperator(*KmP); // Set the operator for the preconditioner
+    Mpp.SetOperator(KmP); // Set the operator for the preconditioner
     Mpp.SetPrintLevel(0);
-    SolverSteps::SolverConditions(KmP, *cgPP_solver, Mpp); // Set up the solver conditions
+    SolverSteps::SolverConditions(KmP, cgPP_solver, Mpp); // Set up the solver conditions
 
     // cRp.SetGridFunction(&RpP); // Set the reaction field coefficient
     SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term
@@ -133,67 +134,24 @@ void PotP::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     Bp2 -> Assemble();
     Fpt = *Bp2; // Assign the force term
 
-    // cout << "BvP: " << BvP << endl;
     mfem::ConstantCoefficient dbc_e_Coef(BvP);	
 
     phx.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
-    // Kp2->FormLinearSystem(ess_tdof_list_e, phx, Fpt, *KmP, X1v, Fpb); // Assemble the force term system
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
-
 
     pP0 = phx; // Store the current potential field
     pP0.GetTrueDofs(Xs0); // Extract degrees of freedom
 
     // Rebind operator & preconditioner to this KmP **every time**
-    Mpp.SetOperator(*KmP);
-    // cgPP_solver->SetPreconditioner(Mpp);
-    cgPP_solver->SetOperator(*KmP);
-    // cgPP_solver->iterative_mode = false;
+    Mpp.SetOperator(KmP);
+    cgPP_solver.SetOperator(KmP);
 
-    cgPP_solver->Mult(Fpb, Xs0); // Solve for the error term
+    cgPP_solver.Mult(Fpb, Xs0); // Solve for the error term
     phx.Distribute(Xs0); // Distribute the updated values
 
     Potentials::ComputeGlobalError(pP0, phx, psx, gerror, gtPsi); // Compute global error
     
-    
-    
-    
-    
-    
-    
-    
-    // dbc_e_bdr = 0; 
-    // dbc_e_bdr[0] = 1;
-	// mfem::Array<int> ess_tdof_list_e(0);
-
-    // Potentials::AssembleForceVector(Rx, RpP, Constants::Frd, cRp, Bp2, Fpt); // Create reaction field
-    
-    // mfem::ConstantCoefficient dbc_e_Coef(BvP); // Coefficient for Dirichlet boundary conditions
-    // phx.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
-    
-    // fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
-    // // std::cout << "[PotP::Advance] Essential DOFs: " << ess_tdof_list_e.Size() << std::endl;
-    
-    // SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
-    // // Kp2->FormLinearSystem(ess_tdof_list_e, phx, Fpt, *KmP, X1v, Fpb);
-
-
-    // pP0 = phx; // Store the current potential field
-    // pP0.GetTrueDofs(Xs0); // Extract degrees of freedom
-    
-    // Mpp.SetOperator(*KmP); // Set the preconditioner operator
-    // // Mpp.SetPrintLevel(0);
-
-    // // cgPP_solver->SetPreconditioner(Mpp); // Attach the preconditioner to the solver
-    // // cgPP_solver->SetOperator(*KmP); // Set the operator for the solver 
-    
-    // SolverSteps::SolverConditions(KmP, *cgPP_solver, Mpp); // Set up the solver conditions
-
-    // cgPP_solver->Mult(Fpb, Xs0); // Solve for the error term
-    // phx.Distribute(Xs0); // Distribute the updated values
-
-    // Potentials::ComputeGlobalError(pP0, phx, psx, gerror, gtPsi); // Compute global error
 }
 
 
