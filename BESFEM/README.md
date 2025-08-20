@@ -1,5 +1,12 @@
 # BESFEM
 
+## Things to Consider for Code Review
+- Ideas on handling boundary conditions for different geometries (where should the user specify?)
+- Concentrations Base currently inherits SolverSteps, should this just be usage rather than inheritance?
+- How should users make changes? Through terminal command lines, editing Constant.cpp file, GUI?
+
+
+
 
 ## How to Run the Code
 1. Clone the repository
