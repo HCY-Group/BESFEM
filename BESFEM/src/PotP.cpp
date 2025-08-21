@@ -72,17 +72,19 @@ void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 {
 	mfem::ConstantCoefficient dbc_e_Coef(BvP);
 
-    // comment out for Cahn-Hilliard Disk!
+    // // comment out below for Cahn-Hilliard Disk!
 
-    ParticleConductivity(Cn, psx); // Update conductivity
-    SolverSteps::Update(Kp2); // Update the stiffness matrix
+    // ParticleConductivity(Cn, psx); // Update conductivity
+    // SolverSteps::Update(Kp2); // Update the stiffness matrix
 
-    potential.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
+    // potential.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
 
-    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
+    // SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
 
-    Mpp.SetOperator(KmP); // Set the preconditioner operator
-    cgPP_solver.SetOperator(KmP); // Set the operator for the solver
+    // Mpp.SetOperator(KmP); // Set the preconditioner operator
+    // cgPP_solver.SetOperator(KmP); // Set the operator for the solver
+
+    // // comment out above for Cahn-Hilliard Disk!
 
 }
 

@@ -21,6 +21,7 @@
     - ⚠️ make sure you go to `Constants.cpp` file and uncomment the section for rectangle
     - ⚠️ change `particle_concentration` in `simulation.cpp` to start with `CnP`and NOT `CnCH`
     - ⚠️ change all of the `Initialize` lines in `simulation.cpp` to the line underneath
+    - ⚠️ go into `PotP.cpp` and uncomment the chunk in `TimeStep`
     - `mpirun -np 1 simulation -m ../inputs/Mesh_3x90_r.mesh -d ../inputs/dsF_3x90_r.txt -t r -n 3`
 
 
@@ -63,3 +64,12 @@
 ## BESFEM Equations
 
 ![Alt text](equations.png)
+
+Additional Notes:
+- A mass matrix is used for anything with a time derivative
+    - `AddDomainIntegrator(new mfem::MassIntegrator)`
+
+- A stiffness matrix is used for anything with ∇ (PDEs)
+    - `AddDomainIntegrator(new mfem::DiffusionIntegrator)`
+    
+- `FormLinearSystem(Array, x, b, A, X, B)` results in `A(X) = B`
