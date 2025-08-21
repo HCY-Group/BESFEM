@@ -58,3 +58,8 @@
 1. `cd outputs/Results`
 2. `rm -rf 2025*/`
 
+
+
+## BESFEM Equations
+
+![Alt text](equations.png)
