@@ -115,10 +115,10 @@ void SolverSteps::Update(std::unique_ptr<mfem::ParBilinearForm> &B) {
 
 void SolverSteps::SolverConditions(mfem::HypreParMatrix &Mmat, mfem::CGSolver &solver, mfem::Solver &preconditioner){
     // Set up the solver for the mass matrix.
-    // solver.iterative_mode = false; // Use direct solving for the system matrix
+    // solver.iterative_mode = true; // Use direct solving for the system matrix
     solver.SetRelTol(1e-6); // Set relative tolerance for the solver
     solver.SetAbsTol(0.0); // Set absolute tolerance for the solver
-    solver.SetMaxIter(80); // Limit the maximum number of iterations
+    solver.SetMaxIter(102); // Limit the maximum number of iterations
     solver.SetPrintLevel(0); // Suppress output from the solver
     solver.SetPreconditioner(preconditioner); // Attach the preconditioner to the solver
     solver.SetOperator(Mmat); // Set the mass matrix as the operator to solve

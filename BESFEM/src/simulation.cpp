@@ -197,13 +197,23 @@ int main(int argc, char *argv[]) {
 
         double globalerror_P = 1.0; // Error for particle potential
         double globalerror_E = 1.0; // Error for electrolyte potential
+
+        mfem::StopWatch sw1;
+        sw1.Start();
  
         while (globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8) {
+
+
             // Update reaction rates using the Butler-Volmer equation
             reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
 
             particle_potential.Advance(Rxn_gf, phP_gf, *domain_parameters.psi, globalerror_P);
             electrolyte_potential.Advance(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
+        }
+
+        sw1.Stop();
+        if(mfem::Mpi::WorldRank() == 0) {
+            std::cout << "Timestep " << t << " advance time: " << sw1.RealTime() << " seconds" << std::endl;
         }
 
         reaction.TotalReactionCurrent(Rxn_gf, global_current);
@@ -215,7 +225,7 @@ int main(int argc, char *argv[]) {
 
         VCell = particle_potential.BvP - electrolyte_potential.BvE;
 
-        if (t % 200 == 0 && mfem::Mpi::WorldRank() == 0) {
+        if (t % 1 == 0 && mfem::Mpi::WorldRank() == 0) {
             std::cout << "timestep: " << t
                     << ", Xfr = " << particle_concentration.GetLithiation()
                     << ", VCell = " << VCell << ", BvE = " << electrolyte_potential.BvE

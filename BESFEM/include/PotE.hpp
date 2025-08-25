@@ -102,7 +102,8 @@ private:
 
     // ---------- Solver / preconditioner ----------
     mfem::CGSolver       cgPE_solver; ///< Conjugate gradient solver.
-    mfem::HypreBoomerAMG Mpe;         ///< AMG preconditioner for potential solve.
+    std::unique_ptr<mfem::HypreBoomerAMG> Mpe; ///< BoomerAMG preconditioner (built once with KmP)
+
 
     // ---------- Forms / matrices ----------
     std::unique_ptr<mfem::ParBilinearForm> Kl1; ///< Conductivity bilinear form.

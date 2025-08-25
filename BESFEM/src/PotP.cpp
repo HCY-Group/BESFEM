@@ -55,9 +55,12 @@ void PotP::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
     
-    Mpp.SetOperator(KmP); // Set the operator for the preconditioner
-    Mpp.SetPrintLevel(0);
-    SolverSteps::SolverConditions(KmP, cgPP_solver, Mpp); // Set up the solver conditions
+    // Mpp.SetOperator(KmP); // Set the operator for the preconditioner
+    // Mpp.SetPrintLevel(0);
+
+    Mpp = std::make_unique<mfem::HypreBoomerAMG>(KmP);  // builds hierarchy once
+    Mpp->SetPrintLevel(0);
+    SolverSteps::SolverConditions(KmP, cgPP_solver, *Mpp); // Set up the solver conditions
 
     // cRp.SetGridFunction(&RpP); // Set the reaction field coefficient
     SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term
@@ -81,7 +84,7 @@ void PotP::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     // SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
 
-    // Mpp.SetOperator(KmP); // Set the preconditioner operator
+    // Mpp->SetOperator(KmP); // Set the preconditioner operator
     // cgPP_solver.SetOperator(KmP); // Set the operator for the solver
 
     // // comment out above for Cahn-Hilliard Disk!
@@ -93,21 +96,17 @@ void PotP::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     RpP = Rx;
     RpP *= Constants::Frd; // Scale the reaction field
 
-    Bp2 -> Assemble();
+    Bp2->Assemble();
     Fpt = *Bp2; // Assign the force term
 
     mfem::ConstantCoefficient dbc_e_Coef(BvP);	
 
     phx.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
-
+    
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
 
     pP0 = phx; // Store the current potential field
     pP0.GetTrueDofs(Xs0); // Extract degrees of freedom
-
-    // Rebind operator & preconditioner to this KmP **every time**
-    Mpp.SetOperator(KmP);
-    cgPP_solver.SetOperator(KmP);
 
     cgPP_solver.Mult(Fpb, Xs0); // Solve for the error term
     phx.Distribute(Xs0); // Distribute the updated values

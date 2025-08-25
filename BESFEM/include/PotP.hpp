@@ -93,7 +93,8 @@ private:
     mfem::HypreParVector B1v; ///< Right-hand-side vector
     mfem::HypreParVector Fpb; ///< Right-hand-side vector
     mfem::HypreParVector Xs0; ///< Solution vector for particle potential
-    mfem::HypreBoomerAMG Mpp; ///< Multigrid preconditioner for the particle potential system
+    std::unique_ptr<mfem::HypreBoomerAMG> Mpp; ///< BoomerAMG preconditioner (built once with KmP)
+
 
 
     double gtPsi; ///< Total Psi from MeshHandler

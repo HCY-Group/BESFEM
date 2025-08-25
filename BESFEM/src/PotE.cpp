@@ -59,10 +59,10 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w); // Get essential true degrees of freedom for Dirichlet boundary conditions
 
     SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, ph, B1t, Kml, X1v, B1v); // Assemble the linear system
-    
-    Mpe.SetOperator(Kml);
-    Mpe.SetPrintLevel(0); // Set the print level for the preconditioner
-    SolverSteps::SolverConditions(Kml, cgPE_solver, Mpe); // Set up the solver conditions
+
+    Mpe = std::make_unique<mfem::HypreBoomerAMG>(Kml);  // builds hierarchy once
+    Mpe->SetPrintLevel(0);
+    SolverSteps::SolverConditions(Kml, cgPE_solver, *Mpe); // Set up the solver conditions
 
     SolverSteps::InitializeForceTerm(cRe, Bl2); // Initialize the force term
     SolverSteps::Update(Bl2); // Update the force term
@@ -93,7 +93,8 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system
 
-    Mpe.SetOperator(Kml); // Set the operator for the preconditioner
+    Mpe->SetOperator(Kml); // Set the operator for the preconditioner
+    cgPE_solver.SetPreconditioner(*Mpe);
     cgPE_solver.SetOperator(Kml); // Set the operator for the solver
 
 }
@@ -118,8 +119,6 @@ void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     pE0 = phx; // Store the current potential field
     pE0.GetTrueDofs(Xe0); // Extract degrees of freedom
 
-    Mpe.SetOperator(Kml);
-    cgPE_solver.SetOperator(Kml);
     cgPE_solver.Mult(RHSl, Xe0); // Solve for the error term
 
     phx.Distribute(Xe0); // Distribute the updated values

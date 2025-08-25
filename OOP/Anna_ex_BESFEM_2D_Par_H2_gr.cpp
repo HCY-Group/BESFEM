@@ -972,7 +972,7 @@ int main(int argc, char *argv[])
 		
 	// timestepping
 	int t = 0;
-	for (int t = 0; t < 20; t++){
+	for (int t = 0; t < 30; t++){
 	// 	while ( Vcell > Vcut){
 	// while ( Xfr < 0.971 ){
 	
@@ -1181,10 +1181,10 @@ int main(int argc, char *argv[])
 		CnE.Distribute(CeVn); 
 		
 		sw.Stop();
-		if (myid == 0) {
-			std::cout << "Concentration timestep: " << t 
-					<< ", time taken  = " << sw.RealTime() 
-					<< " seconds" << std::endl; }
+		// if (myid == 0) {
+		// 	std::cout << "Concentration timestep: " << t 
+		// 			<< ", time taken  = " << sw.RealTime() 
+		// 			<< " seconds" << std::endl; }
 
 
 		mfem::StopWatch sw2;
@@ -1215,10 +1215,10 @@ int main(int argc, char *argv[])
 		}
 		
 		sw2.Stop();
-		if (myid == 0) {
-			std::cout << "Salt Conservation timestep: " << t
-					<< ", time taken  = " << sw2.RealTime() 
-					<< " seconds" << std::endl; }
+		// if (myid == 0) {
+		// 	std::cout << "Salt Conservation timestep: " << t
+		// 			<< ", time taken  = " << sw2.RealTime() 
+		// 			<< " seconds" << std::endl; }
 		
 		delete TmatR;
 		delete TmatL;
@@ -1354,10 +1354,10 @@ int main(int argc, char *argv[])
 		inlp = 0;
 
 		sw3.Stop();
-		if (myid == 0) {
-			std::cout << "Potential timestep: " << t
-					<< ", time taken  = " << sw3.RealTime() 
-					<< " seconds" << std::endl; }
+		// if (myid == 0) {
+		// 	std::cout << "Potential timestep: " << t
+		// 			<< ", time taken  = " << sw3.RealTime() 
+		// 			<< " seconds" << std::endl; }
 
 		// if (t % 100 == 0) {
 
@@ -1451,7 +1451,14 @@ int main(int argc, char *argv[])
 
 			// project values to DBC nodes
 			phP.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); 	
+			mfem::StopWatch swA, swB;
+			swA.Start();
 			Kp2->FormLinearSystem(ess_tdof_list_e, phP, Fpt, KmP, X1v, Fpb);	
+			swA.Stop();
+			if (myid == 0) {
+				std::cout << "Kp2 FormLinearSystem time: "
+						<< swA.RealTime()
+						<< " seconds" << std::endl; }
 			
 			// // project values to DBC nodes
 			// phP.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); 	
@@ -1459,7 +1466,14 @@ int main(int argc, char *argv[])
 			
 			pP0 = phP;	
 			pP0.GetTrueDofs(Xs0);
+
+			swB.Start();
 			cgPP.Mult(Fpb, Xs0);	
+			swB.Stop();
+			if (myid == 0) {
+				std::cout << "cgPP.Mult time: "
+						<< swB.RealTime()
+						<< " seconds" << std::endl; }
 			
 			// recover
 			phP.Distribute(Xs0);   			
@@ -1552,7 +1566,7 @@ int main(int argc, char *argv[])
 
 		sw4.Stop();
 		if (myid == 0) {
-			std::cout << "Reaction and Potential Advance timestep: " << t
+			std::cout << "Advance timestep: " << t
 					<< ", time taken  = " << sw4.RealTime() 
 					<< " seconds" << std::endl; }
 
@@ -1593,12 +1607,12 @@ int main(int argc, char *argv[])
 		
 		tm = tm + dt;
 
-		std::cout << "timestep: " << t 
-				<< ", VCell = " << Vcell 
-				<< ", BvP = " << BvP 
-				<< ", BvE = " << BvE 
-				<< ", gCrnt = " << gCrnt 
-				<< std::endl;
+		// std::cout << "timestep: " << t 
+		// 		<< ", VCell = " << Vcell 
+		// 		<< ", BvP = " << BvP 
+		// 		<< ", BvE = " << BvE 
+		// 		<< ", gCrnt = " << gCrnt 
+		// 		<< std::endl;
 
 	
 
@@ -1676,10 +1690,10 @@ int main(int argc, char *argv[])
 // // 	// 	" " << gCrnt << " -- " << gTrgI << endl;}
 // // // 	if (myid == 1 ){cout << t << "  " << Xfr << "  " << tm << "  " << Vcell << endl;}
 		
-		if (t % 200 == 0 && myid == 0) {
+		if (t % 1 == 0 && myid == 0) {
             std::cout << "timestep: " << t
                     << ", Xfr = " << Xfr
-                    << ", VCell = " << Vcell << ", BvP = " << BvP
+                    << ", VCell = " << Vcell << ", BvE = " << BvE
                     << std::endl;
         }
 
