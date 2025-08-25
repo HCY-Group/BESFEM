@@ -9,11 +9,16 @@ CONFIG_MK = $(MFEM_BUILD_DIR)/config/config.mk
 # Compiler and Flags
 CXX = mpicxx
 CXXFLAGS = -g -O3 -std=c++17
-INCLUDE_FLAGS = -I$(MFEM_DIR) -I$(MFEM_BUILD_DIR) \
-                -I../../../../hypre/src/hypre/include
-LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \
-            -L../../../../hypre/src/hypre/lib -lHYPRE \
-            -L../../../../metis-4.0 -lmetis -lrt
+
+# Use MFEM-provided flags (includes Hypre/Metis/etc)
+INCLUDE_FLAGS := $(MFEM_INCFLAGS)
+LIB_FLAGS     := $(MFEM_LIBS)
+
+# INCLUDE_FLAGS = -I$(MFEM_DIR) -I$(MFEM_BUILD_DIR) \
+#                 -I../../../../hypre/src/hypre/include
+# LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \
+#             -L../../../../hypre/src/hypre/lib -lHYPRE \
+#             -L../../../../metis-4.0 -lmetis -lrt
 
 # Source files for the simulation
 # SRC_FILES = simulation.cpp Constants.cpp \
