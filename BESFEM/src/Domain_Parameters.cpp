@@ -138,7 +138,7 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             << ", max = " << AvP_max << " (expected min = 0, max = 16000)" << std::endl;
 
     if (AvP_min < 0.0 || AvP_max > 20000) {
-        std::cerr << "[AvP Check] ERROR: psi values out of [0,1]!" << std::endl;
+        std::cerr << "[AvP Check] ERROR: AvP values out of [0,16000]!" << std::endl;
         std::exit(EXIT_FAILURE);
     }
     if (AvP_min > 2e-6) {
@@ -146,7 +146,7 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         std::exit(EXIT_FAILURE);
     }
     if (AvP_max < 12000) {
-        std::cerr << "[AvP Check] WARNING: AvP_max not near 1." << std::endl;
+        std::cerr << "[AvP Check] WARNING: AvP_max not near 16000." << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
