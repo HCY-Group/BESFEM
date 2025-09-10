@@ -29,8 +29,7 @@
 
 namespace fs = std::filesystem;
 
-// Build an output directory like:
-// ../outputs/Results/20250812_0915__nsteps=50001__mesh=disk_Mesh_80x80x6_01
+// Build an output directory
 static std::string BuildRunOutdir(const char* mesh_file, int num_steps)
 {
     // timestamp (local time)
@@ -57,6 +56,58 @@ static std::string BuildRunOutdir(const char* mesh_file, int num_steps)
     return od.str();
 }
 
+
+// ---- Save all outputs (raw + projected) in one place ------------------------
+static void SaveSimulationOutputs(
+    const std::string& outdir,
+    Initialize_Geometry& geometry,
+    Domain_Parameters& dp,
+    const mfem::ParGridFunction& CnP_gf,
+    const mfem::ParGridFunction& CnE_gf,
+    const mfem::ParGridFunction& phP_gf,
+    const mfem::ParGridFunction& phE_gf,
+    const mfem::ParGridFunction& Rxn_gf)
+{
+    // Ensure the directory exists before any rank writes into it
+    if (mfem::Mpi::WorldRank() == 0) {
+        std::filesystem::create_directories(outdir);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // 1) Save raw fields
+    geometry.parallelMesh->Save((outdir + "/pmesh").c_str());
+    dp.psi->Save((outdir + "/psi").c_str());
+    dp.pse->Save((outdir + "/pse").c_str());
+    dp.AvB->Save((outdir + "/AvB").c_str());
+    dp.AvP->Save((outdir + "/AvP").c_str());
+
+    CnP_gf.Save((outdir + "/CnP").c_str());
+    CnE_gf.Save((outdir + "/CnE").c_str());
+    phP_gf.Save((outdir + "/phP").c_str());
+    phE_gf.Save((outdir + "/phE").c_str());
+    Rxn_gf.Save((outdir + "/Rxn").c_str());
+
+    // 2) CnP, phP are in the particle domain (mask by psi)
+    {
+        mfem::ParGridFunction pCnP(CnP_gf.ParFESpace()); pCnP = CnP_gf;
+        pCnP *= *dp.psi;  pCnP.Save((outdir + "/pCnP").c_str());
+
+        mfem::ParGridFunction pphP(phP_gf.ParFESpace()); pphP = phP_gf;
+        pphP *= *dp.psi;  pphP.Save((outdir + "/pphP").c_str());
+    }
+    // CnE, phE are in the electrolyte domain (mask by pse)
+    {
+        mfem::ParGridFunction pCnE(CnE_gf.ParFESpace()); pCnE = CnE_gf;
+        pCnE *= *dp.pse;  pCnE.Save((outdir + "/pCnE").c_str());
+
+        mfem::ParGridFunction pphE(phE_gf.ParFESpace()); pphE = phE_gf;
+        pphE *= *dp.pse;  pphE.Save((outdir + "/pphE").c_str());
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+}
+
+
 // ============================================================================
 
 int main(int argc, char *argv[]) {
@@ -78,7 +129,6 @@ int main(int argc, char *argv[]) {
     const char* mesh_type = nullptr;
     int order = Constants::order;
     int num_timesteps = 1000; // Default number of timesteps
-    int model_choice = 0; // Default model choice (0 for diffusion, 1 for Cahn-Hilliard)
 
     // Parse command-line options from MFEM
     mfem::OptionsParser args(argc, argv);
@@ -87,7 +137,6 @@ int main(int argc, char *argv[]) {
     args.AddOption(&order, "-o", "--order", "Finite element polynomial degree.");
     args.AddOption(&mesh_type, "-t", "--type", "Mesh type (r for rectangle, c for circle, v for voxel, d for disk).");
     args.AddOption(&num_timesteps, "-n", "--num-steps", "Number of timesteps to run the simulation.");
-    // args.AddOption(&model_choice, "-pm", "--model-choice", "Model choice for particle (0 for diffusion, 1 for Cahn-Hilliard).");
     args.ParseCheck();
 
     std::string mesh_type_str = (mesh_type ? mesh_type : "");
@@ -189,6 +238,7 @@ int main(int argc, char *argv[]) {
         electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf, electrolyte_concentration.CeVn);  
         
         // Exchange current density using tabular values OR equations
+        std::cout << "Computing exchange current density..." << std::endl;
         reaction.TableExchangeCurrentDensity(CnP_gf); // used for graphite disk
         // reaction.ExchangeCurrentDensity(CnP_gf);
 
@@ -199,7 +249,6 @@ int main(int argc, char *argv[]) {
         sw1.Start();
  
         while (globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8) {
-
 
             // Update reaction rates using the Butler-Volmer equation
             reaction.ButlerVolmer(Rxn_gf, CnP_gf, CnE_gf, phP_gf, phE_gf);
@@ -232,29 +281,8 @@ int main(int argc, char *argv[]) {
 
     }
 
-    // Save outputs into the timestamped folder
-    geometry.parallelMesh->Save((outdir + "/pmesh").c_str());
-    domain_parameters.psi->Save((outdir + "/psi").c_str());
-    domain_parameters.pse->Save((outdir + "/pse").c_str());
-    domain_parameters.AvB->Save((outdir + "/AvB").c_str());
-    domain_parameters.AvP->Save((outdir + "/AvP").c_str());
-    
-    CnP_gf.Save((outdir + "/CnP").c_str());
-    CnE_gf.Save((outdir + "/CnE").c_str());
-    phP_gf.Save((outdir + "/phP").c_str());
-    phE_gf.Save((outdir + "/phE").c_str());
-    Rxn_gf.Save((outdir + "/Rxn").c_str());
-
-    // Multiply Grid Functions for Error Calculations
-    CnP_gf *= *domain_parameters.psi;
-    phP_gf *= *domain_parameters.psi;
-    CnE_gf *= *domain_parameters.pse;
-    phE_gf *= *domain_parameters.pse;
-
-    CnP_gf.Save((outdir + "/pCnP").c_str());
-    CnE_gf.Save((outdir + "/pCnE").c_str());
-    phP_gf.Save((outdir + "/pphP").c_str());
-    phE_gf.Save((outdir + "/pphE").c_str());
+    // Save final outputs
+    SaveSimulationOutputs(outdir, geometry, domain_parameters, CnP_gf, CnE_gf, phP_gf, phE_gf, Rxn_gf);
 
 }
     // Finalize HYPRE processing

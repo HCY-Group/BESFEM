@@ -219,15 +219,6 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
             cerr << "Failed to open distance file" << endl;
         }
         
-        // std::ifstream f(distanceFile, std::ifstream::in);
-        // gDsF->mfem::Mesh::Loader(f, gDsF->Size());
-        // f.close();
-
-        // gDsF = make_unique<mfem::GridFunction>(meshFile, myfile);
-        // mfem::ifgzstream myfile(distanceFile);
-        // mfem::GridFunction gDsF(globalMesh.get(), myfile);
-
-
 
     } else if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "mesh") {
     
@@ -237,15 +228,6 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
         gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
         ifstream myfile(distanceFile);
         if (myfile.is_open()) {
-            // // Skip the first four lines
-            // string line;
-            // for (int i = 0; i < 4; i++) {
-            //     if (!getline(myfile, line)) {
-            //         cerr << "Error: Distance file has fewer than four header lines" << endl;
-            //         myfile.close();
-            //         return;
-            //     }
-            // }
             gDsF->Load(myfile, gDsF->Size());
             myfile.close();
         } else {
