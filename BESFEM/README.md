@@ -38,9 +38,10 @@
 
 ## How To Get Doxygen
 
-1. Run `doxygen Doxyfile`
-2. cd `html`
-3. To view online when using VSCode: `python3 -m http.server 8000 --bind 127.0.0.1`
+1. Run `module load Doxygen`
+2. Run `doxygen Doxyfile`
+3. cd `html`
+4. To view online when using VSCode: `python3 -m http.server 8000 --bind 127.0.0.1`
 
 
 ## How to Plot in Python (currently only supports serial)

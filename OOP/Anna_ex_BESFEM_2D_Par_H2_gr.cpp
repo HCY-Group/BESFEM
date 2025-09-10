@@ -1718,27 +1718,33 @@ int main(int argc, char *argv[])
 // // 	const char *test4 = fname.c_str();
 // // 	phE.Save(test4);
 
-    CnP.Save("Results/CnCH");
+    // CnP.Save("Results/CnCH");
 	
-    CnE.Save("Results/CnE");
-    phP.Save("Results/phP");
-    phE.Save("Results/phE");    
+    // CnE.Save("Results/CnE");
+    // phP.Save("Results/phP");
+    // phE.Save("Results/phE");    
 
-    phP *= psi;
-    CnE *= pse;
-    phE *= pse;
+    // phP *= psi;
+    // CnE *= pse;
+    // phE *= pse;
 	CnP *= psi;
+	CnP.SaveAsOne("Results/CnCH");
+	CnP.Save("Results/CnP");
 
-    CnP.Save("Results/pCnCH");
-    CnE.Save("Results/pCnE");
-    phP.Save("Results/pphP");
-    phE.Save("Results/pphE");
-    Rxn.Save("Results/Rxn");
+	pmesh.SaveAsOne("Results/meshCH");
 
-	ParGridFunction muField(&fespace);
-	muField.SetFromTrueDofs(MuV);  // transfer MuV to nodal field
-	muField.Save("Results/muCH");  
-	Mob.Save("Results/MobCH");
+    // CnP.Save("Results/pCnCH");
+    // CnE.Save("Results/pCnE");
+    // phP.Save("Results/pphP");
+    // phE.Save("Results/pphE");
+    // Rxn.Save("Results/Rxn");
+
+	// ParGridFunction muField(&fespace);
+	// muField.SetFromTrueDofs(MuV);  // transfer MuV to nodal field
+	// muField.Save("Results/muCH");  
+	// Mob.Save("Results/MobCH");
+
+	
 
 }
 	// Finalize HYPRE processing

@@ -7,7 +7,9 @@
 namespace Constants {
 
     const char* mesh_file = "../inputs/disk_Mesh_80x80x6.mesh";            ///< Path to the mesh file
-    const char* dsF_file = "../inputs/disk_dsF_81x81x7.txt";               ///< Path to the surface flux data file
+    // const char* dsF_file = "../inputs/disk_dsF_81x81x7.txt";               ///< Path to the surface flux data file
+    const char* dsF_file = "../inputs/dsF_3x90_r.txt";               ///< Path to the surface flux data file
+
     // const char* mesh_file = "../Code_2D/II_1_bin.tif";            ///< Path to the mesh file
     // const char* dsF_file = "../Code_2D/dsF_p.txt";               ///< Path to the surface flux data file
 
@@ -21,7 +23,7 @@ namespace Constants {
     const double eps = 1.0e-6;                              ///< Small epsilon value for numerical tolerance
     const double dt = 0.0105625;                            ///< Time step size
     const double tm = 0.0;                                  ///< Initial simulation time
-    const double t_minus = 7.619047619047619e-01;           ///< Transference number (ratio of cation conductivity to total conductivity)
+    const double t_minus = 7.619047619047619e-01;           ///< Transference number
     const double D0 = 0.00489;                              ///< Base diffusivity
     const double Frd = 96485.3365;                          ///< Faraday constant
     const double Cst1 = 1.6021766e-19 / (1.3806488e-23 * 300.0);   ///< Constant derived from the Nernst equation (e/kT for T = 300 K)

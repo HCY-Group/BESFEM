@@ -58,6 +58,22 @@ EXEC_DIR = bin
 EXEC_NAME = simulation
 EXEC = $(EXEC_DIR)/$(EXEC_NAME)
 
+# ====================================
+
+# ================== Test sources ==================
+TEST_DIR    := tests
+TEST_SRC    := $(TEST_DIR)/besfem_oop_tests.cpp
+TEST_BIN    := $(EXEC_DIR)/besfem_oop_tests
+
+# Reuse your sources but drop simulation.cpp (it has its own main()).
+TEST_SRC_FILES := $(filter-out src/simulation.cpp,$(SRC_FILES))
+
+OBJ_DIR   := build
+TEST_OBJS := $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(TEST_SRC_FILES))
+
+# ====================================
+
+
 
 # Tiff reading
 LDFLAGS = -ltiff
@@ -67,8 +83,29 @@ all: $(EXEC)
 
 # Compile the simulation target
 $(EXEC): $(SRC_FILES)
+	@mkdir -p $(EXEC_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) $^ -o $@ $(LIB_FLAGS) $(LDFLAGS)
+
+
+# Pattern rule for test objects
+$(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c $< -o $@
+
+# Build test binary
+$(TEST_BIN): $(TEST_OBJS) $(TEST_SRC)
+	@mkdir -p $(EXEC_DIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) $(TEST_OBJS) $(TEST_SRC) -o $@ $(LIB_FLAGS) $(LDFLAGS)
+
+
+# Convenience targets
+tests: $(TEST_BIN)
+	@mkdir -p $(EXEC_DIR)
+# 	mpirun -np 1 $(TEST_BIN)
+
+test: tests
 
 # Clean build artifacts
 clean:
 	rm -f $(EXEC) *.o *~ *.dSYM *.TVD.*breakpoints
+	rm -rf $(OBJ_DIR) $(TEST_BIN)

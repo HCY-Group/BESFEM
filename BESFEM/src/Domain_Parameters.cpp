@@ -88,6 +88,27 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         (*pse)(vi) += 1.0e-6; // Avoid zero values
 
     }
+
+        double psi_min = psi->Min();
+        double psi_max = psi->Max();
+
+        // Basic bounds check
+        std::cout << "[Psi Check] min = " << psi_min 
+                << ", max = " << psi_max << " (expected min = 1e-06, max = 1)" << std::endl;
+
+        if (psi_min < 0.0 || psi_max > 1.0 + 1e-6) {
+            std::cerr << "[Psi Check] ERROR: psi values out of [0,1]!" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        if (psi_min > 2e-6) {
+            std::cerr << "[Psi Check] WARNING: psi_min not near 0." << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        if (psi_max < 1.0) {
+            std::cerr << "[Psi Check] WARNING: psi_max not near 1." << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+
     
     AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
 
