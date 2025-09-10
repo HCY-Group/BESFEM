@@ -21,6 +21,9 @@ Initialize_Geometry::~Initialize_Geometry() {}
 
 void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order) {
 
+    // Adjust distance file
+    AdjustDistanceFile(distanceFile);
+    
     // Initialize the global mesh
     InitializeGlobalMesh(meshFile);
 
@@ -43,6 +46,75 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
     PrintMeshInfo();
 
 }
+
+void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile)
+{
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (rank == 0)
+    {
+        std::ifstream in(distanceFile);
+        if (!in) {
+            throw std::runtime_error("Could not open distance file: " + std::string(distanceFile));
+        }
+
+        std::vector<double> values;
+        values.reserve(1<<20); // pre-alloc for big files (optional)
+
+        double v;
+        while (in >> v) values.push_back(v);
+        in.close();
+
+        if (values.empty()) {
+            std::cerr << "[AdjustDistanceFile] No values read from " << distanceFile << " — leaving unchanged.\n";
+        } else {
+            auto [min_it, max_it] = std::minmax_element(values.begin(), values.end());
+            double max_abs = std::max(std::abs(*min_it), std::abs(*max_it));
+
+            std::cout << "[AdjustDistanceFile] Before: min=" << *min_it
+                      << " max=" << *max_it << " max|v|=" << max_abs << "\n";
+
+            if (max_abs > 1.0) {
+                // 1) write backup with original data
+                std::string backup = std::string(distanceFile) + ".orig";
+                {
+                    std::ofstream bout(backup, std::ios::trunc);
+                    if (!bout) {
+                        throw std::runtime_error("Failed to create backup file: " + backup);
+                    }
+                    bout << std::setprecision(10);
+                    for (double x : values) bout << x << '\n';
+                }
+                std::cout << "[AdjustDistanceFile] Wrote original data to backup: " << backup << "\n";
+
+                // 2) scale and overwrite original file
+                std::cout << "[AdjustDistanceFile] Scaling values by dh=" << std::setprecision(10) << Constants::dh << " and overwriting "
+                          << distanceFile << " ...\n";
+                for (double &x : values) x *= Constants::dh;
+
+                std::ofstream out(distanceFile, std::ios::trunc);
+                if (!out) {
+                    throw std::runtime_error("Failed to open distance file for overwrite: " + std::string(distanceFile));
+                }
+                out << std::setprecision(10);
+                for (double x : values) out << x << '\n';
+                out.close();
+
+                // quick preview after
+                auto [min2, max2] = std::minmax_element(values.begin(), values.end());
+                double max_abs2 = std::max(std::abs(*min2), std::abs(*max2));
+                std::cout << "[AdjustDistanceFile] After: min=" << *min2
+                          << " max=" << *max2 << " max|v|=" << max_abs2 << "\n";
+            } else {
+                std::cout << "[AdjustDistanceFile] No scaling needed (all |v| <= 1). File unchanged.\n";
+            }
+        }
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+}
+
 
 // Function to initialize the global mesh using a .tif or .mesh file
 void Initialize_Geometry::InitializeGlobalMesh(const char* meshFile) {

@@ -32,6 +32,12 @@ public:
     virtual ~Initialize_Geometry();
 
     /**
+     * @brief Adjusts the distance file to ensure scaling for dh.
+     * @param distanceFile Path to the distance function file.
+     */
+    void AdjustDistanceFile(const char* distanceFile);
+
+    /**
      * @brief Initializes mesh and associated distance functions.
      * @param meshFile Path to mesh file.
      * @param distanceFile Path to distance function file.

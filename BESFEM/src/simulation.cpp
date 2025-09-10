@@ -188,12 +188,9 @@ int main(int argc, char *argv[]) {
         particle_potential.TimeStep(CnP_gf, *domain_parameters.psi, phP_gf);
         electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf, electrolyte_concentration.CeVn);  
         
-        if (mesh_type_str == "d") {
-            reaction.TableExchangeCurrentDensity(CnP_gf);
-        } else {
-            reaction.ExchangeCurrentDensity(CnP_gf);
-        }
-        
+        // Exchange current density using tabular values OR equations
+        reaction.TableExchangeCurrentDensity(CnP_gf); // used for graphite disk
+        // reaction.ExchangeCurrentDensity(CnP_gf);
 
         double globalerror_P = 1.0; // Error for particle potential
         double globalerror_E = 1.0; // Error for electrolyte potential
