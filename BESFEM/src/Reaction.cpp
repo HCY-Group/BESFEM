@@ -8,7 +8,8 @@
  #include "mfem.hpp"
  #include "../include/CnE.hpp"
  #include "../include/PotE.hpp"
- #include "../include/PotP.hpp"
+ #include "../include/PotC.hpp"
+#include "../include/PotA.hpp"
  #include <fstream>
  #include <cmath>
  

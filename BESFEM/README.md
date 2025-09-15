@@ -16,13 +16,13 @@
 1. Clone the repository
 3. `make` (you may need to update the Makefile to point to your MFEM installation)
 4. `cd bin`
-5. Run a disk Cahn-Hilliard simulation: `mpirun -np 1 simulation -m ../inputs/disk_Mesh_80x80x6.mesh -d ../inputs/disk_dsF_81x81x7.txt -t d -n 6`
+5. Run a disk Cahn-Hilliard simulation: `mpirun -np 1 battery_simulation -m ../inputs/disk_Mesh_80x80x6.mesh -da ../inputs/disk_dsF_81x81x7.txt -t d -n 6`
 6. Run a rectangle diffusion simulation: 
     - ⚠️ make sure you go to `Constants.cpp` file and uncomment the section for rectangle
     - ⚠️ change `particle_concentration` in `simulation.cpp` to start with `CnP`and NOT `CnCH`
     - ⚠️ change all of the `Initialize` lines in `simulation.cpp` to the line underneath
     - ⚠️ go into `PotP.cpp` and uncomment the chunk in `TimeStep`
-    - `mpirun -np 1 simulation -m ../inputs/Mesh_3x90_r.mesh -d ../inputs/dsF_3x90_r.txt -t r -n 3`
+    - `mpirun -np 1 battery_simulation -m ../inputs/Mesh_3x90_r.mesh -dc ../inputs/dsF_3x90_r.txt -t r -n 3`
 
 
 

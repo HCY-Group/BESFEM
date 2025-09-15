@@ -7,11 +7,9 @@
 namespace Constants {
 
     const char* mesh_file = "../inputs/disk_Mesh_80x80x6.mesh";            ///< Path to the mesh file
-    // const char* dsF_file = "../inputs/disk_dsF_81x81x7.txt";               ///< Path to the surface flux data file
-    const char* dsF_file = "../inputs/dsF_3x90_r.txt";               ///< Path to the surface flux data file
-
-    // const char* mesh_file = "../Code_2D/II_1_bin.tif";            ///< Path to the mesh file
-    // const char* dsF_file = "../Code_2D/dsF_p.txt";               ///< Path to the surface flux data file
+    const char* dsF_file_C = "../inputs/dsF_3x90_r.txt";               ///< Path to the cathode flux data file
+    const char* dsF_file_A = "../inputs/dsF_3x90_r.txt";               ///< Path to the anode flux data file
+    // const char* dsF_file_C = "../inputs/dsF_3x90_c.txt";               ///< Path to the cathode flux data file
 
     // --------------- Constants for Disk Mesh ----------------
     bool visualization = true;
@@ -28,10 +26,18 @@ namespace Constants {
     const double Frd = 96485.3365;                          ///< Faraday constant
     const double Cst1 = 1.6021766e-19 / (1.3806488e-23 * 300.0);   ///< Constant derived from the Nernst equation (e/kT for T = 300 K)
     const double alp = 0.5;                                 ///< Symmetry factor for electrochemical kinetics
-    const double rho = 0.0312;                             ///< Lithium site density    
+    const double rho_A = 0.0312;                             ///< Anode Lithium site density 
+    const double rho_C = 0.0501;                             ///< Cathode Lithium site density   
     const double Cr = 0.5;          ///< C-rate for charging/discharging cycles
     const double Vsr = 0.009466;                                 ///< Voltage scanning rate
     const double VCut = 0.0;                                ///< Cut-off voltage
+    const double init_CnA = 2.02e-2;                            ///< initial concentration in the anode
+    const double init_CnC = 0.3;                              ///< initial concentration in the cathode
+    const double init_CnE = 0.001005;                           ///< initial concentration in the electrolyte
+    const double init_BvA = -0.1;                            ///< boundary condition for anode potential
+    const double init_BvC = 2.9395;                         ///< boundary condition for cathode potential
+    // const double init_BvE = -0.4686;                         ///< boundary condition for electrolyte potential (cathode)
+    const double init_BvE = -1.0;                         ///< boundary condition for electrolyte potential (anode)
 
 
 

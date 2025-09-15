@@ -4,9 +4,10 @@
 #include "../include/Domain_Parameters.hpp"
 #include "mfem.hpp"
 #include "../include/CnE.hpp"
-#include "../include/CnP.hpp"
+#include "../include/CnA.hpp"
 #include "../include/PotE.hpp"
-#include "../include/PotP.hpp"
+#include "../include/PotA.hpp"
+#include "../include/PotC.hpp"
 #include "../include/Reaction.hpp"
 
 Current::Current(Initialize_Geometry &geo, Domain_Parameters &para)

@@ -33,19 +33,20 @@ LIB_FLAGS     := $(MFEM_LIBS)
 
 # Source files
 SRC_FILES = \
-    src/simulation.cpp \
+    src/battery_simulation.cpp \
     inputs/Constants.cpp \
     src/Initialize_Geometry.cpp \
     src/readtiff.cpp \
     src/Domain_Parameters.cpp \
     src/Concentrations_Base.cpp \
     src/CnE.cpp \
-    src/CnCH.cpp \
-    src/CnP.cpp \
+    src/CnA.cpp \
+    src/CnC.cpp \
     src/Reaction.cpp \
     src/SolverSteps.cpp \
     src/Potentials_Base.cpp \
-    src/PotP.cpp \
+    src/PotC.cpp \
+    src/PotA.cpp \
     src/PotE.cpp
 
 # SRC_FILES = Anna_ex_BESFEM_2D_Par_H2_gr.cpp 
@@ -55,7 +56,7 @@ SRC_FILES = \
 # EXEC = simulation
 # EXEC = serial_simulation
 EXEC_DIR = bin
-EXEC_NAME = simulation
+EXEC_NAME = battery_simulation
 EXEC = $(EXEC_DIR)/$(EXEC_NAME)
 
 # ====================================
