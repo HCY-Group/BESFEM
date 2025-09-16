@@ -59,7 +59,12 @@ public:
 
     std::unique_ptr<mfem::ParGridFunction> psi; ///< Solid phase potential
     std::unique_ptr<mfem::ParGridFunction> pse; ///< Electrolyte phase potential
+    std::unique_ptr<mfem::ParGridFunction> psA; ///< Anode phase potential
+    std::unique_ptr<mfem::ParGridFunction> psC; ///< Cathode phase potential
+
     std::unique_ptr<mfem::ParGridFunction> AvP; ///< Particle surface area
+    std::unique_ptr<mfem::ParGridFunction> AvA; ///< Anode surface area
+    std::unique_ptr<mfem::ParGridFunction> AvC; ///< Cathode surface area
     std::unique_ptr<mfem::ParGridFunction> AvB; ///< Boundary surface area
 
     double gtPsi; ///< Global total for Psi
@@ -135,7 +140,9 @@ private:
     int nE; ///< Number of elements in the mesh
     int nC; ///< Number of corners per element
     
-    mfem::GridFunction* dsF;   ///< Pointer to distance function grid
+    mfem::ParGridFunction* dsF;   ///< Pointer to distance function grid
+    mfem::ParGridFunction* dsF_A; ///< Pointer to anode distance function grid
+    mfem::ParGridFunction* dsF_C; ///< Pointer to cathode distance function grid
     mfem::ParMesh* pmesh;         ///< Pointer to parallel mesh
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Shared pointer to finite element space
 

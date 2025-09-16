@@ -144,7 +144,6 @@ int main(int argc, char *argv[]) {
     {
         const char* mode  = "half";    // "half" | "full"
         const char* half_elec  = "anode";   // "anode" | "cathode" (HALF only)
-    
         const char* mesh_file  = cfg.mesh_file;
         const char* dsF_file_A   = Constants::dsF_file_A;
         const char* dsF_file_C   = Constants::dsF_file_C;
@@ -155,8 +154,8 @@ int main(int argc, char *argv[]) {
         // Parse command-line options from MFEM
         mfem::OptionsParser args(argc, argv);
         args.AddOption(&mesh_file, "-m", "--mesh", "Mesh file to use.");
-        args.AddOption(&dsF_file_C, "-dC", "--cathode distance", "Cathode distance file to use.");
-        args.AddOption(&dsF_file_A, "-dA", "--anode distance", "Anode distance file to use.");
+        args.AddOption(&dsF_file_C, "-dC", "--cathode-distance", "Cathode distance file to use.");
+        args.AddOption(&dsF_file_A, "-dA", "--anode-distance", "Anode distance file to use.");
         args.AddOption(&order, "-o", "--order", "Finite element polynomial degree.");
         args.AddOption(&mesh_type, "-t", "--type", "Mesh type (r for rectangle, c for circle, v for voxel, d for disk).");
         args.AddOption(&num_timesteps, "-n", "--num-steps", "Number of timesteps to run the simulation.");
@@ -178,16 +177,18 @@ int main(int argc, char *argv[]) {
                     if (std::strcmp(argv[i], n) == 0) return true;
             return false;
         };
-
-        const bool used_dA = flag_present({"-dA","--anode distance"});
-        const bool used_dC = flag_present({"-dC","--cathode distance"});
+        const bool used_dA = flag_present({"-dA","--anode-distance"});
+        const bool used_dC = flag_present({"-dC","--cathode-distance"});
 
         const char* active_dsF = nullptr;
-        if (cfg.mode == CellMode::HALF) {
-            active_dsF = (cfg.half_electrode == Electrode::CATHODE) ? cfg.dsF_file_C : cfg.dsF_file_A;
-            if (!(active_dsF && std::strlen(active_dsF))) {
-                mfem::mfem_error("HALF mode: missing/empty distance file (use -da/--dsA or -dc/--dsC).");
-            }
+        if (cfg.mode == CellMode::FULL) {
+            if (!used_dA || !used_dC || !*cfg.dsF_file_A || !*cfg.dsF_file_C)
+                mfem::mfem_error("FULL mode requires both -dA <file> and -dC <file>.");
+        } else {
+            const char* active = (cfg.half_electrode == Electrode::CATHODE)
+                               ? cfg.dsF_file_C : cfg.dsF_file_A;
+            if (!active || !*active)
+                mfem::mfem_error("HALF mode requires -dA (anode) or -dC (cathode) with a valid file.");
         }
 
         if (mfem::Mpi::WorldRank() == 0) {
@@ -227,194 +228,216 @@ int main(int argc, char *argv[]) {
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
+        bool half_mode     = (cfg.mode == CellMode::HALF);
+        bool half_is_anode = (cfg.half_electrode == Electrode::ANODE);
+
         // Initialize Mesh & Geometry
         Initialize_Geometry geometry;
-        // geometry.InitializeMesh(mesh_file, dsF_file_C, MPI_COMM_WORLD, order);
-        geometry.InitializeMesh(mesh_file, active_dsF, MPI_COMM_WORLD, cfg.order);
+        // geometry.InitializeMesh(mesh_file, active_dsF, MPI_COMM_WORLD, cfg.order);
+        if (cfg.mode == CellMode::HALF) {
+            const char* active_dsF = (cfg.half_electrode == Electrode::CATHODE)
+                                ? cfg.dsF_file_C : cfg.dsF_file_A;
+            geometry.InitializeMesh(cfg.mesh_file, active_dsF, MPI_COMM_WORLD, cfg.order);
+        } else {
+            geometry.InitializeMesh(cfg.mesh_file, cfg.dsF_file_A, cfg.dsF_file_C,
+                                    MPI_COMM_WORLD, cfg.order);
+        }
         geometry.SetupBoundaryConditions();
 
         // Initialize and Calculate Domain Parameters (psi, pse, AvB, AvP)
         Domain_Parameters domain_parameters(geometry);
         domain_parameters.SetupDomainParameters(mesh_type);
+
+        //////////////////////////
+
+        geometry.parallelMesh->Save((outdir + "/pmesh").c_str());
+
+        // Existing saves:
+        domain_parameters.psi->Save((outdir + "/psi").c_str());
+        domain_parameters.pse->Save((outdir + "/pse").c_str());
+        domain_parameters.AvB->Save((outdir + "/AvB").c_str());
+        domain_parameters.AvP->Save((outdir + "/AvP").c_str());
+
+        if (domain_parameters.psA) { domain_parameters.psA->Save((outdir + "/psA").c_str()); }
+        if (domain_parameters.psC) { domain_parameters.psC->Save((outdir + "/psC").c_str()); }
+
+        /////////////////////////////
         
-        // Cathode concentration initialization with a grid function and initial value
-        CnC cathode_concentration(geometry, domain_parameters);
-        mfem::ParGridFunction CnC_gf(geometry.parfespace.get());
-        cathode_concentration.Initialize(CnC_gf, Constants::init_CnC, *domain_parameters.psi);
+    //     // Cathode concentration initialization with a grid function and initial value
+    //     CnC cathode_concentration(geometry, domain_parameters);
+    //     mfem::ParGridFunction CnC_gf(geometry.parfespace.get());
+    //     cathode_concentration.Initialize(CnC_gf, Constants::init_CnC, *domain_parameters.psi);
 
-        // Anode concentration initialization with a grid function and initial value
-        CnA anode_concentration(geometry, domain_parameters);
-        mfem::ParGridFunction CnA_gf(geometry.parfespace.get());
-        anode_concentration.Initialize(CnA_gf, Constants::init_CnA, *domain_parameters.psi);  // initial value: 2.02d-2
+    //     // Anode concentration initialization with a grid function and initial value
+    //     CnA anode_concentration(geometry, domain_parameters);
+    //     mfem::ParGridFunction CnA_gf(geometry.parfespace.get());
+    //     anode_concentration.Initialize(CnA_gf, Constants::init_CnA, *domain_parameters.psi);  // initial value: 2.02d-2
 
-        // Electrolyte concentration initialization with a grid function and initial value
-        CnE electrolyte_concentration(geometry, domain_parameters);
-        mfem::ParGridFunction CnE_gf(geometry.parfespace.get());
-        electrolyte_concentration.Initialize(CnE_gf, Constants::init_CnE, *domain_parameters.pse); 
+    //     // Electrolyte concentration initialization with a grid function and initial value
+    //     CnE electrolyte_concentration(geometry, domain_parameters);
+    //     mfem::ParGridFunction CnE_gf(geometry.parfespace.get());
+    //     electrolyte_concentration.Initialize(CnE_gf, Constants::init_CnE, *domain_parameters.pse); 
 
-        // Cathode potential initialization with a grid function and initial value
-        PotC cathode_potential(geometry, domain_parameters);
-        mfem::ParGridFunction phC_gf(geometry.parfespace.get());
-        cathode_potential.Initialize(phC_gf, Constants::init_BvC, *domain_parameters.psi);
+    //     // Cathode potential initialization with a grid function and initial value
+    //     PotC cathode_potential(geometry, domain_parameters);
+    //     mfem::ParGridFunction phC_gf(geometry.parfespace.get());
+    //     cathode_potential.Initialize(phC_gf, Constants::init_BvC, *domain_parameters.psi);
 
-        // Anode potential initialization with a grid function and initial value
-        PotA anode_potential(geometry, domain_parameters);
-        mfem::ParGridFunction phA_gf(geometry.parfespace.get());
-        anode_potential.Initialize(phA_gf, Constants::init_BvA, *domain_parameters.psi);
+    //     // Anode potential initialization with a grid function and initial value
+    //     PotA anode_potential(geometry, domain_parameters);
+    //     mfem::ParGridFunction phA_gf(geometry.parfespace.get());
+    //     anode_potential.Initialize(phA_gf, Constants::init_BvA, *domain_parameters.psi);
 
-        // Electrolyte potential initialization with a grid function and initial value
-        PotE electrolyte_potential(geometry, domain_parameters);
-        mfem::ParGridFunction phE_gf(geometry.parfespace.get());
-        electrolyte_potential.Initialize(phE_gf, Constants::init_BvE, *domain_parameters.pse);
+    //     // Electrolyte potential initialization with a grid function and initial value
+    //     PotE electrolyte_potential(geometry, domain_parameters);
+    //     mfem::ParGridFunction phE_gf(geometry.parfespace.get());
+    //     electrolyte_potential.Initialize(phE_gf, Constants::init_BvE, *domain_parameters.pse);
 
-        // Initialize the reaction with an empty reaction grid function and initial value
-        Reaction reaction(geometry, domain_parameters);
-        mfem::ParGridFunction Rxn_gf(geometry.parfespace.get());
-        reaction.Initialize(Rxn_gf, 0.0);
-        // reaction.Initialize(Rxn_gf, 1.0e-8);
+    //     // Initialize the reaction with an empty reaction grid function and initial value
+    //     Reaction reaction(geometry, domain_parameters);
+    //     mfem::ParGridFunction Rxn_gf(geometry.parfespace.get());
+    //     reaction.Initialize(Rxn_gf, 0.0);
+    //     // reaction.Initialize(Rxn_gf, 1.0e-8);
 
-        // Initialize Current Class
+    //     // Initialize Current Class
 
-        // Create the Current class to control current based on particle potential
-        // Current current(geometry, domain_parameters);
+    //     // Create the Current class to control current based on particle potential
+    //     // Current current(geometry, domain_parameters);
 
-        bool half_mode     = (cfg.mode == CellMode::HALF);
-        bool half_is_anode = (cfg.half_electrode == Electrode::ANODE);
+    //     // Set initial global current and cell voltage values  
+    //     double global_current = 0.0;
+    //     double VCell = 0.0;
 
-        // Set initial global current and cell voltage values  
-        double global_current = 0.0;
-        double VCell = 0.0;
+    //     // Main Simulation Loop
 
-        // Main Simulation Loop
-
-        int t = 0;
+    //     int t = 0;
         
-        // Perform simulation over time steps
-        // while (VCell > Constants::VCut) {
-        // while (particle_concentration.GetLithiation() < 0.98) {
+    //     // Perform simulation over time steps
+    //     // while (VCell > Constants::VCut) {
+    //     // while (particle_concentration.GetLithiation() < 0.98) {
 
-        // ============================================================================
-        // ===============================  HALF-CELL  ================================
-        // ============================================================================
+    //     // ============================================================================
+    //     // ===============================  HALF-CELL  ================================
+    //     // ============================================================================
 
-        if (half_mode) {
-            for (int t = 0; t < num_timesteps; ++t) {
+    //     if (half_mode) {
+    //         for (int t = 0; t < num_timesteps; ++t) {
 
-                if (half_is_anode) {
+    //         //     if (half_is_anode) {
                     
-                    // ============================================================================
-                    // ===============================  ANODE HALF-CELL  ==========================
-                    // ============================================================================
+    //         //         // ============================================================================
+    //         //         // ===============================  ANODE HALF-CELL  ==========================
+    //         //         // ============================================================================
 
-                    anode_concentration.TimeStep(Rxn_gf, CnA_gf, *domain_parameters.psi);
-                    electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
+    //         //         anode_concentration.TimeStep(Rxn_gf, CnA_gf, *domain_parameters.psi);
+    //         //         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
 
-                    if (t > 0 && t % 100 == 0){
-                        electrolyte_concentration.SaltConservation(CnE_gf, *domain_parameters.pse);
-                    }
+    //         //         if (t > 0 && t % 100 == 0){
+    //         //             electrolyte_concentration.SaltConservation(CnE_gf, *domain_parameters.pse);
+    //         //         }
 
-                    anode_potential.TimeStep(CnA_gf, *domain_parameters.psi, phA_gf);
-                    electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf, electrolyte_concentration.CeVn);
+    //         //         anode_potential.TimeStep(CnA_gf, *domain_parameters.psi, phA_gf);
+    //         //         electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf, electrolyte_concentration.CeVn);
 
-                    reaction.TableExchangeCurrentDensity(CnA_gf);
+    //         //         reaction.TableExchangeCurrentDensity(CnA_gf);
 
-                    double globalerror_P = 1.0; // Error for particle potential
-                    double globalerror_E = 1.0; // Error for electrolyte potential
+    //         //         double globalerror_P = 1.0; // Error for particle potential
+    //         //         double globalerror_E = 1.0; // Error for electrolyte potential
 
-                    mfem::StopWatch sw1;
-                    sw1.Start();
+    //         //         mfem::StopWatch sw1;
+    //         //         sw1.Start();
             
-                    while (globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8) {
+    //         //         while (globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8) {
 
-                        // Update reaction rates using the Butler-Volmer equation
-                        reaction.ButlerVolmer(Rxn_gf, CnA_gf, CnE_gf, phA_gf, phE_gf);
+    //         //             // Update reaction rates using the Butler-Volmer equation
+    //         //             reaction.ButlerVolmer(Rxn_gf, CnA_gf, CnE_gf, phA_gf, phE_gf);
 
-                        anode_potential.Advance(Rxn_gf, phA_gf, *domain_parameters.psi, globalerror_P);
-                        electrolyte_potential.Advance(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
-                    }
+    //         //             anode_potential.Advance(Rxn_gf, phA_gf, *domain_parameters.psi, globalerror_P);
+    //         //             electrolyte_potential.Advance(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
+    //         //         }
 
-                    sw1.Stop();
-                    if(mfem::Mpi::WorldRank() == 0) {
-                        std::cout << "Timestep " << t << " advance time: " << sw1.RealTime() << " seconds" << std::endl;
-                    }
+    //         //         sw1.Stop();
+    //         //         if(mfem::Mpi::WorldRank() == 0) {
+    //         //             std::cout << "Timestep " << t << " advance time: " << sw1.RealTime() << " seconds" << std::endl;
+    //         //         }
 
-                } else {
+    //         //     } else {
                 
-                    // ============================================================================
-                    // ==============================  CATHODE HALF-CELL  =========================
-                    // ============================================================================    
+    //         //         // ============================================================================
+    //         //         // ==============================  CATHODE HALF-CELL  =========================
+    //         //         // ============================================================================    
 
-                    cathode_concentration.TimeStep(Rxn_gf, CnC_gf, *domain_parameters.psi);
-                    electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
+    //         //         cathode_concentration.TimeStep(Rxn_gf, CnC_gf, *domain_parameters.psi);
+    //         //         electrolyte_concentration.TimeStep(Rxn_gf, CnE_gf, *domain_parameters.pse);
 
-                    if (t > 0 && t % 100 == 0){
-                        electrolyte_concentration.SaltConservation(CnE_gf, *domain_parameters.pse);
-                    }
+    //         //         if (t > 0 && t % 100 == 0){
+    //         //             electrolyte_concentration.SaltConservation(CnE_gf, *domain_parameters.pse);
+    //         //         }
 
-                    cathode_potential.TimeStep(CnC_gf, *domain_parameters.psi, phC_gf);
-                    electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf, electrolyte_concentration.CeVn);
+    //         //         cathode_potential.TimeStep(CnC_gf, *domain_parameters.psi, phC_gf);
+    //         //         electrolyte_potential.TimeStep(CnE_gf, *domain_parameters.pse, phE_gf, electrolyte_concentration.CeVn);
 
-                    reaction.ExchangeCurrentDensity(CnC_gf);
+    //         //         reaction.ExchangeCurrentDensity(CnC_gf);
 
-                    double globalerror_P = 1.0; // Error for particle potential
-                    double globalerror_E = 1.0; // Error for electrolyte potential
+    //         //         double globalerror_P = 1.0; // Error for particle potential
+    //         //         double globalerror_E = 1.0; // Error for electrolyte potential
 
-                    mfem::StopWatch sw1;
-                    sw1.Start();
+    //         //         mfem::StopWatch sw1;
+    //         //         sw1.Start();
             
-                    while (globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8) {
+    //         //         while (globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8) {
 
-                        // Update reaction rates using the Butler-Volmer equation
-                        reaction.ButlerVolmer(Rxn_gf, CnC_gf, CnE_gf, phC_gf, phE_gf);
+    //         //             // Update reaction rates using the Butler-Volmer equation
+    //         //             reaction.ButlerVolmer(Rxn_gf, CnC_gf, CnE_gf, phC_gf, phE_gf);
 
-                        cathode_potential.Advance(Rxn_gf, phC_gf, *domain_parameters.psi, globalerror_P);
-                        electrolyte_potential.Advance(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
-                    }
+    //         //             cathode_potential.Advance(Rxn_gf, phC_gf, *domain_parameters.psi, globalerror_P);
+    //         //             electrolyte_potential.Advance(Rxn_gf, phE_gf, *domain_parameters.pse, globalerror_E);
+    //         //         }
 
-                    sw1.Stop();
-                    if(mfem::Mpi::WorldRank() == 0) {
-                        std::cout << "Timestep " << t << " advance time: " << sw1.RealTime() << " seconds" << std::endl;
-                    }
+    //         //         sw1.Stop();
+    //         //         if(mfem::Mpi::WorldRank() == 0) {
+    //         //             std::cout << "Timestep " << t << " advance time: " << sw1.RealTime() << " seconds" << std::endl;
+    //         //         }
 
 
-                }
+    //         //     }
 
-                reaction.TotalReactionCurrent(Rxn_gf, global_current);
+    //         //     reaction.TotalReactionCurrent(Rxn_gf, global_current);
 
-                double sgn = copysign(1.0, domain_parameters.gTrgI - global_current);
-                double dV = Constants::dt * Constants::Vsr * sgn;
-                electrolyte_potential.BvE += dV; // Adjust electrolyte potential based on target current
-                phE_gf += dV; // Update the grid function for electrolyte potential
+    //         //     double sgn = copysign(1.0, domain_parameters.gTrgI - global_current);
+    //         //     double dV = Constants::dt * Constants::Vsr * sgn;
+    //         //     electrolyte_potential.BvE += dV; // Adjust electrolyte potential based on target current
+    //         //     phE_gf += dV; // Update the grid function for electrolyte potential
 
-                if (half_is_anode) {
-                    VCell = anode_potential.BvA - electrolyte_potential.BvE;
-                } else {
-                    VCell = cathode_potential.BvC - electrolyte_potential.BvE;
-                }
+    //         //     if (half_is_anode) {
+    //         //         VCell = anode_potential.BvA - electrolyte_potential.BvE;
+    //         //     } else {
+    //         //         VCell = cathode_potential.BvC - electrolyte_potential.BvE;
+    //         //     }
 
-                if (t % 1 == 0 && mfem::Mpi::WorldRank() == 0) {
+    //         //     if (t % 1 == 0 && mfem::Mpi::WorldRank() == 0) {
 
-                    const double Xfr = half_is_anode ? anode_concentration.GetLithiation()
-                                                : cathode_concentration.GetLithiation();
+    //         //         const double Xfr = half_is_anode ? anode_concentration.GetLithiation()
+    //         //                                     : cathode_concentration.GetLithiation();
 
-                    std::cout << "timestep: " << t
-                    << (half_is_anode ? " [ANODE HALF-CELL]" : " [CATHODE HALF-CELL]")
-                    << ", Xfr = " << Xfr
-                    << ", VCell = " << VCell
-                    << ", BvE = " << electrolyte_potential.BvE
-                    << (half_is_anode ? ", BvA = " : ", BvC = ")
-                    << (half_is_anode ? anode_potential.BvA : cathode_potential.BvC)
-                    << ", current = " << global_current
-                    << std::endl;
-                        }
-            }
-            // Save final outputs
-            if (half_is_anode) {
-                SaveSimulationOutputs(outdir, geometry, domain_parameters, CnA_gf, CnE_gf, phA_gf, phE_gf, Rxn_gf);
-            } else { 
-                SaveSimulationOutputs(outdir, geometry, domain_parameters, CnC_gf, CnE_gf, phC_gf, phE_gf, Rxn_gf);
-            }
-        }
+    //         //         std::cout << "timestep: " << t
+    //         //         << (half_is_anode ? " [ANODE HALF-CELL]" : " [CATHODE HALF-CELL]")
+    //         //         << ", Xfr = " << Xfr
+    //         //         << ", VCell = " << VCell
+    //         //         << ", BvE = " << electrolyte_potential.BvE
+    //         //         << (half_is_anode ? ", BvA = " : ", BvC = ")
+    //         //         << (half_is_anode ? anode_potential.BvA : cathode_potential.BvC)
+    //         //         << ", current = " << global_current
+    //         //         << std::endl;
+    //         //             }
+    //         }
+    //         // Save final outputs
+    //         if (half_is_anode) {
+    //             SaveSimulationOutputs(outdir, geometry, domain_parameters, CnA_gf, CnE_gf, phA_gf, phE_gf, Rxn_gf);
+    //         } else { 
+    //             SaveSimulationOutputs(outdir, geometry, domain_parameters, CnC_gf, CnE_gf, phC_gf, phE_gf, Rxn_gf);
+    //         }
+    //     }
     }
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();

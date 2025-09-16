@@ -38,13 +38,23 @@ public:
     void AdjustDistanceFile(const char* distanceFile);
 
     /**
-     * @brief Initializes mesh and associated distance functions.
+     * @brief Initializes mesh and associated distance functions for half cell.
      * @param meshFile Path to mesh file.
      * @param distanceFile Path to distance function file.
      * @param comm MPI communicator.
      * @param order Finite element polynomial order.
      */
     void InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order);
+
+    /**
+     * @brief Initializes mesh and associated distance functions for full cell.
+     * @param meshFile Path to mesh file.
+     * @param distanceFileA Path to distance function file for the anode.
+     * @param distanceFileC Path to distance function file for the cathode.
+     * @param comm MPI communicator.
+     * @param order Finite element polynomial order.
+     */
+    void InitializeMesh(const char* meshFile, const char* distanceFileA, const char* distanceFileC, MPI_Comm comm, int order);
 
     /**
      * @brief Initializes a global serial mesh from a file.
@@ -88,8 +98,9 @@ public:
      * @brief Assigns global values such as distance functions and voxel data.
      * @param mesh_file Path to mesh file.
      * @param distanceFile Path to distance function file.
+     * @param gDsF_out Output unique pointer to the assigned global distance function.
      */
-    void AssignGlobalValues(const char* mesh_file, const char* distanceFile);
+    void AssignGlobalValues(const char* mesh_file, const char* distanceFile, std::unique_ptr<mfem::GridFunction>& gDsF_out);
 
     /**
      * @brief Maps global values to local parallel data structures.
@@ -152,6 +163,12 @@ public:
     double Onm; ///< Number of grid function entries.
     std::unique_ptr<mfem::GridFunction> gDsF; ///< Global distance function.
     std::unique_ptr<mfem::ParGridFunction> dsF; ///< Parallel distance function.
+
+    std::unique_ptr<mfem::GridFunction>       gDsF_A;  ///< Global distance function for anode.
+    std::unique_ptr<mfem::GridFunction>       gDsF_C;  ///< Global distance function for cathode.
+    std::unique_ptr<mfem::ParGridFunction>    dsF_A;    /// Parallel distance function for anode.
+    std::unique_ptr<mfem::ParGridFunction>    dsF_C;    ///< Parallel distance function for cathode.
+    
     std::unique_ptr<mfem::GridFunction> gVox; ///< Global voxel function.
     std::unique_ptr<mfem::ParGridFunction> Vox; ///< Parallel voxel function.
 

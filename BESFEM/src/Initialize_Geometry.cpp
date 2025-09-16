@@ -18,7 +18,7 @@ Initialize_Geometry::Initialize_Geometry()
 // Destructor
 Initialize_Geometry::~Initialize_Geometry() {}
 
-
+// Half Cell
 void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order) {
 
     // Adjust distance file
@@ -37,7 +37,40 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
     SetupParFiniteElementSpace(order);
 
     // Assign the global values
-    AssignGlobalValues(meshFile, distanceFile);
+    AssignGlobalValues(meshFile, distanceFile, gDsF);
+
+    // Map the global values to the local
+    MapGlobalToLocal(meshFile);
+
+    // Print out information relative to the mesh
+    PrintMeshInfo();
+
+}
+
+// Full Cell
+void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFileA, const char* distanceFileC, MPI_Comm comm, int order) {
+
+    // Adjust distance file
+    AdjustDistanceFile(distanceFileA); // for anode
+    AdjustDistanceFile(distanceFileC); // for cathode
+
+    
+    // Initialize the global mesh
+    InitializeGlobalMesh(meshFile);
+
+    // Initialize the parallel mesh
+    InitializeParallelMesh(MPI_COMM_WORLD);
+
+    // Set up the finite element space
+    SetupFiniteElementSpace(order);
+
+    // Set up the parallel finite element space
+    SetupParFiniteElementSpace(order);
+
+    // Assign the global values
+    AssignGlobalValues(meshFile, distanceFileA, gDsF_A); // for anode
+    AssignGlobalValues(meshFile, distanceFileC, gDsF_C); // for cathode
+
 
     // Map the global values to the local
     MapGlobalToLocal(meshFile);
@@ -172,7 +205,7 @@ void Initialize_Geometry::SetupParFiniteElementSpace(int order) {
 }
 
 
-void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* distanceFile) {
+void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* distanceFile, std::unique_ptr<mfem::GridFunction>& gDsF_out) {
     std::string meshFileStr(meshFile);  // Convert to std::string
     
     if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
@@ -201,7 +234,7 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
     if (mfem::Mpi::WorldRank() == 0) { // only print on rank 0
     cout << "Reading .dsF file for global distance function for tif case" << endl;
     }
-        gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
+        gDsF_out = make_unique<mfem::GridFunction>(globalfespace.get());
         std::ifstream myfile(distanceFile);
         if (myfile.is_open()) {
             // Skip the first four lines
@@ -213,7 +246,7 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
                     return;
                 }
             }
-            gDsF->Load(myfile, gDsF->Size());
+            gDsF_out->Load(myfile, gDsF_out->Size());
             myfile.close();
         } else {
             cerr << "Failed to open distance file" << endl;
@@ -225,10 +258,10 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
     if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
     { cout << "Reading .dsF file for global distance function for mesh case" << endl; }
 
-        gDsF = make_unique<mfem::GridFunction>(globalfespace.get());
+        gDsF_out = make_unique<mfem::GridFunction>(globalfespace.get());
         ifstream myfile(distanceFile);
         if (myfile.is_open()) {
-            gDsF->Load(myfile, gDsF->Size());
+            gDsF_out->Load(myfile, gDsF_out->Size());
             myfile.close();
         } else {
             cerr << "Failed to open distance file" << endl;
@@ -267,7 +300,9 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
         {cout << "Reading .tif file for mapping global to local grid function" << endl;}
 
         Vox = std::make_unique<mfem::ParGridFunction>(parfespace.get()); // used in Vox code
-        dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        // if (!dsF_A) dsF_A = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        // if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        // if (!dsF)    dsF    = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
         // Iterate over elements and map global to local
         for (ei = 0; ei < nE; ei++) {
@@ -278,10 +313,25 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
 
             for (int vi = 0; vi < nC; vi++) {                            // used in Vox code
                 (*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);         // used in Vox code
-            }                                                            // used in Vox code
+            }   
+            
+            if (gDsF) {
+                if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+                for (int vi = 0; vi < nC; ++vi) { (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]); }
+            }
 
-            for (int vi = 0; vi < nC; vi++) {
-                (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]);
+            if (gDsF_A) {
+                if (!dsF_A) dsF_A = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+                for (int vi=0; vi<nC; ++vi) (*dsF_A)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
+            }
+            if (gDsF_C) {
+                if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+                for (int vi=0; vi<nC; ++vi) (*dsF_C)(VTX[vi]) = (*gDsF_C)(gVTX[vi]);
+            }
+            // legacy single (half): mirror A into dsF
+            if (!gDsF_C && gDsF_A) {
+                if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+                for (int vi=0; vi<nC; ++vi) (*dsF)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
             }
         }
 
@@ -291,8 +341,9 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
         {cout << "Reading .mesh file for mapping global to local grid function" << endl;}
 
         // Assuming dsF is a ParGridFunction for the mesh file
-        dsF = make_unique<mfem::ParGridFunction>(parfespace.get());
-
+        // if (!dsF_A) dsF_A = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        // if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        // if (!dsF)   dsF   = std::make_unique<mfem::ParGridFunction>(parfespace.get());
         // Map local distance function from global one
         for (ei = 0; ei < nE; ei++) {
             gei = E_L2G[ei];
@@ -300,9 +351,25 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
             globalMesh->GetElementVertices(gei, gVTX);
             parallelMesh->GetElementVertices(ei, VTX);
 
-            for (int vi = 0; vi < nC; vi++) {
-                (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]);
+            if (gDsF) {
+                if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+                for (int vi = 0; vi < nC; ++vi) { (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]); }
             }
+
+            if (gDsF_A) {
+                if (!dsF_A) dsF_A = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+                for (int vi=0; vi<nC; ++vi) (*dsF_A)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
+            }
+            if (gDsF_C) {
+                if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+                for (int vi=0; vi<nC; ++vi) (*dsF_C)(VTX[vi]) = (*gDsF_C)(gVTX[vi]);
+            }
+            // legacy single (half): mirror A into dsF
+            if (!gDsF_C && gDsF_A) {
+                if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+                for (int vi=0; vi<nC; ++vi) (*dsF)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
+            }
+
         }
     } else {
         cerr << "Unsupported file type for MapGlobalToLocal" << endl;
