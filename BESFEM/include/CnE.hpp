@@ -77,7 +77,7 @@ public:
 
     // ---------- Boundary forcing ----------
     mfem::ParLinearForm Fet; ///< Linear form for domain/boundary forcing
-    mfem::Array<int> nbc_w_bdr; ///< Boundary markers for Neumann BCs
+    mfem::Array<int> nbc_CnE_bdr; ///< Boundary markers for Neumann BCs
     std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef; ///< Product coefficient for boundary terms
     mfem::ConstantCoefficient nbcCoef; ///< Scalar coefficient in boundary term
     mfem::GridFunctionCoefficient matCoef_R; ///< Coefficient wrapper for PeR

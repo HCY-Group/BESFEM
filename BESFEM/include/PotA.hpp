@@ -99,8 +99,8 @@ private:
 
     double gtPsi; ///< Total Psi from MeshHandler
 
-    mfem::Array<int> ess_tdof_list_e; ///< List of essential true degrees of freedom for Dirichlet boundary conditions
-    mfem::Array<int> dbc_e_bdr; ///< Array marking Dirichlet boundary attributes
+    mfem::Array<int> ess_tdof_list_w; ///< List of essential true degrees of freedom for Dirichlet boundary conditions
+    mfem::Array<int> dbc_w_bdr; ///< Array marking Dirichlet boundary attributes
 
     mfem::ParGridFunction kap; ///< Conductivity field for particle potential
     mfem::GridFunctionCoefficient cKp; ///< Coefficient for the conductivity field

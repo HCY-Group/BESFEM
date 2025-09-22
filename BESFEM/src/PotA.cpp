@@ -9,8 +9,8 @@
 #include <optional>
 
 PotA::PotA(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_e_bdr(geo.dbc_e_bdr), gtPsi(para.gtPsi), 
-    ess_tdof_list_e(geo.ess_tdof_list_e), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get())
+    : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_w_bdr(geo.dbc_w_bdr), gtPsi(para.gtPsi), 
+    ess_tdof_list_w(geo.ess_tdof_list_w), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get())
     
     {
     cgPP_solver = mfem::CGSolver(MPI_COMM_WORLD);
@@ -44,12 +44,12 @@ void PotA::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     kap *= 3.3;
     SolverSteps::InitializeStiffnessMatrix(cKp, Kp2); // Initialize the stiffness matrix
     
-    mfem::ConstantCoefficient dbc_e_Coef(BvA); // Coefficient for Dirichlet boundary conditions
-    ph.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
+    mfem::ConstantCoefficient dbc_w_Coef(BvA); // Coefficient for Dirichlet boundary conditions
+    ph.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
     
-    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+    fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
 
-    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
+    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_w, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
 
     Mpp = std::make_unique<mfem::HypreBoomerAMG>(KmP);  // builds hierarchy once
     Mpp->SetPrintLevel(0);
@@ -60,7 +60,7 @@ void PotA::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     SolverSteps::Update(Bp2); // Assemble the force term
     Fpt = *Bp2; // Assign the force term
 
-    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system
+    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_w, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system
 }
 
 
@@ -78,11 +78,11 @@ void PotA::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     Bp2->Assemble();
     Fpt = *Bp2; // Assign the force term
 
-    mfem::ConstantCoefficient dbc_e_Coef(BvA);	
+    mfem::ConstantCoefficient dbc_w_Coef(BvA);	
 
-    phx.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
+    phx.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
     
-    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
+    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_w, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
 
     pP0 = phx; // Store the current potential field
     pP0.GetTrueDofs(Xs0); // Extract degrees of freedom

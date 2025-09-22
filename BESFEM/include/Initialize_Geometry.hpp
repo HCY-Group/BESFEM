@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "SimTypes.hpp"
 
 using namespace std;
 
@@ -110,8 +111,10 @@ public:
 
     /**
      * @brief Sets up boundary condition markers for Dirichlet and Neumann boundaries.
+     * @param mode Cell mode (HALF or FULL).
+     * @param electrode Electrode type (ANODE, CATHODE, or BOTH).
      */
-    void SetupBoundaryConditions();
+    void SetupBoundaryConditions(sim::CellMode mode, sim::Electrode electrode);
 
     /**
      * @brief Prints information about the mesh (elements, vertices, etc.).
@@ -140,16 +143,33 @@ public:
     int ei;  ///< Local element index.
 
     mfem::Array<int> nbc_w_bdr; ///< West Neumann Boundary Conditions
-    mfem::Array<int> nbc_s_bdr; ///< West Neumann Boundary Conditions
-    mfem::Array<int> nbc_e_bdr; ///< West Neumann Boundary Conditions
-    mfem::Array<int> nbc_n_bdr; ///< West Neumann Boundary Conditions
-
-    
-    mfem::Array<int> ess_tdof_list_w; ///< Total DOF West
-    mfem::Array<int> ess_tdof_list_e; ///< Total DOF East
+    mfem::Array<int> nbc_s_bdr; ///< South Neumann Boundary Conditions
+    mfem::Array<int> nbc_e_bdr; ///< East Neumann Boundary Conditions
+    mfem::Array<int> nbc_n_bdr; ///< North Neumann Boundary Conditions
+    mfem::Array<int> nbc_CnE_bdr; ///< Electrolyte Neumann Boundary Conditions
+    mfem::Array<int> dbc_CnE_bdr; ///< Electrolyte Dirichlet Boundary Conditions
 
     mfem::Array<int> dbc_w_bdr; ///< West Dirichlet Boundary Conditions
     mfem::Array<int> dbc_e_bdr; ///< East Dirichlet Boundary Conditions
+
+    mfem::Array<int> A_nbc_w_bdr; ///< West Neumann Boundary Conditions for Anode
+    mfem::Array<int> A_nbc_e_bdr; ///< East Neumann Boundary Conditions for Anode
+
+    mfem::Array<int> C_nbc_w_bdr; ///< West Neumann Boundary Conditions for Cathode
+    mfem::Array<int> C_nbc_e_bdr; ///< East Neumann Boundary Conditions for Cathode
+
+    mfem::Array<int> A_dbc_w_bdr; ///< West Dirichlet Boundary Conditions for Anode
+    mfem::Array<int> A_dbc_e_bdr; ///< East Dirichlet Boundary Conditions for Anode
+
+    mfem::Array<int> C_dbc_w_bdr; ///< West Dirichlet Boundary Conditions for Cathode
+    mfem::Array<int> C_dbc_e_bdr; ///< East Dirichlet Boundary Conditions for Cathode
+    
+    mfem::Array<int> ess_tdof_list_w; ///< Total DOF West
+    mfem::Array<int> ess_tdof_list_e; ///< Total DOF East
+    mfem::Array<int> A_ess_tdof_list_w; ///< Anode DOF West
+    mfem::Array<int> A_ess_tdof_list_e; ///< Anode DOF East
+    mfem::Array<int> C_ess_tdof_list_w; ///< Cathode DOF West
+    mfem::Array<int> C_ess_tdof_list_e; ///< Cathode DOF East
     
     std::unique_ptr<mfem::Mesh> globalMesh;              ///< Global serial mesh.
     std::unique_ptr<mfem::ParMesh> parallelMesh;         ///< Parallel mesh.
@@ -158,7 +178,6 @@ public:
     std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; ///< Parallel finite element space.
     std::shared_ptr<mfem::ParFiniteElementSpace> parfespace_dg; ///< Parallel DG finite element space.
     std::shared_ptr<mfem::ParFiniteElementSpace> pardimfespace_dg; ///< Parallel DG FE space (dim).
-
 
     double Onm; ///< Number of grid function entries.
     std::unique_ptr<mfem::GridFunction> gDsF; ///< Global distance function.

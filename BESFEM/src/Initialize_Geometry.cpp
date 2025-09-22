@@ -1,6 +1,7 @@
 #include "../include/Initialize_Geometry.hpp"
 #include "../inputs/Constants.hpp"
 #include "../include/readtiff.h"
+#include "../include/SimTypes.hpp"
 #include "mfem.hpp"
 #include <tiffio.h>
 #include <fstream>
@@ -9,6 +10,8 @@
 #include <vector>
 
 using namespace std;
+using sim::CellMode;
+using sim::Electrode;
 
 
 // Constructor
@@ -54,7 +57,6 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
     AdjustDistanceFile(distanceFileA); // for anode
     AdjustDistanceFile(distanceFileC); // for cathode
 
-    
     // Initialize the global mesh
     InitializeGlobalMesh(meshFile);
 
@@ -300,9 +302,6 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
         {cout << "Reading .tif file for mapping global to local grid function" << endl;}
 
         Vox = std::make_unique<mfem::ParGridFunction>(parfespace.get()); // used in Vox code
-        // if (!dsF_A) dsF_A = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-        // if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-        // if (!dsF)    dsF    = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
         // Iterate over elements and map global to local
         for (ei = 0; ei < nE; ei++) {
@@ -328,7 +327,7 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
                 if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
                 for (int vi=0; vi<nC; ++vi) (*dsF_C)(VTX[vi]) = (*gDsF_C)(gVTX[vi]);
             }
-            // legacy single (half): mirror A into dsF
+
             if (!gDsF_C && gDsF_A) {
                 if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
                 for (int vi=0; vi<nC; ++vi) (*dsF)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
@@ -340,10 +339,6 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
         if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
         {cout << "Reading .mesh file for mapping global to local grid function" << endl;}
 
-        // Assuming dsF is a ParGridFunction for the mesh file
-        // if (!dsF_A) dsF_A = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-        // if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-        // if (!dsF)   dsF   = std::make_unique<mfem::ParGridFunction>(parfespace.get());
         // Map local distance function from global one
         for (ei = 0; ei < nE; ei++) {
             gei = E_L2G[ei];
@@ -364,7 +359,7 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
                 if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
                 for (int vi=0; vi<nC; ++vi) (*dsF_C)(VTX[vi]) = (*gDsF_C)(gVTX[vi]);
             }
-            // legacy single (half): mirror A into dsF
+
             if (!gDsF_C && gDsF_A) {
                 if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
                 for (int vi=0; vi<nC; ++vi) (*dsF)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
@@ -394,11 +389,6 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffData;
 	tiffData = reader.getImageData();
-	
-	// cout << "tiff size: "            << tiffData.size()         << endl;	
-	// cout << "tiff[0] size: "         << tiffData[0].size()      << endl;
-	// cout << "tiff[0][0] size: "      << tiffData[0][0].size()   << endl;
-	// cout << "tiffdata[0][0][0] = "   << tiffData[0][0][0]       << endl;
 
     return tiffData;
 }
@@ -436,42 +426,123 @@ void Initialize_Geometry::PrintMeshInfo() {
         return;
     }
 
-    // std::cout << "Number of vertices: " << nV << "\n";
-    // std::cout << "Number of elements: " << nE << "\n";
-    // std::cout << "Number of corner vertices: " << nC << "\n";
 }
 
-void Initialize_Geometry::SetupBoundaryConditions() {
+void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode electrode) {
 
     int dim = parallelMesh->Dimension();
 
     if (dim == 3) {
 
     std::cout << "Setting up boundary conditions for 3D mesh" << std::endl;
+
+    if (mode == CellMode::HALF && electrode == Electrode::ANODE) {
+        std::cout << "Setting up boundary conditions for Half Cell: ANODE" << std::endl;
+
+        A_nbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        A_nbc_e_bdr = 0;
+        A_nbc_e_bdr[2] = 1; 
+
+        A_dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        A_dbc_e_bdr = 0;
+        A_dbc_e_bdr[2] = 1;
+
+        A_dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        A_dbc_w_bdr = 0;
+        A_dbc_w_bdr[0] = 1;
+        dbc_w_bdr = A_dbc_w_bdr; // Dirichlet BC
+
+        A_ess_tdof_list_w.SetSize(0);
+        parfespace->GetEssentialTrueDofs(A_dbc_w_bdr, A_ess_tdof_list_w);
+        ess_tdof_list_w = A_ess_tdof_list_w; 
+
+        nbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        nbc_CnE_bdr = A_nbc_e_bdr; // Neumann BC
+
+        dbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_CnE_bdr = A_dbc_e_bdr; // Dirichlet BC
+
+
+    } else if (mode == CellMode::HALF && electrode == Electrode::CATHODE) {
+        std::cout << "Setting up boundary conditions for Half Cell: CATHODE" << std::endl;
+
+        C_nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        C_nbc_w_bdr = 0;
+        C_nbc_w_bdr[0] = 1; 
+
+        C_dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        C_dbc_w_bdr = 0;
+        C_dbc_w_bdr[0] = 1;
+
+        C_dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        C_dbc_e_bdr = 0;
+        C_dbc_e_bdr[2] = 1;
+        dbc_e_bdr = C_dbc_e_bdr; // Dirichlet BC for CnE same as Cathode Dirichlet BC
+
+        C_ess_tdof_list_e.SetSize(0);
+        parfespace->GetEssentialTrueDofs(C_dbc_e_bdr, C_ess_tdof_list_e);
+        ess_tdof_list_e = C_ess_tdof_list_e;
+
+        nbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        nbc_CnE_bdr = C_nbc_w_bdr; // Neumann BC
+
+        dbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_CnE_bdr = C_dbc_w_bdr; // Dirichlet BC 
+
+    } else {
+        std::cout << "Setting up boundary conditions for Full Cell" << std::endl;
+
+        A_dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        A_dbc_w_bdr = 0;
+        A_dbc_w_bdr[0] = 1;
+        dbc_w_bdr = A_dbc_w_bdr; // Dirichlet BC
+
+        A_ess_tdof_list_w.SetSize(0);
+        parfespace->GetEssentialTrueDofs(A_dbc_w_bdr, A_ess_tdof_list_w);
+        ess_tdof_list_w = A_ess_tdof_list_w; 
+
+        C_dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        C_dbc_e_bdr = 0;
+        C_dbc_e_bdr[2] = 1;
+        dbc_e_bdr = C_dbc_e_bdr; // Dirichlet BC for CnE same as Cathode Dirichlet BC
+
+        C_ess_tdof_list_e.SetSize(0);
+        parfespace->GetEssentialTrueDofs(C_dbc_e_bdr, C_ess_tdof_list_e);
+        ess_tdof_list_e = C_ess_tdof_list_e;
+
+
+        nbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        nbc_CnE_bdr = 0;
+
+        dbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_CnE_bdr = 0;
+
+
+    }
     
-    // DISK
-    // Boundary attributes for Neumann BC on the west boundary for CnE
-    nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-    nbc_w_bdr = 0;
-    nbc_w_bdr[2] = 1;
+    // // DISK
+    // // Boundary attributes for Neumann BC on the west boundary for CnE
+    // nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+    // nbc_w_bdr = 0;
+    // nbc_w_bdr[2] = 1; // east
 
-    // Dirichlet BC on the east boundary for CnP & phP
-    dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-    dbc_e_bdr = 0; 
-    dbc_e_bdr[0] = 1;  // Applying Dirichlet BC to the west boundary
+    // // Dirichlet BC on the east boundary for CnP & phP
+    // dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+    // dbc_e_bdr = 0; 
+    // dbc_e_bdr[0] = 1;  // Applying Dirichlet BC to the west boundary
 
-    // Extract essential true DOFs (Dirichlet BCs) on the east boundary
-    ess_tdof_list_e.SetSize(0);
-    parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+    // // Extract essential true DOFs (Dirichlet BCs) on the east boundary
+    // ess_tdof_list_e.SetSize(0);
+    // parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
 
-    // Dirichlet BC on the west boundary for CnE & phE
-    dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-    dbc_w_bdr = 0;
-    dbc_w_bdr[2] = 1;   // east
+    // // Dirichlet BC on the west boundary for CnE & phE
+    // dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+    // dbc_w_bdr = 0;
+    // dbc_w_bdr[2] = 1;   // east
 
-    // Extract essential true DOFs (Dirichlet BCs) on the west boundary
-    ess_tdof_list_w.SetSize(0); 
-    parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
+    // // Extract essential true DOFs (Dirichlet BCs) on the west boundary
+    // ess_tdof_list_w.SetSize(0); 
+    // parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
 
     } else if (dim == 2) {
 

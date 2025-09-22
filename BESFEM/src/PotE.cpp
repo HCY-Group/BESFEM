@@ -14,7 +14,7 @@
 // double BvE = -0.4686; ///< Global variable for the boundary value of electrolyte potential
 
 PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_w_bdr(geo.dbc_w_bdr), gtPse(para.gtPse), 
+    : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_CnE_bdr(geo.dbc_CnE_bdr), gtPse(para.gtPse), 
     kpl(fespace.get()), RpE(fespace.get()), Dmp(fespace.get()), pE0(fespace.get())
     
     {
@@ -53,12 +53,12 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
     SolverSteps::InitializeStiffnessMatrix(cKe, Kl2); // Initialize the stiffness matrix
 
-    mfem::ConstantCoefficient dbc_w_Coef(BvE); // Coefficient for Dirichlet boundary conditions
-    ph.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions 
+    mfem::ConstantCoefficient dbc_potE_Coef(BvE); // Coefficient for Dirichlet boundary conditions
+    ph.ProjectBdrCoefficient(dbc_potE_Coef, dbc_CnE_bdr); // Apply Dirichlet boundary conditions 
 
-    fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w); // Get essential true degrees of freedom for Dirichlet boundary conditions
+    fespace->GetEssentialTrueDofs(dbc_CnE_bdr, ess_tdof_list_potE); // Get essential true degrees of freedom for Dirichlet boundary conditions
 
-    SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, ph, B1t, Kml, X1v, B1v); // Assemble the linear system
+    SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_potE, ph, B1t, Kml, X1v, B1v); // Assemble the linear system
 
     Mpe = std::make_unique<mfem::HypreBoomerAMG>(Kml);  // builds hierarchy once
     Mpe->SetPrintLevel(0);
@@ -68,7 +68,7 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     SolverSteps::Update(Bl2); // Update the force term
     Flt = *Bl2; // Move the force term
 
-    SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, ph, Flt, Kml, X1v, Flb); // Assemble the force term system
+    SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_potE, ph, Flt, Kml, X1v, Flb); // Assemble the force term system
 
     SolverSteps::InitializeStiffnessMatrix(cDm, Kl1); // Initialize the diffusivity matrix
     SolverSteps::FormLinearSystem(Kl1, boundary_dofs, ph, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
@@ -88,10 +88,10 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     SolverSteps::Update(Kl2); // Update the conductivity matrix
 
-    mfem::ConstantCoefficient dbc_w_Coef(BvE); // Coefficient for Dirichlet boundary conditions
-    potential.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
+    mfem::ConstantCoefficient dbc_potE_Coef(BvE); // Coefficient for Dirichlet boundary conditions
+    potential.ProjectBdrCoefficient(dbc_potE_Coef, dbc_CnE_bdr); // Apply Dirichlet boundary conditions
 
-    SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system
+    SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_potE, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system
 
     Mpe->SetOperator(Kml); // Set the operator for the preconditioner
     cgPE_solver.SetPreconditioner(*Mpe);
@@ -108,10 +108,10 @@ void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     Bl2->Assemble();
     Flt = *Bl2;
 
-    mfem::ConstantCoefficient dbc_w_Coef(BvE); // Coefficient for Dirichlet boundary conditions
-    phx.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
+    mfem::ConstantCoefficient dbc_potE_Coef(BvE); // Coefficient for Dirichlet boundary conditions
+    phx.ProjectBdrCoefficient(dbc_potE_Coef, dbc_CnE_bdr); // Apply Dirichlet boundary conditions
     
-    SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_w, phx, Flt, Kml, X1v, Flb); // Assemble the force term system
+    SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_potE, phx, Flt, Kml, X1v, Flb); // Assemble the force term system
 
     RHSl = Flb;
     RHSl += LpCe;

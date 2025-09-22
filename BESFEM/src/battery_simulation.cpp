@@ -2,6 +2,7 @@
 #include "mpi.h"
 
 #include "../inputs/Constants.hpp"
+#include "../include/SimTypes.hpp"
 #include "../include/Initialize_Geometry.hpp"
 #include "../include/Domain_Parameters.hpp"
 #include "../include/Concentrations_Base.hpp"
@@ -108,12 +109,9 @@ static void SaveSimulationOutputs(
     MPI_Barrier(MPI_COMM_WORLD);
 }
 
-enum class CellMode   { HALF, FULL };
-enum class Electrode  { ANODE, CATHODE, BOTH }; // BOTH used only for FULL
-
 struct SimulationConfig {
-    CellMode    mode = CellMode::HALF;
-    Electrode   half_electrode = Electrode::ANODE; // which one in HALF
+    sim::CellMode mode = sim::CellMode::HALF;
+    sim::Electrode half_electrode = sim::Electrode::ANODE;
     const char* mesh_file = Constants::mesh_file;
     const char* dsF_file_A = Constants::dsF_file_A; // anode ψ distance
     const char* dsF_file_C = Constants::dsF_file_C; // cathode ψ distance
@@ -121,7 +119,6 @@ struct SimulationConfig {
     int order = Constants::order;
     int num_timesteps = 1000; // Default number of timesteps
 };
-
 
 
 // ============================================================================
@@ -163,8 +160,8 @@ int main(int argc, char *argv[]) {
         args.AddOption(&half_elec, "-elec", "--electrode", "HALF mode only: anode | cathode.");
         args.ParseCheck();
 
-        cfg.mode        = (std::strcmp(mode, "full") == 0) ? CellMode::FULL : CellMode::HALF;
-        cfg.half_electrode = (std::strcmp(half_elec, "cathode") == 0) ? Electrode::CATHODE : Electrode::ANODE;
+        cfg.mode        = (std::strcmp(mode, "full") == 0) ? sim::CellMode::FULL : sim::CellMode::HALF;
+        cfg.half_electrode = (std::strcmp(half_elec, "cathode") == 0) ? sim::Electrode::CATHODE : sim::Electrode::ANODE;
         cfg.mesh_file   = mesh_file;
         cfg.dsF_file_A  = dsF_file_A;   // may be nullptr if not passed
         cfg.dsF_file_C  = dsF_file_C;   // may be nullptr if not passed
@@ -180,20 +177,19 @@ int main(int argc, char *argv[]) {
         const bool used_dA = flag_present({"-dA","--anode-distance"});
         const bool used_dC = flag_present({"-dC","--cathode-distance"});
 
-        const char* active_dsF = nullptr;
-        if (cfg.mode == CellMode::FULL) {
+        if (cfg.mode == sim::CellMode::FULL) {
             if (!used_dA || !used_dC || !*cfg.dsF_file_A || !*cfg.dsF_file_C)
                 mfem::mfem_error("FULL mode requires both -dA <file> and -dC <file>.");
         } else {
-            const char* active = (cfg.half_electrode == Electrode::CATHODE)
+            const char* active = (cfg.half_electrode == sim::Electrode::CATHODE)
                                ? cfg.dsF_file_C : cfg.dsF_file_A;
             if (!active || !*active)
                 mfem::mfem_error("HALF mode requires -dA (anode) or -dC (cathode) with a valid file.");
         }
 
         if (mfem::Mpi::WorldRank() == 0) {
-            if (cfg.mode == CellMode::HALF) { // ANODE
-                if (cfg.half_electrode == Electrode::ANODE) {
+            if (cfg.mode == sim::CellMode::HALF) { // ANODE
+                if (cfg.half_electrode == sim::Electrode::ANODE) {
                     if (!used_dA) mfem::mfem_error("HALF-ANODE requires --dA <file> (do not pass --dC).");
                     if (used_dC)  mfem::mfem_error("HALF-ANODE: you passed --dC (cathode). Use --dA instead.");
                     if (!cfg.dsF_file_A || !std::strlen(cfg.dsF_file_A))
@@ -214,6 +210,8 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        const char* active_dsF = (cfg.half_electrode == sim::Electrode::CATHODE) ? cfg.dsF_file_C : cfg.dsF_file_A;
+
         // Create timestamped output folder
         std::string outdir = BuildRunOutdir(mesh_file, num_timesteps);
         if (mfem::Mpi::WorldRank() == 0) {
@@ -228,55 +226,115 @@ int main(int argc, char *argv[]) {
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
-        bool half_mode     = (cfg.mode == CellMode::HALF);
-        bool half_is_anode = (cfg.half_electrode == Electrode::ANODE);
+        // bool half_mode     = (cfg.mode == sim::CellMode::HALF);
+        // bool half_is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
 
         // Initialize Mesh & Geometry
         Initialize_Geometry geometry;
-        // geometry.InitializeMesh(mesh_file, active_dsF, MPI_COMM_WORLD, cfg.order);
-        if (cfg.mode == CellMode::HALF) {
-            const char* active_dsF = (cfg.half_electrode == Electrode::CATHODE)
-                                ? cfg.dsF_file_C : cfg.dsF_file_A;
+        if (cfg.mode == sim::CellMode::HALF) {
             geometry.InitializeMesh(cfg.mesh_file, active_dsF, MPI_COMM_WORLD, cfg.order);
+            geometry.SetupBoundaryConditions(sim::CellMode::HALF, cfg.half_electrode);
         } else {
-            geometry.InitializeMesh(cfg.mesh_file, cfg.dsF_file_A, cfg.dsF_file_C,
-                                    MPI_COMM_WORLD, cfg.order);
+            geometry.InitializeMesh(cfg.mesh_file, cfg.dsF_file_A, cfg.dsF_file_C, MPI_COMM_WORLD, cfg.order);
+            geometry.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
         }
-        geometry.SetupBoundaryConditions();
 
-        // Initialize and Calculate Domain Parameters (psi, pse, AvB, AvP)
+        // Initialize and Calculate Domain Parameters
         Domain_Parameters domain_parameters(geometry);
         domain_parameters.SetupDomainParameters(mesh_type);
 
-        //////////////////////////
 
-        geometry.parallelMesh->Save((outdir + "/pmesh").c_str());
+        // Initialize Concentrations & Potentials
 
-        // Existing saves:
-        domain_parameters.psi->Save((outdir + "/psi").c_str());
-        domain_parameters.pse->Save((outdir + "/pse").c_str());
-        domain_parameters.AvB->Save((outdir + "/AvB").c_str());
-        domain_parameters.AvP->Save((outdir + "/AvP").c_str());
+        // Electrolyte concentration initialization with a grid function and initial value
+        CnE electrolyte_concentration(geometry, domain_parameters);
+        mfem::ParGridFunction CnE_gf(geometry.parfespace.get());
+        electrolyte_concentration.Initialize(CnE_gf, Constants::init_CnE, *domain_parameters.pse);
+        CnE_gf.Save((outdir + "/CnE").c_str());
 
-        if (domain_parameters.psA) { domain_parameters.psA->Save((outdir + "/psA").c_str()); }
-        if (domain_parameters.psC) { domain_parameters.psC->Save((outdir + "/psC").c_str()); }
 
-        /////////////////////////////
+        // Electrolyte potential initialization with a grid function and initial value
+        PotE electrolyte_potential(geometry, domain_parameters);
+        mfem::ParGridFunction phE_gf(geometry.parfespace.get());
+        electrolyte_potential.Initialize(phE_gf, Constants::init_BvE, *domain_parameters.pse);
+        phE_gf.Save((outdir + "/phE").c_str());
+
+
+        if (cfg.mode == sim::CellMode::HALF) // HALF-CELL
+        {
+            if(cfg.half_electrode == sim::Electrode::ANODE) {
+
+                // Anode concentration initialization with a grid function and initial value
+                CnA anode_concentration(geometry, domain_parameters);
+                mfem::ParGridFunction CnA_gf(geometry.parfespace.get());
+                anode_concentration.Initialize(CnA_gf, Constants::init_CnA, *domain_parameters.psi);
+                CnA_gf.Save((outdir + "/CnA").c_str());
+
+                // Anode potential initialization with a grid function and initial value
+                PotA anode_potential(geometry, domain_parameters);
+                mfem::ParGridFunction phA_gf(geometry.parfespace.get());
+                anode_potential.Initialize(phA_gf, Constants::init_BvA, *domain_parameters.psi);
+                phA_gf.Save((outdir + "/phA").c_str());
+
+
+            } else { // HALF-CATHODE
+
+                // Cathode concentration initialization with a grid function and initial value
+                CnC cathode_concentration(geometry, domain_parameters);
+                mfem::ParGridFunction CnC_gf(geometry.parfespace.get());
+                cathode_concentration.Initialize(CnC_gf, Constants::init_CnC, *domain_parameters.psi);
+                CnC_gf.Save((outdir + "/CnC").c_str());
+
+                // Cathode potential initialization with a grid function and initial value
+                PotC cathode_potential(geometry, domain_parameters);
+                mfem::ParGridFunction phC_gf(geometry.parfespace.get());
+                cathode_potential.Initialize(phC_gf, Constants::init_BvC, *domain_parameters.psi);
+                phC_gf.Save((outdir + "/phC").c_str());
+
+            }
+        } 
+        else { // FULL-CELL
+
+            // Anode concentration initialization with a grid function and initial value
+            CnA anode_concentration(geometry, domain_parameters);
+            mfem::ParGridFunction CnA_gf(geometry.parfespace.get());
+            anode_concentration.Initialize(CnA_gf, Constants::init_CnA, *domain_parameters.psA); 
+            CnA_gf.Save((outdir + "/CnA").c_str());
+
+            // Anode potential initialization with a grid function and initial value
+            PotA anode_potential(geometry, domain_parameters);
+            mfem::ParGridFunction phA_gf(geometry.parfespace.get());
+            anode_potential.Initialize(phA_gf, Constants::init_BvA, *domain_parameters.psi);
+            phA_gf.Save((outdir + "/phA").c_str());
+
+            // Cathode concentration initialization with a grid function and initial value
+            CnC cathode_concentration(geometry, domain_parameters);
+            mfem::ParGridFunction CnC_gf(geometry.parfespace.get());
+            cathode_concentration.Initialize(CnC_gf, Constants::init_CnC, *domain_parameters.psC);
+            CnC_gf.Save((outdir + "/CnC").c_str());
+
+            // Cathode potential initialization with a grid function and initial value
+            PotC cathode_potential(geometry, domain_parameters);
+            mfem::ParGridFunction phC_gf(geometry.parfespace.get());
+            cathode_potential.Initialize(phC_gf, Constants::init_BvC, *domain_parameters.psi);
+            phC_gf.Save((outdir + "/phC").c_str());
+        }
+
         
-    //     // Cathode concentration initialization with a grid function and initial value
-    //     CnC cathode_concentration(geometry, domain_parameters);
-    //     mfem::ParGridFunction CnC_gf(geometry.parfespace.get());
-    //     cathode_concentration.Initialize(CnC_gf, Constants::init_CnC, *domain_parameters.psi);
+        // // Cathode concentration initialization with a grid function and initial value
+        // CnC cathode_concentration(geometry, domain_parameters);
+        // mfem::ParGridFunction CnC_gf(geometry.parfespace.get());
+        // cathode_concentration.Initialize(CnC_gf, Constants::init_CnC, *domain_parameters.psi);
 
-    //     // Anode concentration initialization with a grid function and initial value
-    //     CnA anode_concentration(geometry, domain_parameters);
-    //     mfem::ParGridFunction CnA_gf(geometry.parfespace.get());
-    //     anode_concentration.Initialize(CnA_gf, Constants::init_CnA, *domain_parameters.psi);  // initial value: 2.02d-2
+        // // Anode concentration initialization with a grid function and initial value
+        // CnA anode_concentration(geometry, domain_parameters);
+        // mfem::ParGridFunction CnA_gf(geometry.parfespace.get());
+        // anode_concentration.Initialize(CnA_gf, Constants::init_CnA, *domain_parameters.psi);  // initial value: 2.02d-2
 
-    //     // Electrolyte concentration initialization with a grid function and initial value
-    //     CnE electrolyte_concentration(geometry, domain_parameters);
-    //     mfem::ParGridFunction CnE_gf(geometry.parfespace.get());
-    //     electrolyte_concentration.Initialize(CnE_gf, Constants::init_CnE, *domain_parameters.pse); 
+        // // Electrolyte concentration initialization with a grid function and initial value
+        // CnE electrolyte_concentration(geometry, domain_parameters);
+        // mfem::ParGridFunction CnE_gf(geometry.parfespace.get());
+        // electrolyte_concentration.Initialize(CnE_gf, Constants::init_CnE, *domain_parameters.pse); 
 
     //     // Cathode potential initialization with a grid function and initial value
     //     PotC cathode_potential(geometry, domain_parameters);
@@ -457,5 +515,21 @@ int main(int argc, char *argv[]) {
 }
 
 
+
+
+        //////////////////////////
+
+        // geometry.parallelMesh->Save((outdir + "/pmesh").c_str());
+
+        // // Existing saves:
+        // domain_parameters.psi->Save((outdir + "/psi").c_str());
+        // domain_parameters.pse->Save((outdir + "/pse").c_str());
+        // domain_parameters.AvB->Save((outdir + "/AvB").c_str());
+        // domain_parameters.AvP->Save((outdir + "/AvP").c_str());
+
+        // if (domain_parameters.psA) { domain_parameters.psA->Save((outdir + "/psA").c_str()); }
+        // if (domain_parameters.psC) { domain_parameters.psC->Save((outdir + "/psC").c_str()); }
+
+        /////////////////////////////
 
 

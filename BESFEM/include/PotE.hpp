@@ -90,8 +90,8 @@ private:
 
     // ---------- Spaces / BC bookkeeping ----------
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Parallel FE space.
-    mfem::Array<int> dbc_w_bdr;       ///< Dirichlet boundary markers (west).
-    mfem::Array<int> ess_tdof_list_w; ///< Essential true DOFs on west boundary.
+    mfem::Array<int> dbc_CnE_bdr;       ///< Dirichlet boundary markers (west).
+    mfem::Array<int> ess_tdof_list_potE; ///< Essential true DOFs on west boundary.
 
     // ---------- Physical constants (derived combos) ----------
     double tc1 = (2*Constants::t_minus - 1.0) / (2*Constants::t_minus*(1.0 - Constants::t_minus)); ///< Transport factor 1.

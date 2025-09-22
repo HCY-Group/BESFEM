@@ -31,18 +31,18 @@ LIB_FLAGS = -L$(MFEM_BUILD_DIR) -lmfem \
 #             Concentrations_Base.cpp CnE.cpp CnCH.cpp Reaction.cpp ../code/SolverSteps.cpp  \
 #             Potentials_Base.cpp PotP.cpp PotE.cpp
 
-SRC_FILES = Anna_ex_BESFEM_2D_Par_H2_gr.cpp
+# SRC_FILES = Anna_ex_BESFEM_2D_Par_H2_gr.cpp
 
-# SRC_FILES = ex_CnP_CnE_03_A_3D_Ser.cpp 
+SRC_FILES = ex_CnP_CnE_03_A_3D_Ser.cpp 
 # SRC_FILES = ex_Poisson_Solver_A1_2.cpp
 
 # SRC_FILES = fem_demo.cpp
             
 
 # Output executable
-EXEC = linear_simulation
+# EXEC = linear_simulation
 # EXEC = poisson
-# EXEC = demo
+EXEC = demo
 
 # Tiff reading
 LDFLAGS = -ltiff
