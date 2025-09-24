@@ -15,17 +15,23 @@
  
  Reaction::Reaction(Initialize_Geometry &geo, Domain_Parameters &para)
      : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo),
-       domain_parameters(para), AvP(*para.AvP), AvB(*para.AvB), EVol(para.EVol)
+       domain_parameters(para), EVol(para.EVol),
+    //    AvP(para.AvP ? para.AvP.get() : nullptr), AvB(para.AvB ? para.AvB.get() : nullptr),
+    //    AvA(para.AvA ? para.AvA.get() : nullptr), AvC(para.AvC ? para.AvC.get() : nullptr)
+    AvP(para.AvP ? para.AvP.get() : nullptr),
+    AvB(para.AvB ? para.AvB.get() : nullptr),
+    AvA(para.AvA ? para.AvA.get() : nullptr),
+    AvC(para.AvC ? para.AvC.get() : nullptr)
  {
-     nE = geometry.nE; 
-     nC = geometry.nC; 
-     nV = geometry.nV; 
- 
-     i0C = std::make_unique<mfem::ParGridFunction>(fespace.get()); // exchange current density
-     OCV = std::make_unique<mfem::ParGridFunction>(fespace.get()); // open circuit voltage
-     Kfw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // forward reaction constant
-     Kbw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // backward reaction constant
-     dPHE = std::make_unique<mfem::ParGridFunction>(fespace.get()); // voltage drop
+    nE = geometry.nE; 
+    nC = geometry.nC; 
+    nV = geometry.nV; 
+
+    i0C = std::make_unique<mfem::ParGridFunction>(fespace.get()); // exchange current density
+    OCV = std::make_unique<mfem::ParGridFunction>(fespace.get()); // open circuit voltage
+    Kfw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // forward reaction constant
+    Kbw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // backward reaction constant
+    dPHE = std::make_unique<mfem::ParGridFunction>(fespace.get()); // voltage drop
  
     std::ifstream myXfile("../inputs/C_Li_X_101.txt"); // ticks
     std::ifstream mydFfile("../inputs/C_Li_M6_101.txt"); // chemical potential
@@ -55,8 +61,6 @@ double Reaction::GetTableValues(double cn, const mfem::Vector &ticks, const mfem
  void Reaction::Initialize(mfem::ParGridFunction &Rx, double initial_value)
  {
      SetInitialReaction(Rx, initial_value);
-    //  Rx = AvP; // Scale by active particle surface area
-    //  Rx *= 8.0e-10 * 0.99 * 2.25; // Apply a scaling factor
  }
  
  void Reaction::SetInitialReaction(mfem::ParGridFunction &Rx, double initial_value)
@@ -69,7 +73,7 @@ double Reaction::GetTableValues(double cn, const mfem::Vector &ticks, const mfem
 // rate constants and exchange current density at interface
 void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
     for (int vi = 0; vi < nV; vi++){
-        if(AvB(vi) * Constants::dh > 0.0){ 
+        if((*AvB)(vi) * Constants::dh > 0.0){ 
             double val = -0.2 * (Cn(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn(vi) - 3.195);
             (*i0C)(vi) = pow(10.0, val) * 1.0e-3; // Exchange current density
             (*OCV)(vi) = 1.095 * Cn(vi) * Cn(vi) - 8.324e-7 * exp(14.31 * Cn(vi)) + 4.692 * exp(-0.5389 * Cn(vi)); // open circuit voltage
@@ -103,9 +107,9 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn
 {
 
     for (int vi = 0; vi < nV; vi++){
-        if ( AvB(vi) * Constants::dh > 0.0 ){ // Check for interface presence
+        if ( (*AvB)(vi) * Constants::dh > 0.0 ){ // Check for interface presence
             (*dPHE)(vi) = phx1(vi) - phx2(vi); // Voltage drop across the interface
-            Rx(vi) = AvP(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
+            Rx(vi) = (*AvP)(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
 					                   (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
 
         }

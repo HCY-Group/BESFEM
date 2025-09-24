@@ -462,6 +462,15 @@ void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode elect
         dbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
         dbc_CnE_bdr = A_dbc_e_bdr; // Dirichlet BC
 
+        // std::cout << "Anode NE BCs: " << std::endl;
+        // A_nbc_e_bdr.Print(std::cout); 
+
+        // std::cout << "Anode DE BCs: " << std::endl;
+        // A_dbc_e_bdr.Print(std::cout);
+
+        // std::cout << "Anode DW BCs: " << std::endl;
+        // A_dbc_w_bdr.Print(std::cout);
+
 
     } else if (mode == CellMode::HALF && electrode == Electrode::CATHODE) {
         std::cout << "Setting up boundary conditions for Half Cell: CATHODE" << std::endl;

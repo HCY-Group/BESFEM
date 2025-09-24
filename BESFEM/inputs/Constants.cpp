@@ -36,8 +36,11 @@ namespace Constants {
     const double init_CnE = 0.001005;                           ///< initial concentration in the electrolyte
     const double init_BvA = -0.1;                            ///< boundary condition for anode potential
     const double init_BvC = 2.9395;                         ///< boundary condition for cathode potential
-    // const double init_BvE = -0.4686;                         ///< boundary condition for electrolyte potential (cathode)
-    const double init_BvE = -1.0;                         ///< boundary condition for electrolyte potential (anode)
+    const double init_BvE = -0.4686;                         ///< boundary condition for electrolyte potential (cathode)
+    // const double init_BvE = -1.0;                         ///< boundary condition for electrolyte potential (anode)
+    const double init_Rxn = 0.0;                             ///< initial reaction rate
+    const double init_RxA = 0.0;                             ///< initial anode reaction
+    const double init_RxC = 0.0;                             ///< initial cathode reaction
 
 
 

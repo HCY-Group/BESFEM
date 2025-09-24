@@ -77,8 +77,16 @@ public:
     std::unique_ptr<mfem::ParGridFunction> Kbw; ///< Backward reaction rate constant field
     std::unique_ptr<mfem::ParGridFunction> i0C; ///< Exchange current density field
     std::unique_ptr<mfem::ParGridFunction> OCV; ///< Open circuit voltage field
-    mfem::ParGridFunction AvP; ///< Grid function for active particle surface area
-    mfem::ParGridFunction AvB; ///< Grid function for active boundary area
+    // std::unique_ptr<mfem::ParGridFunction> AvP; ///< Particle surface area
+    // std::unique_ptr<mfem::ParGridFunction> AvA; ///< Anode surface area
+    // std::unique_ptr<mfem::ParGridFunction> AvC; ///< Cathode surface area
+    // std::unique_ptr<mfem::ParGridFunction> AvB; ///< Boundary surface area
+
+    // non-owning
+    const mfem::ParGridFunction* AvP = nullptr;
+    const mfem::ParGridFunction* AvB = nullptr;
+    const mfem::ParGridFunction* AvA = nullptr;
+    const mfem::ParGridFunction* AvC = nullptr;
 
 
 private:

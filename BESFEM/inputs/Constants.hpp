@@ -39,6 +39,9 @@ namespace Constants {
     extern const double init_BvA;
     extern const double init_BvC;
     extern const double init_BvE;
+    extern const double init_Rxn;
+    extern const double init_RxA;
+    extern const double init_RxC;
 }
 
 #endif // CONSTANTS_HPP

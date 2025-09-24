@@ -4,10 +4,37 @@
 #include "../include/readtiff.h"
 #include "mfem.hpp"
 #include <tiffio.h>
+#include <mpi.h>
+#include <cmath>
+#include <cstring>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <memory>
 #include <stdexcept>
 #include <vector>
+
+static inline void GlobalMinMax(const mfem::ParGridFunction& gf,
+                                double& gmin, double& gmax,
+                                MPI_Comm comm = MPI_COMM_WORLD)
+{
+    double lmin =  std::numeric_limits<double>::infinity();
+    double lmax = -std::numeric_limits<double>::infinity();
+    for (int i = 0; i < gf.Size(); ++i) {
+        const double v = gf(i);
+        if (v < lmin) lmin = v;
+        if (v > lmax) lmax = v;
+    }
+    MPI_Allreduce(&lmin, &gmin, 1, MPI_DOUBLE, MPI_MIN, comm);
+    MPI_Allreduce(&lmax, &gmax, 1, MPI_DOUBLE, MPI_MAX, comm);
+}
+
+static inline bool AnyRankTrue(bool local, MPI_Comm comm = MPI_COMM_WORLD)
+{
+    int l = local ? 1 : 0, g = 0;
+    MPI_Allreduce(&l, &g, 1, MPI_INT, MPI_MAX, comm);
+    return g != 0;
+}
 
 
 double gTrgI = 0.0;
@@ -38,17 +65,17 @@ void Domain_Parameters::InitializeGridFunctions() {
         throw std::runtime_error("Finite element space is not initialized.");
     }
 
-    psi = make_unique<mfem::ParGridFunction>(fespace.get());
-    pse = make_unique<mfem::ParGridFunction>(fespace.get());
-    AvP = make_unique<mfem::ParGridFunction>(fespace.get());
-    AvB = make_unique<mfem::ParGridFunction>(fespace.get());
+    psi = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    pse = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvB = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
     const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
     if (full) {
         psA = std::make_unique<mfem::ParGridFunction>(fespace.get());
         psC = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        AvA = make_unique<mfem::ParGridFunction>(fespace.get());
-        AvC = make_unique<mfem::ParGridFunction>(fespace.get());
+        AvA = std::make_unique<mfem::ParGridFunction>(fespace.get());
+        AvC = std::make_unique<mfem::ParGridFunction>(fespace.get());
     }
 
 }
@@ -61,6 +88,8 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     }
     
     const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
+    const bool is_root = (mfem::Mpi::WorldRank() == 0);
+
 
     if (!full) {
         // ------- HALF CELL (unchanged, but read from best available dsF) -------
@@ -112,12 +141,14 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
 
         }
 
-            double psi_min = psi->Min();
-            double psi_max = psi->Max();
+            // ---- GLOBAL checks for psi -------------------------------------------
+            double psi_min = 0.0, psi_max = 0.0;
+            GlobalMinMax(*psi, psi_min, psi_max);
 
             // Basic bounds check
             std::cout << "[Psi Check] min = " << psi_min 
                     << ", max = " << psi_max << " (expected min = 1e-06, max = 1)" << std::endl;
+        
 
             if (psi_min < 0.0 || psi_max > 1.0 + 1e-6) {
                 std::cerr << "[Psi Check] ERROR: psi values out of [0,1]!" << std::endl;
@@ -220,10 +251,9 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             *psi += *psA;
             *psi += *psC;
 
-            double psA_min = psA->Min();
-            double psA_max = psA->Max();
-            double psC_min = psC->Min();
-            double psC_max = psC->Max();
+            double psA_min = 0, psA_max = 0, psC_min = 0, psC_max = 0;
+            GlobalMinMax(*psA, psA_min, psA_max);
+            GlobalMinMax(*psC, psC_min, psC_max);
 
             // Basic bounds check
             std::cout << "[PsA Check] min = " << psA_min 
@@ -368,8 +398,8 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
 void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
 
     // Compute target current based on total Psi, rho, Cr, and constants
-    trgI = total_psi * Constants::rho_A * (0.9 - 0.3) / (3600.0 / Constants::Cr);
-    // trgI = total_psi * Constants::rho * (1.0 - 0.0) / (3600.0 / Constants::Cr);
+    // trgI = total_psi * Constants::rho_A * (0.9 - 0.3) / (3600.0 / Constants::Cr);
+    trgI = total_psi * Constants::rho_A * (1.0 - 0.0) / (3600.0 / Constants::Cr);
 
     // Perform global MPI reduction to get the total target current
     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
