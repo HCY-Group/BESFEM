@@ -66,7 +66,7 @@ void PotA::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
 void PotA::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
 {
-	mfem::ConstantCoefficient dbc_e_Coef(BvA);
+	mfem::ConstantCoefficient dbc_w_Coef(BvA);
 
 }
 

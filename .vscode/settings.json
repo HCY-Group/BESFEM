@@ -70,5 +70,6 @@
         "typeindex": "cpp",
         "valarray": "cpp",
         "variant": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/mfem/glvis-4.2"
 }

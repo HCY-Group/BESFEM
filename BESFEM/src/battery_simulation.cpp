@@ -504,8 +504,8 @@ int main(int argc, char *argv[]) {
                     double globalerror_P = 1.0; // Error for particle potential
                     double globalerror_E = 1.0; // Error for electrolyte potential
 
-                    mfem::StopWatch sw1;
-                    sw1.Start();
+                    // // mfem::StopWatch sw1;
+                    // // sw1.Start();
             
                     while (globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8) {
 
@@ -516,7 +516,7 @@ int main(int argc, char *argv[]) {
                         electrolyte_potential->Advance(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
                     }
 
-                    sw1.Stop();
+                    // sw1.Stop();
                     // if(mfem::Mpi::WorldRank() == 0) {
                     //     std::cout << "Cathode Timestep " << t << " advance time: " << sw1.RealTime() << " seconds" << std::endl;
                     // }
@@ -537,7 +537,7 @@ int main(int argc, char *argv[]) {
                     VCell = cathode_potential->BvC - electrolyte_potential->BvE;
                 }
 
-                if (t % 50 == 0 && mfem::Mpi::WorldRank() == 0) {
+                if (t % 500 == 0 && mfem::Mpi::WorldRank() == 0) {
 
                     const double Xfr = half_is_anode ? anode_concentration->GetLithiation()
                                                 : cathode_concentration->GetLithiation();
@@ -578,22 +578,6 @@ int main(int argc, char *argv[]) {
             *CnA_gf *= *domain_parameters.psi;  CnA_gf->Save((outdir + "/CnA_final").c_str());
             *CnC_gf *= *domain_parameters.psi;  CnC_gf->Save((outdir + "/CnC_final").c_str());
         }
-
-        // // Destroy things that depend on geometry.parfespace first:
-        // cathode_potential.reset();
-        // anode_potential.reset();
-        // cathode_concentration.reset();
-        // anode_concentration.reset();
-        // electrolyte_potential.reset();
-        // electrolyte_concentration.reset();
-        // reaction.reset();
-
-        // phC_gf.reset();  CnC_gf.reset();
-        // phA_gf.reset();  CnA_gf.reset();
-        // phE_gf.reset();  CnE_gf.reset();
-        // Rxn_gf.reset();
-
-
     }
 
     std::cout << "Simulation complete." << std::endl;
@@ -614,6 +598,24 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

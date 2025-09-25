@@ -48,38 +48,73 @@ private:
 
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
-
-    mfem::HypreParVector PsVc; ///< Vector for storing true degrees of freedom in the solid region
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
-    mfem::ParGridFunction Dp; ///< Grid function for particle diffusivity
     mfem::ParGridFunction RxP; ///< Pointer to a grid function storing reaction values
 
+    mfem::HypreParVector PsVc; ///< Vector for storing true degrees of freedom in the solid region
+    mfem::HypreParVector CpV0; ///< Initial particle concentration values
+    mfem::HypreParVector RHCp; ///< Right-hand side vector for the linear system
+    mfem::HypreParVector CpVn; ///< Particle concentration values at the next time step
+
+    std::unique_ptr<mfem::ParBilinearForm> Mt; ///< Mass matrix for particle concentrations
+    mfem::HypreParMatrix Mmatp; ///< Mass matrix for particle concentrations
+
     mfem::CGSolver Mp_solver; ///< Solver for the mass matrix
-    std::shared_ptr<mfem::HypreParMatrix> Mmatp; ///< Mass matrix for particle concentrations
     mfem::HypreSmoother Mp_prec; ///< Preconditioner for the mass matrix solver
 
-    mfem::ParLinearForm ftPC; ///< Linear form for the force term related to particle concentration
+    std::unique_ptr<mfem::ParBilinearForm> Kc2; ///< Stiffness form for particle potential
+    mfem::HypreParMatrix Kmatp; ///< Stiffness matrix for diffusion calculations
 
-    std::shared_ptr<mfem::HypreParMatrix> Kmatp; ///< Stiffness matrix for diffusion calculations 
+    std::unique_ptr<mfem::ParLinearForm> Bc2; ///< Linear form for the force term related to particle concentrations
 
     mfem::HypreParVector Fcb; ///< Vector for storing the force term contributions
     mfem::ParLinearForm Fct; ///< Linear form for the force term related to particle concentrations
 
-    mfem::Array<int> boundary_dofs; ///< Array to store boundary degrees of freedom
-    mfem::HypreParVector X1v; ///< Temporary vector used during assembly
-
-    std::shared_ptr<mfem::HypreParVector> CpV0; ///< Initial particle concentration values
-    std::shared_ptr<mfem::HypreParVector> CpVn; ///< Particle concentration values at the next time step
-    std::shared_ptr<mfem::HypreParVector> RHCp; ///< Right-hand-side vector at the current time step
-    std::unique_ptr<mfem::HypreParMatrix> Tmatp; ///< System matrix for time-stepping
-
-    std::unique_ptr<mfem::ParBilinearForm> Mt; ///< Mass matrix for particle concentrations
+    mfem::ParGridFunction Dp; ///< Grid function for particle diffusivity
 
     mfem::GridFunctionCoefficient cAp; ///< Coefficient for the reaction term
     mfem::GridFunctionCoefficient cDp; ///< Coefficient for the diffusivity term
-    std::unique_ptr<mfem::ParLinearForm> Bc2; ///< Linear form for the force term related to particle concentrations
-    std::unique_ptr<mfem::ParBilinearForm> Kc2; ///< Stiffness form for particle potential
+
+    std::unique_ptr<mfem::HypreParMatrix> Tmatp; ///< System matrix for time-stepping
+
+
+
+
+
+
+    // mfem::ParGridFunction Dp; ///< Grid function for particle diffusivity
+
+
+    // mfem::CGSolver Mp_solver; ///< Solver for the mass matrix
+    // mfem::HypreParMatrix Mmatp; ///< Mass matrix for particle concentrations
+    // mfem::HypreSmoother Mp_prec; ///< Preconditioner for the mass matrix solver
+
+    // mfem::ParLinearForm ftPC; ///< Linear form for the force term related to particle concentration
+
+    // std::shared_ptr<mfem::HypreParMatrix> Kmatp; ///< Stiffness matrix for diffusion calculations 
+    // mfem::HypreParMatrix Kmatp; ///< Stiffness matrix for diffusion calculations
+
+    // mfem::HypreParVector Fcb; ///< Vector for storing the force term contributions
+    // mfem::ParLinearForm Fct; ///< Linear form for the force term related to particle concentrations
+
+    // mfem::Array<int> boundary_dofs; ///< Array to store boundary degrees of freedom
+    // mfem::HypreParVector X1v; ///< Temporary vector used during assembly
+
+    // std::shared_ptr<mfem::HypreParVector> CpV0; ///< Initial particle concentration values
+    // mfem::HypreParVector CpV0; ///< Initial particle concentration values
+    // mfem::HypreParVector RHCp; ///< Right-hand side vector for the linear system
+    // mfem::HypreParVector CpVn; ///< Particle concentration values at the next time step
+    // std::shared_ptr<mfem::HypreParVector> CpVn; ///< Particle concentration values at the next time step
+    // std::shared_ptr<mfem::HypreParVector> RHCp; ///< Right-hand-side vector at the current time step
+    // std::unique_ptr<mfem::HypreParMatrix> Tmatp; ///< System matrix for time-stepping
+
+    // std::unique_ptr<mfem::ParBilinearForm> Mt; ///< Mass matrix for particle concentrations
+
+    // mfem::GridFunctionCoefficient cAp; ///< Coefficient for the reaction term
+    // mfem::GridFunctionCoefficient cDp; ///< Coefficient for the diffusivity term
+    // std::unique_ptr<mfem::ParLinearForm> Bc2; ///< Linear form for the force term related to particle concentrations
+    // std::unique_ptr<mfem::ParBilinearForm> Kc2; ///< Stiffness form for particle potential
 };
 
 #endif // CNC_HPP
