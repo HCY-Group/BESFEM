@@ -26,7 +26,7 @@ void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double i
 
 }
 
-void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {
+void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, double gtps) {
     
     // Temporary grid function to store the product of concentration and potential
     *TmpF = Cn; // Copy concentration values to the temporary grid function
@@ -44,13 +44,21 @@ void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParG
 
     double gSum; 
     MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
-    Xfr = gSum / gtPsi; // Calculate the degree of lithiation as the normalized sum
+    Xfr = gSum / gtps; // Calculate the degree of lithiation as the normalized sum
 }
 
 void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value) {
 
     Rx2 = Rx1; // Copy the input reaction field to the output reaction field
     Rx2 *= value; // Scale the output reaction field by the specified factor
+
+}
+
+void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &Rx3, double value) {
+
+    Rx2 += Rx1; // Sum the two input reaction fields and store in Rx2
+    Rx3 = Rx2; // Copy the summed reaction field to the output reaction field
+    Rx3 *= value; // Scale the output reaction field by the specified factor
 
 }
 
@@ -67,8 +75,6 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double &xCrnt) {
    
     if (dim == 2) L_w =  Rmax(1) - Rmin(1);
     else if (dim == 3) L_w = (Rmax(1) - Rmin(1))*(Rmax(2) - Rmin(2));
-    // L_w = (Rmax(1) - Rmin(1)) + 2*(Rmax(0) - Rmin(0));
-    // L_w = (Rmax(1) - Rmin(1))*(Rmax(2) - Rmin(2)); //3D
 
     for (int ei = 0; ei < nE; ei++) {
         Rx.GetNodalValues(ei, VtxVal); // Retrieve the nodal values of the reaction field for the current element
@@ -86,32 +92,32 @@ void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double &xCrnt) {
 
 }
 
-std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
+// std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
     
-    Dx = std::make_shared<mfem::ParGridFunction>(fespace.get());
+//     Dx = std::make_shared<mfem::ParGridFunction>(fespace.get());
     
-    // Loop through all vertices in the domain to calculate diffusivity
-    for (int vi = 0; vi < nV; vi++) {
-        if (particle_electrolyte) {
+//     // Loop through all vertices in the domain to calculate diffusivity
+//     for (int vi = 0; vi < nV; vi++) {
+//         if (particle_electrolyte) {
             
-            // Compute diffusivity for the particle based on a polynomial model
-            (*Dx)(vi) = psx(vi) * (0.0277 - 0.084 * Cn(vi) + 0.1003 * Cn(vi) * Cn(vi)) * 1.0e-8;
+//             // Compute diffusivity for the particle based on a polynomial model
+//             (*Dx)(vi) = psx(vi) * (0.0277 - 0.084 * Cn(vi) + 0.1003 * Cn(vi) * Cn(vi)) * 1.0e-8;
             
-            // Cap the diffusivity at a maximum value for stability
-            if ((*Dx)(vi) > 4.6e-10) {
-                (*Dx)(vi) = 4.6e-10;
-            }
+//             // Cap the diffusivity at a maximum value for stability
+//             if ((*Dx)(vi) > 4.6e-10) {
+//                 (*Dx)(vi) = 4.6e-10;
+//             }
 
-        } else {
-            // Compute diffusivity for the electrolyte based on an exponential model
-            (*Dx)(vi) = psx(vi) * Constants::D0 * exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi));
-        }
-    }
+//         } else {
+//             // Compute diffusivity for the electrolyte based on an exponential model
+//             (*Dx)(vi) = psx(vi) * Constants::D0 * exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi));
+//         }
+//     }
     
-    // Wrap the computed diffusivity grid function in a GridFunctionCoefficient and return it
-    return std::make_shared<mfem::GridFunctionCoefficient>(Dx.get());
+//     // Wrap the computed diffusivity grid function in a GridFunctionCoefficient and return it
+//     return std::make_shared<mfem::GridFunctionCoefficient>(Dx.get());
 
-}
+// }
 
 
 void Concentrations::SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {

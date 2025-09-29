@@ -46,6 +46,14 @@ public:
     void ExchangeCurrentDensity(mfem::ParGridFunction &Cn);
 
 
+    /**
+     * @brief Computes the exchange current density and rate constants at the interface using two concentration fields
+     * @param Cn1 Concentration field on one side of the interface
+     * @param Cn2 Concentration field on the other side of the interface
+     */
+    void ExchangeCurrentDensity(mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2);
+
+
 
     /**
      * @brief Computes the Butler-Volmer reaction rates based on concentration and potential fields
@@ -56,6 +64,21 @@ public:
      * @param phx2 Potential field on the other side of the interface
      */
     void ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2);
+    
+    /**
+     * @brief Computes the Butler-Volmer reaction rates based on concentration and potential fields for both anode and cathode
+     * @param Rx Reaction rate grid function
+     * @param Rx1 Reaction rate grid function for cathode
+     * @param Rx2 Reaction rate grid function for anode
+     * @param Cn1 Concentration field on cathode side of the interface
+     * @param Cn2 Concentration field on anode side of the interface
+     * @param Cn3 Concentration field in the electrolyte
+     * @param phx1 Potential field on cathode side of the interface
+     * @param phx2 Potential field on anode side of the interface
+     * @param phx3 Potential field in the electrolyte
+     */
+    void ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &Cn3, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2, mfem::ParGridFunction &phx3);
+    
     
     /**
      * @brief Computes the total reaction current across the domain
@@ -75,12 +98,12 @@ public:
 
     std::unique_ptr<mfem::ParGridFunction> Kfw; ///< Open circuit voltage field
     std::unique_ptr<mfem::ParGridFunction> Kbw; ///< Backward reaction rate constant field
+    std::unique_ptr<mfem::ParGridFunction> KfA; ///< Open circuit voltage field (anode)
+    std::unique_ptr<mfem::ParGridFunction> KbA; ///< Backward reaction rate constant field (anode)
+    std::unique_ptr<mfem::ParGridFunction> KfC; ///< Open circuit voltage field (cathode)
+    std::unique_ptr<mfem::ParGridFunction> KbC; ///< Backward reaction rate constant field (cathode)
     std::unique_ptr<mfem::ParGridFunction> i0C; ///< Exchange current density field
     std::unique_ptr<mfem::ParGridFunction> OCV; ///< Open circuit voltage field
-    // std::unique_ptr<mfem::ParGridFunction> AvP; ///< Particle surface area
-    // std::unique_ptr<mfem::ParGridFunction> AvA; ///< Anode surface area
-    // std::unique_ptr<mfem::ParGridFunction> AvC; ///< Cathode surface area
-    // std::unique_ptr<mfem::ParGridFunction> AvB; ///< Boundary surface area
 
     // non-owning
     const mfem::ParGridFunction* AvP = nullptr;
@@ -108,6 +131,8 @@ private:
 
     double local_current; ///< Local reaction current for each MPI process
     std::unique_ptr<mfem::ParGridFunction> dPHE; ///< Voltage drop field
+    std::unique_ptr<mfem::ParGridFunction> dPHA; ///< Voltage drop field
+    std::unique_ptr<mfem::ParGridFunction> dPHC; ///< Voltage
 
     const mfem::Vector& EVol; ///< Element volumes from the mesh handler
 

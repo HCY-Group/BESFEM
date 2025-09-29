@@ -9,19 +9,23 @@
  CnA::CnA(Initialize_Geometry &geo, Domain_Parameters &para)
      : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), pmesh(geo.parallelMesh.get()),
       // fields
-      Mub(fespace.get()), Mob(fespace.get()), Rxc(fespace.get()),
+      Mub(fespace.get()), Mob(fespace.get()), RxA(fespace.get()), gtPsi(para.gtPsi), gtPsA(para.gtPsA),
       // vectors
       Lp1(fespace.get()), Lp2(fespace.get()), MuV(fespace.get()),
       PsVc(fespace.get()), CpV0(fespace.get()), RHCp(fespace.get()), CpVn(fespace.get()),
       // forms
       Fct(fespace.get()), Fcb(fespace.get()),
       // coefficients wrap long-lived fields
-      cDp(&Mob), cAp(&Rxc),
+      cDp(&Mob), cAp(&RxA),
       // solver
       MCH_solver(MPI_COMM_WORLD)   // value type solver
 
      
      {
+
+        if (gtPsA < 1.0e-200){
+            gtPsA = gtPsi;
+        }
 
         std::ifstream myXfile("../inputs/C_Li_X_101.txt"); ///< Concentration ticks
         std::ifstream mydFfile("../inputs/C_Li_M6_101.txt"); ///< Chemical potential
@@ -53,7 +57,7 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
  void CnA::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
     {
         Concentrations::SetInitialConcentration(Cn, initial_value); // initial value: 2.02d-2
-        Concentrations::LithiationCalculation(Cn, psx); // Calculate the initial concentration based on the potential field
+        Concentrations::LithiationCalculation(Cn, psx, gtPsA); // Calculate the initial concentration based on the potential field
 
         mfem::GridFunctionCoefficient coef(&psx); 
         SolverSteps::InitializeMassMatrix(coef, M_init); 
@@ -80,8 +84,8 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
  
  void CnA::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
     {
-        Concentrations::CreateReaction(Rx, Rxc, (1.0/Constants::rho_A));
-        cAp.SetGridFunction(&Rxc); // Set the reaction term coefficient for the force term
+        Concentrations::CreateReaction(Rx, RxA, (1.0/Constants::rho_A));
+        cAp.SetGridFunction(&RxA); // Set the reaction term coefficient for the force term
 
         SolverSteps::Update(B_init); // Update the force term with the current reaction term
         Fct = *B_init; // Move the updated force term to Fct
@@ -133,5 +137,5 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
         // recover the GridFunction from the HypreParVector
         Cn.Distribute(CpV0); 
 
-        Concentrations::LithiationCalculation(Cn, psx); // Update the degree of lithiation based on the new concentration values
+        Concentrations::LithiationCalculation(Cn, psx, gtPsA); // Update the degree of lithiation based on the new concentration values
     }

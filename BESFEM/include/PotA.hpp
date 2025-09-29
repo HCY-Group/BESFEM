@@ -98,6 +98,7 @@ private:
 
 
     double gtPsi; ///< Total Psi from MeshHandler
+    double gtPsA; ///< Total PsA from Domain_Parameters
 
     mfem::Array<int> ess_tdof_list_w; ///< List of essential true degrees of freedom for Dirichlet boundary conditions
     mfem::Array<int> dbc_w_bdr; ///< Array marking Dirichlet boundary attributes

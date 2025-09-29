@@ -50,7 +50,7 @@ private:
     Domain_Parameters &domain_parameters;
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
 
-    mfem::ParGridFunction RxP; ///< Pointer to a grid function storing reaction values
+    mfem::ParGridFunction RxC; ///< Pointer to a grid function storing reaction values
 
     mfem::HypreParVector PsVc; ///< Vector for storing true degrees of freedom in the solid region
     mfem::HypreParVector CpV0; ///< Initial particle concentration values
@@ -77,6 +77,9 @@ private:
     mfem::GridFunctionCoefficient cDp; ///< Coefficient for the diffusivity term
 
     std::unique_ptr<mfem::HypreParMatrix> Tmatp; ///< System matrix for time-stepping
+
+    double gtPsC = 0.0; ///< Global normalization for ψ (solid phase).
+    double gtPsi = 0.0; ///< Global normalization for ψ (total).
 
 
 

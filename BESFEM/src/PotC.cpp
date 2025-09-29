@@ -10,7 +10,7 @@
 
 
 PotC::PotC(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_e_bdr(geo.dbc_e_bdr), gtPsi(para.gtPsi), 
+    : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_e_bdr(geo.dbc_e_bdr), gtPsi(para.gtPsi), gtPsC(para.gtPsC), 
     ess_tdof_list_e(geo.ess_tdof_list_e), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get())
     
     {
@@ -32,6 +32,11 @@ PotC::PotC(Initialize_Geometry &geo, Domain_Parameters &para)
     Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Initialize the bilinear form for conductivity
 
     pP0 = mfem::ParGridFunction(fespace.get()); // Initialize the potential grid function
+
+    if (gtPsC < 1.0e-200){
+        gtPsC = gtPsi;
+    }
+
     }
 
 
@@ -101,7 +106,7 @@ void PotC::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     cgPP_solver.Mult(Fpb, Xs0); // Solve for the error term
     phx.Distribute(Xs0); // Distribute the updated values
 
-    Potentials::ComputeGlobalError(pP0, phx, psx, gerror, gtPsi); // Compute global error
+    Potentials::ComputeGlobalError(pP0, phx, psx, gerror, gtPsC); // Compute global error
     
 }
 

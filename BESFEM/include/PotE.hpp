@@ -84,6 +84,17 @@ public:
      * @param gerror Global error/residual (output).
      */
     void Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
+
+
+    /**
+     * @brief One higher-level advance with reaction field update.
+     * @param Rx1    Input reaction source field (input).
+     * @param Rx2    Input reaction source field (input).
+     * @param phx    Electrolyte potential field (in/out).
+     * @param psx    Phase mask ψ_E (input).
+     * @param gerror Global error/residual (output).
+     */
+    void Advance(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
    
 
 private:

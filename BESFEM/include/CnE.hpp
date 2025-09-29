@@ -67,6 +67,21 @@ public:
      */
     void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
+
+    /**
+     * @brief Advance the electrolyte concentration by one timestep.
+     *
+     * Performs Crank–Nicolson assembly (left/right operators), applies
+     * updated reaction and Neumann BC contributions, and solves for the
+     * new true-DoF concentration vector before distributing back to \p Cn.
+     *
+     * @param RxC  Reaction field cathode (input; used to assemble Rxe).
+     * @param RxA  Reaction field anode (input; used to assemble Rxe).
+     * @param Cn  Electrolyte concentration grid function (in/out).
+     * @param psx Phase field ψ used to mask diffusivity and BCs.
+     */
+    void TimeStep(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+
     // ---------- Geometry / spaces ----------
     Initialize_Geometry &geometry;                              ///< Geometry/mesh owner
     Domain_Parameters   &domain_parameters;                     ///< Domain/physics parameters

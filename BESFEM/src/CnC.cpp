@@ -9,18 +9,22 @@
 using namespace std;
 
 CnC::CnC(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace),
-    RxP(fespace.get()), Dp(fespace.get()), Mp_solver(MPI_COMM_WORLD), Fct(fespace.get()), cAp(&RxP), cDp(&Dp),
+    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), gtPsC(para.gtPsC), gtPsi(para.gtPsi),
+    RxC(fespace.get()), Dp(fespace.get()), Mp_solver(MPI_COMM_WORLD), Fct(fespace.get()), cAp(&RxC), cDp(&Dp),
     PsVc(fespace.get()), CpV0(fespace.get()), RHCp(fespace.get()), CpVn(fespace.get())
     
     {
+
+    if (gtPsC < 1.0e-200){
+        gtPsC = gtPsi;
+    }
 
     }
 
 void CnC::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
     Concentrations::SetInitialConcentration(Cn, initial_value);
-    Concentrations::LithiationCalculation(Cn, psx);
+    Concentrations::LithiationCalculation(Cn, psx, gtPsC);
 
     mfem::GridFunctionCoefficient coef(&psx);
     SolverSteps::InitializeMassMatrix(coef, Mt);
@@ -42,8 +46,8 @@ void CnC::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
 void CnC::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
 {
     // Compute the reaction field scaled by a constant factor
-    Concentrations::CreateReaction(Rx, RxP, (1.0/Constants::rho_C));
-    cAp.SetGridFunction(&RxP); // Set the reaction term coefficient for the force term
+    Concentrations::CreateReaction(Rx, RxC, (1.0/Constants::rho_C));
+    cAp.SetGridFunction(&RxC); // Set the reaction term coefficient for the force term
 
     // SolverSteps::InitializeForceTerm(cAp, Bc2);
     SolverSteps::Update(Bc2); // Update the force term with the current reaction term
@@ -76,6 +80,6 @@ void CnC::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     Cn.Distribute(CpVn);
 
     // Degree of Lithiation
-    Concentrations::LithiationCalculation(Cn, psx);
+    Concentrations::LithiationCalculation(Cn, psx, gtPsC);
 
 }

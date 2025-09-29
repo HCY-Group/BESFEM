@@ -70,6 +70,8 @@ public:
     double gtPsi; ///< Global total for Psi
     double gtPse; ///< Global total for Pse
     double gTrgI; ///< Global target current
+    double gtPsA; ///< Global total for PsA
+    double gtPsC; ///< Global total for PsC
     mfem::Vector EVol; ///< Element volumes
 
 
@@ -150,6 +152,9 @@ private:
     double tPsi; ///< Target Psi value
     double tPse; ///< Target Pse value
     double trgI; ///< Target current
+
+    double tPsA; ///< Target PsA value
+    double tPsC; ///< Target PsC value
 
 
 };

@@ -115,6 +115,15 @@ protected:
      * @param value Scale factor.
      */
     void CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value);
+
+    /**
+     * @brief Create a combined scaled reaction field Rx3 = value * (Rx1 + Rx2).
+     * @param Rx1  First input reaction field (cathode).
+     * @param Rx2  Second input reaction field (anode).
+     * @param Rx3  Output combined scaled reaction field.
+     * @param value Scale factor.
+     */
+    void CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &Rx3, double value);
     
     /**
      * @brief Compute total reaction and flux scale (infx).
@@ -137,8 +146,9 @@ protected:
      * @brief Compute the lithiation degree Xfr from Cn and ψ.
      * @param Cn  Concentration field.
      * @param psx Phase field mask.
+     * @param gtps Global normalization for ψ.
      */
-    void LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+    void LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, double gtps);
 
 private:
     // ---------- Internal assembly helpers / storage ----------

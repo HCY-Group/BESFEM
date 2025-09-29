@@ -69,7 +69,13 @@
         "thread": "cpp",
         "typeindex": "cpp",
         "valarray": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "any": "cpp",
+        "bitset": "cpp",
+        "csignal": "cpp",
+        "unordered_set": "cpp",
+        "regex": "cpp",
+        "future": "cpp"
     },
     "cmake.sourceDirectory": "/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/mfem/glvis-4.2"
 }

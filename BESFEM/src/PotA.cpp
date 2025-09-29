@@ -10,7 +10,7 @@
 
 PotA::PotA(Initialize_Geometry &geo, Domain_Parameters &para)
     : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_w_bdr(geo.dbc_w_bdr), gtPsi(para.gtPsi), 
-    ess_tdof_list_w(geo.ess_tdof_list_w), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get())
+    ess_tdof_list_w(geo.ess_tdof_list_w), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get()), gtPsA(para.gtPsA)
     
     {
     cgPP_solver = mfem::CGSolver(MPI_COMM_WORLD);
@@ -31,6 +31,11 @@ PotA::PotA(Initialize_Geometry &geo, Domain_Parameters &para)
     Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Initialize the bilinear form for conductivity
 
     pP0 = mfem::ParGridFunction(fespace.get()); // Initialize the potential grid function
+
+    if (gtPsA < 1.0e-200){
+        gtPsA = gtPsi;
+    }
+
     }
 
 

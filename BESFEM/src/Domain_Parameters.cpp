@@ -172,25 +172,6 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
         }
         
-        // double AvP_min = AvP->Min();
-        // double AvP_max = AvP->Max();
-
-        // // Basic bounds check
-        // std::cout << "[AvP Check] min = " << AvP_min 
-        //         << ", max = " << AvP_max << " (expected min = 0, max = 16000)" << std::endl;
-
-        // if (AvP_min < 0.0 || AvP_max > 20000) {
-        //     std::cerr << "[AvP Check] ERROR: AvP values out of [0,16000]!" << std::endl;
-        //     std::exit(EXIT_FAILURE);
-        // }
-        // if (AvP_min > 2e-6) {
-        //     std::cerr << "[AvP Check] ERROR: AvP_min not near 0." << std::endl;
-        //     std::exit(EXIT_FAILURE);
-        // }
-        // if (AvP_max < 12000) {
-        //     std::cerr << "[AvP Check] ERROR: AvP_max not near 16000." << std::endl;
-        //     std::exit(EXIT_FAILURE);
-        // }
 
         mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
         AvP->ProjectCoefficient(AvP_coeff);
@@ -299,46 +280,8 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
         }
         
-        // double AvA_min = AvA->Min();
-        // double AvA_max = AvA->Max();
-        // double AvC_min = AvC->Min();
-        // double AvC_max = AvC->Max();
-
-        // // Basic bounds check
-        // std::cout << "[AvA Check] min = " << AvA_min 
-        //         << ", max = " << AvA_max << " (expected min = 0, max = 16000)" << std::endl;
-
-        // if (AvA_min < 0.0 || AvA_max > 20000) {
-        //     std::cerr << "[AvA Check] ERROR: AvA values out of [0,16000]!" << std::endl;
-        //     std::exit(EXIT_FAILURE);
-        // }
-        // if (AvA_min > 2e-6) {
-        //     std::cerr << "[AvA Check] ERROR: AvA_min not near 0." << std::endl;
-        //     std::exit(EXIT_FAILURE);
-        // }
-        // if (AvA_max < 12000) {
-        //     std::cerr << "[AvA Check] ERROR: AvA_max not near 16000." << std::endl;
-        //     std::exit(EXIT_FAILURE);
-        // }
-
         mfem::GridFunctionCoefficient AvA_coeff(AvA.get());
         AvA->ProjectCoefficient(AvA_coeff);
-
-        // std::cout << "[AvC Check] min = " << AvC_min 
-        //     << ", max = " << AvC_max << " (expected min = 0, max = 16000)" << std::endl;
-
-        // if (AvC_min < 0.0 || AvC_max > 20000) {
-        //     std::cerr << "[AvC Check] ERROR: AvC values out of [0,16000]!" << std::endl;
-        //     std::exit(EXIT_FAILURE);
-        // }
-        // if (AvC_min > 2e-6) {
-        //     std::cerr << "[AvC Check] ERROR: AvC_min not near 0." << std::endl;
-        //     std::exit(EXIT_FAILURE);
-        // }
-        // if (AvC_max < 12000) {
-        //     std::cerr << "[AvC Check] ERROR: AvC_max not near 16000." << std::endl;
-        //     std::exit(EXIT_FAILURE);
-        // }
 
         mfem::GridFunctionCoefficient AvC_coeff(AvC.get());
         AvC->ProjectCoefficient(AvC_coeff);
@@ -387,19 +330,32 @@ void Domain_Parameters::CalculateTotalPhaseField(const mfem::ParGridFunction& gr
 
 void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
 
-    // Calculate totals for Psi and Pse fields
-    CalculateTotalPhaseField(*psi, tPsi, gtPsi);
-    CalculateTotalPhaseField(*pse, tPse, gtPse);
+    const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
 
-    // Compute the target current using Psi
-    CalculateTargetCurrent(tPsi);
+    // Half Cell : use psi
+    if (!full) {
+        // Calculate totals for Psi and Pse fields
+        CalculateTotalPhaseField(*psi, tPsi, gtPsi);
+        CalculateTotalPhaseField(*pse, tPse, gtPse);
+        CalculateTargetCurrent(tPsi);
+    }
+
+    // Full Cell : use psA, psC
+    else {
+        // Calculate totals for PsA, PsC, and Pse fields
+        CalculateTotalPhaseField(*psA, tPsA, gtPsA);
+        CalculateTotalPhaseField(*psC, tPsC, gtPsC);
+        CalculateTotalPhaseField(*pse, tPse, gtPse);
+        CalculateTargetCurrent(tPsC);
+    }
+
 }
 
 void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
 
     // Compute target current based on total Psi, rho, Cr, and constants
     // trgI = total_psi * Constants::rho_A * (0.9 - 0.3) / (3600.0 / Constants::Cr);
-    trgI = total_psi * Constants::rho_A * (1.0 - 0.0) / (3600.0 / Constants::Cr);
+    trgI = total_psi * Constants::rho_C * (0.75) / (3600.0 / Constants::Cr);
 
     // Perform global MPI reduction to get the total target current
     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -407,9 +363,20 @@ void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
 
 
 void Domain_Parameters::PrintInfo() {
+
+    const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
+
     if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
+    if (!full)
     {
         cout << "Total Psi: " << gtPsi << endl;
+        cout << "Total Pse: " << gtPse << endl;
+        cout << "Target Current: " << gTrgI << endl;
+    }
+    else
+    {
+        cout << "Total PsA: " << gtPsA << endl;
+        cout << "Total PsC: " << gtPsC << endl;
         cout << "Total Pse: " << gtPse << endl;
         cout << "Target Current: " << gTrgI << endl;
     }

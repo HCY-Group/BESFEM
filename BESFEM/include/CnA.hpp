@@ -87,7 +87,7 @@ private:
     // ---------- State fields (grid functions) ----------
     mfem::ParGridFunction Mub;   ///< Chemical potential field μ(C) 
     mfem::ParGridFunction Mob;   ///< Mobility field M(C)·ψ 
-    mfem::ParGridFunction Rxc;   ///< Reaction source term mapped to grid
+    mfem::ParGridFunction RxA;   ///< Reaction source term mapped to grid
 
     // ---------- Work vectors (true DoFs / Hypre) ----------
     mfem::HypreParVector phV0;   ///< Generic scratch vector.
@@ -129,6 +129,9 @@ private:
     mfem::Vector Mobility= mfem::Vector(101); ///< Mobility M(C) table (scaled).
     mfem::Vector OCV     = mfem::Vector(101); ///< Open-circuit voltage table.
     mfem::Vector i0      = mfem::Vector(101); ///< Exchange-current-density table.
+
+    double gtPsA = 0.0; ///< Global normalization for ψ (solid phase).
+    double gtPsi = 0.0; ///< Global normalization for ψ (total).
 
     /**
      * @brief Linear interpolation utility for tabulated data.

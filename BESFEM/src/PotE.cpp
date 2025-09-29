@@ -126,6 +126,34 @@ void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     Potentials::ComputeGlobalError(pE0, phx, psx, gerror, gtPse); // Compute global error
 }
 
+void PotE::Advance(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
+{
+    // Potentials::AssembleForceVector(Rx, RpE, -1.0, cRe, Bl2, Flt); // Create reaction field
+    Rx2 += Rx1;
+    RpE = Rx2;
+    RpE.Neg();
+
+    Bl2->Assemble();
+    Flt = *Bl2;
+
+    mfem::ConstantCoefficient dbc_potE_Coef(BvE); // Coefficient for Dirichlet boundary conditions
+    phx.ProjectBdrCoefficient(dbc_potE_Coef, dbc_CnE_bdr); // Apply Dirichlet boundary conditions
+    
+    SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_potE, phx, Flt, Kml, X1v, Flb); // Assemble the force term system
+
+    RHSl = Flb;
+    RHSl += LpCe;
+
+    pE0 = phx; // Store the current potential field
+    pE0.GetTrueDofs(Xe0); // Extract degrees of freedom
+
+    cgPE_solver.Mult(RHSl, Xe0); // Solve for the error term
+
+    phx.Distribute(Xe0); // Distribute the updated values
+
+    // Potentials::ComputeGlobalError(pE0, phx, psx, gerror, gtPse); // Compute global error
+}
+
 
 void PotE::ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {
     for (int vi = 0; vi < nV; vi++){
