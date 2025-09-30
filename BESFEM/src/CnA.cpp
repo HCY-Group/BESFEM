@@ -22,7 +22,8 @@
 
      
      {
-
+        std::cout << "gtPsA before: " << gtPsA << std::endl;
+        
         if (gtPsA < 1.0e-200){
             gtPsA = gtPsi;
         }
@@ -130,7 +131,7 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
         // Ensure that the concentration values are within the valid range
         for (int i = 0; i < CpV0.Size(); i++) {
             if (PsVc(i) < 1.0e-5) {
-                (CpV0)(i) = 2.02e-2;
+                (CpV0)(i) = Constants::init_CnA; // Reset to initial concentration if potential is too low
             }
         }
 

@@ -504,7 +504,7 @@ void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode elect
         C_dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
         C_dbc_e_bdr = 0;
         C_dbc_e_bdr[2] = 1;
-        dbc_e_bdr = C_dbc_e_bdr; // Dirichlet BC for CnE same as Cathode Dirichlet BC
+        dbc_e_bdr = C_dbc_e_bdr;
 
         C_ess_tdof_list_e.SetSize(0);
         parfespace->GetEssentialTrueDofs(C_dbc_e_bdr, C_ess_tdof_list_e);

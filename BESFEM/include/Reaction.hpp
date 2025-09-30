@@ -104,6 +104,10 @@ public:
     std::unique_ptr<mfem::ParGridFunction> KbC; ///< Backward reaction rate constant field (cathode)
     std::unique_ptr<mfem::ParGridFunction> i0C; ///< Exchange current density field
     std::unique_ptr<mfem::ParGridFunction> OCV; ///< Open circuit voltage field
+    std::unique_ptr<mfem::ParGridFunction> i0CA; ///< Exchange current density field
+    std::unique_ptr<mfem::ParGridFunction> OCVA; ///< Open circuit voltage field
+    std::unique_ptr<mfem::ParGridFunction> i0CC; ///< Exchange current density field
+    std::unique_ptr<mfem::ParGridFunction> OCVC; ///< Open circuit voltage field
 
     // non-owning
     const mfem::ParGridFunction* AvP = nullptr;

@@ -30,6 +30,11 @@
     i0C = std::make_unique<mfem::ParGridFunction>(fespace.get()); // exchange current density
     OCV = std::make_unique<mfem::ParGridFunction>(fespace.get()); // open circuit voltage
 
+    i0CC = std::make_unique<mfem::ParGridFunction>(fespace.get()); // exchange current density (cathode)
+    OCVC = std::make_unique<mfem::ParGridFunction>(fespace.get()); // open circuit voltage (cathode)
+    i0CA = std::make_unique<mfem::ParGridFunction>(fespace.get()); // exchange current density (anode)
+    OCVA = std::make_unique<mfem::ParGridFunction>(fespace.get()); // open circuit voltage (anode)
+
     Kfw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // forward reaction constant
     Kbw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // backward reaction constant
 
@@ -96,23 +101,24 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
 
 void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2){
     for (int vi = 0; vi < nV; vi++){
-        if((*AvB)(vi) * Constants::dh > 0.0){ 
+        if((*AvC)(vi) * Constants::dh > 0.0){ 
             double val = -0.2 * (Cn1(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn1(vi) - 3.195);
-            (*i0C)(vi) = pow(10.0, val) * 1.0e-3; // Exchange current density
-            (*OCV)(vi) = 1.095 * Cn1(vi) * Cn1(vi) - 8.324e-7 * exp(14.31 * Cn1(vi)) + 4.692 * exp(-0.5389 * Cn1(vi)); // open circuit voltage
-            (*KfC)(vi) = (*i0C)(vi) / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * (*OCV)(vi)); // forward reaction constant
-            (*KbC)(vi) = (*i0C)(vi) / (Constants::Frd * Cn1(vi)) * exp(-Constants::alp * Constants::Cst1 * (*OCV)(vi)); // backward rection constant
+            (*i0CC)(vi) = pow(10.0, val) * 1.0e-3; // Exchange current density
+            (*OCVC)(vi) = 1.095 * Cn1(vi) * Cn1(vi) - 8.324e-7 * exp(14.31 * Cn1(vi)) + 4.692 * exp(-0.5389 * Cn1(vi)); // open circuit voltage
+            (*KfC)(vi) = (*i0CC)(vi) / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * (*OCVC)(vi)); // forward reaction constant
+            (*KbC)(vi) = (*i0CC)(vi) / (Constants::Frd * Cn1(vi)) * exp(-Constants::alp * Constants::Cst1 * (*OCVC)(vi)); // backward rection constant
         }
-        
-        double cn_val = Cn2(vi);
 
-        double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
-        double ocv = GetTableValues(cn_val, Ticks, OCV_file);
+        if((*AvA)(vi) * Constants::dh > 0.0){
+            double cn_val = Cn2(vi);
+            double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
+            double ocv = GetTableValues(cn_val, Ticks, OCV_file);
 
-        (*i0C)(vi) = i0;
-        (*OCV)(vi) = ocv;
-        (*KfA)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
-        (*KbA)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
+            (*i0CA)(vi) = i0;
+            (*OCVA)(vi) = ocv;
+            (*KfA)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
+            (*KbA)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
+        }
     }
 }
 

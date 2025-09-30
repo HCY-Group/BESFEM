@@ -15,6 +15,8 @@ CnC::CnC(Initialize_Geometry &geo, Domain_Parameters &para)
     
     {
 
+    std::cout << "gtPsC before: " << gtPsC << std::endl;
+
     if (gtPsC < 1.0e-200){
         gtPsC = gtPsi;
     }
@@ -74,7 +76,7 @@ void CnC::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     // Update only the solid region MAKE INTO FUNCTION
     for (int p = 0; p < CpV0.Size(); p++){
         if (PsVc(p) < 1.0e-5){
-            (CpVn)(p) = 0.3;} // Cp0 initial value
+            (CpVn)(p) = Constants::init_CnC;} // Cp0 initial value
     }
 
     Cn.Distribute(CpVn);

@@ -465,9 +465,9 @@ int main(int argc, char *argv[]) {
 
                 // while (globalerror_C > 1.0e-6 || globalerror_A > 1.0e-7 || globalerror_E > 1.0e-4) {
                     reaction->ButlerVolmer(*Rxn_gf, *RxC_gf, *RxA_gf, *CnC_gf, *CnA_gf, *CnE_gf, *phC_gf, *phA_gf, *phE_gf); // 9 inputs
-                    cathode_potential->Advance(*RxC_gf, *phC_gf, *domain_parameters.psC, globalerror_C);
-                    anode_potential->Advance(*RxA_gf, *phA_gf, *domain_parameters.psA, globalerror_A);
-                    electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+                    // cathode_potential->Advance(*RxC_gf, *phC_gf, *domain_parameters.psC, globalerror_C);
+                    // anode_potential->Advance(*RxA_gf, *phA_gf, *domain_parameters.psA, globalerror_A);
+                    // electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
                 // }
 
                 // reaction->TotalReactionCurrent(*Rxn_gf, global_current);
