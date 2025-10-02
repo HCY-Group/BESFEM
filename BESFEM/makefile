@@ -49,7 +49,7 @@ SRC_FILES = \
     src/PotA.cpp \
     src/PotE.cpp
 
-# SRC_FILES = Anna_ex_BESFEM_2D_Par_H2_gr.cpp 
+# SRC_FILES = src/full_cell_linear.cpp
             
 
 # Output executable
@@ -57,6 +57,7 @@ SRC_FILES = \
 # EXEC = serial_simulation
 EXEC_DIR = bin
 EXEC_NAME = battery_simulation
+# EXEC_NAME = full_cell
 EXEC = $(EXEC_DIR)/$(EXEC_NAME)
 
 # ====================================

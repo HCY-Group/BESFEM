@@ -22,7 +22,7 @@
 
      
      {
-        std::cout << "gtPsA before: " << gtPsA << std::endl;
+        // std::cout << "gtPsA before: " << gtPsA << std::endl;
         
         if (gtPsA < 1.0e-200){
             gtPsA = gtPsi;

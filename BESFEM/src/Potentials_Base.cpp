@@ -47,8 +47,7 @@ void Potentials::AssembleForceVector(mfem::ParGridFunction &Rx1, mfem::ParGridFu
 
 
 
-void Potentials::ComputeGlobalError(mfem::ParGridFunction &px0, mfem::ParGridFunction &potential, mfem::ParGridFunction &psx, 
-                                    double &globalerror, double gtPsx)
+void Potentials::ComputeGlobalError(mfem::ParGridFunction &px0, mfem::ParGridFunction &potential, mfem::ParGridFunction &psx, double &globalerror, double gtPsx)
 {
     // Compute squared error using the auxiliary field
     for (int vi = 0; vi < nV; vi++){

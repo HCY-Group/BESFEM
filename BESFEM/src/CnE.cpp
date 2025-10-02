@@ -7,7 +7,7 @@
 
 
 CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), nbc_CnE_bdr(geo.nbc_CnE_bdr),
+    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), nbc_bdr(geo.nbc_bdr),
       De(fespace.get()), Rxe(fespace.get()), PeR(fespace.get()), cDe(&De), cAe(&Rxe), matCoef_R(&PeR),
       nbcCoef(0.0), Fet(fespace.get()), Me_solver(MPI_COMM_WORLD),
       CeV0(fespace.get()), RHCe(fespace.get()), CeVn(fespace.get()),
@@ -35,7 +35,7 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     // Initialize stiffness operator (diffusivity)
     SolverSteps::InitializeStiffnessMatrix(cDe, Ke2); // Initialize
 
-    // Build boundary coefficient (Neumann BC weighting)
+    // Build boundary coefficient (Neumann BC weighting) HALF
     PeR = psx;
     PeR.Neg();
     m_nbcCoef = std::make_unique<mfem::ProductCoefficient>(matCoef_R, nbcCoef);
@@ -43,8 +43,8 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     // Build force term (domain + boundary contributions)
     Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
     Be_init->AddDomainIntegrator(new mfem::DomainLFIntegrator(cAe));
-    Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(*m_nbcCoef), nbc_CnE_bdr);
-    Be_init->Assemble();
+    Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(*m_nbcCoef), nbc_bdr); // HALF
+    Be_init->Assemble(); 
     Fet = *Be_init;
 
     boundary_dofs.SetSize(0);
@@ -65,7 +65,7 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 
         Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
         Be_init->AddDomainIntegrator(new mfem::DomainLFIntegrator(cAe));
-        Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(m_nbcCoef), nbc_CnE_bdr);
+        Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(m_nbcCoef), nbc_bdr);
 
         Be_init->Assemble();
         Fet = *Be_init; // Assign the updated linear form to Fet
@@ -105,14 +105,9 @@ void CnE::TimeStep(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem:
         // Assemble reaction source term
         Concentrations::CreateReaction(RxC, RxA, Rxe, (-1.0 * Constants::t_minus));
 		cAe.SetGridFunction(&Rxe);
-        Concentrations::TotalReaction(Rxe, eCrnt);
-
-        nbcCoef.constant = infx;
-		mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
 
         Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
         Be_init->AddDomainIntegrator(new mfem::DomainLFIntegrator(cAe));
-        Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(m_nbcCoef), nbc_CnE_bdr);
 
         Be_init->Assemble();
         Fet = *Be_init; // Assign the updated linear form to Fet

@@ -439,84 +439,79 @@ void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode elect
     if (mode == CellMode::HALF && electrode == Electrode::ANODE) {
         std::cout << "Setting up boundary conditions for Half Cell: ANODE" << std::endl;
 
-        A_nbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        A_nbc_e_bdr = 0;
-        A_nbc_e_bdr[2] = 1; 
+        // East Neumann Boundary Condition
+        nbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        nbc_e_bdr = 0;
+        nbc_e_bdr[2] = 1; 
 
-        A_dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        A_dbc_e_bdr = 0;
-        A_dbc_e_bdr[2] = 1;
+        // East Dirichlet Boundary Condition
+        dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_e_bdr = 0;
+        dbc_e_bdr[2] = 1;
 
-        A_dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        A_dbc_w_bdr = 0;
-        A_dbc_w_bdr[0] = 1;
-        dbc_w_bdr = A_dbc_w_bdr; // Dirichlet BC
+        // West Dirichlet Boundary Condition
+        dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_w_bdr = 0;
+        dbc_w_bdr[0] = 1;
 
-        A_ess_tdof_list_w.SetSize(0);
-        parfespace->GetEssentialTrueDofs(A_dbc_w_bdr, A_ess_tdof_list_w);
-        ess_tdof_list_w = A_ess_tdof_list_w; 
+        ess_tdof_list_w.SetSize(0);
+        parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
 
-        nbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        nbc_CnE_bdr = A_nbc_e_bdr; // Neumann BC
+        nbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
 
-        dbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        dbc_CnE_bdr = A_dbc_e_bdr; // Dirichlet BC
+        nbc_bdr = nbc_e_bdr;
+        dbc_bdr = dbc_e_bdr;
 
 
     } else if (mode == CellMode::HALF && electrode == Electrode::CATHODE) {
         std::cout << "Setting up boundary conditions for Half Cell: CATHODE" << std::endl;
 
-        C_nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        C_nbc_w_bdr = 0;
-        C_nbc_w_bdr[0] = 1; 
+        // West Neumann Boundary Condition
+        nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        nbc_w_bdr = 0;
+        nbc_w_bdr[0] = 1; 
 
-        C_dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        C_dbc_w_bdr = 0;
-        C_dbc_w_bdr[0] = 1;
+        // West Dirichlet Boundary Condition
+        dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_w_bdr = 0;
+        dbc_w_bdr[0] = 1;
 
-        C_dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        C_dbc_e_bdr = 0;
-        C_dbc_e_bdr[2] = 1;
-        dbc_e_bdr = C_dbc_e_bdr; // Dirichlet BC for CnE same as Cathode Dirichlet BC
+        // East Dirichlet Boundary Condition 
+        dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_e_bdr = 0;
+        dbc_e_bdr[2] = 1;
 
-        C_ess_tdof_list_e.SetSize(0);
-        parfespace->GetEssentialTrueDofs(C_dbc_e_bdr, C_ess_tdof_list_e);
-        ess_tdof_list_e = C_ess_tdof_list_e;
+        ess_tdof_list_e.SetSize(0);
+        parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
 
-        nbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        nbc_CnE_bdr = C_nbc_w_bdr; // Neumann BC
-
-        dbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        dbc_CnE_bdr = C_dbc_w_bdr; // Dirichlet BC 
+        nbc_bdr = nbc_w_bdr;
+        dbc_bdr = dbc_w_bdr;
 
     } else {
         std::cout << "Setting up boundary conditions for Full Cell" << std::endl;
 
-        A_dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        A_dbc_w_bdr = 0;
-        A_dbc_w_bdr[0] = 1;
-        dbc_w_bdr = A_dbc_w_bdr; // Dirichlet BC
+        // West Dirichlet Boundary Condition
+        dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_w_bdr = 0;
+        dbc_w_bdr[0] = 1;
 
-        A_ess_tdof_list_w.SetSize(0);
-        parfespace->GetEssentialTrueDofs(A_dbc_w_bdr, A_ess_tdof_list_w);
-        ess_tdof_list_w = A_ess_tdof_list_w; 
+        ess_tdof_list_w.SetSize(0);
+        parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
 
-        C_dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        C_dbc_e_bdr = 0;
-        C_dbc_e_bdr[2] = 1;
-        dbc_e_bdr = C_dbc_e_bdr;
+        // East Dirichlet Boundary Condition
+        dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_e_bdr = 0;
+        dbc_e_bdr[2] = 1;
 
-        C_ess_tdof_list_e.SetSize(0);
-        parfespace->GetEssentialTrueDofs(C_dbc_e_bdr, C_ess_tdof_list_e);
-        ess_tdof_list_e = C_ess_tdof_list_e;
+        ess_tdof_list_e.SetSize(0);
+        parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
 
+        nbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        nbc_bdr = 0;
 
-        nbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        nbc_CnE_bdr = 0;
-
-        dbc_CnE_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-        dbc_CnE_bdr = 0;
-
+        dbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_bdr = 0;
 
     }
     
@@ -548,27 +543,87 @@ void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode elect
 
     std::cout << "Setting up boundary conditions for 2D mesh" << std::endl;
 
-    // 2D Rectangle
-	// Neumann BC on the west boundary. CnE
-	nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-	nbc_w_bdr = 0; nbc_w_bdr[0] = 1;
+    if (mode == CellMode::HALF && electrode == Electrode::ANODE) {
+        std::cout << "Setting up boundary conditions for Half Cell: ANODE" << std::endl;
 
-	// Dirichlet BC on the east boundary. phP
-	dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-	dbc_e_bdr = 0; dbc_e_bdr[2] = 1;
-	// use dbc_e_bdr array to extract all node labels of Dirichlet BC
-	ess_tdof_list_e.SetSize(0);			
-	parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
-	
-	// Dirichlet BC on the west boundary. phE
-	dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-	dbc_w_bdr = 0; dbc_w_bdr[0] = 1;
-	// use dbc_w_bdr array to extract all node labels of Dirichlet BC
-	ess_tdof_list_w.SetSize(0);			
-	parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
+        // East Neumann Boundary Condition
+        nbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        nbc_e_bdr = 0;
+        nbc_e_bdr[2] = 1; 
+
+        // East Dirichlet Boundary Condition
+        dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_e_bdr = 0;
+        dbc_e_bdr[2] = 1;
+
+        // West Dirichlet Boundary Condition
+        dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_w_bdr = 0;
+        dbc_w_bdr[0] = 1;
+
+        ess_tdof_list_w.SetSize(0);
+        parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
+
+        nbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+
+        nbc_bdr = nbc_e_bdr;
+        dbc_bdr = dbc_e_bdr;
+
+
+    } else if (mode == CellMode::HALF && electrode == Electrode::CATHODE) {
+        std::cout << "Setting up boundary conditions for Half Cell: CATHODE" << std::endl;
+
+        // West Neumann Boundary Condition
+        nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        nbc_w_bdr = 0;
+        nbc_w_bdr[0] = 1; 
+
+        // West Dirichlet Boundary Condition
+        dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_w_bdr = 0;
+        dbc_w_bdr[0] = 1;
+
+        // East Dirichlet Boundary Condition 
+        dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_e_bdr = 0;
+        dbc_e_bdr[2] = 1;
+
+        ess_tdof_list_e.SetSize(0);
+        parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+
+        nbc_bdr = nbc_w_bdr;
+        dbc_bdr = dbc_w_bdr;
+
+    } else {
+        std::cout << "Setting up boundary conditions for Full Cell" << std::endl;
+
+        // West Dirichlet Boundary Condition
+        dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_w_bdr = 0;
+        dbc_w_bdr[0] = 1;
+
+        ess_tdof_list_w.SetSize(0);
+        parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
+
+        // East Dirichlet Boundary Condition
+        dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_e_bdr = 0;
+        dbc_e_bdr[2] = 1;
+
+        ess_tdof_list_e.SetSize(0);
+        parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+
+        nbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        nbc_bdr = 0;
+
+        dbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
+        dbc_bdr = 0;
 
     }
 
+
+}
 
 }
 

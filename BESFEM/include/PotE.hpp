@@ -101,7 +101,7 @@ private:
 
     // ---------- Spaces / BC bookkeeping ----------
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Parallel FE space.
-    mfem::Array<int> dbc_CnE_bdr;       ///< Dirichlet boundary markers (west).
+    mfem::Array<int> dbc_bdr;       ///< Dirichlet boundary markers (west).
     mfem::Array<int> ess_tdof_list_potE; ///< Essential true DOFs on west boundary.
 
     // ---------- Physical constants (derived combos) ----------

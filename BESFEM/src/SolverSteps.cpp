@@ -73,24 +73,16 @@ void SolverSteps::FormSystemMatrix(std::unique_ptr<mfem::ParBilinearForm> &M, mf
         throw std::runtime_error("Bilinear form M is not initialized.");
     }
     
-    // Temporary matrix to hold the assembled mass matrix
-    // mfem::HypreParMatrix A;
-
-    // Form the system matrix from the bilinear form
     M->FormSystemMatrix(boundary_dofs, A);
-    // MassMatrix = std::make_shared<mfem::HypreParMatrix>(A);
-    }
+
+}
 
 void SolverSteps::FormLinearSystem(std::unique_ptr<mfem::ParBilinearForm> &K, mfem::Array<int> &boundary_dofs, mfem::ParGridFunction &x, mfem::ParLinearForm &b, mfem::HypreParMatrix &A, mfem::HypreParVector &X, mfem::HypreParVector &B) {
     if (!K) {
         throw std::runtime_error("Bilinear form K is not initialized.");
     }
 
-    // Temporary matrix to hold the assembled stiffness matrix
-    // mfem::HypreParMatrix A;
-
     K->FormLinearSystem(boundary_dofs, x, b, A, X, B);
-    // StiffnessMatrix = std::make_shared<mfem::HypreParMatrix>(A);
 }
 
 void SolverSteps::Update(std::unique_ptr<mfem::ParLinearForm> &B) {
@@ -115,7 +107,7 @@ void SolverSteps::Update(std::unique_ptr<mfem::ParBilinearForm> &B) {
 
 void SolverSteps::SolverConditions(mfem::HypreParMatrix &Mmat, mfem::CGSolver &solver, mfem::Solver &preconditioner){
     // Set up the solver for the mass matrix.
-    // solver.iterative_mode = true; // Use direct solving for the system matrix
+    solver.iterative_mode = false; // Use direct solving for the system matrix
     solver.SetRelTol(1e-6); // Set relative tolerance for the solver
     solver.SetAbsTol(0.0); // Set absolute tolerance for the solver
     solver.SetMaxIter(102); // Limit the maximum number of iterations
@@ -126,7 +118,7 @@ void SolverSteps::SolverConditions(mfem::HypreParMatrix &Mmat, mfem::CGSolver &s
 
 void SolverSteps::SolverConditions(mfem::CGSolver &solver, mfem::Solver &preconditioner){
     // Set up the solver for the mass matrix.
-    // solver.iterative_mode = false; // Use direct solving for the system matrix
+    solver.iterative_mode = false; // Use direct solving for the system matrix
     solver.SetRelTol(1e-6); // Set relative tolerance for the solver
     solver.SetAbsTol(0.0); // Set absolute tolerance for the solver
     solver.SetMaxIter(102); // Limit the maximum number of iterations

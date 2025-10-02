@@ -15,7 +15,7 @@ CnC::CnC(Initialize_Geometry &geo, Domain_Parameters &para)
     
     {
 
-    std::cout << "gtPsC before: " << gtPsC << std::endl;
+    // std::cout << "gtPsC before: " << gtPsC << std::endl;
 
     if (gtPsC < 1.0e-200){
         gtPsC = gtPsi;
@@ -36,10 +36,10 @@ void CnC::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     Mp_prec.SetType(mfem::HypreSmoother::Jacobi); //
     SolverSteps::SolverConditions(Mmatp, Mp_solver, Mp_prec); // Set up the solver conditions for the mass matrix
 
-    SolverSteps::InitializeForceTerm(cAp, Bc2);
-    Fct = *Bc2; // Move the updated force term to Fct
+    SolverSteps::InitializeForceTerm(cAp, Bc2); // HALF
+    Fct = *Bc2; // Move the updated force term to Fct HALF
 
-    SolverSteps::InitializeStiffnessMatrix(cDp, Kc2); // Initialize stiffness form for particle potential
+    SolverSteps::InitializeStiffnessMatrix(cDp, Kc2); // Initialize stiffness form for particle potential HALF
 
     psx.GetTrueDofs(PsVc); // Extract true degrees of freedom in the potential field
 
@@ -51,7 +51,7 @@ void CnC::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     Concentrations::CreateReaction(Rx, RxC, (1.0/Constants::rho_C));
     cAp.SetGridFunction(&RxC); // Set the reaction term coefficient for the force term
 
-    // SolverSteps::InitializeForceTerm(cAp, Bc2);
+    SolverSteps::InitializeForceTerm(cAp, Bc2);
     SolverSteps::Update(Bc2); // Update the force term with the current reaction term
     Fct = *Bc2; // Move the updated force term to Fct
 

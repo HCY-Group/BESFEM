@@ -92,10 +92,14 @@ void PotA::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     pP0 = phx; // Store the current potential field
     pP0.GetTrueDofs(Xs0); // Extract degrees of freedom
 
+    // std::cout << "PotA Solver" << std::endl;
     cgPP_solver.Mult(Fpb, Xs0); // Solve for the error term
+    
+    // std::cout << Xs0.Sum() << " Xs0 after solver" << std::endl;
+
     phx.Distribute(Xs0); // Distribute the updated values
 
-    Potentials::ComputeGlobalError(pP0, phx, psx, gerror, gtPsi); // Compute global error
+    Potentials::ComputeGlobalError(pP0, phx, psx, gerror, gtPsA); // Compute global error
     
 }
 

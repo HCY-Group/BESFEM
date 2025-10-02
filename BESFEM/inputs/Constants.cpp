@@ -18,6 +18,7 @@ namespace Constants {
     const double thres = 1.0e-3;                            ///< Threshold value for numerical operations
     const double eps = 1.0e-6;                              ///< Small epsilon value for numerical tolerance
     const double dt = 0.0105625;                            ///< Time step size
+    // const double dt = 0.02 * 3.25e-5 * 3.25e-5 /7.3333e-10;      ///< Time step size (FULL CELL)
     const double tm = 0.0;                                  ///< Initial simulation time
     const double t_minus = 7.619047619047619e-01;           ///< Transference number
     const double D0 = 0.00489;                              ///< Base diffusivity

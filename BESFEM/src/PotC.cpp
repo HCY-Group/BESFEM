@@ -46,14 +46,14 @@ void PotC::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     BvC = initial_value; // Set the boundary value
     Potentials::SetInitialPotentials(ph, BvC); // Initialize potentials
 
-    kap = psx; // Set the conductivity field to the particle concentration field
-    kap *= 3.3;
+    kap = psx; // Set the conductivity field to the particle concentration field // HALF
+    kap *= 3.3; // HALF
     SolverSteps::InitializeStiffnessMatrix(cKp, Kp2); // Initialize the stiffness matrix
     
-    mfem::ConstantCoefficient dbc_e_Coef(BvC); // Coefficient for Dirichlet boundary conditions
-    ph.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
+    mfem::ConstantCoefficient dbc_e_Coef(BvC); // Coefficient for Dirichlet boundary conditions // HALF
+    ph.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions // HALF
     
-    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e); // HALF
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
 
@@ -62,11 +62,11 @@ void PotC::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     SolverSteps::SolverConditions(KmP, cgPP_solver, *Mpp); // Set up the solver conditions
 
     // cRp.SetGridFunction(&RpP); // Set the reaction field coefficient
-    SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term
-    SolverSteps::Update(Bp2); // Assemble the force term
-    Fpt = *Bp2; // Assign the force term
+    SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term HALF
+    SolverSteps::Update(Bp2); // Assemble the force term HALF
+    Fpt = *Bp2; // Assign the force term HALF
 
-    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system
+    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system HALF
 }
 
 
@@ -81,7 +81,8 @@ void PotC::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
 
-    Mpp->SetOperator(KmP); // Set the preconditioner operator
+    Mpp->SetOperator(KmP); // Set the operator for the preconditioner
+    cgPP_solver.SetPreconditioner(*Mpp);
     cgPP_solver.SetOperator(KmP); // Set the operator for the solver
 
 }
@@ -103,6 +104,7 @@ void PotC::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     pP0 = phx; // Store the current potential field
     pP0.GetTrueDofs(Xs0); // Extract degrees of freedom
 
+    // std::cout << "PotP Solver" << std::endl;
     cgPP_solver.Mult(Fpb, Xs0); // Solve for the error term
     phx.Distribute(Xs0); // Distribute the updated values
 
