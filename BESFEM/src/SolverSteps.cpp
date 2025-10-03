@@ -42,26 +42,39 @@ void SolverSteps::InitializeStiffnessMatrix(mfem::Coefficient &coef, std::unique
 
 }
 
+// void SolverSteps::InitializeForceTerm(
+//     mfem::Coefficient &coef,
+//     std::unique_ptr<mfem::ParLinearForm> &B,
+//     mfem::Coefficient *boundary_coef,
+//     mfem::Array<int> *boundary_attr)
+// {
+//     B = std::make_unique<mfem::ParLinearForm>(local_fespace);
+
+//     // Domain term
+//     B->AddDomainIntegrator(new mfem::DomainLFIntegrator(coef));
+
+//     // Optional boundary term
+//     if (boundary_coef && boundary_attr)
+//     {
+//         B->AddBoundaryIntegrator(
+//             new mfem::BoundaryLFIntegrator(*boundary_coef),
+//             *boundary_attr
+//         );
+//     }
+
+//     B->Assemble();
+
+//     // std::cout << "Force term initialized." << std::endl;
+// }
+
 void SolverSteps::InitializeForceTerm(
     mfem::Coefficient &coef,
-    std::unique_ptr<mfem::ParLinearForm> &B,
-    mfem::Coefficient *boundary_coef,
-    mfem::Array<int> *boundary_attr)
+    std::unique_ptr<mfem::ParLinearForm> &B)
 {
     B = std::make_unique<mfem::ParLinearForm>(local_fespace);
 
     // Domain term
     B->AddDomainIntegrator(new mfem::DomainLFIntegrator(coef));
-
-    // Optional boundary term
-    if (boundary_coef && boundary_attr)
-    {
-        B->AddBoundaryIntegrator(
-            new mfem::BoundaryLFIntegrator(*boundary_coef),
-            *boundary_attr
-        );
-    }
-
     B->Assemble();
 
     // std::cout << "Force term initialized." << std::endl;

@@ -59,15 +59,22 @@ public:
     void InitializeStiffnessMatrix(mfem::Coefficient &coef, std::unique_ptr<mfem::ParBilinearForm> &K);
     
     
+    // /**
+    //  * @brief Initializes the force term.
+    //  * @param coef Coefficient for the force term.
+    //  * @param B Pointer to the linear form for the force term.
+    //  * @param boundary_coef Optional boundary coefficient.
+    //  * @param boundary_attr Optional boundary attributes.
+    //  */
+    // void InitializeForceTerm(mfem::Coefficient &coef, std::unique_ptr<mfem::ParLinearForm> &B, mfem::Coefficient *boundary_coef = nullptr,
+    //     mfem::Array<int> *boundary_attr = nullptr);
+
     /**
      * @brief Initializes the force term.
      * @param coef Coefficient for the force term.
      * @param B Pointer to the linear form for the force term.
-     * @param boundary_coef Optional boundary coefficient.
-     * @param boundary_attr Optional boundary attributes.
      */
-    void InitializeForceTerm(mfem::Coefficient &coef, std::unique_ptr<mfem::ParLinearForm> &B, mfem::Coefficient *boundary_coef = nullptr,
-        mfem::Array<int> *boundary_attr = nullptr);
+    void InitializeForceTerm(mfem::Coefficient &coef, std::unique_ptr<mfem::ParLinearForm> &B);
     
     /**
      * @brief Forms the system matrix.

@@ -56,8 +56,8 @@ void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFun
 
 void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &Rx3, double value) {
 
-    Rx2 += Rx1; // Sum the two input reaction fields and store in Rx2
-    Rx3 = Rx2; // Copy the summed reaction field to the output reaction field
+    Rx3 = Rx1; // Copy the input reaction field to the output reaction field
+    Rx3 += Rx2; // Add the second reaction field to the output reaction field
     Rx3 *= value; // Scale the output reaction field by the specified factor
 
 }

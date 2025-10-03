@@ -31,7 +31,7 @@ namespace Constants {
     const double Vsr = 0.009466;                                 ///< Voltage scanning rate (same value for anode, cathode, and electrolyte)
     const double VCut = 0.0;                                ///< Cut-off voltage
     const double init_CnA = 0.95;                        ///< initial concentration in the anode
-    const double init_CnC = 0.20;                            ///< initial concentration in the cathode
+    const double init_CnC = 0.30;                            ///< initial concentration in the cathode
     const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
     const double init_BvA = 0.1055;                            ///< boundary condition for anode potential
     const double init_BvC = 4.1985;                         ///< boundary condition for cathode potential

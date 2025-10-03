@@ -35,15 +35,15 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     // Initialize stiffness operator (diffusivity)
     SolverSteps::InitializeStiffnessMatrix(cDe, Ke2); // Initialize
 
-    // Build boundary coefficient (Neumann BC weighting) HALF
-    PeR = psx;
-    PeR.Neg();
-    m_nbcCoef = std::make_unique<mfem::ProductCoefficient>(matCoef_R, nbcCoef);
+    // // Build boundary coefficient (Neumann BC weighting) HALF
+    // PeR = psx;
+    // PeR.Neg();
+    // m_nbcCoef = std::make_unique<mfem::ProductCoefficient>(matCoef_R, nbcCoef);
 
     // Build force term (domain + boundary contributions)
     Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
     Be_init->AddDomainIntegrator(new mfem::DomainLFIntegrator(cAe));
-    Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(*m_nbcCoef), nbc_bdr); // HALF
+    // Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(*m_nbcCoef), nbc_bdr); // HALF
     Be_init->Assemble(); 
     Fet = *Be_init;
 
