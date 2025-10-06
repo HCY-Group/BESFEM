@@ -620,7 +620,8 @@ void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode elect
 
         dbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
         dbc_bdr = 0;
-        // dbc_bdr[1] = 1;
+        // dbc_bdr[0] = 1;
+        // dbc_bdr[2] = 1;
 
     }
 

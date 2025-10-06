@@ -75,7 +75,8 @@
         "csignal": "cpp",
         "unordered_set": "cpp",
         "regex": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "climits": "cpp"
     },
     "cmake.sourceDirectory": "/mnt/home/brandlan/PhD/MFEM_Parallel/mfem-4.5/GitLab/besfem/mfem/glvis-4.2"
 }

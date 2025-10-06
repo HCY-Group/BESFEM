@@ -270,9 +270,13 @@ int main(int argc, char *argv[]) {
         CnE_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         electrolyte_concentration->Initialize(*CnE_gf, Constants::init_CnE, *domain_parameters.pse);
 
+        std::cout << "Initialized electrolyte concentration" << std::endl;
+
         electrolyte_potential = std::make_unique<PotE>(geometry, domain_parameters);
         phE_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         electrolyte_potential->Initialize(*phE_gf, Constants::init_BvE, *domain_parameters.pse);
+
+        std::cout << "Initialized electrolyte potential" << std::endl;
 
         if (cfg.mode == sim::CellMode::HALF) // HALF-CELL
         {
@@ -447,7 +451,7 @@ int main(int argc, char *argv[]) {
         if(cfg.mode == sim::CellMode::FULL) {
             for (int t = 0; t < num_timesteps; ++t) {
 
-                std::cout << "entered full cell loop at t= " << t << std::endl;
+                // std::cout << "entered full cell loop at t= " << t << std::endl;
 
                 anode_concentration->TimeStep(*RxA_gf, *CnA_gf, *domain_parameters.psA);
                 cathode_concentration->TimeStep(*RxC_gf, *CnC_gf, *domain_parameters.psC);
@@ -469,21 +473,15 @@ int main(int argc, char *argv[]) {
 
                 double intlp = 0.0;
 
-                // while (globalerror_C > 1.0e-8 || globalerror_A > 1.0e-8 || globalerror_E > 1.0e-8) {
-                while (globalerror_C > 1.0e-8 || globalerror_A > 1.0e-8) {
-                // while (globalerror_E > 1.0e-8) {
-
+                while (globalerror_C > 1.0e-8 || globalerror_A > 1.0e-8 || globalerror_E > 1.0e-8) {
                 
                     reaction->ButlerVolmer(*Rxn_gf, *RxC_gf, *RxA_gf, *CnC_gf, *CnA_gf, *CnE_gf, *phC_gf, *phA_gf, *phE_gf); // 9 inputs
                     cathode_potential->Advance(*RxC_gf, *phC_gf, *domain_parameters.psC, globalerror_C);
                     anode_potential->Advance(*RxA_gf, *phA_gf, *domain_parameters.psA, globalerror_A);
-                    // electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
-                    // std::cout << "after electrolyte advance" << std::endl;
+                    electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
 
-                    intlp += 1;
-
-                    std::cout << " intlp: " << intlp << " gerrA: " << globalerror_A << " gerrC: " << globalerror_C << " gerrE: " << globalerror_E << std::endl;
-                    
+                    // intlp += 1;
+                    // std::cout << " intlp: " << intlp << " gerrA: " << globalerror_A << " gerrC: " << globalerror_C << " gerrE: " << globalerror_E << std::endl;
                 }
 
                 reaction->TotalReactionCurrent(*RxA_gf, global_current_A);
@@ -499,7 +497,7 @@ int main(int argc, char *argv[]) {
                 // cathode_potential->BvC -= dV_C; // Adjust cathode potential based on target current
                 // *phC_gf -= dV_C; // Update the grid function for cathode potential
 
-                if (t % 1 == 0 && mfem::Mpi::WorldRank() == 0) {
+                if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
                     const double XfrA = anode_concentration->GetLithiation();
                     const double XfrC = cathode_concentration->GetLithiation();
@@ -536,8 +534,14 @@ int main(int argc, char *argv[]) {
         } else { // FULL
             phA_gf->Save((outdir + "/phA_final").c_str());
             phC_gf->Save((outdir + "/phC_final").c_str());
+            phE_gf->Save((outdir + "/phE_final").c_str());
+            CnA_gf->Save((outdir + "/CnA_final_raw").c_str());
+            CnC_gf->Save((outdir + "/CnC_final_raw").c_str());
+            CnE_gf->Save((outdir + "/CnE_final_raw").c_str());
             *CnA_gf *= *domain_parameters.psA;  CnA_gf->Save((outdir + "/CnA_final").c_str());
             *CnC_gf *= *domain_parameters.psC;  CnC_gf->Save((outdir + "/CnC_final").c_str());
+            *CnE_gf *= *domain_parameters.pse;  CnE_gf->Save((outdir + "/CnE_final").c_str());
+            *CnA_gf += *CnC_gf;  CnA_gf->Save((outdir + "/CnP_final").c_str()); // CnP = CnA + CnC
         }
     }
 

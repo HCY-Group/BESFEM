@@ -17,8 +17,8 @@ namespace Constants {
     const double zeta = 1.0;                                ///< Interfacial thickness
     const double thres = 1.0e-3;                            ///< Threshold value for numerical operations
     const double eps = 1.0e-6;                              ///< Small epsilon value for numerical tolerance
-    const double dt = 0.0105625;                            ///< Time step size
-    // const double dt = 0.02 * 3.25e-5 * 3.25e-5 /7.3333e-10;      ///< Time step size (FULL CELL)
+    // const double dt = 0.0105625;                            ///< Time step size
+    const double dt = 0.02 * 3.25e-5 * 3.25e-5 /7.3333e-10;      ///< Time step size (FULL CELL)
     const double tm = 0.0;                                  ///< Initial simulation time
     const double t_minus = 7.619047619047619e-01;           ///< Transference number
     const double D0 = 0.00489;                              ///< Base diffusivity
@@ -31,7 +31,7 @@ namespace Constants {
     const double Vsr = 0.009466;                                 ///< Voltage scanning rate (same value for anode, cathode, and electrolyte)
     const double VCut = 0.0;                                ///< Cut-off voltage
     const double init_CnA = 0.95;                        ///< initial concentration in the anode
-    const double init_CnC = 0.30;                            ///< initial concentration in the cathode
+    const double init_CnC = 0.20;                            ///< initial concentration in the cathode
     const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
     const double init_BvA = 0.1055;                            ///< boundary condition for anode potential
     const double init_BvC = 4.1985;                         ///< boundary condition for cathode potential
