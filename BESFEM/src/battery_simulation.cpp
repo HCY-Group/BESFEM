@@ -58,56 +58,7 @@ static std::string BuildRunOutdir(const char* mesh_file, int num_steps)
     return od.str();
 }
 
-
-// ---- Save all outputs (raw + projected) in one place ------------------------
-static void SaveSimulationOutputs(
-    const std::string& outdir,
-    Initialize_Geometry& geometry,
-    Domain_Parameters& dp,
-    const mfem::ParGridFunction& CnP_gf,
-    const mfem::ParGridFunction& CnE_gf,
-    const mfem::ParGridFunction& phP_gf,
-    const mfem::ParGridFunction& phE_gf,
-    const mfem::ParGridFunction& Rxn_gf)
-{
-    // Ensure the directory exists before any rank writes into it
-    if (mfem::Mpi::WorldRank() == 0) {
-        std::filesystem::create_directories(outdir);
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    // 1) Save raw fields
-    geometry.parallelMesh->Save((outdir + "/pmesh").c_str());
-    dp.psi->Save((outdir + "/psi").c_str());
-    dp.pse->Save((outdir + "/pse").c_str());
-    dp.AvB->Save((outdir + "/AvB").c_str());
-    dp.AvP->Save((outdir + "/AvP").c_str());
-
-    CnP_gf.Save((outdir + "/CnP").c_str());
-    CnE_gf.Save((outdir + "/CnE").c_str());
-    phP_gf.Save((outdir + "/phP").c_str());
-    phE_gf.Save((outdir + "/phE").c_str());
-    Rxn_gf.Save((outdir + "/Rxn").c_str());
-
-    // 2) CnP, phP are in the particle domain (mask by psi)
-    {
-        mfem::ParGridFunction pCnP(CnP_gf.ParFESpace()); pCnP = CnP_gf;
-        pCnP *= *dp.psi;  pCnP.Save((outdir + "/pCnP").c_str());
-
-        mfem::ParGridFunction pphP(phP_gf.ParFESpace()); pphP = phP_gf;
-        pphP *= *dp.psi;  pphP.Save((outdir + "/pphP").c_str());
-    }
-    // CnE, phE are in the electrolyte domain (mask by pse)
-    {
-        mfem::ParGridFunction pCnE(CnE_gf.ParFESpace()); pCnE = CnE_gf;
-        pCnE *= *dp.pse;  pCnE.Save((outdir + "/pCnE").c_str());
-
-        mfem::ParGridFunction pphE(phE_gf.ParFESpace()); pphE = phE_gf;
-        pphE *= *dp.pse;  pphE.Save((outdir + "/pphE").c_str());
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
-}
+// ============================================================================
 
 struct SimulationConfig {
     sim::CellMode mode = sim::CellMode::HALF;
@@ -230,9 +181,6 @@ int main(int argc, char *argv[]) {
         bool half_is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
 
 
-
-
-
         // ============================================================================
         // ===============================  START SIMULATION  =========================
         // ============================================================================
@@ -270,13 +218,9 @@ int main(int argc, char *argv[]) {
         CnE_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         electrolyte_concentration->Initialize(*CnE_gf, Constants::init_CnE, *domain_parameters.pse);
 
-        std::cout << "Initialized electrolyte concentration" << std::endl;
-
         electrolyte_potential = std::make_unique<PotE>(geometry, domain_parameters);
         phE_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         electrolyte_potential->Initialize(*phE_gf, Constants::init_BvE, *domain_parameters.pse);
-
-        std::cout << "Initialized electrolyte potential" << std::endl;
 
         if (cfg.mode == sim::CellMode::HALF) // HALF-CELL
         {
@@ -450,8 +394,6 @@ int main(int argc, char *argv[]) {
 
         if(cfg.mode == sim::CellMode::FULL) {
             for (int t = 0; t < num_timesteps; ++t) {
-
-                // std::cout << "entered full cell loop at t= " << t << std::endl;
 
                 anode_concentration->TimeStep(*RxA_gf, *CnA_gf, *domain_parameters.psA);
                 cathode_concentration->TimeStep(*RxC_gf, *CnC_gf, *domain_parameters.psC);
