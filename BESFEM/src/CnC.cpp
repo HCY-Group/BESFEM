@@ -57,6 +57,7 @@ void CnC::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 
     for (int vi = 0; vi < nV; vi++){
         Dp(vi) = psx(vi) * (0.0277 - 0.084 * Cn(vi) + 0.1003 * Cn(vi) * Cn(vi)) * 1.0e-8;
+        if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
     }
     cDp.SetGridFunction(&Dp); // Set the diffusivity coefficient for the stiffness matrix
     

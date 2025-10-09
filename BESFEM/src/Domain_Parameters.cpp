@@ -56,6 +56,12 @@ void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
     InterpolateDomainParameters(mesh_type);
     CalculatePhasePotentialsAndTargetCurrent();
 
+    // psA->Save("psA.gf");
+    // psC->Save("psC.gf");
+
+    // *psA += *psC;
+    // psA->Save("psP.gf");
+
     PrintInfo();
 }
 
@@ -276,7 +282,6 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         for (int vi = 0; vi < nV; vi++) {
             if ((*AvA)(vi) * Constants::dh < 1.0e-2) { (*AvA)(vi) = 0.0; }
             if ((*AvC)(vi) * Constants::dh < 1.0e-2) { (*AvC)(vi) = 0.0; }
-
             if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
         }
         
@@ -355,7 +360,7 @@ void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
 
     // Compute target current based on total Psi, rho, Cr, and constants
     // trgI = total_psi * Constants::rho_A * (0.9 - 0.3) / (3600.0 / Constants::Cr);
-    trgI = total_psi * Constants::rho_C * (0.75) / (3600.0 / Constants::Cr);
+    trgI = total_psi * Constants::rho_C * (Constants::init_CnA - Constants::init_CnC) / (3600.0 / Constants::Cr);
 
     // Perform global MPI reduction to get the total target current
     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);

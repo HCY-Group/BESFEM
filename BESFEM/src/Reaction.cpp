@@ -155,13 +155,13 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Rx
 {
     for (int vi = 0; vi < nV; vi++){
         
-        if ( (*AvA)(vi) * Constants::dh > 1.0e-2 ){ // Check for interface presence
+        if ( (*AvA)(vi) * Constants::dh > 0.0 ){ // Check for interface presence
                 (*dPHA)(vi) = phx2(vi) - phx3(vi); // Voltage drop across the interface
                 Rx2(vi) = (*AvA)(vi) * ((*KfA)(vi)*Cn3(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHA)(vi)) - \
                                            (*KbA)(vi)*Cn2(vi)*exp( Constants::alp*Constants::Cst1*(*dPHA)(vi)));
             }
 
-        if ( (*AvC)(vi) * Constants::dh > 1.0e-2 ){ // Check for interface presence
+        if ( (*AvC)(vi) * Constants::dh > 0.0 ){ // Check for interface presence
                 (*dPHC)(vi) = phx1(vi) - phx3(vi); // Voltage drop across the interface
                 Rx1(vi) = (*AvC)(vi) * ((*KfC)(vi)*Cn3(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHC)(vi)) - \
                                            (*KbC)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHC)(vi)));

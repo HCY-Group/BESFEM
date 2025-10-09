@@ -181,7 +181,7 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     //     anchor_ready = true; 
     // }
 
-    const int anchor = 215;
+    const int anchor = 2000;
 
     if (!anchor_set) {
         ess_tdof_potE.SetSize(1);
@@ -307,7 +307,7 @@ void PotE::Advance(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem:
     phE_bc = phx;
     if (ess_tdof_potE.Size() == 1) {
         mfem::Vector td; phE_bc.GetTrueDofs(td);
-        td(ess_tdof_potE[0]) = Constants::init_BvE;
+        td(ess_tdof_potE[0]) = BvE;
         phE_bc.SetFromTrueDofs(td);
     }
 

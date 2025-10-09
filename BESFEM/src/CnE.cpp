@@ -49,7 +49,6 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
 
     boundary_dofs.SetSize(0);
 
-
     SolverSteps::FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
 }
 

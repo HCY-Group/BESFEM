@@ -24,9 +24,6 @@
 #include <sstream>
 #include <ctime>
 
-// Sample run: uses disk mesh and distance function and runs for 250 timesteps
-// mpirun -np 6 battery_simulation -m ../inputs/disk_Mesh_80x80x6.mesh -da ../inputs/disk_dsF_81x81x7.txt -t d -n 250
-
 // ============================================================================
 
 namespace fs = std::filesystem;
@@ -73,6 +70,9 @@ struct SimulationConfig {
 
 
 // ============================================================================
+// ============================================================================
+// ============================================================================
+
 
 int main(int argc, char *argv[]) {
 
@@ -422,8 +422,6 @@ int main(int argc, char *argv[]) {
                     anode_potential->Advance(*RxA_gf, *phA_gf, *domain_parameters.psA, globalerror_A);
                     electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
 
-                    // intlp += 1;
-                    // std::cout << " intlp: " << intlp << " gerrA: " << globalerror_A << " gerrC: " << globalerror_C << " gerrE: " << globalerror_E << std::endl;
                 }
 
                 reaction->TotalReactionCurrent(*RxA_gf, global_current_A);
@@ -434,22 +432,24 @@ int main(int argc, char *argv[]) {
                 // anode_potential->BvA += dV_A; // Adjust anode potential based on target current
                 // *phA_gf += dV_A; // Update the grid function for anode potential
 
-                // double sgnC = copysign(1.0, domain_parameters.gTrgI - abs(global_current_C));
+                // double sgnC = copysign(1.0, domain_parameters.gTrgI - global_current_C);
                 // double dV_C = Constants::dt * Constants::Vsr * sgnC;
                 // cathode_potential->BvC -= dV_C; // Adjust cathode potential based on target current
                 // *phC_gf -= dV_C; // Update the grid function for cathode potential
+
+                double err = domain_parameters.gTrgI - 0.5*(global_current_A - global_current_C);
+                double dV = Constants::dt * Constants::Vsr * err;
+                *phA_gf += 0.5*dV;  anode_potential->BvA += 0.5*dV;
+                *phC_gf -= 0.5*dV;  cathode_potential->BvC -= 0.5*dV;
+
 
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
                     const double XfrA = anode_concentration->GetLithiation();
                     const double XfrC = cathode_concentration->GetLithiation();
 
-                    std::cout << "timestep: " << t
-                    << (" [FULL-CELL]")
-                    << ", XfrA = " << XfrA
-                    << ", XfrC = " << XfrC
-                    << ", Anode current = " << global_current_A
-                    << ", Cathode current = " << global_current_C
+                    std::cout << "timestep: " << t << (" [FULL-CELL]") << ", XfrA = " << XfrA << ", XfrC = " << XfrC
+                    << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C
                     << std::endl;
                 }
 
@@ -484,6 +484,8 @@ int main(int argc, char *argv[]) {
             *CnC_gf *= *domain_parameters.psC;  CnC_gf->Save((outdir + "/CnC_final").c_str());
             *CnE_gf *= *domain_parameters.pse;  CnE_gf->Save((outdir + "/CnE_final").c_str());
             *CnA_gf += *CnC_gf;  CnA_gf->Save((outdir + "/CnP_final").c_str()); // CnP = CnA + CnC
+            RxA_gf->Save((outdir + "/RxA_final_raw").c_str());
+            RxC_gf->Save((outdir + "/RxC_final_raw").c_str());
         }
     }
 
@@ -503,145 +505,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
-
-
-
-
-
-        //////////////////////////
-
-        // geometry.parallelMesh->Save((outdir + "/pmesh").c_str());
-
-        // // Existing saves:
-        // domain_parameters.psi->Save((outdir + "/psi").c_str());
-        // domain_parameters.pse->Save((outdir + "/pse").c_str());
-        // domain_parameters.AvB->Save((outdir + "/AvB").c_str());
-        // domain_parameters.AvP->Save((outdir + "/AvP").c_str());
-
-        // if (domain_parameters.psA) { domain_parameters.psA->Save((outdir + "/psA").c_str()); }
-        // if (domain_parameters.psC) { domain_parameters.psC->Save((outdir + "/psC").c_str()); }
-
-        /////////////////////////////
-
-
-
-             // // Cathode concentration initialization with a grid function and initial value
-        // CnC cathode_concentration(geometry, domain_parameters);
-        // mfem::ParGridFunction CnC_gf(geometry.parfespace.get());
-        // cathode_concentration.Initialize(CnC_gf, Constants::init_CnC, *domain_parameters.psi);
-
-        // // Anode concentration initialization with a grid function and initial value
-        // CnA anode_concentration(geometry, domain_parameters);
-        // mfem::ParGridFunction CnA_gf(geometry.parfespace.get());
-        // anode_concentration.Initialize(CnA_gf, Constants::init_CnA, *domain_parameters.psi);  // initial value: 2.02d-2
-
-        // // Electrolyte concentration initialization with a grid function and initial value
-        // CnE electrolyte_concentration(geometry, domain_parameters);
-        // mfem::ParGridFunction CnE_gf(geometry.parfespace.get());
-        // electrolyte_concentration.Initialize(CnE_gf, Constants::init_CnE, *domain_parameters.pse); 
-
-    //     // Cathode potential initialization with a grid function and initial value
-    //     PotC cathode_potential(geometry, domain_parameters);
-    //     mfem::ParGridFunction phC_gf(geometry.parfespace.get());
-    //     cathode_potential.Initialize(phC_gf, Constants::init_BvC, *domain_parameters.psi);
-
-    //     // Anode potential initialization with a grid function and initial value
-    //     PotA anode_potential(geometry, domain_parameters);
-    //     mfem::ParGridFunction phA_gf(geometry.parfespace.get());
-    //     anode_potential.Initialize(phA_gf, Constants::init_BvA, *domain_parameters.psi);
-
-    //     // Electrolyte potential initialization with a grid function and initial value
-    //     PotE electrolyte_potential(geometry, domain_parameters);
-    //     mfem::ParGridFunction phE_gf(geometry.parfespace.get());
-    //     electrolyte_potential.Initialize(phE_gf, Constants::init_BvE, *domain_parameters.pse);
-
-    //     // Initialize the reaction with an empty reaction grid function and initial value
-    //     Reaction reaction(geometry, domain_parameters);
-    //     mfem::ParGridFunction Rxn_gf(geometry.parfespace.get());
-    //     reaction.Initialize(Rxn_gf, 0.0);
-    //     // reaction.Initialize(Rxn_gf, 1.0e-8);
-
-    //     // Initialize Current Class
-
-    //     // Create the Current class to control current based on particle potential
-    //     // Current current(geometry, domain_parameters);
-
-
-                // // Anode concentration initialization with a grid function and initial value
-            // CnA anode_concentration(geometry, domain_parameters);
-            // mfem::ParGridFunction CnA_gf(geometry.parfespace.get());
-            // anode_concentration.Initialize(CnA_gf, Constants::init_CnA, *domain_parameters.psA); 
-            // CnA_gf.Save((outdir + "/CnA").c_str());
-
-            // // Anode potential initialization with a grid function and initial value
-            // PotA anode_potential(geometry, domain_parameters);
-            // mfem::ParGridFunction phA_gf(geometry.parfespace.get());
-            // anode_potential.Initialize(phA_gf, Constants::init_BvA, *domain_parameters.psA);
-            // phA_gf.Save((outdir + "/phA").c_str());
-
-            // // Cathode concentration initialization with a grid function and initial value
-            // CnC cathode_concentration(geometry, domain_parameters);
-            // mfem::ParGridFunction CnC_gf(geometry.parfespace.get());
-            // cathode_concentration.Initialize(CnC_gf, Constants::init_CnC, *domain_parameters.psC);
-            // CnC_gf.Save((outdir + "/CnC").c_str());
-
-            // // Cathode potential initialization with a grid function and initial value
-            // PotC cathode_potential(geometry, domain_parameters);
-            // mfem::ParGridFunction phC_gf(geometry.parfespace.get());
-            // cathode_potential.Initialize(phC_gf, Constants::init_BvC, *domain_parameters.psC);
-            // phC_gf.Save((outdir + "/phC").c_str());
-
-                // // Cathode concentration initialization with a grid function and initial value
-                // CnC cathode_concentration(geometry, domain_parameters);
-                // mfem::ParGridFunction CnC_gf(geometry.parfespace.get());
-                // cathode_concentration.Initialize(CnC_gf, Constants::init_CnC, *domain_parameters.psi);
-                // CnC_gf.Save((outdir + "/CnC").c_str());
-
-                // // Cathode potential initialization with a grid function and initial value
-                // PotC cathode_potential(geometry, domain_parameters);
-                // mfem::ParGridFunction phC_gf(geometry.parfespace.get());
-                // cathode_potential.Initialize(phC_gf, Constants::init_BvC, *domain_parameters.psi);
-                // phC_gf.Save((outdir + "/phC").c_str());
-
-                                // // Anode concentration initialization with a grid function and initial value
-                // CnA anode_concentration(geometry, domain_parameters);
-                // mfem::ParGridFunction CnA_gf(geometry.parfespace.get());
-                // anode_concentration.Initialize(CnA_gf, Constants::init_CnA, *domain_parameters.psi);
-                // CnA_gf.Save((outdir + "/CnA").c_str());
-
-                // // Anode potential initialization with a grid function and initial value
-                // PotA anode_potential(geometry, domain_parameters);
-                // mfem::ParGridFunction phA_gf(geometry.parfespace.get());
-                // anode_potential.Initialize(phA_gf, Constants::init_BvA, *domain_parameters.psi);
-                // phA_gf.Save((outdir + "/phA").c_str());
-
-
-                // // Initialize the reaction with an empty reaction grid function and initial value
-        // Reaction reaction(geometry, domain_parameters);
-        // mfem::ParGridFunction Rxn_gf(geometry.parfespace.get());
-        // reaction.Initialize(Rxn_gf, Constants::init_Rxn);
-        // Rxn_gf.Save((outdir + "/Rxn").c_str());
-
-        // if (cfg.mode == sim::CellMode::FULL) { // FULL-CELL
-
-        //     mfem::ParGridFunction RxC_gf(geometry.parfespace.get());
-        //     mfem::ParGridFunction RxA_gf(geometry.parfespace.get());
-        //     reaction.Initialize(RxC_gf, Constants::init_RxC);
-        //     reaction.Initialize(RxA_gf, Constants::init_RxA);
-        //     RxC_gf.Save((outdir + "/RxC").c_str());
-        //     RxA_gf.Save((outdir + "/RxA").c_str());
-        // }
-
-                // // Electrolyte concentration initialization with a grid function and initial value
-        // CnE electrolyte_concentration(geometry, domain_parameters);
-        // mfem::ParGridFunction CnE_gf(geometry.parfespace.get());
-        // electrolyte_concentration.Initialize(CnE_gf, Constants::init_CnE, *domain_parameters.pse);
-        // CnE_gf.Save((outdir + "/CnE").c_str());
-
-
-        // // Electrolyte potential initialization with a grid function and initial value
-        // PotE electrolyte_potential(geometry, domain_parameters);
-        // mfem::ParGridFunction phE_gf(geometry.parfespace.get());
-        // electrolyte_potential.Initialize(phE_gf, Constants::init_BvE, *domain_parameters.pse);
-        // phE_gf.Save((outdir + "/phE").c_str());
