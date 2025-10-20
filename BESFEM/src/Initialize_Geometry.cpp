@@ -24,6 +24,8 @@ Initialize_Geometry::~Initialize_Geometry() {}
 // Half Cell
 void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order) {
 
+    myid = mfem::Mpi::WorldRank();
+
     // Adjust distance file
     AdjustDistanceFile(distanceFile);
     
@@ -289,7 +291,7 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
     nC = pow(2, parallelMesh->Dimension());  // number of corner vertices
 
     // Map local to global element indices
-    mfem::Array<HYPRE_BigInt> E_L2G;
+    // mfem::Array<HYPRE_BigInt> E_L2G;
     parallelMesh->GetGlobalElementIndices(E_L2G);
 
     mfem::Array<int> gVTX(nC);    // global indices of corner vertices
@@ -512,7 +514,26 @@ void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode elect
 
         dbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
         dbc_bdr = 0;
-        // dbc_bdr[0] = 1; // west
+
+        // const int anchor = 2000;
+
+        // if (!anchor_set) {
+        //     ess_tdof_potE.SetSize(1);
+        //     ess_tdof_potE[0] = anchor;  
+        //     anchor_set = true; 
+        // }
+
+        // std::cout << "Ess tdof for potential on electrode: " << ess_tdof_potE[0] << std::endl;
+
+        // phE_bc = ph;                       // start from current iterate
+        // if (ess_tdof_potE.Size() == 1) {
+        //     mfem::Vector td; 
+        //     phE_bc.GetTrueDofs(td); // get true dofs
+        //     td(ess_tdof_potE[0]) = Constants::init_BvE;     // set anchor value
+        //     phE_bc.SetFromTrueDofs(td); // set grid function from modified true dofs
+        // }
+
+
 
     }
     
@@ -620,8 +641,46 @@ void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode elect
 
         dbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
         dbc_bdr = 0;
-        // dbc_bdr[0] = 1;
-        // dbc_bdr[2] = 1;
+
+        // // pin point (gVpp)
+        // int gVpp = 2000;
+        // int lVpp = -10;
+        // int rkpp = -20;
+        // bool pin = false;
+
+        // // Map local distance function from global one
+        // for (int ei = 0; ei < nE; ei++){
+        //     gei = E_L2G[ei];
+        //     globalMesh->GetElementVertices(gei,gVTX);
+        //     parallelMesh->GetElementVertices(ei,VTX);
+            
+        //     // identify pin point by comparing to global index
+        //     for (int vi = 0; vi < nC; vi++){
+        //         if (gVTX[vi] == gVpp){
+        //             lVpp = VTX[vi];
+        //             rkpp = myid;
+        //             pin = true; 	
+        //         }				
+        //     }	
+        // }	
+
+        // // Array<int> ess_tdof_listPinned;
+        // // imposing pinnig condition to the rank that has the pin point
+        // if (pin){
+        //     cout << pin << " -- "  << myid << endl;
+        //     mfem::Array<int> vdofs;
+        //     parfespace->GetVertexVDofs(lVpp, vdofs);	
+
+        //     mfem::Array<int> ess_tdof_marker(parfespace->GetTrueVSize());
+        //     ess_tdof_marker = 0;		
+            
+        //     int ldof = vdofs[0];
+        //     if (ldof < 0) ldof = -1 - ldof;
+        //     int ltdof = parfespace->GetLocalTDofNumber(ldof); // -1 if this proc doesn't own the t-dof
+        //     if (ltdof >= 0) ess_tdof_marker[ltdof] = 1;
+
+        //     parfespace->MarkerToList(ess_tdof_marker, ess_tdof_potE);
+        // }
 
     }
 

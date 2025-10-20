@@ -167,6 +167,9 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Rx
                                            (*KbC)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHC)(vi)));
             }
     }
+
+    // std::cout << "dPHC min/max: " << dPHC->Min() << " " << dPHC->Max() << std::endl;
+    // std::cout << "dPHA min/max: " << dPHA->Min() << " " << dPHA->Max() << std::endl;
 }
 
 

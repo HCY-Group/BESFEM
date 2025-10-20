@@ -46,27 +46,31 @@ void PotC::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     BvC = initial_value; // Set the boundary value
     Potentials::SetInitialPotentials(ph, BvC); // Initialize potentials
 
-    kap = psx; // Set the conductivity field to the particle concentration field // HALF
-    kap *= 3.3; // HALF
+    // kap = psx; // Set the conductivity field to the particle concentration field // HALF
+    // kap *= 3.3; // HALF
     SolverSteps::InitializeStiffnessMatrix(cKp, Kp2); // Initialize the stiffness matrix
     
-    mfem::ConstantCoefficient dbc_e_Coef(BvC); // Coefficient for Dirichlet boundary conditions // HALF
-    ph.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions // HALF
+    // mfem::ConstantCoefficient dbc_e_Coef(BvC); // Coefficient for Dirichlet boundary conditions // HALF
+    // ph.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions // HALF
     
-    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e); // HALF
+    // fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e); // HALF
 
-    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
+    // SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
 
-    Mpp = std::make_unique<mfem::HypreBoomerAMG>(KmP);  // builds hierarchy once
-    Mpp->SetPrintLevel(0);
-    SolverSteps::SolverConditions(KmP, cgPP_solver, *Mpp); // Set up the solver conditions
+    // Mpp = std::make_unique<mfem::HypreBoomerAMG>(KmP);  // builds hierarchy once
+    // Mpp->SetPrintLevel(0);
+    // SolverSteps::SolverConditions(KmP, cgPP_solver, *Mpp); // Set up the solver conditions
 
     // cRp.SetGridFunction(&RpP); // Set the reaction field coefficient
     SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term HALF
     SolverSteps::Update(Bp2); // Assemble the force term HALF
     Fpt = *Bp2; // Assign the force term HALF
 
-    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system HALF
+    // SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system HALF
+
+    mfem::CGSolver cgPP_solver(MPI_COMM_WORLD);
+    cgPP_solver.SetRelTol(1e-6);
+    cgPP_solver.SetMaxIter(102);
 }
 
 
@@ -81,7 +85,9 @@ void PotC::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
 
-    Mpp->SetOperator(KmP); // Set the operator for the preconditioner
+    Mpp = std::make_unique<mfem::HypreBoomerAMG>(KmP);  // builds hierarchy once
+    Mpp->SetPrintLevel(0);
+    // Mpp->SetOperator(KmP); // Set the operator for the preconditioner
     cgPP_solver.SetPreconditioner(*Mpp);
     cgPP_solver.SetOperator(KmP); // Set the operator for the solver
 

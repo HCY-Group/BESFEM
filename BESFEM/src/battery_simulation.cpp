@@ -422,28 +422,24 @@ int main(int argc, char *argv[]) {
                     anode_potential->Advance(*RxA_gf, *phA_gf, *domain_parameters.psA, globalerror_A);
                     electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
 
+                    // std::cout << "  iter err: " << globalerror_C << ", " << globalerror_A << ", " << globalerror_E << std::endl;
                 }
 
                 reaction->TotalReactionCurrent(*RxA_gf, global_current_A);
                 reaction->TotalReactionCurrent(*RxC_gf, global_current_C);
 
-                // double sgnA = copysign(1.0, domain_parameters.gTrgI - abs(global_current_A));
-                // double dV_A = Constants::dt * Constants::Vsr * sgnA;
-                // anode_potential->BvA += dV_A; // Adjust anode potential based on target current
-                // *phA_gf += dV_A; // Update the grid function for anode potential
+                double sgnA = copysign(1.0, domain_parameters.gTrgI - abs(global_current_A));
+                double dV_A = Constants::dt * Constants::Vsr * sgnA;
+                anode_potential->BvA += dV_A; // Adjust anode potential based on target current
+                *phA_gf += dV_A; // Update the grid function for anode potential
 
-                // double sgnC = copysign(1.0, domain_parameters.gTrgI - global_current_C);
-                // double dV_C = Constants::dt * Constants::Vsr * sgnC;
-                // cathode_potential->BvC -= dV_C; // Adjust cathode potential based on target current
-                // *phC_gf -= dV_C; // Update the grid function for cathode potential
-
-                double err = domain_parameters.gTrgI - 0.5*(global_current_A - global_current_C);
-                double dV = Constants::dt * Constants::Vsr * err;
-                *phA_gf += 0.5*dV;  anode_potential->BvA += 0.5*dV;
-                *phC_gf -= 0.5*dV;  cathode_potential->BvC -= 0.5*dV;
+                double sgnC = copysign(1.0, domain_parameters.gTrgI - global_current_C);
+                double dV_C = Constants::dt * Constants::Vsr * sgnC;
+                cathode_potential->BvC -= dV_C; // Adjust cathode potential based on target current
+                *phC_gf -= dV_C; // Update the grid function for cathode potential
 
 
-                if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
+                if (t % 1 == 0 && mfem::Mpi::WorldRank() == 0) {
 
                     const double XfrA = anode_concentration->GetLithiation();
                     const double XfrC = cathode_concentration->GetLithiation();

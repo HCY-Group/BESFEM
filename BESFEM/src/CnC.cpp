@@ -36,8 +36,8 @@ void CnC::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     Mp_prec.SetType(mfem::HypreSmoother::Jacobi); //
     SolverSteps::SolverConditions(Mmatp, Mp_solver, Mp_prec); // Set up the solver conditions for the mass matrix
 
-    SolverSteps::InitializeForceTerm(cAp, Bc2); // HALF
-    Fct = *Bc2; // Move the updated force term to Fct HALF
+    // SolverSteps::InitializeForceTerm(cAp, Bc2); // HALF
+    // Fct = *Bc2; // Move the updated force term to Fct HALF
 
     SolverSteps::InitializeStiffnessMatrix(cDp, Kc2); // Initialize stiffness form for particle potential HALF
 

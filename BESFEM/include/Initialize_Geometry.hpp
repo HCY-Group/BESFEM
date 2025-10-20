@@ -156,7 +156,9 @@ public:
     mfem::Array<int> ess_tdof_list_w; ///< Total DOF West
     mfem::Array<int> ess_tdof_list_e; ///< Total DOF East
 
-    
+    mfem::Array<int> gVTX;    ///< Global vertex indices of corners.
+    mfem::Array<int> VTX;     ///< Local vertex indices of corners.
+
     std::unique_ptr<mfem::Mesh> globalMesh;              ///< Global serial mesh.
     std::unique_ptr<mfem::ParMesh> parallelMesh;         ///< Parallel mesh.
     std::shared_ptr<mfem::FiniteElementSpace> feSpace;   ///< Serial finite element space.
@@ -164,6 +166,8 @@ public:
     std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; ///< Parallel finite element space.
     std::shared_ptr<mfem::ParFiniteElementSpace> parfespace_dg; ///< Parallel DG finite element space.
     std::shared_ptr<mfem::ParFiniteElementSpace> pardimfespace_dg; ///< Parallel DG FE space (dim).
+    mfem::Array<HYPRE_BigInt> E_L2G; ///< Local to global element mapping.
+
 
     double Onm; ///< Number of grid function entries.
     std::unique_ptr<mfem::GridFunction> gDsF; ///< Global distance function.
@@ -181,6 +185,11 @@ public:
     std::unique_ptr<mfem::H1_FECollection> gfec; ///< Global H1 finite element collection.
     std::unique_ptr<mfem::H1_FECollection> pfec; ///< Parallel H1 finite element collection.
     std::unique_ptr<mfem::DG_FECollection> pfec_dg; ///< Parallel DG finite element collection.
+
+    mfem::Array<int> ess_tdof_potE;        // size 0 on most ranks, size 1 on owner
+    bool anchor_set = false;
+
+    int myid; ///< MPI rank ID.
 
 
 

@@ -188,9 +188,9 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         for (int vi = 0; vi < nV; vi++) {
             if (strcmp(mesh_type, "r") == 0) {
                 (*psA)(vi) = 0.5 * (1.0 + tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh))); // rectangle
-                (*AvA)(vi) = -(pow(tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
+                (*AvA)(vi) = -(pow(tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (Constants::zeta * Constants::dh); // rectangle
                 (*psC)(vi) = 0.5 * (1.0 + tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh))); // rectangle
-                (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
+                (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (Constants::zeta * Constants::dh); // rectangle
 
             } else if (strcmp(mesh_type, "c") == 0) {
                 (*psA)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF_A)(vi)) / Constants::zeta)); // circle
@@ -217,20 +217,24 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
             }
 
-            (*pse)(vi) = 1.0 - (*psC)(vi) - (*psA)(vi);
+            (*pse)(vi) = 1.0 - (*psA)(vi) - (*psC)(vi);
 
-            if ((*psA)(vi) < 0) { (*psA)(vi) = 0; }
-            if ((*psA)(vi) > 1) { (*psA)(vi) = 1; }
-            if ((*psC)(vi) < 0) { (*psC)(vi) = 0; }
-            if ((*psC)(vi) > 1) { (*psC)(vi) = 1; }
+            if ((*psA)(vi) < Constants::eps) { (*psA)(vi) = Constants::eps; }
+            if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }
+            if ((*psC)(vi) < Constants::eps) { (*psC)(vi) = Constants::eps; }
 
-            if ((*pse)(vi) < 0) { (*pse)(vi) = 0; }
-            if ((*pse)(vi) > 1) { (*pse)(vi) = 1; }
+            // if ((*psA)(vi) < 0) { (*psA)(vi) = 0; }
+            // if ((*psA)(vi) > 1) { (*psA)(vi) = 1; }
+            // if ((*psC)(vi) < 0) { (*psC)(vi) = 0; }
+            // if ((*psC)(vi) > 1) { (*psC)(vi) = 1; }
 
-            (*psA)(vi) += 1.0e-6; // Avoid zero values
-            (*psC)(vi) += 1.0e-6; // Avoid zero values
+            // if ((*pse)(vi) < 0) { (*pse)(vi) = 0; }
+            // if ((*pse)(vi) > 1) { (*pse)(vi) = 1; }
 
-            (*pse)(vi) += 1.0e-6; // Avoid zero values
+            // (*psA)(vi) += 1.0e-6; // Avoid zero values
+            // (*psC)(vi) += 1.0e-6; // Avoid zero values
+
+            // (*pse)(vi) += 1.0e-6; // Avoid zero values
 
         }
 
@@ -254,7 +258,7 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 std::cerr << "[PsA Check] ERROR: psA_min not near 0." << std::endl;
                 std::exit(EXIT_FAILURE);
             }
-            if (psA_max < 1.0) {
+            if (psA_max < 0.9) {
                 std::cerr << "[PsA Check] ERROR: psA_max not near 1." << std::endl;
                 std::exit(EXIT_FAILURE);
             }
@@ -270,19 +274,20 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 std::cerr << "[psC Check] ERROR: psC_min not near 0." << std::endl;
                 std::exit(EXIT_FAILURE);
             }
-            if (psC_max < 1.0) {
+            if (psC_max < 0.9) {
                 std::cerr << "[psC Check] ERROR: psC_max not near 1." << std::endl;
                 std::exit(EXIT_FAILURE);
             }
 
         
         AvB = std::make_unique<mfem::ParGridFunction>(*AvA);
+        
 
 
         for (int vi = 0; vi < nV; vi++) {
-            if ((*AvA)(vi) * Constants::dh < 1.0e-2) { (*AvA)(vi) = 0.0; }
-            if ((*AvC)(vi) * Constants::dh < 1.0e-2) { (*AvC)(vi) = 0.0; }
-            if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
+            if ((*AvA)(vi) * Constants::dh < Constants::thres) { (*AvA)(vi) = 0.0; }
+            if ((*AvC)(vi) * Constants::dh < Constants::thres) { (*AvC)(vi) = 0.0; }
+            if ((*AvB)(vi) * Constants::dh < 1.0e-5) { (*AvB)(vi) = 0.0; }
         }
         
         mfem::GridFunctionCoefficient AvA_coeff(AvA.get());
@@ -360,7 +365,9 @@ void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
 
     // Compute target current based on total Psi, rho, Cr, and constants
     // trgI = total_psi * Constants::rho_A * (0.9 - 0.3) / (3600.0 / Constants::Cr);
-    trgI = total_psi * Constants::rho_C * (Constants::init_CnA - Constants::init_CnC) / (3600.0 / Constants::Cr);
+    // trgI = total_psi * Constants::rho_C * (Constants::init_CnA - Constants::init_CnC) / (3600.0 / Constants::Cr);
+    trgI = total_psi * Constants::rho_C * (0.9 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
+
 
     // Perform global MPI reduction to get the total target current
     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
