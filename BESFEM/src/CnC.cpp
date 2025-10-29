@@ -51,6 +51,8 @@ void CnC::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     Concentrations::CreateReaction(Rx, RxC, (1.0/Constants::rho_C));
     cAp.SetGridFunction(&RxC); // Set the reaction term coefficient for the force term
 
+    // std::cout << "RxC Sum before: " << RxC.Sum() << std::endl;
+
     SolverSteps::InitializeForceTerm(cAp, Bc2);
     SolverSteps::Update(Bc2); // Update the force term with the current reaction term
     Fct = *Bc2; // Move the updated force term to Fct

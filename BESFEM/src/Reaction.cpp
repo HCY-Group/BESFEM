@@ -187,6 +187,8 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Rx
          EAvg(ei) = sum / nC;
          local_current += EAvg(ei) * EVol(ei);
      }
+
+    //  if (mfem::Mpi::WorldRank() == 0){std::cout << "local current: " << local_current << std::endl;}
  
      MPI_Allreduce(&local_current, &global_current, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
  }

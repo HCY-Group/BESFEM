@@ -55,6 +55,8 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
 // Full Cell
 void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFileA, const char* distanceFileC, MPI_Comm comm, int order) {
 
+    myid = mfem::Mpi::WorldRank();
+
     // Adjust distance file
     AdjustDistanceFile(distanceFileA); // for anode
     AdjustDistanceFile(distanceFileC); // for cathode
@@ -75,9 +77,10 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
     AssignGlobalValues(meshFile, distanceFileA, gDsF_A); // for anode
     AssignGlobalValues(meshFile, distanceFileC, gDsF_C); // for cathode
 
-
     // Map the global values to the local
     MapGlobalToLocal(meshFile);
+
+    SetupPinnedDOF(*parfespace);
 
     // Print out information relative to the mesh
     PrintMeshInfo();
@@ -166,6 +169,7 @@ void Initialize_Geometry::InitializeGlobalMesh(const char* meshFile) {
     else if (fileExtension == "mesh") {
         if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
         {std::cout << "Creating global mesh using .mesh file" << std::endl;}
+        
         globalMesh = std::make_unique<mfem::Mesh>(meshFile);
     } 
     else {
@@ -174,6 +178,20 @@ void Initialize_Geometry::InitializeGlobalMesh(const char* meshFile) {
 
     // ensure mesh supports non-conforming elements for adaptive refinement
     globalMesh->EnsureNCMesh(true);
+
+    int e = 0;
+    mfem::Array<int> vert_ids;
+    globalMesh->GetElementVertices(e, vert_ids);
+
+    mfem::Vector v0(globalMesh->GetVertex(vert_ids[0]), globalMesh->SpaceDimension());
+    mfem::Vector v1(globalMesh->GetVertex(vert_ids[1]), globalMesh->SpaceDimension());
+
+
+    double dh1 = v0.DistanceTo(v1);
+    std::cout << "Element size dh = " << dh1 << std::endl;
+    
+    MPI_Barrier(MPI_COMM_WORLD);
+
 }
 
 // Function to initialize the parallel mesh
@@ -181,7 +199,11 @@ void Initialize_Geometry::InitializeParallelMesh(MPI_Comm comm) {
     if (!globalMesh) {
         throw std::runtime_error("Global mesh must be initialized before creating a parallel mesh.");
     }
-    parallelMesh = std::make_unique<mfem::ParMesh>(comm, *globalMesh);
+    parallelMesh = std::make_shared<mfem::ParMesh>(comm, *globalMesh);
+
+    std::cout << "Rank " << myid << " owns "
+              << parallelMesh->GetNE() << " elements, "
+              << parallelMesh->GetNV() << " vertices.\n";
 }
 
 // Function to set up the finite element space on global mesh
@@ -291,11 +313,13 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
     nC = pow(2, parallelMesh->Dimension());  // number of corner vertices
 
     // Map local to global element indices
-    // mfem::Array<HYPRE_BigInt> E_L2G;
     parallelMesh->GetGlobalElementIndices(E_L2G);
 
-    mfem::Array<int> gVTX(nC);    // global indices of corner vertices
-    mfem::Array<int> VTX(nC);     // local indices of corner vertices
+    // SetupPinnedDOF(*parfespace);
+
+    gVTX.SetSize(nC);
+    VTX.SetSize(nC);
+
 
     // Determine file type based on extension
     std::string meshFileStr(meshFile);  // Convert to std::string
@@ -430,6 +454,23 @@ void Initialize_Geometry::PrintMeshInfo() {
 
 }
 
+static inline int PickAnchorGlobalTDof(mfem::ParFiniteElementSpace &fes, HYPRE_BigInt global_anchor)
+{
+    const HYPRE_BigInt *offsets = fes.GetTrueDofOffsets(); // size = nprocs + 1
+    int rank;
+    MPI_Comm_rank(fes.GetComm(), &rank);
+
+    // Check if this rank owns the target global tdof
+    if (global_anchor >= offsets[rank] && global_anchor < offsets[rank + 1])
+    {
+        return static_cast<int>(global_anchor - offsets[rank]); // Local index
+    }
+    else
+    {
+        return -1; // Not owned by this rank
+    }
+}
+
 void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode electrode) {
 
     int dim = parallelMesh->Dimension();
@@ -515,51 +556,8 @@ void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode elect
         dbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
         dbc_bdr = 0;
 
-        // const int anchor = 2000;
-
-        // if (!anchor_set) {
-        //     ess_tdof_potE.SetSize(1);
-        //     ess_tdof_potE[0] = anchor;  
-        //     anchor_set = true; 
-        // }
-
-        // std::cout << "Ess tdof for potential on electrode: " << ess_tdof_potE[0] << std::endl;
-
-        // phE_bc = ph;                       // start from current iterate
-        // if (ess_tdof_potE.Size() == 1) {
-        //     mfem::Vector td; 
-        //     phE_bc.GetTrueDofs(td); // get true dofs
-        //     td(ess_tdof_potE[0]) = Constants::init_BvE;     // set anchor value
-        //     phE_bc.SetFromTrueDofs(td); // set grid function from modified true dofs
-        // }
-
-
-
     }
-    
-    // // DISK
-    // // Boundary attributes for Neumann BC on the west boundary for CnE
-    // nbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-    // nbc_w_bdr = 0;
-    // nbc_w_bdr[2] = 1; // east
 
-    // // Dirichlet BC on the east boundary for CnP & phP
-    // dbc_e_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-    // dbc_e_bdr = 0; 
-    // dbc_e_bdr[0] = 1;  // Applying Dirichlet BC to the west boundary
-
-    // // Extract essential true DOFs (Dirichlet BCs) on the east boundary
-    // ess_tdof_list_e.SetSize(0);
-    // parfespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
-
-    // // Dirichlet BC on the west boundary for CnE & phE
-    // dbc_w_bdr.SetSize(parallelMesh->bdr_attributes.Max());
-    // dbc_w_bdr = 0;
-    // dbc_w_bdr[2] = 1;   // east
-
-    // // Extract essential true DOFs (Dirichlet BCs) on the west boundary
-    // ess_tdof_list_w.SetSize(0); 
-    // parfespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
 
     } else if (dim == 2) {
 
@@ -642,50 +640,65 @@ void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode elect
         dbc_bdr.SetSize(parallelMesh->bdr_attributes.Max());
         dbc_bdr = 0;
 
-        // // pin point (gVpp)
-        // int gVpp = 2000;
-        // int lVpp = -10;
-        // int rkpp = -20;
-        // bool pin = false;
-
-        // // Map local distance function from global one
-        // for (int ei = 0; ei < nE; ei++){
-        //     gei = E_L2G[ei];
-        //     globalMesh->GetElementVertices(gei,gVTX);
-        //     parallelMesh->GetElementVertices(ei,VTX);
-            
-        //     // identify pin point by comparing to global index
-        //     for (int vi = 0; vi < nC; vi++){
-        //         if (gVTX[vi] == gVpp){
-        //             lVpp = VTX[vi];
-        //             rkpp = myid;
-        //             pin = true; 	
-        //         }				
-        //     }	
-        // }	
-
-        // // Array<int> ess_tdof_listPinned;
-        // // imposing pinnig condition to the rank that has the pin point
-        // if (pin){
-        //     cout << pin << " -- "  << myid << endl;
-        //     mfem::Array<int> vdofs;
-        //     parfespace->GetVertexVDofs(lVpp, vdofs);	
-
-        //     mfem::Array<int> ess_tdof_marker(parfespace->GetTrueVSize());
-        //     ess_tdof_marker = 0;		
-            
-        //     int ldof = vdofs[0];
-        //     if (ldof < 0) ldof = -1 - ldof;
-        //     int ltdof = parfespace->GetLocalTDofNumber(ldof); // -1 if this proc doesn't own the t-dof
-        //     if (ltdof >= 0) ess_tdof_marker[ltdof] = 1;
-
-        //     parfespace->MarkerToList(ess_tdof_marker, ess_tdof_potE);
-        // }
 
     }
 
-
 }
 
 }
+
+void Initialize_Geometry::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
+{
+    if (E_L2G.Size() == 0)
+        parallelMesh->GetGlobalElementIndices(E_L2G);
+
+    int gVpp = 1311;
+	int lVpp = -10;
+	rkpp = -20;
+	pin = false;
+
+	// Map local distance function from global one
+	for (int ei = 0; ei < nE; ei++){
+		gei = E_L2G[ei];
+		globalMesh->GetElementVertices(gei,gVTX);
+		parallelMesh->GetElementVertices(ei,VTX);
+		
+		// identify pin point by comparing to global index
+		for (int vi = 0; vi < nC; vi++){
+			if (gVTX[vi] == gVpp){
+				lVpp = VTX[vi];
+				rkpp = myid;
+				pin = true; 	
+			}				
+		}	
+	}
+
+	// imposing pinnig condition to the rank that has the pin point
+	if (pin){
+		mfem::Array<int> vdofs;
+		fespace.GetVertexVDofs(lVpp, vdofs);	
+
+		mfem::Array<int> ess_tdof_marker(fespace.GetTrueVSize());
+		ess_tdof_marker = 0;		
+		
+		int ldof = vdofs[0];
+		if (ldof < 0) ldof = -1 - ldof;
+		int ltdof = fespace.GetLocalTDofNumber(ldof); // -1 if this proc doesn't own the t-dof
+		if (ltdof >= 0) ess_tdof_marker[ltdof] = 1;
+
+		fespace.MarkerToList(ess_tdof_marker, ess_tdof_listPinned);
+	}
+	
+	std::cout << "this is the rank that has the vertex: " << rkpp << std::endl;
+
+
+    if (myid == rkpp){
+        std::cout << "Rank " << myid << " found global vertex " << gVpp << " as local vertex " << lVpp << std::endl;
+    }
+
+}
+
+
+
+
 

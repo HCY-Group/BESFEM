@@ -58,7 +58,7 @@ public:
      * @param ph Particle potential grid function
      * @param initial_value Initial potential value
      */
-    void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
+    void Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx);
 
     /**
      * @brief Performs time-stepping for the particle potential
@@ -114,7 +114,6 @@ private:
     mfem::HypreParMatrix KmP; ///< Stiffness matrix for particle potential conductivity
 
     mfem::ParLinearForm Fpt; ///< Linear form for the force term in particle potential calculations
-
 };
 
 /** @} */ // end group potentials

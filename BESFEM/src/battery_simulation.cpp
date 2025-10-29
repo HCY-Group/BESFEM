@@ -214,6 +214,8 @@ int main(int argc, char *argv[]) {
         std::unique_ptr<CnE> electrolyte_concentration;
         std::unique_ptr<PotE> electrolyte_potential;
 
+
+        // always initialize electrolyte concentration & potential
         electrolyte_concentration = std::make_unique<CnE>(geometry, domain_parameters);
         CnE_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         electrolyte_concentration->Initialize(*CnE_gf, Constants::init_CnE, *domain_parameters.pse);
@@ -286,6 +288,7 @@ int main(int argc, char *argv[]) {
         double global_current_A = 0.0;
         double global_current_C = 0.0;
         double VCell = 0.0;
+
 
         // Main Simulation Loop
 
@@ -360,7 +363,7 @@ int main(int argc, char *argv[]) {
                 reaction->TotalReactionCurrent(*Rxn_gf, global_current);
 
                 double sgn = copysign(1.0, domain_parameters.gTrgI - global_current);
-                double dV = Constants::dt * Constants::Vsr * sgn;
+                double dV = Constants::dt * Constants::Vsr0 * sgn;
                 electrolyte_potential->BvE += dV; // Adjust electrolyte potential based on target current
                 *phE_gf += dV; // Update the grid function for electrolyte potential
 
@@ -415,37 +418,45 @@ int main(int argc, char *argv[]) {
 
                 double intlp = 0.0;
 
-                while (globalerror_C > 1.0e-8 || globalerror_A > 1.0e-8 || globalerror_E > 1.0e-8) {
+                // while (globalerror_C > 1.0e-8 || globalerror_A > 1.0e-8 || globalerror_E > 1.0e-8) {
                 
                     reaction->ButlerVolmer(*Rxn_gf, *RxC_gf, *RxA_gf, *CnC_gf, *CnA_gf, *CnE_gf, *phC_gf, *phA_gf, *phE_gf); // 9 inputs
                     cathode_potential->Advance(*RxC_gf, *phC_gf, *domain_parameters.psC, globalerror_C);
                     anode_potential->Advance(*RxA_gf, *phA_gf, *domain_parameters.psA, globalerror_A);
-                    electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
-
+                    // electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+ 
                     // std::cout << "  iter err: " << globalerror_C << ", " << globalerror_A << ", " << globalerror_E << std::endl;
-                }
+                // }
 
                 reaction->TotalReactionCurrent(*RxA_gf, global_current_A);
                 reaction->TotalReactionCurrent(*RxC_gf, global_current_C);
 
+                double Vsr;
+                double dCrnt = abs(global_current_A - domain_parameters.gTrgI);
+                if (dCrnt < abs(domain_parameters.gTrgI)*0.05) {Vsr = 0.025 * Constants::Vsr0;}
+                else if (dCrnt < abs(domain_parameters.gTrgI)*0.10) {Vsr = 0.25 * Constants::Vsr0;}
+                else {Vsr = 1.0 * Constants::Vsr0;}
+
                 double sgnA = copysign(1.0, domain_parameters.gTrgI - abs(global_current_A));
-                double dV_A = Constants::dt * Constants::Vsr * sgnA;
+                double dV_A = Constants::dt * Vsr * sgnA * 0.5;
                 anode_potential->BvA += dV_A; // Adjust anode potential based on target current
                 *phA_gf += dV_A; // Update the grid function for anode potential
 
                 double sgnC = copysign(1.0, domain_parameters.gTrgI - global_current_C);
-                double dV_C = Constants::dt * Constants::Vsr * sgnC;
+                double dV_C = Constants::dt * Vsr * sgnC * 2.0;
                 cathode_potential->BvC -= dV_C; // Adjust cathode potential based on target current
                 *phC_gf -= dV_C; // Update the grid function for cathode potential
 
+                VCell = anode_potential->BvA - cathode_potential->BvC;
 
-                if (t % 1 == 0 && mfem::Mpi::WorldRank() == 0) {
+
+                if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
                     const double XfrA = anode_concentration->GetLithiation();
                     const double XfrC = cathode_concentration->GetLithiation();
 
                     std::cout << "timestep: " << t << (" [FULL-CELL]") << ", XfrA = " << XfrA << ", XfrC = " << XfrC
-                    << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C
+                    << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C << ", VCell = " << VCell << ", Target Current = " << domain_parameters.gTrgI
                     << std::endl;
                 }
 

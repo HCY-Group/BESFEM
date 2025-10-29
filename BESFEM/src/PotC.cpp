@@ -62,13 +62,13 @@ void PotC::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     // SolverSteps::SolverConditions(KmP, cgPP_solver, *Mpp); // Set up the solver conditions
 
     // cRp.SetGridFunction(&RpP); // Set the reaction field coefficient
-    SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term HALF
-    SolverSteps::Update(Bp2); // Assemble the force term HALF
-    Fpt = *Bp2; // Assign the force term HALF
+    SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term
+    SolverSteps::Update(Bp2); // Assemble the force term 
+    Fpt = *Bp2; // Assign the force term
 
     // SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system HALF
 
-    mfem::CGSolver cgPP_solver(MPI_COMM_WORLD);
+    // mfem::CGSolver cgPP_solver(MPI_COMM_WORLD);
     cgPP_solver.SetRelTol(1e-6);
     cgPP_solver.SetMaxIter(102);
 }
@@ -102,7 +102,6 @@ void PotC::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     Fpt = *Bp2; // Assign the force term
 
     mfem::ConstantCoefficient dbc_e_Coef(BvC);	
-
     phx.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
     
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_e, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system

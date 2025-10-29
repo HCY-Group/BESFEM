@@ -52,17 +52,20 @@ void PotA::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     mfem::ConstantCoefficient dbc_w_Coef(BvA); // Coefficient for Dirichlet boundary conditions
     ph.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
     
-    fespace->GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
-
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_w, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
 
     Mpp = std::make_unique<mfem::HypreBoomerAMG>(KmP);  // builds hierarchy once
     Mpp->SetPrintLevel(0);
-    SolverSteps::SolverConditions(KmP, cgPP_solver, *Mpp); // Set up the solver conditions
+    cgPP_solver.SetRelTol(1e-6);
+    cgPP_solver.SetMaxIter(102);
+    cgPP_solver.SetPreconditioner(*Mpp);
+    cgPP_solver.SetOperator(KmP); 
 
-    // cRp.SetGridFunction(&RpP); // Set the reaction field coefficient
+    // SolverSteps::SolverConditions(KmP, cgPP_solver, *Mpp); // Set up the solver conditions
+
     SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term
-    SolverSteps::Update(Bp2); // Assemble the force term
+    // SolverSteps::Update(Bp2); // Assemble the force term
+    Bp2->Assemble();
     Fpt = *Bp2; // Assign the force term
 
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_w, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system
@@ -72,6 +75,8 @@ void PotA::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 void PotA::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
 {
 	mfem::ConstantCoefficient dbc_w_Coef(BvA);
+    cgPP_solver.SetPreconditioner(*Mpp);
+    cgPP_solver.SetOperator(KmP);
 
 }
 
@@ -80,19 +85,26 @@ void PotA::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     RpP = Rx;
     RpP *= Constants::Frd; // Scale the reaction field
 
+    // std::cout << "RpP sum: " << RpP.Sum() << " before assembly" << std::endl;
+
+    // mfem::GridFunctionCoefficient cfRpP(&RpP);
+    // Bp2->Update();
+    // Bp2->AddDomainIntegrator(new mfem::DomainLFIntegrator(cfRpP));
     Bp2->Assemble();
     Fpt = *Bp2; // Assign the force term
 
     mfem::ConstantCoefficient dbc_w_Coef(BvA);	
-
     phx.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
     
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_w, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
+
 
     pP0 = phx; // Store the current potential field
     pP0.GetTrueDofs(Xs0); // Extract degrees of freedom
 
     // std::cout << "PotA Solver" << std::endl;
+    // cgPP_solver.SetPreconditioner(*Mpp);
+    // cgPP_solver.SetOperator(KmP);
     cgPP_solver.Mult(Fpb, Xs0); // Solve for the error term
     
     // std::cout << Xs0.Sum() << " Xs0 after solver" << std::endl;

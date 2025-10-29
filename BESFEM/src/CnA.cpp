@@ -88,6 +88,8 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
         Concentrations::CreateReaction(Rx, RxA, (1.0/Constants::rho_A));
         cAp.SetGridFunction(&RxA); // Set the reaction term coefficient for the force term
 
+        // std::cout << "RxA Sum before: " << RxA.Sum() << std::endl;
+
         SolverSteps::Update(B_init); // Update the force term with the current reaction term
         Fct = *B_init; // Move the updated force term to Fct
 

@@ -30,7 +30,7 @@ namespace Constants {
     extern const double rho_A;
     extern const double rho_C;
     extern const double Cr;
-    extern const double Vsr;
+    extern const double Vsr0;
     extern const double VCut;
     extern const double gc;
     extern const double init_CnA;

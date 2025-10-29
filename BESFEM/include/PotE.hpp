@@ -149,6 +149,7 @@ private:
     mfem::Array<int> ess_tdof_potE;        // size 0 on most ranks, size 1 on owner
     mfem::ParGridFunction phE_bc;         // reused BC vector for gauge pin
     bool anchor_set = false;               // track if anchor has been set
+    int myid;
     
 
     /**

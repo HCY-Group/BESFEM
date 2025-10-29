@@ -121,6 +121,8 @@ public:
      */
     void PrintMeshInfo();
 
+    void SetupPinnedDOF(mfem::ParFiniteElementSpace& fespace);
+
     /**
      * @brief Returns the parallel mesh pointer.
      * @return Pointer to parallel mesh.
@@ -160,7 +162,7 @@ public:
     mfem::Array<int> VTX;     ///< Local vertex indices of corners.
 
     std::unique_ptr<mfem::Mesh> globalMesh;              ///< Global serial mesh.
-    std::unique_ptr<mfem::ParMesh> parallelMesh;         ///< Parallel mesh.
+    std::shared_ptr<mfem::ParMesh> parallelMesh;
     std::shared_ptr<mfem::FiniteElementSpace> feSpace;   ///< Serial finite element space.
     std::shared_ptr<mfem::FiniteElementSpace> globalfespace; ///< Global finite element space.
     std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; ///< Parallel finite element space.
@@ -175,7 +177,7 @@ public:
 
     std::unique_ptr<mfem::GridFunction>       gDsF_A;  ///< Global distance function for anode.
     std::unique_ptr<mfem::GridFunction>       gDsF_C;  ///< Global distance function for cathode.
-    std::unique_ptr<mfem::ParGridFunction>    dsF_A;    /// Parallel distance function for anode.
+    std::unique_ptr<mfem::ParGridFunction>    dsF_A;    ///< Parallel distance function for anode.
     std::unique_ptr<mfem::ParGridFunction>    dsF_C;    ///< Parallel distance function for cathode.
     
     std::unique_ptr<mfem::GridFunction> gVox; ///< Global voxel function.
@@ -188,8 +190,15 @@ public:
 
     mfem::Array<int> ess_tdof_potE;        // size 0 on most ranks, size 1 on owner
     bool anchor_set = false;
+    HYPRE_BigInt global_anchor_potE;  // the global true dof index for the anchor
+    int anchor_owner_potE; 
+    bool pin;
+
+    mfem::Array<int> ess_tdof_listPinned;
+
 
     int myid; ///< MPI rank ID.
+    int rkpp; ///< Rank owning the pinned DOF.
 
 
 
