@@ -75,6 +75,7 @@ public:
      */
     void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential, mfem::HypreParVector &CeVn);
     
+    
     /**
      * @brief One higher-level advance (e.g., residual/error evaluation).
      *
@@ -146,10 +147,10 @@ private:
 
     mfem::HypreParVector LpCe; ///< Concentration true-DoF vector (coupling).
 
-    mfem::Array<int> ess_tdof_potE;        // size 0 on most ranks, size 1 on owner
     mfem::ParGridFunction phE_bc;         // reused BC vector for gauge pin
     bool anchor_set = false;               // track if anchor has been set
     int myid;
+    mfem::Array<int> &ess_tdof_potE;
     
 
     /**

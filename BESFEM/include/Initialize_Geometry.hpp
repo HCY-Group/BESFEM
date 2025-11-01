@@ -195,6 +195,7 @@ public:
     bool pin;
 
     mfem::Array<int> ess_tdof_listPinned;
+    mfem::Array<int> boundary_dofs;
 
 
     int myid; ///< MPI rank ID.

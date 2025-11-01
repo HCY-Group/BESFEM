@@ -63,6 +63,8 @@ void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
     // psA->Save("psP.gf");
 
     PrintInfo();
+
+    // MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void Domain_Parameters::InitializeGridFunctions() {

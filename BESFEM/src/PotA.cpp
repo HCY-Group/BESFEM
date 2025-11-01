@@ -87,15 +87,18 @@ void PotA::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
 
     // std::cout << "RpP sum: " << RpP.Sum() << " before assembly" << std::endl;
 
-    // mfem::GridFunctionCoefficient cfRpP(&RpP);
-    // Bp2->Update();
-    // Bp2->AddDomainIntegrator(new mfem::DomainLFIntegrator(cfRpP));
+    // mfem::GridFunctionCoefficient cRp(&RpP);
+    Bp2->Update();
+    // Bp2->AddDomainIntegrator(new mfem::DomainLFIntegrator(cRp));
     Bp2->Assemble();
     Fpt = *Bp2; // Assign the force term
+    // std::cout << "Fpt norm before BCs: " << Fpt.Norml2() << std::endl;
+
 
     mfem::ConstantCoefficient dbc_w_Coef(BvA);	
+    // std::cout << "BvA: " << BvA << std::endl;
+
     phx.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
-    
     SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_w, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
 
 

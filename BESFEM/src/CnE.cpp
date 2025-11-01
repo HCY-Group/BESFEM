@@ -47,7 +47,7 @@ void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     Be_init->Assemble(); 
     Fet = *Be_init;
 
-    boundary_dofs.SetSize(0);
+    // boundary_dofs.SetSize(0);
 
     SolverSteps::FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
 }
@@ -91,6 +91,7 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
         RHCe += Feb; // Add the right-hand side vector to the system
 
         Me_solver.SetOperator(*TmatL);
+        Me_solver.SetPreconditioner(Me_prec);
         Me_solver.Mult(RHCe, CeVn) ;
 
         // Recover updated concentration into GridFunction
@@ -119,7 +120,9 @@ void CnE::TimeStep(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem:
 		cDe.SetGridFunction(&De);
 
         // Update stiffness operator
-        SolverSteps::Update(Ke2); // Update the stiffness matrix with the new diffusivity coefficient
+        // SolverSteps::Update(Ke2); // Update the stiffness matrix with the new diffusivity coefficient
+        Ke2->Update();
+        Ke2->Assemble();
         SolverSteps::FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the updated values
    		Feb *= Constants::dt;
 
@@ -133,6 +136,8 @@ void CnE::TimeStep(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem:
         RHCe += Feb; // Add the right-hand side vector to the system
 
         Me_solver.SetOperator(*TmatL);
+        Me_solver.SetPreconditioner(Me_prec);
+
         Me_solver.Mult(RHCe, CeVn) ;
 
         // Recover updated concentration into GridFunction

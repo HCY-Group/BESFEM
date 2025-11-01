@@ -410,6 +410,8 @@ int main(int argc, char *argv[]) {
                 anode_potential->TimeStep(*CnA_gf, *domain_parameters.psA, *phA_gf);
                 electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf, electrolyte_concentration->CeVn);
 
+                // electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf, electrolyte_concentration->CeVn, cathode_concentration->Fct);
+
                 reaction->ExchangeCurrentDensity(*CnC_gf, *CnA_gf); // with two inputs
 
                 double globalerror_C = 1.0; // Error for cathode potential
@@ -423,7 +425,7 @@ int main(int argc, char *argv[]) {
                     reaction->ButlerVolmer(*Rxn_gf, *RxC_gf, *RxA_gf, *CnC_gf, *CnA_gf, *CnE_gf, *phC_gf, *phA_gf, *phE_gf); // 9 inputs
                     cathode_potential->Advance(*RxC_gf, *phC_gf, *domain_parameters.psC, globalerror_C);
                     anode_potential->Advance(*RxA_gf, *phA_gf, *domain_parameters.psA, globalerror_A);
-                    // electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+                    electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
  
                     // std::cout << "  iter err: " << globalerror_C << ", " << globalerror_A << ", " << globalerror_E << std::endl;
                 // }

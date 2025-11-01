@@ -91,6 +91,11 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
                 << "] pinned true dof = " << ess_tdof_potE[0] << std::endl;
     }
 
+    // if (mfem::Mpi::WorldRank() == geometry.rkpp && ess_tdof_potE.Size() > 0)
+    // {
+    //     ph(ess_tdof_potE[0]) = BvE;
+    // }
+
 
     SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, ph, B1t, Kml, X1v, B1v); // Assemble the linear system FULL
 
@@ -103,9 +108,12 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     // std::cout << " finish solver conditions PotE " << std::endl;
 
     SolverSteps::InitializeForceTerm(cRe, Bl2); // Initialize the force term
+    // std::unique_ptr<mfem::ParLinearForm>Bl2(new mfem::ParLinearForm(fespace.get()));
+    // Bl2->AddDomainIntegrator(new mfem::DomainLFIntegrator(cRe));
     Bl2->Assemble();
     // SolverSteps::Update(Bl2); // Update the force term
     Flt = *Bl2; // Move the force term
+    // Flt = std::move(*Bl2);
 
     // SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_potE, ph, Flt, Kml, X1v, Flb); // Assemble the force term system HALF
 
@@ -123,21 +131,45 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
     myid = mfem::Mpi::WorldRank();
 
 
-    ElectrolyteConductivity(Cn, psx); // Update conductivity and diffusivity
+    // ElectrolyteConductivity(Cn, psx); // Update conductivity and diffusivity
 
-    SolverSteps::Update(Kl1); // Update the diffusivity matrix
+    for (int vi = 0; vi < nV; vi++){
+        dffe = exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi)); // Compute diffusivity factor
+        Dmp(vi) = psx(vi) * tc1 * Constants::D0 * dffe;
+        kpl(vi) = psx(vi) * tc2 * Constants::D0 * dffe * Cn(vi);
+    }
+
+    // SolverSteps::Update(Kl1); // Update the diffusivity matrix
+    cDm.SetGridFunction(&Dmp);
+    Kl1->Update();
+    Kl1->Assemble();
     SolverSteps::FormLinearSystem(Kl1, boundary_dofs, potential, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
+
+    // std::cout << "boundary_dofs size: " << boundary_dofs.Size() << " on rank " << myid << std::endl;
 
     Cn.GetTrueDofs(CeVn); // Get the true degrees of freedom for concentration
     Kdm.Mult(CeVn, LpCe); 
 
-    SolverSteps::Update(Kl2); // Update the conductivity matrix
+    std::cout << "[Rank " << myid << "] LpCe norm before BCs: " << LpCe.Norml2() << std::endl;
+
+
+
+    // SolverSteps::Update(Kl2); // Update the conductivity matrix
+    cKe.SetGridFunction(&kpl);
+    Kl2->Update();
+    Kl2->Assemble();
+
+    // if (mfem::Mpi::WorldRank() == geometry.rkpp) {
+    //     // std::cout << "pinning on rank: " << mfem::Mpi::WorldRank() << std::endl;
+    //     potential(ess_tdof_potE[0]) = BvE;
+    // }
 
     // mfem::ConstantCoefficient dbc_potE_Coef(BvE); // Coefficient for Dirichlet boundary conditions HALF
     // potential.ProjectBdrCoefficient(dbc_potE_Coef, dbc_bdr); // Apply Dirichlet boundary conditions HALF
     // SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_potE, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system HALF
 
-    SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system FULL
+    SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, potential, Flt, Kml, X1v, Flb); // Assemble the conductivity matrix system FULL
+
 
     Mpe->SetOperator(Kml); // Set the operator for the preconditioner
     cgPE_solver.SetPreconditioner(*Mpe);
@@ -147,10 +179,9 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
 }
 
+
 void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
 {
-    myid = mfem::Mpi::WorldRank();
-
     RpE = Rx;
     RpE.Neg();
 
@@ -161,6 +192,7 @@ void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     phx.ProjectBdrCoefficient(dbc_potE_Coef, dbc_bdr); // Apply Dirichlet boundary conditions
     
     SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_potE, phx, Flt, Kml, X1v, Flb); // Assemble the force term system
+
 
     RHSl = Flb;
     RHSl += LpCe;
@@ -177,34 +209,79 @@ void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
 
 void PotE::Advance(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
 {    
-    RpE = Rx1;
-    RpE += Rx2;
-
+    RpE = Rx2;
+    RpE += Rx1;
     RpE.Neg(); // check and see if this should be negative
     
+    // SolverSteps::InitializeForceTerm(cRe, Bl2); // Initialize the force term
+
+    double min_Rx1 = Rx1.Min(), max_Rx1 = Rx1.Max();
+    double min_Rx2 = Rx2.Min(), max_Rx2 = Rx2.Max();
+    std::cout << "[Rank " << myid << "] Rx1 range: [" << min_Rx1 << ", " << max_Rx1 
+            << "], Rx2 range: [" << min_Rx2 << ", " << max_Rx2 << "]" << std::endl;
+
+
+    cRe.SetGridFunction(&RpE);
+    Bl2->Update();
     Bl2->Assemble();
     Flt = *Bl2;
+    // Flt = std::move(*Bl2);
 
-    // if (geometry.pin) {phx(ess_tdof_potE[0]) = BvE;}
+
+    std::cout << "[Rank " << myid << "] Flt norm before BCs: " << Flt.Norml2() << std::endl;
+
+
+    // if (geometry.pin) {
+    //     // std::cout << "pinning on rank: " << mfem::Mpi::WorldRank() << std::endl;
+    //     phx(ess_tdof_potE[0]) = BvE;
+    // }
 
     if (mfem::Mpi::WorldRank() == geometry.rkpp) {
         // std::cout << "pinning on rank: " << mfem::Mpi::WorldRank() << std::endl;
         phx(ess_tdof_potE[0]) = BvE;
     }
+
+    // if (mfem::Mpi::WorldRank() == geometry.rkpp) {
+    //     mfem::Vector td;
+    //     phx.GetTrueDofs(td);
+    //     td(ess_tdof_potE[0]) = BvE;
+    //     phx.SetFromTrueDofs(td);
+    // }
+
+
+    // // phx(ess_tdof_potE[0]) = BvE;
+
+    // // std::cout << "Size of ess_tdof_potE: " << ess_tdof_potE.Size() << " on rank " << mfem::Mpi::WorldRank() << std::endl;
     
+    Kl2->Update();
+    Kl2->Assemble();
+    // SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, phx, Flt, Kml, X1v, Flb);
+    Kl2->FormLinearSystem(ess_tdof_potE, phx, Flt, Kml, X1v, Flb);
 
-    SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, phx, Flt, Kml, X1v, Flb);
+    std::cout << "[Rank " << myid << "] Flb norm before BCs: " << Flb.Norml2() << std::endl;
 
-    RHSl = Flb;
-    RHSl += LpCe;
+    std::cout << "[Rank " << myid << "] LpCe in Advance: " << LpCe.Norml2() << std::endl;
+
+    // RHSl = mfem::HypreParVector(Flb); 
+    // RHSl = Flb;                 // now safe to copy values
+
+    // RHSl = Flb;
+    // RHSl += LpCe;
+
+    std::cout << "[Rank " << myid << "] RHSl in Advance: " << RHSl.Norml2() << std::endl;
+
 
     pE0 = phx; // Store the current potential field
     pE0.GetTrueDofs(Xe0); // Extract degrees of freedom
 
+    // Mpe->SetOperator(Kml); // Set the operator for the preconditioner
+    cgPE_solver.SetPreconditioner(*Mpe);	
+	cgPE_solver.SetOperator(Kml);
+
     cgPE_solver.Mult(RHSl, Xe0); // Solve for the error term
 
     phx.Distribute(Xe0); // Distribute the updated values
-    Potentials::ComputeGlobalError(pE0, phx, psx, gerror, gtPse); // Compute global error
+    // Potentials::ComputeGlobalError(pE0, phx, psx, gerror, gtPse); // Compute global error
 }
 
 

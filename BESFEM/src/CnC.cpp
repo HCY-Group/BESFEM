@@ -10,7 +10,7 @@ using namespace std;
 
 CnC::CnC(Initialize_Geometry &geo, Domain_Parameters &para)
     : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), gtPsC(para.gtPsC), gtPsi(para.gtPsi),
-    RxC(fespace.get()), Dp(fespace.get()), Mp_solver(MPI_COMM_WORLD), Fct(fespace.get()), cAp(&RxC), cDp(&Dp),
+    RxC(fespace.get()), Dp(fespace.get()), Mp_solver(MPI_COMM_WORLD), cAp(&RxC), cDp(&Dp), Fct(fespace.get()),
     PsVc(fespace.get()), CpV0(fespace.get()), RHCp(fespace.get()), CpVn(fespace.get())
     
     {
@@ -27,6 +27,9 @@ void CnC::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
 {
     Concentrations::SetInitialConcentration(Cn, initial_value);
     Concentrations::LithiationCalculation(Cn, psx, gtPsC);
+
+    // Fct = mfem::ParLinearForm(fespace.get());
+
 
     mfem::GridFunctionCoefficient coef(&psx);
     SolverSteps::InitializeMassMatrix(coef, Mt);

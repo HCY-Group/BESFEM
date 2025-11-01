@@ -649,6 +649,8 @@ void Initialize_Geometry::SetupBoundaryConditions(CellMode mode, Electrode elect
 
 void Initialize_Geometry::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
 {
+    std::cout << "Rank: " << myid << " Setting up pinned DOF" << std::endl;
+
     if (E_L2G.Size() == 0)
         parallelMesh->GetGlobalElementIndices(E_L2G);
 
@@ -688,13 +690,15 @@ void Initialize_Geometry::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
 
 		fespace.MarkerToList(ess_tdof_marker, ess_tdof_listPinned);
 	}
-	
-	std::cout << "this is the rank that has the vertex: " << rkpp << std::endl;
 
+    std::cout << "Rank: " << rkpp << " Pinning global vertex " << gVpp << " as local vertex " << lVpp << std::endl;
+	
 
     if (myid == rkpp){
         std::cout << "Rank " << myid << " found global vertex " << gVpp << " as local vertex " << lVpp << std::endl;
     }
+
+    std::cout << "Size of pinned tdof list: " << ess_tdof_listPinned.Size() << " on rank " << myid << std::endl;
 
 }
 
