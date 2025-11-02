@@ -74,6 +74,19 @@ public:
      * @param CeVn      True-DoF concentration vector (input), for coupling.
      */
     void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential, mfem::HypreParVector &CeVn);
+
+    /**
+     * @brief Advance electrolyte potential for one step (assemble/solve).
+     *
+     * Uses current concentration and phase mask to update operators and solve
+     * for the electrolyte potential.
+     *
+     * @param Cn        Electrolyte concentration field (input).
+     * @param psx       Phase mask ψ_E (input).
+     * @param potential Electrolyte potential grid function (in/out).
+     */
+    void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
+    
     
     
     /**
@@ -124,6 +137,8 @@ private:
 
     mfem::HypreParMatrix Kml; ///< Stiffness matrix (conductivity).
     mfem::HypreParMatrix Kdm; ///< Stiffness matrix (diffusivity).
+    mfem::HypreParVector CeVn; ///< Concentration at next time step
+
 
     // ---------- Coefficients / fields ----------
     mfem::ParGridFunction kpl; ///< Conductivity field κ_e(x).
@@ -150,7 +165,13 @@ private:
     mfem::ParGridFunction phE_bc;         // reused BC vector for gauge pin
     bool anchor_set = false;               // track if anchor has been set
     int myid;
-    mfem::Array<int> &ess_tdof_potE;
+    mfem::Array<int> ess_tdof_potE;
+
+    bool pin = false;
+    int rkpp = -1;
+    mfem::Array<int> dbc_e_bdr; ///< Array marking Dirichlet boundary attributes
+
+
     
 
     /**

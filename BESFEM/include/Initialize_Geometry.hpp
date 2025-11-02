@@ -196,6 +196,7 @@ public:
 
     mfem::Array<int> ess_tdof_listPinned;
     mfem::Array<int> boundary_dofs;
+    mfem::Array<int> ess_tdof_marker; ///< East Dirichlet Boundary Conditions
 
 
     int myid; ///< MPI rank ID.

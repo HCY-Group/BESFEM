@@ -408,7 +408,9 @@ int main(int argc, char *argv[]) {
 
                 cathode_potential->TimeStep(*CnC_gf, *domain_parameters.psC, *phC_gf);
                 anode_potential->TimeStep(*CnA_gf, *domain_parameters.psA, *phA_gf);
-                electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf, electrolyte_concentration->CeVn);
+                electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf);
+
+                // electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf, electrolyte_concentration->CeVn);
 
                 // electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf, electrolyte_concentration->CeVn, cathode_concentration->Fct);
 

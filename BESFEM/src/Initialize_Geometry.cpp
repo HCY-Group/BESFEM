@@ -680,7 +680,8 @@ void Initialize_Geometry::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
 		mfem::Array<int> vdofs;
 		fespace.GetVertexVDofs(lVpp, vdofs);	
 
-		mfem::Array<int> ess_tdof_marker(fespace.GetTrueVSize());
+		// mfem::Array<int> ess_tdof_marker(fespace.GetTrueVSize());
+        ess_tdof_marker.SetSize(fespace.GetTrueVSize());
 		ess_tdof_marker = 0;		
 		
 		int ldof = vdofs[0];
@@ -698,11 +699,150 @@ void Initialize_Geometry::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
         std::cout << "Rank " << myid << " found global vertex " << gVpp << " as local vertex " << lVpp << std::endl;
     }
 
-    std::cout << "Size of pinned tdof list: " << ess_tdof_listPinned.Size() << " on rank " << myid << std::endl;
+    std::cout << "GEO Size of pinned tdof list: " << ess_tdof_listPinned.Size() << " on rank " << myid << std::endl;
+
 
 }
 
 
+// void Initialize_Geometry::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
+// {
+//     std::cout << "Rank " << myid << ": Setting up pinned DOF" << std::endl;
+
+//     if (E_L2G.Size() == 0)
+//         parallelMesh->GetGlobalElementIndices(E_L2G);
+
+//     int gVpp = 1311;
+//     int lVpp = -1;
+//     bool pin = false;
+
+//     // Step 1. Search locally for which rank contains the pinned global vertex
+//     for (int ei = 0; ei < nE; ei++)
+//     {
+//         int gei = E_L2G[ei];
+//         globalMesh->GetElementVertices(gei, gVTX);
+//         parallelMesh->GetElementVertices(ei, VTX);
+
+//         for (int vi = 0; vi < nC; vi++)
+//         {
+//             if (gVTX[vi] == gVpp)
+//             {
+//                 lVpp = VTX[vi];
+//                 pin = true;
+//             }
+//         }
+//     }
+
+//     // Step 2. Determine the global owner rank (broadcast root)
+//     int local_owner = pin ? myid : -1;
+//     MPI_Allreduce(&local_owner, &rkpp, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+//     if (pin)
+//     {
+//         mfem::Array<int> vdofs;
+//         fespace.GetVertexVDofs(lVpp, vdofs);
+
+//         mfem::Array<int> ess_tdof_marker(fespace.GetTrueVSize());
+//         ess_tdof_marker = 0;
+
+//         int ldof = vdofs[0];
+//         if (ldof < 0) ldof = -1 - ldof;
+//         int ltdof = fespace.GetLocalTDofNumber(ldof);
+//         if (ltdof >= 0) ess_tdof_marker[ltdof] = 1;
+
+//         fespace.MarkerToList(ess_tdof_marker, ess_tdof_listPinned);
+//     }
+
+//     std::cout << "Rank " << myid
+//               << ": Pin owner is " << rkpp
+//               << ", local vertex = " << lVpp
+//               << ", list size = " << ess_tdof_listPinned.Size() << std::endl;
+
+//     // Step 3. Broadcast pinned DOF list from owner to all ranks
+//     int n_pins = ess_tdof_listPinned.Size();
+//     MPI_Bcast(&n_pins, 1, MPI_INT, rkpp, MPI_COMM_WORLD);
+//     if (myid != rkpp)
+//         ess_tdof_listPinned.SetSize(n_pins);
+//     if (n_pins > 0)
+//         MPI_Bcast(ess_tdof_listPinned.GetData(), n_pins, MPI_INT, rkpp, MPI_COMM_WORLD);
+// }
 
 
 
+
+// void Initialize_Geometry::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
+// {
+//     int myid = mfem::Mpi::WorldRank();
+//     int nprocs = mfem::Mpi::WorldSize();
+
+//     if (E_L2G.Size() == 0)
+//         parallelMesh->GetGlobalElementIndices(E_L2G);
+
+//     const int gVpp = 1311;   // global vertex index to pin
+//     int lVpp = -1;           // local vertex index
+//     int rkpp_local = -1;     // local candidate for pin owner
+//     bool found_local = false;
+
+//     mfem::Array<int> gVTX, VTX;
+
+//     // Step 1. Each rank checks if it owns the global vertex
+//     for (int ei = 0; ei < nE; ei++) {
+//         int gei = E_L2G[ei];
+//         globalMesh->GetElementVertices(gei, gVTX);
+//         parallelMesh->GetElementVertices(ei, VTX);
+
+//         for (int vi = 0; vi < gVTX.Size(); vi++) {
+//             if (gVTX[vi] == gVpp) {
+//                 lVpp = VTX[vi];
+//                 rkpp_local = myid;
+//                 found_local = true;
+//             }
+//         }
+//     }
+
+//     // Step 2. Determine the global owner rank
+//     int rkpp_global = -1;
+//     MPI_Allreduce(&rkpp_local, &rkpp_global, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+//     if (myid == rkpp_global)
+//         std::cout << "[Rank " << myid << "] owns the pin vertex " << gVpp
+//                   << " (local vertex " << lVpp << ")" << std::endl;
+
+//     // Step 3. Owner rank builds the essential DOF list
+//     mfem::Array<int> local_ess_tdofs;
+
+//     if (myid == rkpp_global && found_local) {
+//         mfem::Array<int> vdofs;
+//         fespace.GetVertexVDofs(lVpp, vdofs);
+
+//         mfem::Array<int> ess_marker(fespace.GetTrueVSize());
+//         ess_marker = 0;
+
+//         int ldof = vdofs[0];
+//         if (ldof < 0) ldof = -1 - ldof;
+//         int ltdof = fespace.GetLocalTDofNumber(ldof);
+//         if (ltdof >= 0)
+//             ess_marker[ltdof] = 1;
+
+//         fespace.MarkerToList(ess_marker, local_ess_tdofs);
+//     }
+
+//     // Step 4. Broadcast the pinned DOF list from the owner to all ranks
+//     int list_size = local_ess_tdofs.Size();
+//     MPI_Bcast(&list_size, 1, MPI_INT, rkpp_global, MPI_COMM_WORLD);
+
+//     ess_tdof_listPinned.SetSize(list_size);
+//     if (myid == rkpp_global && list_size > 0)
+//         std::memcpy(ess_tdof_listPinned.GetData(), local_ess_tdofs.GetData(),
+//                     list_size * sizeof(int));
+
+//     MPI_Bcast(ess_tdof_listPinned.GetData(), list_size, MPI_INT, rkpp_global, MPI_COMM_WORLD);
+
+//     // Step 5. Save bookkeeping info for other modules
+//     pin = (myid == rkpp_global);
+//     rkpp = rkpp_global;
+
+//     if (myid == 0)
+//         std::cout << "[SetupPinnedDOF] Global pin rank: " << rkpp
+//                   << ", true DOF index: " << ess_tdof_listPinned[0] << std::endl;
+// }

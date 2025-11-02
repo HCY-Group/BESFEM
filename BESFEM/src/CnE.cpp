@@ -103,7 +103,7 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 void CnE::TimeStep(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
     {
         // Assemble reaction source term
-        Concentrations::CreateReaction(RxC, RxA, Rxe, (-1.0 * Constants::t_minus));
+        Concentrations::CreateReaction(RxA, RxC, Rxe, (-1.0 * Constants::t_minus));
 		cAe.SetGridFunction(&Rxe);
 
         Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
@@ -136,11 +136,11 @@ void CnE::TimeStep(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem:
         RHCe += Feb; // Add the right-hand side vector to the system
 
         Me_solver.SetOperator(*TmatL);
-        Me_solver.SetPreconditioner(Me_prec);
+        // Me_solver.SetPreconditioner(Me_prec);
 
-        Me_solver.Mult(RHCe, CeVn) ;
+        Me_solver.Mult(RHCe, CeV0) ;
 
         // Recover updated concentration into GridFunction
-	    Cn.Distribute(CeVn); 
+	    Cn.Distribute(CeV0); 
         
     }	
