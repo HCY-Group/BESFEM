@@ -195,24 +195,31 @@ int main(int argc, char *argv[]) {
             geometry.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
         }
 
-        geometry.parallelMesh->Save((outdir + "/pmesh").c_str());
+        // geometry.parallelMesh->Save((outdir + "/pmesh").c_str());
 
         // Initialize and Calculate Domain Parameters
         Domain_Parameters domain_parameters(geometry);
         domain_parameters.SetupDomainParameters(mesh_type);
 
         // Initialize Concentrations & Potentials
-        std::unique_ptr<mfem::ParGridFunction> CnA_gf, phA_gf;
+        std::unique_ptr<mfem::ParGridFunction> CnA_gf, phA_gf, CnA_gf_psi;
         std::unique_ptr<CnA> anode_concentration;
         std::unique_ptr<PotA> anode_potential;
 
-        std::unique_ptr<mfem::ParGridFunction> CnC_gf, phC_gf;
+        std::unique_ptr<mfem::ParGridFunction> CnC_gf, phC_gf, CnC_gf_psi;
         std::unique_ptr<CnC> cathode_concentration;
         std::unique_ptr<PotC> cathode_potential;
 
-        std::unique_ptr<mfem::ParGridFunction> CnE_gf, phE_gf;
+        std::unique_ptr<mfem::ParGridFunction> CnE_gf, phE_gf, CnE_gf_psi;
         std::unique_ptr<CnE> electrolyte_concentration;
         std::unique_ptr<PotE> electrolyte_potential;
+
+        std::unique_ptr<mfem::ParGridFunction> CnP_together;
+
+        CnA_gf_psi = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+        CnC_gf_psi = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+        CnE_gf_psi = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+        CnP_together = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
 
 
         // always initialize electrolyte concentration & potential
@@ -410,10 +417,6 @@ int main(int argc, char *argv[]) {
                 anode_potential->TimeStep(*CnA_gf, *domain_parameters.psA, *phA_gf);
                 electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf);
 
-                // electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf, electrolyte_concentration->CeVn);
-
-                // electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf, electrolyte_concentration->CeVn, cathode_concentration->Fct);
-
                 reaction->ExchangeCurrentDensity(*CnC_gf, *CnA_gf); // with two inputs
 
                 double globalerror_C = 1.0; // Error for cathode potential
@@ -422,7 +425,7 @@ int main(int argc, char *argv[]) {
 
                 double intlp = 0.0;
 
-                // while (globalerror_C > 1.0e-8 || globalerror_A > 1.0e-8 || globalerror_E > 1.0e-8) {
+                while (globalerror_C > 1.0e-8 || globalerror_A > 1.0e-8 || globalerror_E > 1.0e-8) {
                 
                     reaction->ButlerVolmer(*Rxn_gf, *RxC_gf, *RxA_gf, *CnC_gf, *CnA_gf, *CnE_gf, *phC_gf, *phA_gf, *phE_gf); // 9 inputs
                     cathode_potential->Advance(*RxC_gf, *phC_gf, *domain_parameters.psC, globalerror_C);
@@ -430,7 +433,7 @@ int main(int argc, char *argv[]) {
                     electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
  
                     // std::cout << "  iter err: " << globalerror_C << ", " << globalerror_A << ", " << globalerror_E << std::endl;
-                // }
+                }
 
                 reaction->TotalReactionCurrent(*RxA_gf, global_current_A);
                 reaction->TotalReactionCurrent(*RxC_gf, global_current_C);
@@ -442,7 +445,7 @@ int main(int argc, char *argv[]) {
                 else {Vsr = 1.0 * Constants::Vsr0;}
 
                 double sgnA = copysign(1.0, domain_parameters.gTrgI - abs(global_current_A));
-                double dV_A = Constants::dt * Vsr * sgnA * 0.5;
+                double dV_A = Constants::dt * Vsr * sgnA * 0.10;
                 anode_potential->BvA += dV_A; // Adjust anode potential based on target current
                 *phA_gf += dV_A; // Update the grid function for anode potential
 
@@ -459,9 +462,74 @@ int main(int argc, char *argv[]) {
                     const double XfrA = anode_concentration->GetLithiation();
                     const double XfrC = cathode_concentration->GetLithiation();
 
-                    std::cout << "timestep: " << t << (" [FULL-CELL]") << ", XfrA = " << XfrA << ", XfrC = " << XfrC
-                    << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C << ", VCell = " << VCell << ", Target Current = " << domain_parameters.gTrgI
-                    << std::endl;
+                //     std::cout << "timestep: " << t << (" [FULL-CELL]") << ", XfrA = " << XfrA << ", XfrC = " << XfrC
+                //     << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C << ", VCell = " << VCell << ", Target Current = " << domain_parameters.gTrgI
+                //     << std::endl;
+                // }
+
+                    // open file in append mode
+                    std::ofstream outfile("full_cell_output.txt", std::ios::app);
+
+                    outfile << "timestep: " << t << " [FULL-CELL]"
+                            << ", XfrA = " << XfrA
+                            << ", XfrC = " << XfrC
+                            << ", Anode current = " << global_current_A
+                            << ", Cathode current = " << global_current_C
+                            << ", VCell = " << VCell
+                            << ", Target Current = " << domain_parameters.gTrgI
+                            << std::endl;
+
+                    outfile.close(); // optional (auto-closed when going out of scope)
+
+                }
+
+                // Inside time step loop
+                if (t % 300 == 0)
+                {
+                    std::ostringstream step_str;
+                    step_str << std::setw(5) << std::setfill('0') << t;  // zero-padded timestep number
+
+                    // Build unique filenames
+                    std::string suffix = "_" + step_str.str();
+
+                    geometry.parallelMesh->SaveAsOne((outdir + "/pmesh" + suffix).c_str());
+
+                    phA_gf->SaveAsOne((outdir + "/phA" + suffix).c_str());
+                    phC_gf->SaveAsOne((outdir + "/phC" + suffix).c_str());
+                    phE_gf->SaveAsOne((outdir + "/phE" + suffix).c_str());
+
+                    CnA_gf->SaveAsOne((outdir + "/CnA_raw" + suffix).c_str());
+                    CnC_gf->SaveAsOne((outdir + "/CnC_raw" + suffix).c_str());
+                    CnE_gf->SaveAsOne((outdir + "/CnE_raw" + suffix).c_str());
+
+                    *CnA_gf_psi = *CnA_gf;
+                    *CnA_gf_psi *= *domain_parameters.psA;
+                    CnA_gf_psi->SaveAsOne((outdir + "/CnA" + suffix).c_str());
+                    *CnC_gf_psi = *CnC_gf;
+                    *CnC_gf_psi *= *domain_parameters.psC;
+                    CnC_gf_psi->SaveAsOne((outdir + "/CnC" + suffix).c_str());
+                    *CnE_gf_psi = *CnE_gf;
+                    *CnE_gf_psi *= *domain_parameters.pse;
+                    CnE_gf_psi->SaveAsOne((outdir + "/CnE" + suffix).c_str());
+
+
+                    *CnP_together = *CnA_gf_psi;
+                    *CnP_together += *CnC_gf_psi;
+                    CnP_together->SaveAsOne((outdir + "/CnP" + suffix).c_str()); // composite field
+
+                    // // Apply masks (multiply by ψ fields) before saving smooth versions
+                    // *CnA_gf *= *domain_parameters.psA;  
+                    // CnA_gf->Save((outdir + "/CnA" + suffix).c_str());
+                    // *CnC_gf *= *domain_parameters.psC;  
+                    // CnC_gf->Save((outdir + "/CnC" + suffix).c_str());
+                    // *CnE_gf *= *domain_parameters.pse;  
+                    // CnE_gf->Save((outdir + "/CnE" + suffix).c_str());
+
+                    // *CnA_gf += *CnC_gf;  
+                    // CnA_gf->Save((outdir + "/CnP" + suffix).c_str()); // composite field
+
+                    // RxA_gf->Save((outdir + "/RxA" + suffix).c_str());
+                    // RxC_gf->Save((outdir + "/RxC" + suffix).c_str());
                 }
 
             }
@@ -474,45 +542,48 @@ int main(int argc, char *argv[]) {
         // ============================================================================
 
         // ============================================================================
-        if (cfg.mode == sim::CellMode::HALF) {
-            if (cfg.half_electrode == sim::Electrode::ANODE) {
-                phA_gf->Save((outdir + "/phA_final").c_str());
-                *CnA_gf *= *domain_parameters.psi;
-                CnA_gf->Save((outdir + "/CnA_final").c_str());
-            } else {
-                phC_gf->Save((outdir + "/phC_final").c_str());
-                *CnC_gf *= *domain_parameters.psi;
-                CnC_gf->Save((outdir + "/CnC_final").c_str());
-            }
-        } else { // FULL
-            phA_gf->Save((outdir + "/phA_final").c_str());
-            phC_gf->Save((outdir + "/phC_final").c_str());
-            phE_gf->Save((outdir + "/phE_final").c_str());
-            CnA_gf->Save((outdir + "/CnA_final_raw").c_str());
-            CnC_gf->Save((outdir + "/CnC_final_raw").c_str());
-            CnE_gf->Save((outdir + "/CnE_final_raw").c_str());
-            *CnA_gf *= *domain_parameters.psA;  CnA_gf->Save((outdir + "/CnA_final").c_str());
-            *CnC_gf *= *domain_parameters.psC;  CnC_gf->Save((outdir + "/CnC_final").c_str());
-            *CnE_gf *= *domain_parameters.pse;  CnE_gf->Save((outdir + "/CnE_final").c_str());
-            *CnA_gf += *CnC_gf;  CnA_gf->Save((outdir + "/CnP_final").c_str()); // CnP = CnA + CnC
-            RxA_gf->Save((outdir + "/RxA_final_raw").c_str());
-            RxC_gf->Save((outdir + "/RxC_final_raw").c_str());
-        }
+        // if (cfg.mode == sim::CellMode::HALF) {
+        //     if (cfg.half_electrode == sim::Electrode::ANODE) {
+        //         phA_gf->Save((outdir + "/phA_final").c_str());
+        //         *CnA_gf *= *domain_parameters.psi;
+        //         CnA_gf->Save((outdir + "/CnA_final").c_str());
+        //     } else {
+        //         phC_gf->Save((outdir + "/phC_final").c_str());
+        //         *CnC_gf *= *domain_parameters.psi;
+        //         CnC_gf->Save((outdir + "/CnC_final").c_str());
+        //     }
+        // } else { // FULL
+        //     phA_gf->Save((outdir + "/phA_final").c_str());
+        //     phC_gf->Save((outdir + "/phC_final").c_str());
+        //     phE_gf->Save((outdir + "/phE_final").c_str());
+        //     CnA_gf->Save((outdir + "/CnA_final_raw").c_str());
+        //     CnC_gf->Save((outdir + "/CnC_final_raw").c_str());
+        //     CnE_gf->Save((outdir + "/CnE_final_raw").c_str());
+        //     *CnA_gf *= *domain_parameters.psA;  CnA_gf->Save((outdir + "/CnA_final").c_str());
+        //     *CnC_gf *= *domain_parameters.psC;  CnC_gf->Save((outdir + "/CnC_final").c_str());
+        //     *CnE_gf *= *domain_parameters.pse;  CnE_gf->Save((outdir + "/CnE_final").c_str());
+        //     *CnA_gf += *CnC_gf;  CnA_gf->Save((outdir + "/CnP_final").c_str()); // CnP = CnA + CnC
+        //     RxA_gf->Save((outdir + "/RxA_final_raw").c_str());
+        //     RxC_gf->Save((outdir + "/RxC_final_raw").c_str());
+        // }
+
     }
 
-    std::cout << "Simulation complete." << std::endl;
 
-    // Finalize HYPRE processing
-    mfem::Hypre::Finalize();
+        std::cout << "Simulation complete." << std::endl;
 
-    // Finalize MPI processing
-    mfem::Mpi::Finalize();
+        // Finalize HYPRE processing
+        mfem::Hypre::Finalize();
 
-    // End timing and output the total program execution time
-    auto program_end = high_resolution_clock::now();
-    std::cout << "Total Program Time: " 
-              << duration_cast<seconds>(program_end - program_start).count() 
-              << " seconds" << std::endl;
+        // Finalize MPI processing
+        mfem::Mpi::Finalize();
 
-    return 0;
+        // End timing and output the total program execution time
+        auto program_end = high_resolution_clock::now();
+        std::cout << "Total Program Time: " 
+                << duration_cast<seconds>(program_end - program_start).count() 
+                << " seconds" << std::endl;
+
+        return 0;
+
 }

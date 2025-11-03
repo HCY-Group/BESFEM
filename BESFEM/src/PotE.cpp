@@ -50,12 +50,6 @@ void PotE::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
 
     SolverSteps::InitializeStiffnessMatrix(cKe, Kl2); // Initialize the stiffness matrix
 
-    if (ess_tdof_potE.Size() > 0)
-    {
-        std::cout << "[Rank " << myid
-                << "] pinned true dof = " << ess_tdof_potE[0] << std::endl;
-    }
-
     // if (mfem::Mpi::WorldRank() == geometry.rkpp && ess_tdof_potE.Size() > 0)
     // {
     //     ph(ess_tdof_potE[0]) = BvE;
@@ -137,10 +131,6 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
     // LpCe = LpCe_true;
 
 
-    std::cout << "[Rank " << myid << "] LpCe norm before BCs: " << LpCe.Norml2() << std::endl;
-
-
-
     // SolverSteps::Update(Kl2); // Update the conductivity matrix
     cKe.SetGridFunction(&kpl);
     Kl2->Update();
@@ -185,116 +175,55 @@ void PotE::Advance(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem:
     RpE.Neg(); // check and see if this should be negative
     
     // SolverSteps::InitializeForceTerm(cRe, Bl2); // Initialize the force term
-
-    double min_Rx1 = Rx1.Min(), max_Rx1 = Rx1.Max();
-    double min_Rx2 = Rx2.Min(), max_Rx2 = Rx2.Max();
-    std::cout << "[Rank " << myid << "] Rx1 range: [" << min_Rx1 << ", " << max_Rx1 
-            << "], Rx2 range: [" << min_Rx2 << ", " << max_Rx2 << "]" << std::endl;
-
-
     Bl2 = std::make_unique<mfem::ParLinearForm>(fespace.get());
     Bl2->AddDomainIntegrator(new mfem::DomainLFIntegrator(cRe));
-    // SolverSteps::InitializeForceTerm(cRe, Bl2); // Initialize the force term
-    // std::unique_ptr<mfem::ParLinearForm>Bl2(new mfem::ParLinearForm(fespace.get()));
-    // Bl2->AddDomainIntegrator(new mfem::DomainLFIntegrator(cRe));
     // Bl2->Update();
     Bl2->Assemble();
     // SolverSteps::Update(Bl2); // Update the force term
     Flt = *Bl2; // Move the force term
 
-    // Bl2->Update();
-    // Bl2->Assemble();
-    // Flt = *Bl2;
-
-    std::cout << "[Rank " << myid << "] Flt norm before BCs: " << Flt.Norml2() << std::endl;
-
-    // if (geometry.pin) {
-    //     // std::cout << "pinning on rank: " << mfem::Mpi::WorldRank() << std::endl;
-    //     phx(ess_tdof_potE[0]) = BvE;
-    // }
-
-    if (mfem::Mpi::WorldRank() == geometry.rkpp) {
-        // std::cout << "pinning on rank: " << mfem::Mpi::WorldRank() << std::endl;
-        phx(ess_tdof_potE[0]) = BvE;
-        // phx.Save("phE_pin_2");
-    } 
-
-    // mfem::ConstantCoefficient dbc_e_Coef(BvE);	
-    // phx.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
-    
-
-    // mfem::Vector td;
-    // phx.GetTrueDofs(td);
-    // if (myid == geometry.rkpp)
-    //     td(ess_tdof_potE[0]) = BvE;
-    // MPI_Bcast(td.GetData(), td.Size(), MPI_DOUBLE, geometry.rkpp, MPI_COMM_WORLD);
-    // phx.SetFromTrueDofs(td);
-
-
-    // phx.ExchangeFaceNbrData();
-    // phx.SetTrueVector();
-
 
     // if (mfem::Mpi::WorldRank() == geometry.rkpp) {
-    //     mfem::Vector td;
-    //     phx.GetTrueDofs(td);
-    //     td(ess_tdof_potE[0]) = BvE;
-    //     phx.SetFromTrueDofs(td);
-    // }
+    //     phx(ess_tdof_potE[0]) = BvE;
+    // } 
 
-
-    // // phx(ess_tdof_potE[0]) = BvE;
-
-    // // std::cout << "Size of ess_tdof_potE: " << ess_tdof_potE.Size() << " on rank " << mfem::Mpi::WorldRank() << std::endl;
-
-
-    // std::cout << "Number of Rows: " << Kml.GetNumRows() << " Number of Columns: " << Kml.GetNumCols() << std::endl;
     
     Kl2->Update();
     Kl2->Assemble();
-
-    std::cout << "Before FormLinearSystem: phx size " << phx.Size()
-          << " true size " << fespace->GetTrueVSize() << std::endl;
-
 
     // SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, phx, Flt, Kml, X1v, Flb);
     // Kl2->FormLinearSystem(ess_tdof_potE, phx, Flt, Kml, X1v, Flb);
     Kl2->FormLinearSystem(ess_tdof_potE, phx, Flt, Kml, X1v, Flb);
 
-
-
-    // double flb_sum = Flb.Sum();
-    // double rhs_sum;
-    // MPI_Allreduce(&flb_sum, &rhs_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-    // if (myid == 0)
-    //     std::cout << std::setprecision(15)
-    //             << "Global sum(Flb) = " << rhs_sum << std::endl;
-
-
-
-    std::cout << "[Rank " << myid << "] Flb norm before BCs: " << Flb.Norml2() << std::endl;
-    std::cout << "[Rank " << myid << "] LpCe in Advance: " << LpCe.Norml2() << std::endl;
-
     RHSl = 0.0;
     RHSl = Flb; // when this is commented out, same results in serial and parallel
     RHSl += LpCe;
 
-    std::cout << "[Rank " << myid << "] RHSl in Advance: " << RHSl.Norml2() << std::endl;
-
-
     pE0 = phx; // Store the current potential field
     pE0.GetTrueDofs(Xe0); // Extract degrees of freedom
-
-    // Mpe->SetOperator(Kml); // Set the operator for the preconditioner
-    // cgPE_solver.SetPreconditioner(*Mpe);	
-	// cgPE_solver.SetOperator(Kml);
-
     cgPE_solver.Mult(RHSl, Xe0); // Solve for the error term
 
     phx.Distribute(Xe0); // Distribute the updated values
-    // Potentials::ComputeGlobalError(pE0, phx, psx, gerror, gtPse); // Compute global error
+    Potentials::ComputeGlobalError(pE0, phx, psx, gerror, gtPse); // Compute global error
+
+    // double ref_val = phx.Sum() / phx.Size();
+    // phx -= ref_val;
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
