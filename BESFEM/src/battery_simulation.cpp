@@ -1,20 +1,6 @@
 #include "mfem.hpp"
 #include "mpi.h"
-
-#include "../inputs/Constants.hpp"
-#include "../include/SimTypes.hpp"
-#include "../include/Initialize_Geometry.hpp"
-#include "../include/Domain_Parameters.hpp"
-#include "../include/Concentrations_Base.hpp"
-#include "../include/Potentials_Base.hpp"
-#include "../include/CnC.hpp"
-#include "../include/CnE.hpp"
-#include "../include/CnA.hpp"
-#include "../include/PotC.hpp"
-#include "../include/PotA.hpp"
-#include "../include/PotE.hpp"
-#include "../include/Reaction.hpp"
-// #include "../include/Current.hpp"
+#include "../include/BESFEM_All.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -23,56 +9,6 @@
 #include <iomanip>
 #include <sstream>
 #include <ctime>
-
-// ============================================================================
-
-namespace fs = std::filesystem;
-
-// Build an output directory
-static std::string BuildRunOutdir(const char* mesh_file, int num_steps)
-{
-    // timestamp (local time)
-    auto now   = std::chrono::system_clock::now();
-    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-    std::tm tm{};
-#if defined(_WIN32)
-    localtime_s(&tm, &now_c);
-#else
-    localtime_r(&now_c, &tm);
-#endif
-    std::ostringstream ts;
-    ts << std::put_time(&tm, "%Y%m%d_%H%M%S");
-
-    // mesh base name without directory or extension
-    std::string mesh_name = fs::path(mesh_file).stem().string();
-
-    std::ostringstream od;
-    od << "../outputs/Results/"
-       << ts.str()
-       << "__nsteps=" << num_steps
-       << "__mesh=" << mesh_name;
-
-    return od.str();
-}
-
-// ============================================================================
-
-struct SimulationConfig {
-    sim::CellMode mode = sim::CellMode::HALF;
-    sim::Electrode half_electrode = sim::Electrode::ANODE;
-    const char* mesh_file = Constants::mesh_file;
-    const char* dsF_file_A = Constants::dsF_file_A; // anode ψ distance
-    const char* dsF_file_C = Constants::dsF_file_C; // cathode ψ distance
-    const char* mesh_type = nullptr;
-    int order = Constants::order;
-    int num_timesteps = 1000; // Default number of timesteps
-};
-
-
-// ============================================================================
-// ============================================================================
-// ============================================================================
-
 
 int main(int argc, char *argv[]) {
 
@@ -86,99 +22,18 @@ int main(int argc, char *argv[]) {
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    SimulationConfig cfg = ParseSimulationArgs(argc, argv);
+    ValidateConfig(cfg, argc, argv);
+
+    std::string outdir = Utils::BuildRunOutdir(cfg.mesh_file, cfg.num_timesteps);
+    if (mfem::Mpi::WorldRank() == 0)
+        std::filesystem::create_directories(outdir);
     
-    SimulationConfig cfg;
-    
-    {
-        const char* mode  = "half";    // "half" | "full"
-        const char* half_elec  = "anode";   // "anode" | "cathode" (HALF only)
-        const char* mesh_file  = cfg.mesh_file;
-        const char* dsF_file_A   = Constants::dsF_file_A;
-        const char* dsF_file_C   = Constants::dsF_file_C;
-        const char* mesh_type  = nullptr;
-        int         order      = cfg.order;
-        int         num_timesteps     = cfg.num_timesteps;
+    const char* active_dsF = (cfg.half_electrode == sim::Electrode::CATHODE) ? cfg.dsF_file_C : cfg.dsF_file_A;
 
-        // Parse command-line options from MFEM
-        mfem::OptionsParser args(argc, argv);
-        args.AddOption(&mesh_file, "-m", "--mesh", "Mesh file to use.");
-        args.AddOption(&dsF_file_C, "-dC", "--cathode-distance", "Cathode distance file to use.");
-        args.AddOption(&dsF_file_A, "-dA", "--anode-distance", "Anode distance file to use.");
-        args.AddOption(&order, "-o", "--order", "Finite element polynomial degree.");
-        args.AddOption(&mesh_type, "-t", "--type", "Mesh type (r for rectangle, c for circle, v for voxel, d for disk).");
-        args.AddOption(&num_timesteps, "-n", "--num-steps", "Number of timesteps to run the simulation.");
-        args.AddOption(&mode,      "-mode", "--mode",      "Cell mode: half | full.");
-        args.AddOption(&half_elec, "-elec", "--electrode", "HALF mode only: anode | cathode.");
-        args.ParseCheck();
-
-        cfg.mode        = (std::strcmp(mode, "full") == 0) ? sim::CellMode::FULL : sim::CellMode::HALF;
-        cfg.half_electrode = (std::strcmp(half_elec, "cathode") == 0) ? sim::Electrode::CATHODE : sim::Electrode::ANODE;
-        cfg.mesh_file   = mesh_file;
-        cfg.dsF_file_A  = dsF_file_A;   // may be nullptr if not passed
-        cfg.dsF_file_C  = dsF_file_C;   // may be nullptr if not passed
-
-        // Sanity checks
-        auto flag_present = [&](std::initializer_list<const char*> names)
-        {
-            for (int i = 1; i < argc; ++i)
-                for (auto n : names)
-                    if (std::strcmp(argv[i], n) == 0) return true;
-            return false;
-        };
-        const bool used_dA = flag_present({"-dA","--anode-distance"});
-        const bool used_dC = flag_present({"-dC","--cathode-distance"});
-
-        if (cfg.mode == sim::CellMode::FULL) {
-            if (!used_dA || !used_dC || !*cfg.dsF_file_A || !*cfg.dsF_file_C)
-                mfem::mfem_error("FULL mode requires both -dA <file> and -dC <file>.");
-        } else {
-            const char* active = (cfg.half_electrode == sim::Electrode::CATHODE)
-                               ? cfg.dsF_file_C : cfg.dsF_file_A;
-            if (!active || !*active)
-                mfem::mfem_error("HALF mode requires -dA (anode) or -dC (cathode) with a valid file.");
-        }
-
-        if (mfem::Mpi::WorldRank() == 0) {
-            if (cfg.mode == sim::CellMode::HALF) { // ANODE
-                if (cfg.half_electrode == sim::Electrode::ANODE) {
-                    if (!used_dA) mfem::mfem_error("HALF-ANODE requires --dA <file> (do not pass --dC).");
-                    if (used_dC)  mfem::mfem_error("HALF-ANODE: you passed --dC (cathode). Use --dA instead.");
-                    if (!cfg.dsF_file_A || !std::strlen(cfg.dsF_file_A))
-                        mfem::mfem_error("HALF-ANODE: empty --dA value.");
-                } else { // CATHODE
-                    if (!used_dC) mfem::mfem_error("HALF-CATHODE requires --dC <file> (do not pass --dA).");
-                    if (used_dA)  mfem::mfem_error("HALF-CATHODE: you passed --dA (anode). Use --dC instead.");
-                    if (!cfg.dsF_file_C || !std::strlen(cfg.dsF_file_C))
-                        mfem::mfem_error("HALF-CATHODE: empty --dC value.");
-                }
-            } else { // FULL
-                if (!used_dA || !used_dC)
-                    mfem::mfem_error("FULL mode requires both --dA <file> and --dC <file>.");
-                if (!cfg.dsF_file_A || !std::strlen(cfg.dsF_file_A))
-                    mfem::mfem_error("FULL: empty --dA value.");
-                if (!cfg.dsF_file_C || !std::strlen(cfg.dsF_file_C))
-                    mfem::mfem_error("FULL: empty --dC value.");
-            }
-        }
-
-        const char* active_dsF = (cfg.half_electrode == sim::Electrode::CATHODE) ? cfg.dsF_file_C : cfg.dsF_file_A;
-
-        // Create timestamped output folder
-        std::string outdir = BuildRunOutdir(mesh_file, num_timesteps);
-        if (mfem::Mpi::WorldRank() == 0) {
-            fs::create_directories(outdir);
-            // Optional: write run metadata
-            std::ofstream meta(outdir + "/run.txt");
-            meta << "mesh_file=" << mesh_file << "\n"
-                    << "dsF_file=" << dsF_file_A << "\n"
-                    << "num_steps=" << num_timesteps << "\n"
-                    << "order=" << order << "\n"
-                    << "procs=" << mfem::Mpi::WorldSize() << "\n";
-        }
-        MPI_Barrier(MPI_COMM_WORLD);
-
-        bool half_mode     = (cfg.mode == sim::CellMode::HALF);
-        bool half_is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
+    bool half_mode     = (cfg.mode == sim::CellMode::HALF);
+    bool half_is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
 
 
         // ============================================================================
@@ -195,11 +50,12 @@ int main(int argc, char *argv[]) {
             geometry.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
         }
 
-        // geometry.parallelMesh->Save((outdir + "/pmesh").c_str());
-
         // Initialize and Calculate Domain Parameters
         Domain_Parameters domain_parameters(geometry);
-        domain_parameters.SetupDomainParameters(mesh_type);
+        domain_parameters.SetupDomainParameters(cfg.mesh_type);
+
+        // Define Adjuster for Surface Voltage & Current
+        Adjust adjust(geometry, domain_parameters);
 
         // Initialize Concentrations & Potentials
         std::unique_ptr<mfem::ParGridFunction> CnA_gf, phA_gf, CnA_gf_psi;
@@ -220,7 +76,6 @@ int main(int argc, char *argv[]) {
         CnC_gf_psi = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         CnE_gf_psi = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         CnP_together = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-
 
         // always initialize electrolyte concentration & potential
         electrolyte_concentration = std::make_unique<CnE>(geometry, domain_parameters);
@@ -296,21 +151,16 @@ int main(int argc, char *argv[]) {
         double global_current_C = 0.0;
         double VCell = 0.0;
 
-
         // Main Simulation Loop
 
         int t = 0;
-        
-        // Perform simulation over time steps
-        // while (VCell > Constants::VCut) {
-        // while (particle_concentration.GetLithiation() < 0.98) {
 
         // ============================================================================
         // ===============================  HALF-CELL  ================================
         // ============================================================================
 
         if (cfg.mode == sim::CellMode::HALF) {
-            for (int t = 0; t < num_timesteps; ++t) {
+            for (int t = 0; t < cfg.num_timesteps; ++t) {
 
                 if (cfg.half_electrode == sim::Electrode::ANODE) {
                     
@@ -382,18 +232,12 @@ int main(int argc, char *argv[]) {
 
                 if (t % 5 == 0 && mfem::Mpi::WorldRank() == 0) {
 
-                    const double Xfr = half_is_anode ? anode_concentration->GetLithiation()
-                                                : cathode_concentration->GetLithiation();
+                    const double Xfr = half_is_anode ? anode_concentration->GetLithiation() : cathode_concentration->GetLithiation();
 
-                    std::cout << "timestep: " << t
-                    << (half_is_anode ? " [ANODE HALF-CELL]" : " [CATHODE HALF-CELL]")
-                    << ", Xfr = " << Xfr
-                    << ", VCell = " << VCell
-                    << ", BvE = " << electrolyte_potential->BvE
-                    << (half_is_anode ? ", BvA = " : ", BvC = ")
-                    << (half_is_anode ? anode_potential->BvA : cathode_potential->BvC)
-                    << ", current = " << global_current
-                    << std::endl;
+                    std::cout << "timestep: " << t << (half_is_anode ? " [ANODE HALF-CELL]" : " [CATHODE HALF-CELL]")
+                    << ", Xfr = " << Xfr << ", VCell = " << VCell << ", BvE = " << electrolyte_potential->BvE
+                    << (half_is_anode ? ", BvA = " : ", BvC = ") << (half_is_anode ? anode_potential->BvA : cathode_potential->BvC)
+                    << ", current = " << global_current << std::endl;
                 }
             }
         }
@@ -403,7 +247,14 @@ int main(int argc, char *argv[]) {
         // ============================================================================
 
         if(cfg.mode == sim::CellMode::FULL) {
-            for (int t = 0; t < num_timesteps; ++t) {
+            
+            double XfrA = anode_concentration->GetLithiation();
+            double XfrC = cathode_concentration->GetLithiation();
+
+            int t = 0;
+
+            // for (int t = 0; t < num_timesteps; ++t) {
+            while (XfrC < 0.32) {
 
                 anode_concentration->TimeStep(*RxA_gf, *CnA_gf, *domain_parameters.psA);
                 cathode_concentration->TimeStep(*RxC_gf, *CnC_gf, *domain_parameters.psC);
@@ -431,159 +282,60 @@ int main(int argc, char *argv[]) {
                     cathode_potential->Advance(*RxC_gf, *phC_gf, *domain_parameters.psC, globalerror_C);
                     anode_potential->Advance(*RxA_gf, *phA_gf, *domain_parameters.psA, globalerror_A);
                     electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
- 
-                    // std::cout << "  iter err: " << globalerror_C << ", " << globalerror_A << ", " << globalerror_E << std::endl;
-                }
+                 }
 
                 reaction->TotalReactionCurrent(*RxA_gf, global_current_A);
                 reaction->TotalReactionCurrent(*RxC_gf, global_current_C);
 
-                double Vsr;
-                double dCrnt = abs(global_current_A - domain_parameters.gTrgI);
-                if (dCrnt < abs(domain_parameters.gTrgI)*0.05) {Vsr = 0.025 * Constants::Vsr0;}
-                else if (dCrnt < abs(domain_parameters.gTrgI)*0.10) {Vsr = 0.25 * Constants::Vsr0;}
-                else {Vsr = 1.0 * Constants::Vsr0;}
+                adjust.AdjustSurfaceVoltage(global_current_A, global_current_C, *anode_potential, *cathode_potential, *phA_gf, *phC_gf, VCell);
 
-                double sgnA = copysign(1.0, domain_parameters.gTrgI - abs(global_current_A));
-                double dV_A = Constants::dt * Vsr * sgnA * 0.10;
-                anode_potential->BvA += dV_A; // Adjust anode potential based on target current
-                *phA_gf += dV_A; // Update the grid function for anode potential
+                XfrA = anode_concentration->GetLithiation();
+                XfrC = cathode_concentration->GetLithiation();
 
-                double sgnC = copysign(1.0, domain_parameters.gTrgI - global_current_C);
-                double dV_C = Constants::dt * Vsr * sgnC * 2.0;
-                cathode_potential->BvC -= dV_C; // Adjust cathode potential based on target current
-                *phC_gf -= dV_C; // Update the grid function for cathode potential
-
-                VCell = anode_potential->BvA - cathode_potential->BvC;
-
+                // Synchronize lithiation across ranks
+                double global_XfrC;
+                MPI_Allreduce(&XfrC, &global_XfrC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+                global_XfrC /= mfem::Mpi::WorldSize();
+                XfrC = global_XfrC; 
 
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
-
-                    const double XfrA = anode_concentration->GetLithiation();
-                    const double XfrC = cathode_concentration->GetLithiation();
-
-                //     std::cout << "timestep: " << t << (" [FULL-CELL]") << ", XfrA = " << XfrA << ", XfrC = " << XfrC
-                //     << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C << ", VCell = " << VCell << ", Target Current = " << domain_parameters.gTrgI
-                //     << std::endl;
-                // }
 
                     // open file in append mode
                     std::ofstream outfile("full_cell_output.txt", std::ios::app);
 
-                    outfile << "timestep: " << t << " [FULL-CELL]"
-                            << ", XfrA = " << XfrA
-                            << ", XfrC = " << XfrC
-                            << ", Anode current = " << global_current_A
-                            << ", Cathode current = " << global_current_C
-                            << ", VCell = " << VCell
-                            << ", Target Current = " << domain_parameters.gTrgI
-                            << std::endl;
+                    outfile << "timestep: " << t << " [FULL-CELL]" << ", XfrA = " << XfrA << ", XfrC = " << XfrC
+                            << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C
+                            << ", VCell = " << VCell << ", Target Current = " << domain_parameters.gTrgI << std::endl;
 
                     outfile.close(); // optional (auto-closed when going out of scope)
-
                 }
 
                 // Inside time step loop
-                if (t % 300 == 0)
+                if (t % 500 == 0)
                 {
-                    std::ostringstream step_str;
-                    step_str << std::setw(5) << std::setfill('0') << t;  // zero-padded timestep number
+                    Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phA_gf, *phC_gf, *phE_gf, 
+                        *CnA_gf, *CnC_gf, *CnE_gf, *CnA_gf_psi, *CnC_gf_psi, *CnE_gf_psi, *CnP_together);
+                } 
 
-                    // Build unique filenames
-                    std::string suffix = "_" + step_str.str();
+                t += 1;
 
-                    geometry.parallelMesh->SaveAsOne((outdir + "/pmesh" + suffix).c_str());
+            } // end of FULL-CELL while loop
 
-                    phA_gf->SaveAsOne((outdir + "/phA" + suffix).c_str());
-                    phC_gf->SaveAsOne((outdir + "/phC" + suffix).c_str());
-                    phE_gf->SaveAsOne((outdir + "/phE" + suffix).c_str());
+        } // end of FULL-CELL
 
-                    CnA_gf->SaveAsOne((outdir + "/CnA_raw" + suffix).c_str());
-                    CnC_gf->SaveAsOne((outdir + "/CnC_raw" + suffix).c_str());
-                    CnE_gf->SaveAsOne((outdir + "/CnE_raw" + suffix).c_str());
+    std::cout << "Simulation complete." << std::endl;
 
-                    *CnA_gf_psi = *CnA_gf;
-                    *CnA_gf_psi *= *domain_parameters.psA;
-                    CnA_gf_psi->SaveAsOne((outdir + "/CnA" + suffix).c_str());
-                    *CnC_gf_psi = *CnC_gf;
-                    *CnC_gf_psi *= *domain_parameters.psC;
-                    CnC_gf_psi->SaveAsOne((outdir + "/CnC" + suffix).c_str());
-                    *CnE_gf_psi = *CnE_gf;
-                    *CnE_gf_psi *= *domain_parameters.pse;
-                    CnE_gf_psi->SaveAsOne((outdir + "/CnE" + suffix).c_str());
+    // Finalize HYPRE processing
+    mfem::Hypre::Finalize();
 
+    // Finalize MPI processing
+    mfem::Mpi::Finalize();
 
-                    *CnP_together = *CnA_gf_psi;
-                    *CnP_together += *CnC_gf_psi;
-                    CnP_together->SaveAsOne((outdir + "/CnP" + suffix).c_str()); // composite field
+    // End timing and output the total program execution time
+    auto program_end = high_resolution_clock::now();
+    std::cout << "Total Program Time: " 
+            << duration_cast<seconds>(program_end - program_start).count() 
+            << " seconds" << std::endl;
 
-                    // // Apply masks (multiply by ψ fields) before saving smooth versions
-                    // *CnA_gf *= *domain_parameters.psA;  
-                    // CnA_gf->Save((outdir + "/CnA" + suffix).c_str());
-                    // *CnC_gf *= *domain_parameters.psC;  
-                    // CnC_gf->Save((outdir + "/CnC" + suffix).c_str());
-                    // *CnE_gf *= *domain_parameters.pse;  
-                    // CnE_gf->Save((outdir + "/CnE" + suffix).c_str());
-
-                    // *CnA_gf += *CnC_gf;  
-                    // CnA_gf->Save((outdir + "/CnP" + suffix).c_str()); // composite field
-
-                    // RxA_gf->Save((outdir + "/RxA" + suffix).c_str());
-                    // RxC_gf->Save((outdir + "/RxC" + suffix).c_str());
-                }
-
-            }
-        }
-
-
-
-        // ============================================================================
-        // ===============================  SAVE OUTPUTS  =============================
-        // ============================================================================
-
-        // ============================================================================
-        // if (cfg.mode == sim::CellMode::HALF) {
-        //     if (cfg.half_electrode == sim::Electrode::ANODE) {
-        //         phA_gf->Save((outdir + "/phA_final").c_str());
-        //         *CnA_gf *= *domain_parameters.psi;
-        //         CnA_gf->Save((outdir + "/CnA_final").c_str());
-        //     } else {
-        //         phC_gf->Save((outdir + "/phC_final").c_str());
-        //         *CnC_gf *= *domain_parameters.psi;
-        //         CnC_gf->Save((outdir + "/CnC_final").c_str());
-        //     }
-        // } else { // FULL
-        //     phA_gf->Save((outdir + "/phA_final").c_str());
-        //     phC_gf->Save((outdir + "/phC_final").c_str());
-        //     phE_gf->Save((outdir + "/phE_final").c_str());
-        //     CnA_gf->Save((outdir + "/CnA_final_raw").c_str());
-        //     CnC_gf->Save((outdir + "/CnC_final_raw").c_str());
-        //     CnE_gf->Save((outdir + "/CnE_final_raw").c_str());
-        //     *CnA_gf *= *domain_parameters.psA;  CnA_gf->Save((outdir + "/CnA_final").c_str());
-        //     *CnC_gf *= *domain_parameters.psC;  CnC_gf->Save((outdir + "/CnC_final").c_str());
-        //     *CnE_gf *= *domain_parameters.pse;  CnE_gf->Save((outdir + "/CnE_final").c_str());
-        //     *CnA_gf += *CnC_gf;  CnA_gf->Save((outdir + "/CnP_final").c_str()); // CnP = CnA + CnC
-        //     RxA_gf->Save((outdir + "/RxA_final_raw").c_str());
-        //     RxC_gf->Save((outdir + "/RxC_final_raw").c_str());
-        // }
-
-    }
-
-
-        std::cout << "Simulation complete." << std::endl;
-
-        // Finalize HYPRE processing
-        mfem::Hypre::Finalize();
-
-        // Finalize MPI processing
-        mfem::Mpi::Finalize();
-
-        // End timing and output the total program execution time
-        auto program_end = high_resolution_clock::now();
-        std::cout << "Total Program Time: " 
-                << duration_cast<seconds>(program_end - program_start).count() 
-                << " seconds" << std::endl;
-
-        return 0;
-
+    return 0;
 }

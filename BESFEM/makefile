@@ -33,6 +33,7 @@ LIB_FLAGS     := $(MFEM_LIBS)
 
 # Source files
 SRC_FILES = \
+    src/SimulationConfig.cpp \
     src/battery_simulation.cpp \
     inputs/Constants.cpp \
     src/Initialize_Geometry.cpp \
@@ -47,7 +48,8 @@ SRC_FILES = \
     src/Potentials_Base.cpp \
     src/PotC.cpp \
     src/PotA.cpp \
-    src/PotE.cpp
+    src/PotE.cpp \
+    src/Adjust.cpp
 
 # SRC_FILES = src/full_cell_linear.cpp
             
