@@ -17,4 +17,5 @@
 #include "../include/PotE.hpp"
 #include "../include/Reaction.hpp"
 #include "../include/Adjust.hpp"
+#include "../include/BoundaryConditions.hpp"
 

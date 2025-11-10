@@ -39,6 +39,7 @@ SRC_FILES = \
     src/Initialize_Geometry.cpp \
     src/readtiff.cpp \
     src/Domain_Parameters.cpp \
+    src/BoundaryConditions.cpp \
     src/Concentrations_Base.cpp \
     src/CnE.cpp \
     src/CnA.cpp \

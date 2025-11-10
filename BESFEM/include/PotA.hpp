@@ -44,11 +44,12 @@ public:
      * @param fe Pointer to the finite element space
      * @param mh Reference to the mesh handler
      */
-    PotA(Initialize_Geometry &geo, Domain_Parameters &para);
+    PotA(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc);
 
 
     Initialize_Geometry &geometry; ///< Geometry/mesh handler
     Domain_Parameters &domain_parameters;  ///< Domain parameters
+    BoundaryConditions &boundary_conditions;
 
     double BvA; ///< Boundary value for particle potential
 

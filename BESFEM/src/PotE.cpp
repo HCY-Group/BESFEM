@@ -9,9 +9,9 @@
 #include "../include/CnE.hpp"
 #include <optional>
 
-PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_bdr(geo.dbc_bdr), gtPse(para.gtPse), dbc_e_bdr(geo.ess_tdof_marker),
-    kpl(fespace.get()), RpE(fespace.get()), Dmp(fespace.get()), pE0(fespace.get()), ess_tdof_potE(geo.ess_tdof_listPinned), phE_bc(fespace.get()), CeVn(fespace.get())
+PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc)
+    : Potentials(geo,para), geometry(geo), domain_parameters(para), boundary_conditions(bc), fespace(geo.parfespace), dbc_bdr(bc.dbc_bdr), gtPse(para.gtPse), dbc_e_bdr(bc.ess_tdof_marker),
+    kpl(fespace.get()), RpE(fespace.get()), Dmp(fespace.get()), pE0(fespace.get()), ess_tdof_potE(bc.ess_tdof_listPinned), phE_bc(fespace.get()), CeVn(fespace.get())
     
     {
     cgPE_solver = mfem::CGSolver(MPI_COMM_WORLD); // Initialize the conjugate gradient solver for potential

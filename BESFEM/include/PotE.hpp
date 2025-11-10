@@ -43,10 +43,12 @@ public:
      * @param geo  Geometry/space container (mesh, FESpaces, BC markers).
      * @param para Domain/physics parameters (constants, totals, dt).
      */
-    PotE(Initialize_Geometry &geo, Domain_Parameters &para);
+    PotE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc);
 
     Initialize_Geometry &geometry; ///< Reference to geometry initialization
     Domain_Parameters &domain_parameters; ///< Reference to domain parameters
+    BoundaryConditions &boundary_conditions;
+
 
     double BvE; ///< Boundary value for electrolyte potential
 

@@ -17,6 +17,7 @@
 #include "Initialize_Geometry.hpp"
 #include "SolverSteps.hpp"
 #include "Domain_Parameters.hpp"
+#include "BoundaryConditions.hpp"
 
 #include <memory>
 

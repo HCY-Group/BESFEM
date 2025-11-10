@@ -14,6 +14,7 @@
 
 class Initialize_Geometry;
 class Domain_Parameters;
+class BoundaryConditions;
 
 /**
  * @defgroup concentrations Concentration Modules
@@ -40,7 +41,7 @@ public:
      * @param geo  Geometry/space container (mesh, FESpace, boundary markers).
      * @param para Domain/physics parameters (time step, constants, etc.).
      */
-    CnE(Initialize_Geometry &geo, Domain_Parameters &para);
+    CnE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc);
 
     /**
      * @brief Initialize solver and assemble operators.
@@ -85,6 +86,7 @@ public:
     // ---------- Geometry / spaces ----------
     Initialize_Geometry &geometry;                              ///< Geometry/mesh owner
     Domain_Parameters   &domain_parameters;                     ///< Domain/physics parameters
+    BoundaryConditions   &boundary_conditions;
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace;       ///< Parallel FESpace
     
 

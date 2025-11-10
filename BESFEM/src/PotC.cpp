@@ -9,9 +9,9 @@
 #include <optional>
 
 
-PotC::PotC(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_e_bdr(geo.dbc_e_bdr), gtPsi(para.gtPsi), gtPsC(para.gtPsC), 
-    ess_tdof_list_e(geo.ess_tdof_list_e), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get())
+PotC::PotC(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc)
+    : Potentials(geo,para), geometry(geo), domain_parameters(para), boundary_conditions(bc), fespace(geo.parfespace), dbc_e_bdr(bc.dbc_e_bdr), gtPsi(para.gtPsi), gtPsC(para.gtPsC), 
+    ess_tdof_list_e(bc.ess_tdof_list_e), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get())
     
     {
     cgPP_solver = mfem::CGSolver(MPI_COMM_WORLD);

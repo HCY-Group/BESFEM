@@ -56,15 +56,7 @@ void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
     InterpolateDomainParameters(mesh_type);
     CalculatePhasePotentialsAndTargetCurrent();
 
-    // psA->Save("psA.gf");
-    // psC->Save("psC.gf");
-
-    // *psA += *psC;
-    // psA->Save("psP.gf");
-
     PrintInfo();
-
-    // MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void Domain_Parameters::InitializeGridFunctions() {
@@ -225,19 +217,6 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }
             if ((*psC)(vi) < Constants::eps) { (*psC)(vi) = Constants::eps; }
 
-            // if ((*psA)(vi) < 0) { (*psA)(vi) = 0; }
-            // if ((*psA)(vi) > 1) { (*psA)(vi) = 1; }
-            // if ((*psC)(vi) < 0) { (*psC)(vi) = 0; }
-            // if ((*psC)(vi) > 1) { (*psC)(vi) = 1; }
-
-            // if ((*pse)(vi) < 0) { (*pse)(vi) = 0; }
-            // if ((*pse)(vi) > 1) { (*pse)(vi) = 1; }
-
-            // (*psA)(vi) += 1.0e-6; // Avoid zero values
-            // (*psC)(vi) += 1.0e-6; // Avoid zero values
-
-            // (*pse)(vi) += 1.0e-6; // Avoid zero values
-
         }
 
             *psi = 0.0;
@@ -392,3 +371,4 @@ void Domain_Parameters::PrintInfo() {
         cout << "Target Current: " << gTrgI << endl;
     }
 }
+

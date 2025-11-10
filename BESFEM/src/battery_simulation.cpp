@@ -44,15 +44,21 @@ int main(int argc, char *argv[]) {
         Initialize_Geometry geometry;
         if (cfg.mode == sim::CellMode::HALF) {
             geometry.InitializeMesh(cfg.mesh_file, active_dsF, MPI_COMM_WORLD, cfg.order);
-            geometry.SetupBoundaryConditions(sim::CellMode::HALF, cfg.half_electrode);
         } else {
             geometry.InitializeMesh(cfg.mesh_file, cfg.dsF_file_A, cfg.dsF_file_C, MPI_COMM_WORLD, cfg.order);
-            geometry.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
         }
 
         // Initialize and Calculate Domain Parameters
         Domain_Parameters domain_parameters(geometry);
         domain_parameters.SetupDomainParameters(cfg.mesh_type);
+
+        // Initialize Boundary Conditions 
+        BoundaryConditions bc(geometry, domain_parameters);
+        if (cfg.mode == sim::CellMode::HALF) {
+            bc.SetupBoundaryConditions(sim::CellMode::HALF, cfg.half_electrode);
+        } else {
+            bc.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
+        }
 
         // Define Adjuster for Surface Voltage & Current
         Adjust adjust(geometry, domain_parameters);
@@ -78,11 +84,11 @@ int main(int argc, char *argv[]) {
         CnP_together = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
 
         // always initialize electrolyte concentration & potential
-        electrolyte_concentration = std::make_unique<CnE>(geometry, domain_parameters);
+        electrolyte_concentration = std::make_unique<CnE>(geometry, domain_parameters, bc);
         CnE_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         electrolyte_concentration->Initialize(*CnE_gf, Constants::init_CnE, *domain_parameters.pse);
 
-        electrolyte_potential = std::make_unique<PotE>(geometry, domain_parameters);
+        electrolyte_potential = std::make_unique<PotE>(geometry, domain_parameters, bc);
         phE_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         electrolyte_potential->Initialize(*phE_gf, Constants::init_BvE, *domain_parameters.pse);
 
@@ -94,7 +100,7 @@ int main(int argc, char *argv[]) {
                 CnA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
                 anode_concentration->Initialize(*CnA_gf, Constants::init_CnA, *domain_parameters.psi);
 
-                anode_potential = std::make_unique<PotA>(geometry, domain_parameters);
+                anode_potential = std::make_unique<PotA>(geometry, domain_parameters, bc);
                 phA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
                 anode_potential->Initialize(*phA_gf, Constants::init_BvA, *domain_parameters.psi);
 
@@ -104,7 +110,7 @@ int main(int argc, char *argv[]) {
                 CnC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
                 cathode_concentration->Initialize(*CnC_gf, Constants::init_CnC, *domain_parameters.psi);
 
-                cathode_potential = std::make_unique<PotC>(geometry, domain_parameters);
+                cathode_potential = std::make_unique<PotC>(geometry, domain_parameters, bc);
                 phC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
                 cathode_potential->Initialize(*phC_gf, Constants::init_BvC, *domain_parameters.psi);
 
@@ -116,7 +122,7 @@ int main(int argc, char *argv[]) {
                 CnA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
                 anode_concentration->Initialize(*CnA_gf, Constants::init_CnA, *domain_parameters.psA);
 
-                anode_potential = std::make_unique<PotA>(geometry, domain_parameters);
+                anode_potential = std::make_unique<PotA>(geometry, domain_parameters, bc);
                 phA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
                 anode_potential->Initialize(*phA_gf, Constants::init_BvA, *domain_parameters.psA);
 
@@ -124,7 +130,7 @@ int main(int argc, char *argv[]) {
                 CnC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
                 cathode_concentration->Initialize(*CnC_gf, Constants::init_CnC, *domain_parameters.psC);
 
-                cathode_potential = std::make_unique<PotC>(geometry, domain_parameters);
+                cathode_potential = std::make_unique<PotC>(geometry, domain_parameters, bc);
                 phC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
                 cathode_potential->Initialize(*phC_gf, Constants::init_BvC, *domain_parameters.psC);
         }
@@ -254,7 +260,7 @@ int main(int argc, char *argv[]) {
             int t = 0;
 
             // for (int t = 0; t < num_timesteps; ++t) {
-            while (XfrC < 0.32) {
+            while (XfrC < 0.85) {
 
                 anode_concentration->TimeStep(*RxA_gf, *CnA_gf, *domain_parameters.psA);
                 cathode_concentration->TimeStep(*RxC_gf, *CnC_gf, *domain_parameters.psC);

@@ -6,8 +6,8 @@
 #include <optional>
 
 
-CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), nbc_bdr(geo.nbc_bdr),
+CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc)
+    : Concentrations(geo, para), geometry(geo), domain_parameters(para), boundary_conditions(bc), fespace(geo.parfespace), nbc_bdr(bc.nbc_bdr),
       De(fespace.get()), Rxe(fespace.get()), PeR(fespace.get()), cDe(&De), cAe(&Rxe), matCoef_R(&PeR),
       nbcCoef(0.0), Fet(fespace.get()), Me_solver(MPI_COMM_WORLD),
       CeV0(fespace.get()), RHCe(fespace.get()), CeVn(fespace.get()),

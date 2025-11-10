@@ -8,9 +8,9 @@
 #include "mfem.hpp"
 #include <optional>
 
-PotA::PotA(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Potentials(geo,para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), dbc_w_bdr(geo.dbc_w_bdr), gtPsi(para.gtPsi), 
-    ess_tdof_list_w(geo.ess_tdof_list_w), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get()), gtPsA(para.gtPsA)
+PotA::PotA(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc)
+    : Potentials(geo,para), geometry(geo), domain_parameters(para), boundary_conditions(bc), fespace(geo.parfespace), dbc_w_bdr(bc.dbc_w_bdr), gtPsi(para.gtPsi), 
+    ess_tdof_list_w(bc.ess_tdof_list_w), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get()), gtPsA(para.gtPsA)
     
     {
     cgPP_solver = mfem::CGSolver(MPI_COMM_WORLD);
