@@ -17,6 +17,8 @@ class BoundaryConditions {
         BoundaryConditions(Initialize_Geometry &geo, Domain_Parameters &para);
         Initialize_Geometry &geometry;
         Domain_Parameters &domain_parameters;
+        virtual ~BoundaryConditions();
+
         void SetupBoundaryConditions(sim::CellMode mode, sim::Electrode electrode);
         void SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace);
         int ListElectrolyteElementVertices(double threshold);
@@ -32,12 +34,17 @@ class BoundaryConditions {
         mfem::Array<int> ess_tdof_list_e; ///< Total DOF East
         mfem::Array<int> gVTX;    ///< Global vertex indices of corners.
         mfem::Array<int> VTX;     ///< Local vertex indices of corners.
-        std::unique_ptr<mfem::Mesh> globalMesh;              ///< Global serial mesh.
-        std::shared_ptr<mfem::ParMesh> parallelMesh;
-        std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; ///< Parallel finite element space.
+        // std::unique_ptr<mfem::Mesh> globalMesh;              ///< Global serial mesh.
+        // std::shared_ptr<mfem::ParMesh> parallelMesh;
+        // std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; ///< Parallel finite element space.
+
+        mfem::Mesh globalMesh;
+        mfem::ParMesh parallelMesh;
+        mfem::ParFiniteElementSpace parfespace;
+        
         mfem::Array<HYPRE_BigInt> E_L2G; ///< Local to global element mapping.
         bool pin;
-        mfem::Array<int> ess_tdof_listPinned;
+        mfem::Array<int> ess_tdof_list;
         mfem::Array<int> ess_tdof_marker; ///< East Dirichlet Boundary Conditions
 
         int myid; ///< MPI rank ID.

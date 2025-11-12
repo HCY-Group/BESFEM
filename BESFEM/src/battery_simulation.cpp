@@ -23,6 +23,8 @@ int main(int argc, char *argv[]) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+    {
+
     SimulationConfig cfg = ParseSimulationArgs(argc, argv);
     ValidateConfig(cfg, argc, argv);
 
@@ -31,6 +33,9 @@ int main(int argc, char *argv[]) {
         std::filesystem::create_directories(outdir);
     
     const char* active_dsF = (cfg.half_electrode == sim::Electrode::CATHODE) ? cfg.dsF_file_C : cfg.dsF_file_A;
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
 
     bool half_mode     = (cfg.mode == sim::CellMode::HALF);
     bool half_is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
@@ -86,11 +91,11 @@ int main(int argc, char *argv[]) {
         // always initialize electrolyte concentration & potential
         electrolyte_concentration = std::make_unique<CnE>(geometry, domain_parameters, bc);
         CnE_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-        electrolyte_concentration->Initialize(*CnE_gf, Constants::init_CnE, *domain_parameters.pse);
+        electrolyte_concentration->Initialize(cfg.mode, *CnE_gf, Constants::init_CnE, *domain_parameters.pse);
 
         electrolyte_potential = std::make_unique<PotE>(geometry, domain_parameters, bc);
         phE_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-        electrolyte_potential->Initialize(*phE_gf, Constants::init_BvE, *domain_parameters.pse);
+        electrolyte_potential->Initialize(cfg.mode, *phE_gf, Constants::init_BvE, *domain_parameters.pse);
 
         if (cfg.mode == sim::CellMode::HALF) // HALF-CELL
         {
@@ -182,7 +187,7 @@ int main(int argc, char *argv[]) {
                     }
 
                     anode_potential->TimeStep(*CnA_gf, *domain_parameters.psi, *phA_gf);
-                    electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf, electrolyte_concentration->CeVn);
+                    electrolyte_potential->TimeStep(cfg.mode, *CnE_gf, *domain_parameters.pse, *phE_gf);
 
                     reaction->TableExchangeCurrentDensity(*CnA_gf);
 
@@ -209,7 +214,7 @@ int main(int argc, char *argv[]) {
                     }
 
                     cathode_potential->TimeStep(*CnC_gf, *domain_parameters.psi, *phC_gf);
-                    electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf, electrolyte_concentration->CeVn);
+                    electrolyte_potential->TimeStep(cfg.mode, *CnE_gf, *domain_parameters.pse, *phE_gf);
 
                     reaction->ExchangeCurrentDensity(*CnC_gf);
 
@@ -260,7 +265,11 @@ int main(int argc, char *argv[]) {
             int t = 0;
 
             // for (int t = 0; t < num_timesteps; ++t) {
-            while (XfrC < 0.85) {
+            // while (XfrC < 0.85) {
+
+            VCell = Constants::init_BvC - Constants::init_BvA;
+
+            while (VCell > 2.5) {
 
                 anode_concentration->TimeStep(*RxA_gf, *CnA_gf, *domain_parameters.psA);
                 cathode_concentration->TimeStep(*RxC_gf, *CnC_gf, *domain_parameters.psC);
@@ -272,7 +281,7 @@ int main(int argc, char *argv[]) {
 
                 cathode_potential->TimeStep(*CnC_gf, *domain_parameters.psC, *phC_gf);
                 anode_potential->TimeStep(*CnA_gf, *domain_parameters.psA, *phA_gf);
-                electrolyte_potential->TimeStep(*CnE_gf, *domain_parameters.pse, *phE_gf);
+                electrolyte_potential->TimeStep(cfg.mode, *CnE_gf, *domain_parameters.pse, *phE_gf);
 
                 reaction->ExchangeCurrentDensity(*CnC_gf, *CnA_gf); // with two inputs
 
@@ -307,7 +316,7 @@ int main(int argc, char *argv[]) {
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
                     // open file in append mode
-                    std::ofstream outfile("full_cell_output.txt", std::ios::app);
+                    std::ofstream outfile("testing.txt", std::ios::app);
 
                     outfile << "timestep: " << t << " [FULL-CELL]" << ", XfrA = " << XfrA << ", XfrC = " << XfrC
                             << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C
@@ -329,7 +338,9 @@ int main(int argc, char *argv[]) {
 
         } // end of FULL-CELL
 
-    std::cout << "Simulation complete." << std::endl;
+    }
+
+    if (mfem::Mpi::WorldRank() == 0) { std::cout << "Simulation complete.\n"; }
 
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();

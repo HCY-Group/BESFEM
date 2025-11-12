@@ -2,6 +2,7 @@
 #define CNE_HPP
 
 #include "Concentrations_Base.hpp"
+#include "SimTypes.hpp"
 
 /**
  * @file CnE.hpp
@@ -53,7 +54,7 @@ public:
      * @param initial_value Initial scalar value used for \p Cn.
      * @param psx           Phase field ψ used for masking/weights/BCs.
      */
-    void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
+    void Initialize(sim::CellMode mode, mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
 
     /**
      * @brief Advance the electrolyte concentration by one timestep.

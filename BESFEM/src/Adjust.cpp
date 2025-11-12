@@ -43,7 +43,8 @@ void Adjust::AdjustSurfaceVoltage(double current_A, double current_C, PotA &anod
     phC_gf -= dV_C;
 
     // --- Compute overall cell voltage ---
-    VCell = anode_potential.BvA - cathode_potential.BvC;
+    // VCell = anode_potential.BvA - cathode_potential.BvC;
+    VCell = cathode_potential.BvC - anode_potential.BvA;
 }
 
 

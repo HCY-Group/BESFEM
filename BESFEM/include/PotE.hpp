@@ -3,6 +3,7 @@
 
 #include "Potentials_Base.hpp"
 #include "../inputs/Constants.hpp"
+#include "SimTypes.hpp"
 
 /**
  * @file PotE.hpp
@@ -62,7 +63,7 @@ public:
      * @param initial_value Initial scalar value for the potential field.
      * @param psx           Phase mask ψ_E used for weighting/BCs.
      */
-    void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
+    void Initialize(sim::CellMode mode, mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
 
     /**
      * @brief Advance electrolyte potential for one step (assemble/solve).
@@ -87,7 +88,7 @@ public:
      * @param psx       Phase mask ψ_E (input).
      * @param potential Electrolyte potential grid function (in/out).
      */
-    void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
+    void TimeStep(sim::CellMode mode, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
     
     
     

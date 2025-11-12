@@ -2,9 +2,11 @@
 
 #include "../include/CnE.hpp"
 #include "../inputs/Constants.hpp"
+#include "../include/SimTypes.hpp"
 #include "mfem.hpp"
 #include <optional>
 
+using sim::CellMode;
 
 CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc)
     : Concentrations(geo, para), geometry(geo), domain_parameters(para), boundary_conditions(bc), fespace(geo.parfespace), nbc_bdr(bc.nbc_bdr),
@@ -13,43 +15,71 @@ CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &
       CeV0(fespace.get()), RHCe(fespace.get()), CeVn(fespace.get()),
       Feb(fespace.get()), X1v(fespace.get())
     
-    {
+    {}
 
+
+void CnE::Initialize(CellMode mode, mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
+{
+
+    if(mode == CellMode::HALF){
+        std::cout << "Initializing CnE for Half Cell" << std::endl;
+
+        Concentrations::SetInitialConcentration(Cn, initial_value);
+
+        // Assemble mass matrix
+        mfem::GridFunctionCoefficient coef(&psx);
+        SolverSteps::InitializeMassMatrix(coef, Me_init); 
+        SolverSteps::FormSystemMatrix(Me_init, boundary_dofs, Mmate); 
+        
+        // Configure solver
+        Me_solver.iterative_mode = false;
+        Me_prec.SetType(mfem::HypreSmoother::Jacobi); // Configure the preconditioner using a Jacobi smoother
+        SolverSteps::SolverConditions(Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
+
+        // Initialize stiffness operator (diffusivity)
+        SolverSteps::InitializeStiffnessMatrix(cDe, Ke2); // Initialize
+
+        // Build boundary coefficient (Neumann BC weighting)
+        PeR = psx;
+        PeR.Neg();
+        m_nbcCoef = std::make_unique<mfem::ProductCoefficient>(matCoef_R, nbcCoef);
+
+        // Build force term (domain + boundary contributions)
+        Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
+        Be_init->AddDomainIntegrator(new mfem::DomainLFIntegrator(cAe));
+        Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(*m_nbcCoef), nbc_bdr);
+        Be_init->Assemble();
+        Fet = *Be_init;
+
+        SolverSteps::FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
     }
 
+    else if(mode == CellMode::FULL){
+        std::cout << "Initializing CnE for Full Cell" << std::endl;
 
-void CnE::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
-{
-    Concentrations::SetInitialConcentration(Cn, initial_value);
+        Concentrations::SetInitialConcentration(Cn, initial_value);
 
-    // Assemble mass matrix
-    mfem::GridFunctionCoefficient coef(&psx);
-    SolverSteps::InitializeMassMatrix(coef, Me_init); 
-    SolverSteps::FormSystemMatrix(Me_init, boundary_dofs, Mmate); 
-    
-    // Configure solver
-    Me_solver.iterative_mode = false; // Enable iterative mode for the solver
-    Me_prec.SetType(mfem::HypreSmoother::Jacobi); // Configure the preconditioner using a Jacobi smoother
-    SolverSteps::SolverConditions(Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
+        // Assemble mass matrix
+        mfem::GridFunctionCoefficient coef(&psx);
+        SolverSteps::InitializeMassMatrix(coef, Me_init); 
+        SolverSteps::FormSystemMatrix(Me_init, boundary_dofs, Mmate); 
+        
+        // Configure solver
+        Me_solver.iterative_mode = false; // Enable iterative mode for the solver
+        Me_prec.SetType(mfem::HypreSmoother::Jacobi); // Configure the preconditioner using a Jacobi smoother
+        SolverSteps::SolverConditions(Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
 
-    // Initialize stiffness operator (diffusivity)
-    SolverSteps::InitializeStiffnessMatrix(cDe, Ke2); // Initialize
+        // Initialize stiffness operator (diffusivity)
+        SolverSteps::InitializeStiffnessMatrix(cDe, Ke2); // Initialize
 
-    // // Build boundary coefficient (Neumann BC weighting) HALF
-    // PeR = psx;
-    // PeR.Neg();
-    // m_nbcCoef = std::make_unique<mfem::ProductCoefficient>(matCoef_R, nbcCoef);
+        // Build force term (domain + boundary contributions)
+        Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
+        Be_init->AddDomainIntegrator(new mfem::DomainLFIntegrator(cAe));
+        Be_init->Assemble(); 
+        Fet = *Be_init;
 
-    // Build force term (domain + boundary contributions)
-    Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
-    Be_init->AddDomainIntegrator(new mfem::DomainLFIntegrator(cAe));
-    // Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(*m_nbcCoef), nbc_bdr); // HALF
-    Be_init->Assemble(); 
-    Fet = *Be_init;
-
-    // boundary_dofs.SetSize(0);
-
-    SolverSteps::FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
+        SolverSteps::FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
+    }
 }
 
 void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
@@ -142,5 +172,4 @@ void CnE::TimeStep(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem:
 
         // Recover updated concentration into GridFunction
 	    Cn.Distribute(CeV0); 
-        
     }	
