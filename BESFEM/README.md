@@ -2,13 +2,9 @@
 
 ## Things to Consider for Code Review
 - Other ways to organize the code into classes?
-- Somewhere I am doing unnecessary calculations because OOP is MUCH slower than the non-OOP version.
-- Memory management with pointers: unique vs shared?
-- Ideas on handling boundary conditions for different geometries (where should the user specify?)
-- Concentrations Base currently inherits SolverSteps, should this just be usage rather than inheritance?
+- Thoughts on boundary conditions class?
 - How should users make changes? Through terminal command lines, editing Constant.cpp file, GUI?
-- Best way to switch particle concentration between diffusion and Cahn-Hilliard?
-
+- Best way to switch particle concentration between diffusion and Cahn-Hilliard? Right now, the anode uses Cahn-Hilliard
 
 
 
@@ -16,21 +12,18 @@
 1. Clone the repository
 3. `make` (you may need to update the Makefile to point to your MFEM installation)
 4. `cd bin`
-5. Run a disk Cahn-Hilliard simulation: `mpirun -np 1 battery_simulation -m ../inputs/disk_Mesh_80x80x6.mesh -da ../inputs/disk_dsF_81x81x7.txt -t d -n 6`
-6. Run a rectangle diffusion simulation: 
-    - ⚠️ make sure you go to `Constants.cpp` file and uncomment the section for rectangle
-    - ⚠️ change `particle_concentration` in `simulation.cpp` to start with `CnP`and NOT `CnCH`
-    - ⚠️ change all of the `Initialize` lines in `simulation.cpp` to the line underneath
-    - ⚠️ go into `PotP.cpp` and uncomment the chunk in `TimeStep`
-    - `mpirun -np 1 battery_simulation -m ../inputs/Mesh_3x90_r.mesh -dc ../inputs/dsF_3x90_r.txt -t r -n 3`
-
+5. Example for a full cell code: `mpirun -np 2 battery_simulation -mode full -m ../inputs/mesh/Mesh_40x60x3_3D_disk_full.mesh -dA ../inputs/distance/dsF_A_40x60x3_3D_disk_full.txt -dC ../inputs/distance/dsF_C_40x60x3_3D_disk_full.txt -t r`
+6. Example for a half cell (cathode) code: `mpirun -np 1 battery_simulation -mode half -elec cathode -m ../inputs/mesh/Mesh_40x60_F00.mesh  -dC ../inputs/distance/dsFC_41x61_F00.txt -t r`
 
 
 ## Additional Command-Line Options
 
 
 - `-m MeshFileName` This will allow you to change the .mesh file 
-- `-d DistanceFileName` This will allow you to change the distance .txt file
+- `-mode CellMode` This will allow you to change if you are simulating a half or full cell. 
+- `-elec Electrode` If you are doing a half cell simulation, this will allow you to specify which electrode you are simulating. 
+- `-dC CathodeDistanceFileName` This will allow you to change the distance .txt file for the cathode
+- `-dA AnodeDistanceFileName` This will allow you to change the distance .txt file for the anode
 - `-o Order` This will allow you to change the polynomial degree order
 - `-t MeshType` This will allow you to change the type of mesh (r = rectangle, d = disk, v = voxel, c = circle)
 - `-n NumberOfTimeSteps` This will allow you to change the number of timesteps that the simulation runs
