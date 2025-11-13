@@ -15,7 +15,7 @@ SimulationConfig ParseSimulationArgs(int argc, char *argv[])
     args.AddOption(&cfg.dsF_file_C, "-dC", "--cathode-distance", "Cathode distance file.");
     args.AddOption(&cfg.dsF_file_A, "-dA", "--anode-distance", "Anode distance file.");
     args.AddOption(&cfg.order, "-o", "--order", "Finite element polynomial degree.");
-    args.AddOption(&cfg.mesh_type, "-t", "--type", "Mesh type (r, c, v, d).");
+    args.AddOption(&cfg.mesh_type, "-t", "--type", "Mesh type (ml (MATLAB), v (voxel)).");
     args.AddOption(&cfg.num_timesteps, "-n", "--num-steps", "Number of timesteps.");
     args.AddOption(&mode, "-mode", "--mode", "Cell mode: half | full.");
     args.AddOption(&half_elec, "-elec", "--electrode", "HALF mode only: anode | cathode.");

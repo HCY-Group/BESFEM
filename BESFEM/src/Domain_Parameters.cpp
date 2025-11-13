@@ -83,7 +83,7 @@ void Domain_Parameters::InitializeGridFunctions() {
 void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
 
     if (mesh_type == nullptr) {
-        std::cerr << "Error: Mesh type not specified. Use -t option to specify mesh type (r for rectangle, c for circle, v for voxel)." << std::endl;
+        std::cerr << "Error: Mesh type not specified. Use -t option to specify mesh type (ml for matlab, v for voxel)." << std::endl;
         exit(EXIT_FAILURE);
     }
     
@@ -107,26 +107,15 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         }
 
         for (int vi = 0; vi < nV; vi++) {
-            if (strcmp(mesh_type, "r") == 0) {
-                (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // rectangle
-                (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // rectangle
-
-            } else if (strcmp(mesh_type, "c") == 0) {
-                (*psi)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*g)(vi)) / Constants::zeta)); // circle
-                (*AvP)(vi) = -(pow(tanh((11.0 * Constants::dh - (*g)(vi)) / Constants::zeta), 2) - 1.0) / (2 * Constants::zeta); // circle
-
-            } else if (strcmp(mesh_type, "d") == 0) {
-                (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // disk
-                (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // disk
+            if (strcmp(mesh_type, "ml") == 0) {
+                (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // matlab
+                (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // matlab
 
             } else if (strcmp(mesh_type, "v") == 0) {
                 (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi))); // voxel
                 (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
 
-            } else {
-                (*psi)(vi) = 0.5 * (1.0 + tanh((*psi)(vi))); // voxel
-                (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
-            }
+            } 
 
             (*pse)(vi) = 1.0 - (*psi)(vi);
 
@@ -180,23 +169,11 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         // ------- FULL CELL -------
 
         for (int vi = 0; vi < nV; vi++) {
-            if (strcmp(mesh_type, "r") == 0) {
-                (*psA)(vi) = 0.5 * (1.0 + tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh))); // rectangle
-                (*AvA)(vi) = -(pow(tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (Constants::zeta * Constants::dh); // rectangle
-                (*psC)(vi) = 0.5 * (1.0 + tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh))); // rectangle
-                (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (Constants::zeta * Constants::dh); // rectangle
-
-            } else if (strcmp(mesh_type, "c") == 0) {
-                (*psA)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF_A)(vi)) / Constants::zeta)); // circle
-                (*AvA)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF_A)(vi)) / Constants::zeta), 2) - 1.0) / (2 * Constants::zeta); // circle
-                (*psC)(vi) = 0.5 * (1.0 + tanh((11.0 * Constants::dh - (*dsF_C)(vi)) / Constants::zeta)); // circle
-                (*AvC)(vi) = -(pow(tanh((11.0 * Constants::dh - (*dsF_C)(vi)) / Constants::zeta), 2) - 1.0) / (2 * Constants::zeta); // circle
-
-            } else if (strcmp(mesh_type, "d") == 0) {
-                (*psA)(vi) = 0.5 * (1.0 + tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh))); // disk
-                (*AvA)(vi) = -(pow(tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // disk
-                (*psC)(vi) = 0.5 * (1.0 + tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh))); // disk
-                (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // disk
+            if (strcmp(mesh_type, "ml") == 0) {
+                (*psA)(vi) = 0.5 * (1.0 + tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh))); // matlab
+                (*AvA)(vi) = -(pow(tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (Constants::zeta * Constants::dh); // matlab
+                (*psC)(vi) = 0.5 * (1.0 + tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh))); // matlab
+                (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (Constants::zeta * Constants::dh); // matlab
 
             } else if (strcmp(mesh_type, "v") == 0) {
                 (*psA)(vi) = 0.5 * (1.0 + tanh((*dsF_A)(vi))); // voxel
@@ -204,11 +181,6 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 (*psC)(vi) = 0.5 * (1.0 + tanh((*dsF_C)(vi))); // voxel
                 (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
 
-            } else {
-                (*psA)(vi) = 0.5 * (1.0 + tanh((*psA)(vi))); // voxel
-                (*AvA)(vi) = -(pow(tanh((*dsF_A)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
-                (*psC)(vi) = 0.5 * (1.0 + tanh((*psC)(vi))); // voxel
-                (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
             }
 
             (*pse)(vi) = 1.0 - (*psA)(vi) - (*psC)(vi);
@@ -271,11 +243,11 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             if ((*AvB)(vi) * Constants::dh < 1.0e-5) { (*AvB)(vi) = 0.0; }
         }
         
-        mfem::GridFunctionCoefficient AvA_coeff(AvA.get());
-        AvA->ProjectCoefficient(AvA_coeff);
+        // mfem::GridFunctionCoefficient AvA_coeff(AvA.get());
+        // AvA->ProjectCoefficient(AvA_coeff);
 
-        mfem::GridFunctionCoefficient AvC_coeff(AvC.get());
-        AvC->ProjectCoefficient(AvC_coeff);
+        // mfem::GridFunctionCoefficient AvC_coeff(AvC.get());
+        // AvC->ProjectCoefficient(AvC_coeff);
 
     }
 }

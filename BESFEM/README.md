@@ -12,8 +12,8 @@
 1. Clone the repository
 3. `make` (you may need to update the Makefile to point to your MFEM installation)
 4. `cd bin`
-5. Example for a full cell code: `mpirun -np 2 battery_simulation -mode full -m ../inputs/mesh/Mesh_40x60x3_3D_disk_full.mesh -dA ../inputs/distance/dsF_A_40x60x3_3D_disk_full.txt -dC ../inputs/distance/dsF_C_40x60x3_3D_disk_full.txt -t r`
-6. Example for a half cell (cathode) code: `mpirun -np 1 battery_simulation -mode half -elec cathode -m ../inputs/mesh/Mesh_40x60_F00.mesh  -dC ../inputs/distance/dsFC_41x61_F00.txt -t r`
+5. Example for a full cell code: `mpirun -np 2 battery_simulation -mode full -m ../inputs/mesh/Mesh_40x60x3_3D_disk_full.mesh -dA ../inputs/distance/dsF_A_40x60x3_3D_disk_full.txt -dC ../inputs/distance/dsF_C_40x60x3_3D_disk_full.txt -t ml`
+6. Example for a half cell (cathode) code: `mpirun -np 1 battery_simulation -mode half -elec cathode -m ../inputs/mesh/Mesh_40x60_F00.mesh  -dC ../inputs/distance/dsFC_41x61_F00.txt -t ml`
 
 
 ## Additional Command-Line Options
@@ -25,7 +25,7 @@
 - `-dC CathodeDistanceFileName` This will allow you to change the distance .txt file for the cathode
 - `-dA AnodeDistanceFileName` This will allow you to change the distance .txt file for the anode
 - `-o Order` This will allow you to change the polynomial degree order
-- `-t MeshType` This will allow you to change the type of mesh (r = rectangle, d = disk, v = voxel, c = circle)
+- `-t MeshType` This will allow you to change the type of mesh (ml = MATLAB, v = voxel)
 - `-n NumberOfTimeSteps` This will allow you to change the number of timesteps that the simulation runs
 
 

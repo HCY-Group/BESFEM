@@ -15,8 +15,6 @@ using namespace std;
 using sim::CellMode;
 using sim::Electrode;
 
-
-
 BoundaryConditions::BoundaryConditions(Initialize_Geometry& geo, Domain_Parameters &para)
     : geometry(geo), domain_parameters(para), parallelMesh(*geo.parallelMesh), globalMesh(*geo.globalMesh), parfespace(*geo.parfespace),
     E_L2G(geo.E_L2G) {}

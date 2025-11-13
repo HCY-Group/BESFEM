@@ -11,6 +11,7 @@
 
 #include "../inputs/Constants.hpp"
 #include "../include/Initialize_Geometry.hpp"
+#include "../include/SolverSteps.hpp"
 
 using std::cout;
 using std::endl;
@@ -166,6 +167,88 @@ static void Test_AdjustDistanceFile_ScalingAndBackup()
     std::remove(backup.c_str());
 }
 
+static void Test_SolverSteps_InitializeStiffnessMatrix_1D()
+{
+    INFO("Test_SolverSteps_InitializeStiffnessMatrix_1D");
+
+    // Optional: only run on 1 MPI rank
+    int myid   = mfem::Mpi::WorldRank();
+    int nprocs = mfem::Mpi::WorldSize();
+    if (nprocs != 1)
+    {
+        if (myid == 0)
+            INFO("Skipping stiffness-matrix test: requires 1 MPI rank.");
+        return;
+    }
+
+    // --- Build a tiny 1D mesh: [0,2] split into 2 elements ---
+    mfem::Mesh mesh = mfem::Mesh::MakeCartesian1D(2, 2.0);  // 2 elements on [0,2]
+    mfem::ParMesh pmesh(MPI_COMM_WORLD, mesh);
+
+    int dim = pmesh.Dimension();              // should be 1
+    mfem::H1_FECollection fec(1, dim);        // linear H1
+    mfem::ParFiniteElementSpace pfes(&pmesh, &fec);
+
+    // --- Build SolverSteps with this FE space ---
+    SolverSteps steps(&pfes);
+
+    // Coefficient k(x) = 1
+    mfem::ConstantCoefficient one(1.0);
+
+    std::unique_ptr<mfem::ParBilinearForm> K;
+    steps.InitializeStiffnessMatrix(one, K);
+
+    CHECK(K != nullptr, "InitializeStiffnessMatrix: K should not be null");
+
+    // Finalize to assemble the sparse matrix structure/data
+    K->Finalize();
+
+    const mfem::SparseMatrix &A = K->SpMat();
+    int n_rows = A.Height();
+    int n_cols = A.Width();
+
+    CHECK(n_rows == 3, "Expected 3x3 stiffness matrix (3 DOFs for 2 elems)");
+    CHECK(n_cols == 3, "Expected 3 columns for stiffness matrix");
+
+    auto check_entry = [&](int i, int j, double expected, const std::string &name)
+    {
+        double val  = A.Elem(i, j);
+        double diff = std::fabs(val - expected);
+        if (diff >= 1e-12)
+        {
+            CHECK(false,
+                  name + " mismatch: expected " + std::to_string(expected) + ", got " + std::to_string(val));
+        }
+    };
+
+    // Expected K (2 elements on [0,2]):
+    // [ 1  -1   0 ]
+    // [ -1  2  -1 ]
+    // [ 0  -1   1 ]
+
+
+    // Expected K (2 elements on [0,1]):
+    // [ 2  -2   0 ]
+    // [ -2  4  -2 ]
+    // [ 0  -2   2 ]
+
+
+    check_entry(0,0, 1.0, "K(0,0)");
+    check_entry(0,1,-1.0, "K(0,1)");
+    check_entry(0,2, 0.0, "K(0,2)");
+
+    check_entry(1,0,-1.0, "K(1,0)");
+    check_entry(1,1, 2.0, "K(1,1)");
+    check_entry(1,2,-1.0, "K(1,2)");
+
+    check_entry(2,0, 0.0, "K(2,0)");
+    check_entry(2,1,-1.0, "K(2,1)");
+    check_entry(2,2, 1.0, "K(2,2)");
+
+}
+
+
+
 // ----------------- main -----------------
 
 int main(int argc, char **argv)
@@ -175,6 +258,8 @@ int main(int argc, char **argv)
 
     Test_AdjustDistanceFile_NoScaling();
     Test_AdjustDistanceFile_ScalingAndBackup();
+
+    Test_SolverSteps_InitializeStiffnessMatrix_1D();
 
     if (fails == 0) {
         cout << "\nALL TESTS PASSED \n";

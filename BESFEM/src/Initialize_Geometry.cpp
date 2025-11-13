@@ -80,8 +80,6 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
     // Map the global values to the local
     MapGlobalToLocal(meshFile);
 
-    // SetupPinnedDOF(*parfespace);
-
     // Print out information relative to the mesh
     PrintMeshInfo();
 
@@ -116,7 +114,7 @@ void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile)
                       << " max=" << *max_it << " max|v|=" << max_abs << "\n";
 
             if (max_abs > 1.0) {
-                // 1) write backup with original data
+                // write backup with original data
                 std::string backup = std::string(distanceFile) + ".orig";
                 {
                     std::ofstream bout(backup, std::ios::trunc);
@@ -128,7 +126,7 @@ void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile)
                 }
                 std::cout << "[AdjustDistanceFile] Wrote original data to backup: " << backup << "\n";
 
-                // 2) scale and overwrite original file
+                // scale and overwrite original file
                 std::cout << "[AdjustDistanceFile] Scaling values by dh=" << std::setprecision(10) << Constants::dh << " and overwriting "
                           << distanceFile << " ...\n";
                 for (double &x : values) x *= Constants::dh;
@@ -452,21 +450,4 @@ void Initialize_Geometry::PrintMeshInfo() {
         return;
     }
 
-}
-
-static inline int PickAnchorGlobalTDof(mfem::ParFiniteElementSpace &fes, HYPRE_BigInt global_anchor)
-{
-    const HYPRE_BigInt *offsets = fes.GetTrueDofOffsets(); // size = nprocs + 1
-    int rank;
-    MPI_Comm_rank(fes.GetComm(), &rank);
-
-    // Check if this rank owns the target global tdof
-    if (global_anchor >= offsets[rank] && global_anchor < offsets[rank + 1])
-    {
-        return static_cast<int>(global_anchor - offsets[rank]); // Local index
-    }
-    else
-    {
-        return -1; // Not owned by this rank
-    }
 }

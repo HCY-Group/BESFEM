@@ -316,7 +316,7 @@ int main(int argc, char *argv[]) {
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
                     // open file in append mode
-                    std::ofstream outfile("testing.txt", std::ios::app);
+                    std::ofstream outfile("full_cell_output.txt", std::ios::app);
 
                     outfile << "timestep: " << t << " [FULL-CELL]" << ", XfrA = " << XfrA << ", XfrC = " << XfrC
                             << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C

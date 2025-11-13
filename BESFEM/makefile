@@ -71,7 +71,7 @@ TEST_SRC    := $(TEST_DIR)/besfem_oop_tests.cpp
 TEST_BIN    := $(EXEC_DIR)/besfem_oop_tests
 
 # Reuse your sources but drop simulation.cpp (it has its own main()).
-TEST_SRC_FILES := $(filter-out src/simulation.cpp,$(SRC_FILES))
+TEST_SRC_FILES := $(filter-out src/battery_simulation.cpp,$(SRC_FILES))
 
 OBJ_DIR   := build
 TEST_OBJS := $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(TEST_SRC_FILES))
