@@ -21,7 +21,11 @@ class BoundaryConditions {
 
         void SetupBoundaryConditions(sim::CellMode mode, sim::Electrode electrode);
         void SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace);
-        int ListElectrolyteElementVertices(double threshold);
+        int SelectCenterPin(double threshold, double &out_dist2);
+        int SelectFirstPin(double threshold, double &out_dist2);
+
+
+        // int SelectPin(double threshold, double &out_z, double &out_dist2);
         int gei; ///< Global element index.
         mfem::Array<int> nbc_w_bdr; ///< West Neumann Boundary Conditions
         mfem::Array<int> nbc_e_bdr; ///< East Neumann Boundary Conditions

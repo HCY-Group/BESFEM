@@ -66,6 +66,7 @@ inline void SaveSimulationSnapshot(
 
     // Mesh and ψ fields
     geometry.parallelMesh->SaveAsOne((outdir + "/pmesh" + suffix).c_str());
+    domain_parameters.psi->SaveAsOne((outdir + "/psi" + suffix).c_str());
     domain_parameters.pse->SaveAsOne((outdir + "/pse" + suffix).c_str());
 
     // Potentials
@@ -92,6 +93,49 @@ inline void SaveSimulationSnapshot(
     CnP_together = CnA_gf_psi;
     CnP_together += CnC_gf_psi;
     CnP_together.SaveAsOne((outdir + "/CnP" + suffix).c_str());
+}
+
+
+
+
+inline void SaveSimulationSnapshot(
+    int t,
+    const std::string &outdir,
+    Initialize_Geometry &geometry,
+    Domain_Parameters &domain_parameters,
+    mfem::ParGridFunction &phC_gf,
+    mfem::ParGridFunction &phE_gf,
+    mfem::ParGridFunction &CnC_gf,
+    mfem::ParGridFunction &CnE_gf,
+    mfem::ParGridFunction &CnC_gf_psi,
+    mfem::ParGridFunction &CnE_gf_psi,
+    int save_interval = 500)
+{
+    if (t % save_interval != 0) return;
+
+    std::ostringstream step_str;
+    step_str << "_" << std::setw(5) << std::setfill('0') << t;
+    std::string suffix = step_str.str();
+
+    // Mesh and ψ fields
+    geometry.parallelMesh->SaveAsOne((outdir + "/pmesh" + suffix).c_str());
+    domain_parameters.psi->SaveAsOne((outdir + "/psi" + suffix).c_str());
+    domain_parameters.pse->SaveAsOne((outdir + "/pse" + suffix).c_str());
+
+    // Potentials
+    phC_gf.SaveAsOne((outdir + "/phC" + suffix).c_str());
+    phE_gf.SaveAsOne((outdir + "/phE" + suffix).c_str());
+
+    // Raw concentrations
+    CnC_gf.SaveAsOne((outdir + "/CnC_raw" + suffix).c_str());
+    CnE_gf.SaveAsOne((outdir + "/CnE_raw" + suffix).c_str());
+
+    // ψ-weighted concentrations
+    CnC_gf_psi = CnC_gf; CnC_gf_psi *= *domain_parameters.psi;
+    CnC_gf_psi.SaveAsOne((outdir + "/CnC" + suffix).c_str());
+
+    CnE_gf_psi = CnE_gf; CnE_gf_psi *= *domain_parameters.pse;
+    CnE_gf_psi.SaveAsOne((outdir + "/CnE" + suffix).c_str());
 }
 
 } // namespace besfem

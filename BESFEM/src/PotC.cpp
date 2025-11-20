@@ -14,28 +14,28 @@ PotC::PotC(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions
     ess_tdof_list_e(bc.ess_tdof_list_e), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get())
     
     {
-    cgPP_solver = mfem::CGSolver(MPI_COMM_WORLD);
-    B1t = mfem::ParLinearForm(fespace.get());
-    X1v = mfem::HypreParVector(fespace.get());
-    B1v = mfem::HypreParVector(fespace.get());
-    Fpb = mfem::HypreParVector(fespace.get());
-    Xs0 = mfem::HypreParVector(fespace.get()); // Initialize the solution vector for particle potential
-    RpP = mfem::ParGridFunction(fespace.get());
+        cgPP_solver = mfem::CGSolver(MPI_COMM_WORLD);
+        B1t = mfem::ParLinearForm(fespace.get());
+        X1v = mfem::HypreParVector(fespace.get());
+        B1v = mfem::HypreParVector(fespace.get());
+        Fpb = mfem::HypreParVector(fespace.get());
+        Xs0 = mfem::HypreParVector(fespace.get()); // Initialize the solution vector for particle potential
+        RpP = mfem::ParGridFunction(fespace.get());
 
-    Bp2 = std::make_unique<mfem::ParLinearForm>(fespace.get());
+        Bp2 = std::make_unique<mfem::ParLinearForm>(fespace.get());
 
-    kap = mfem::ParGridFunction(fespace.get()); // Initialize conductivity field
-    cKp = mfem::GridFunctionCoefficient(&kap); // Coefficient for conductivity field
-    cRp = mfem::GridFunctionCoefficient(&RpP);
-    Fpt = mfem::ParLinearForm(fespace.get());
+        kap = mfem::ParGridFunction(fespace.get()); // Initialize conductivity field
+        cKp = mfem::GridFunctionCoefficient(&kap); // Coefficient for conductivity field
+        cRp = mfem::GridFunctionCoefficient(&RpP);
+        Fpt = mfem::ParLinearForm(fespace.get());
 
-    Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Initialize the bilinear form for conductivity
+        Kp2 = std::make_unique<mfem::ParBilinearForm>(fespace.get()); // Initialize the bilinear form for conductivity
 
-    pP0 = mfem::ParGridFunction(fespace.get()); // Initialize the potential grid function
+        pP0 = mfem::ParGridFunction(fespace.get()); // Initialize the potential grid function
 
-    if (gtPsC < 1.0e-200){
-        gtPsC = gtPsi;
-    }
+        if (gtPsC < 1.0e-200){
+            gtPsC = gtPsi;
+        }
 
     }
 

@@ -171,7 +171,17 @@ int main(int argc, char *argv[]) {
         // ============================================================================
 
         if (cfg.mode == sim::CellMode::HALF) {
-            for (int t = 0; t < cfg.num_timesteps; ++t) {
+
+
+            if (cfg.half_electrode == sim::Electrode::ANODE) {
+                VCell = anode_potential->BvA - electrolyte_potential->BvE;
+            } else {
+                VCell = cathode_potential->BvC - electrolyte_potential->BvE;
+            }
+
+            // for (int t = 0; t < cfg.num_timesteps; ++t) {
+
+            while(VCell > 2.5){
 
                 if (cfg.half_electrode == sim::Electrode::ANODE) {
                     
@@ -182,7 +192,7 @@ int main(int argc, char *argv[]) {
                     anode_concentration->TimeStep(*Rxn_gf, *CnA_gf, *domain_parameters.psi);
                     electrolyte_concentration->TimeStep(*Rxn_gf, *CnE_gf, *domain_parameters.pse);
 
-                    if (t > 0 && t % 100 == 0){
+                    if (t > 0 && t % 500 == 0){
                         electrolyte_concentration->SaltConservation(*CnE_gf, *domain_parameters.pse);
                     }
 
@@ -209,23 +219,53 @@ int main(int argc, char *argv[]) {
                     cathode_concentration->TimeStep(*Rxn_gf, *CnC_gf, *domain_parameters.psi);
                     electrolyte_concentration->TimeStep(*Rxn_gf, *CnE_gf, *domain_parameters.pse);
 
-                    if (t > 0 && t % 100 == 0){
+                    if (t > 0 && t % 500 == 0){
                         electrolyte_concentration->SaltConservation(*CnE_gf, *domain_parameters.pse);
                     }
 
-                    cathode_potential->TimeStep(*CnC_gf, *domain_parameters.psi, *phC_gf);
+                    // cathode_potential->TimeStep(*CnC_gf, *domain_parameters.psi, *phC_gf);
+                    *phC_gf = Constants::init_BvC;
                     electrolyte_potential->TimeStep(cfg.mode, *CnE_gf, *domain_parameters.pse, *phE_gf);
 
                     reaction->ExchangeCurrentDensity(*CnC_gf);
 
                     double globalerror_P = 1.0; // Error for particle potential
                     double globalerror_E = 1.0; // Error for electrolyte potential
+
+                    // if (t > 10100 && mfem::Mpi::WorldRank() == 0) {
+                    //     std::cout << "enter while loop on timestep: " << t << std::endl;
+                    // }
+
+                    // int it = 0;
+                    // const int max_bv_it = 50;
             
-                    while (globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8) {
+                    // while ((globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8)) {
+                    //     reaction->ButlerVolmer(*Rxn_gf, *CnC_gf, *CnE_gf, *phC_gf, *phE_gf);
+                    //     cathode_potential->Advance(*Rxn_gf, *phC_gf, *domain_parameters.psi, globalerror_P);
+                    //     electrolyte_potential->Advance(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+
+                    //     // if(t > 10120 && t % 1 == 0){
+                    //         // std::cout << "cathode error: " << globalerror_P << " electrolyte error: " << globalerror_E << std::endl;
+                    //     // }
+                    // }
+
+                    while (globalerror_E > 1.0e-8) {
                         reaction->ButlerVolmer(*Rxn_gf, *CnC_gf, *CnE_gf, *phC_gf, *phE_gf);
-                        cathode_potential->Advance(*Rxn_gf, *phC_gf, *domain_parameters.psi, globalerror_P);
                         electrolyte_potential->Advance(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+
+                        // if(t > 10120 && t % 1 == 0){
+                            // std::cout << "cathode error: " << globalerror_P << " electrolyte error: " << globalerror_E << std::endl;
+                        // }
                     }
+
+                    // if (it == max_bv_it && mfem::Mpi::WorldRank() == 0) {
+                    //     std::cout << "WARNING: BV loop hit max iterations ("
+                    //             << max_bv_it << ") without reaching tolerance.\n";
+                    // }
+
+                    // if (t > 10100 && mfem::Mpi::WorldRank() == 0) {
+                    //     std::cout << "exited while loop on timestep: " << t << std::endl;
+                    // }
                 }
 
                 reaction->TotalReactionCurrent(*Rxn_gf, global_current);
@@ -241,16 +281,25 @@ int main(int argc, char *argv[]) {
                     VCell = cathode_potential->BvC - electrolyte_potential->BvE;
                 }
 
-                if (t % 5 == 0 && mfem::Mpi::WorldRank() == 0) {
+                if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
                     const double Xfr = half_is_anode ? anode_concentration->GetLithiation() : cathode_concentration->GetLithiation();
 
                     std::cout << "timestep: " << t << (half_is_anode ? " [ANODE HALF-CELL]" : " [CATHODE HALF-CELL]")
                     << ", Xfr = " << Xfr << ", VCell = " << VCell << ", BvE = " << electrolyte_potential->BvE
                     << (half_is_anode ? ", BvA = " : ", BvC = ") << (half_is_anode ? anode_potential->BvA : cathode_potential->BvC)
-                    << ", current = " << global_current << std::endl;
+                    << ", current = " << global_current << ", target current = " << domain_parameters.gTrgI << std::endl;
                 }
-            }
+
+                // Inside time step loop
+                if (t % 500 == 0)
+                {
+                    Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phC_gf, *phE_gf, 
+                        *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi);
+                } 
+
+                t += 1;
+            } //
         }
 
         // ============================================================================

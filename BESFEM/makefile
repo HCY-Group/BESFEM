@@ -52,7 +52,7 @@ SRC_FILES = \
     src/PotE.cpp \
     src/Adjust.cpp
 
-# SRC_FILES = src/full_cell_linear.cpp
+# SRC_FILES = example.cpp
             
 
 # Output executable
@@ -60,6 +60,7 @@ SRC_FILES = \
 # EXEC = serial_simulation
 EXEC_DIR = bin
 EXEC_NAME = battery_simulation
+# EXEC_NAME = example
 # EXEC_NAME = full_cell
 EXEC = $(EXEC_DIR)/$(EXEC_NAME)
 
