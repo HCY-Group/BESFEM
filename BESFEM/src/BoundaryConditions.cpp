@@ -223,7 +223,7 @@ void BoundaryConditions::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
         parallelMesh.GetGlobalElementIndices(E_L2G);
 
     double cand_dist = 0.0;
-    int local_gVpp = SelectFirstPin(0.99, cand_dist);
+    int local_gVpp = SelectCenterPin(0.99, cand_dist);
 
     // std::cout << "[SetupPinnedDOF] rank " << myid
     //           << " gVpp = "  << local_gVpp

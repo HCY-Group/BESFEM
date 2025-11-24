@@ -9,7 +9,7 @@
 #include <optional>
 
 PotA::PotA(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc)
-    : Potentials(geo,para), geometry(geo), domain_parameters(para), boundary_conditions(bc), fespace(geo.parfespace), dbc_w_bdr(bc.dbc_w_bdr), gtPsi(para.gtPsi), 
+    : PotentialBase(geo,para), geometry(geo), domain_parameters(para), boundary_conditions(bc), utils(geo,para), fespace(geo.parfespace), fem(geo.parfespace), dbc_w_bdr(bc.dbc_w_bdr), gtPsi(para.gtPsi), 
     ess_tdof_list_w(bc.ess_tdof_list_w), kap(fespace.get()), RpP(fespace.get()), pP0(fespace.get()), gtPsA(para.gtPsA)
     
     {
@@ -39,20 +39,20 @@ PotA::PotA(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions
     }
 
 
-void PotA::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx)
+void PotA::SetupField(mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx)
 {
 
     BvA = initial_value; // Set the boundary value
-    Potentials::SetInitialPotentials(ph, BvA); // Initialize potentials
+    utils.SetInitialValue(ph, BvA); // Initialize potentials
 
     kap = psx; // Set the conductivity field to the particle concentration field
     kap *= 3.3;
-    SolverSteps::InitializeStiffnessMatrix(cKp, Kp2); // Initialize the stiffness matrix
+    fem.InitializeStiffnessMatrix(cKp, Kp2); // Initialize the stiffness matrix
     
     mfem::ConstantCoefficient dbc_w_Coef(BvA); // Coefficient for Dirichlet boundary conditions
     ph.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
     
-    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_w, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
+    fem.FormLinearSystem(Kp2, ess_tdof_list_w, ph, B1t, KmP, X1v, B1v); // Assemble the linear system
 
     Mpp = std::make_unique<mfem::HypreBoomerAMG>(KmP);  // builds hierarchy once
     Mpp->SetPrintLevel(0);
@@ -61,18 +61,18 @@ void PotA::Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::Par
     cgPP_solver.SetPreconditioner(*Mpp);
     cgPP_solver.SetOperator(KmP); 
 
-    // SolverSteps::SolverConditions(KmP, cgPP_solver, *Mpp); // Set up the solver conditions
+    // fem.SolverConditions(KmP, cgPP_solver, *Mpp); // Set up the solver conditions
 
-    SolverSteps::InitializeForceTerm(cRp, Bp2); // Initialize the force term
-    // SolverSteps::Update(Bp2); // Assemble the force term
+    fem.InitializeForceTerm(cRp, Bp2); // Initialize the force term
+    // fem.Update(Bp2); // Assemble the force term
     Bp2->Assemble();
     Fpt = *Bp2; // Assign the force term
 
-    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_w, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system
+    fem.FormLinearSystem(Kp2, ess_tdof_list_w, ph, Fpt, KmP, X1v, Fpb); // Assemble the force term system
 }
 
 
-void PotA::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
+void PotA::AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
 {
 	mfem::ConstantCoefficient dbc_w_Coef(BvA);
     cgPP_solver.SetPreconditioner(*Mpp);
@@ -80,7 +80,7 @@ void PotA::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
 }
 
-void PotA::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
+void PotA::UpdatePotential(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
 {
     RpP = Rx;
     RpP *= Constants::Frd; // Scale the reaction field
@@ -99,7 +99,7 @@ void PotA::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     // std::cout << "BvA: " << BvA << std::endl;
 
     phx.ProjectBdrCoefficient(dbc_w_Coef, dbc_w_bdr); // Apply Dirichlet boundary conditions
-    SolverSteps::FormLinearSystem(Kp2, ess_tdof_list_w, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
+    fem.FormLinearSystem(Kp2, ess_tdof_list_w, phx, Fpt, KmP, X1v, Fpb); // Assemble the force term system
 
 
     pP0 = phx; // Store the current potential field
@@ -114,7 +114,7 @@ void PotA::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
 
     phx.Distribute(Xs0); // Distribute the updated values
 
-    Potentials::ComputeGlobalError(pP0, phx, psx, gerror, gtPsA); // Compute global error
+    utils.CalculateGlobalError(pP0, phx, psx, gerror, gtPsA); // Compute global error
     
 }
 

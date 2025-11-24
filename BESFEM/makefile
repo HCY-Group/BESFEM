@@ -45,12 +45,13 @@ SRC_FILES = \
     src/CnA.cpp \
     src/CnC.cpp \
     src/Reaction.cpp \
-    src/SolverSteps.cpp \
+    src/FEMOperators.cpp \
     src/Potentials_Base.cpp \
     src/PotC.cpp \
     src/PotA.cpp \
     src/PotE.cpp \
-    src/Adjust.cpp
+    src/Adjust.cpp \
+    src/Utils.cpp
 
 # SRC_FILES = example.cpp
             

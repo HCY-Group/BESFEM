@@ -1,5 +1,6 @@
  #include "../include/CnA.hpp"
  #include "../inputs/Constants.hpp"
+ #include "../include/Utils.hpp"
  #include "mfem.hpp"
  #include <optional>
  
@@ -7,18 +8,11 @@
  using namespace std;
  
  CnA::CnA(Initialize_Geometry &geo, Domain_Parameters &para)
-     : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), pmesh(geo.parallelMesh.get()),
-      // fields
+     : ConcentrationBase(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), fem(geo.parfespace), utils(geo,para), pmesh(geo.parallelMesh.get()),
       Mub(fespace.get()), Mob(fespace.get()), RxA(fespace.get()), gtPsi(para.gtPsi), gtPsA(para.gtPsA),
-      // vectors
       Lp1(fespace.get()), Lp2(fespace.get()), MuV(fespace.get()),
       PsVc(fespace.get()), CpV0(fespace.get()), RHCp(fespace.get()), CpVn(fespace.get()),
-      // forms
-      Fct(fespace.get()), Fcb(fespace.get()),
-      // coefficients wrap long-lived fields
-      cDp(&Mob), cAp(&RxA),
-      // solver
-      MCH_solver(MPI_COMM_WORLD)   // value type solver
+      Fct(fespace.get()), Fcb(fespace.get()), cDp(&Mob), cAp(&RxA), MCH_solver(MPI_COMM_WORLD)   // value type solver
 
      
      {
@@ -55,42 +49,45 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
         return data(idx) + (cn - ticks(idx)) / 0.01 * (data(idx + 1) - data(idx));
     }
  
- void CnA::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
+ void CnA::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
     {
-        Concentrations::SetInitialConcentration(Cn, initial_value); // initial value: 2.02d-2
-        Concentrations::LithiationCalculation(Cn, psx, gtPsA); // Calculate the initial concentration based on the potential field
+        utils.SetInitialValue(Cn, initial_value); // initial value: 2.02d-2
+        utils.CalculateLithiation(Cn, psx, gtPsA); // Calculate the initial concentration based on the potential field
+        Xfr = utils.GetLithiation();
+
 
         mfem::GridFunctionCoefficient coef(&psx); 
-        SolverSteps::InitializeMassMatrix(coef, M_init); 
-        SolverSteps::FormSystemMatrix(M_init, boundary_dofs, MmatCH); // Form the system matrix from the bilinear form
+        fem.InitializeMassMatrix(coef, M_init); 
+        fem.FormSystemMatrix(M_init, boundary_dofs, MmatCH); // Form the system matrix from the bilinear form
         
         MCH_solver.iterative_mode = false; // Enable iterative mode for the solver
         MCH_prec.SetType(mfem::HypreSmoother::Jacobi); // Configure the preconditioner using a Jacobi smoother
-        SolverSteps::SolverConditions(MmatCH, MCH_solver, MCH_prec); // Set up the solver conditions for the mass matrix
+        fem.SolverConditions(MmatCH, MCH_solver, MCH_prec); // Set up the solver conditions for the mass matrix
 
-        SolverSteps::InitializeStiffnessMatrix(cDp, Grad_MForm); // Initialize stiffness form for mobility
+        fem.InitializeStiffnessMatrix(cDp, Grad_MForm); // Initialize stiffness form for mobility
 
         mfem::ConstantCoefficient varE(Constants::gc/pow(Constants::dh, pmesh->Dimension())); // dx2 is in M matrix in MFEM, not in K matrix
-        SolverSteps::InitializeStiffnessMatrix(varE, Grad_EForm); // Initialize stiffness form for energy
+        fem.InitializeStiffnessMatrix(varE, Grad_EForm); // Initialize stiffness form for energy
 
-        SolverSteps::InitializeForceTerm(cAp, B_init);
+        fem.InitializeForceTerm(cAp, B_init);
         Fct = *B_init;
 
-        SolverSteps::FormLinearSystem(Grad_EForm, boundary_dofs, Cn, Fct, Grad_EM, X1v, Fcb); // Form the linear system for energy
-        SolverSteps::FormLinearSystem(Grad_MForm, boundary_dofs, Mub, Fct, Grad_MM, X1v, Fcb); // Form the linear system for mobility
+        fem.FormLinearSystem(Grad_EForm, boundary_dofs, Cn, Fct, Grad_EM, X1v, Fcb); // Form the linear system for energy
+        fem.FormLinearSystem(Grad_MForm, boundary_dofs, Mub, Fct, Grad_MM, X1v, Fcb); // Form the linear system for mobility
 
         psx.GetTrueDofs(PsVc); 
 
+
     }
  
- void CnA::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
+ void CnA::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
     {
-        Concentrations::CreateReaction(Rx, RxA, (1.0/Constants::rho_A));
+        utils.InitializeReaction(Rx, RxA, (1.0/Constants::rho_A));
         cAp.SetGridFunction(&RxA); // Set the reaction term coefficient for the force term
 
         // std::cout << "RxA Sum before: " << RxA.Sum() << std::endl;
 
-        SolverSteps::Update(B_init); // Update the force term with the current reaction term
+        fem.Update(B_init); // Update the force term with the current reaction term
         Fct = *B_init; // Move the updated force term to Fct
 
         // Tabulate the chemical potential and mobility values
@@ -113,8 +110,8 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
 
         // Update stiffness form with new mobility
         cDp.SetGridFunction(&Mob); // Set the mobility coefficient for the stiffness matrix
-        SolverSteps::Update(Grad_MForm);
-        SolverSteps::FormLinearSystem(Grad_MForm, boundary_dofs, Mub, Fct, Grad_MM, X1v, Fcb); // Form the linear system for updated chemical potential
+        fem.Update(Grad_MForm);
+        fem.FormLinearSystem(Grad_MForm, boundary_dofs, Mub, Fct, Grad_MM, X1v, Fcb); // Form the linear system for updated chemical potential
 
         Grad_MM.Mult(MuV, Lp2); // Lp2 = Grad_MM * MuV
         Lp2.Neg(); // Negate Lp2 to account for the negative Lap
@@ -140,5 +137,8 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
         // recover the GridFunction from the HypreParVector
         Cn.Distribute(CpV0); 
 
-        Concentrations::LithiationCalculation(Cn, psx, gtPsA); // Update the degree of lithiation based on the new concentration values
+        utils.CalculateLithiation(Cn, psx, gtPsA); // Update the degree of lithiation based on the new concentration values
+        Xfr = utils.GetLithiation();
+
+
     }

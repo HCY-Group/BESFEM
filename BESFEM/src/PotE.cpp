@@ -9,12 +9,14 @@
 #include "../include/CnE.hpp"
 #include <optional>
 #include "../include/SimTypes.hpp"
+#include <mpi.h>
 
-using sim::CellMode;
 
-PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc)
-    : Potentials(geo,para), geometry(geo), domain_parameters(para), boundary_conditions(bc), fespace(geo.parfespace), dbc_bdr(bc.dbc_bdr), gtPse(para.gtPse),
-    kpl(fespace.get()), RpE(fespace.get()), Dmp(fespace.get()), pE0(fespace.get()), ess_tdof_potE(bc.ess_tdof_list), phE_bc(fespace.get()), CeVn(fespace.get())
+// using sim::CellMode;
+
+PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc, sim::CellMode mode)
+    : PotentialBase(geo,para), geometry(geo), domain_parameters(para), boundary_conditions(bc), utils(geo,para), fespace(geo.parfespace), fem(geo.parfespace), dbc_bdr(bc.dbc_bdr), gtPse(para.gtPse),
+    kpl(fespace.get()), RpE(fespace.get()), Dmp(fespace.get()), pE0(fespace.get()), ess_tdof_potE(bc.ess_tdof_list), phE_bc(fespace.get()), CeVn(fespace.get()), mode_(mode)
     
     {
     cgPE_solver = mfem::CGSolver(MPI_COMM_WORLD); // Initialize the conjugate gradient solver for potential
@@ -44,46 +46,45 @@ PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions
 
     }
 
-#include <mpi.h>
 
-void PotE::Initialize(CellMode mode, mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx)
+void PotE::SetupField(mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx)
 {
-    if(mode == CellMode::HALF){
+    if(mode_ == sim::CellMode::HALF){
         std::cout << "Initializing PotE for Half Cell" << std::endl;
 
         BvE = initial_value; // Set the boundary value.
-        Potentials::SetInitialPotentials(ph, BvE); // Initialize potentials
+        utils.SetInitialValue(ph, BvE); // Initialize potentials
 
-        SolverSteps::InitializeStiffnessMatrix(cKe, Kl2); // Initialize the stiffness matrix
+        fem.InitializeStiffnessMatrix(cKe, Kl2); // Initialize the stiffness matrix
 
         mfem::ConstantCoefficient dbc_potE_Coef(BvE); // Coefficient for Dirichlet boundary conditions
         ph.ProjectBdrCoefficient(dbc_potE_Coef, dbc_bdr); // Apply Dirichlet boundary conditions 
 
         fespace->GetEssentialTrueDofs(dbc_bdr, ess_tdof_potE); // Get essential true degrees of freedom for Dirichlet boundary conditions
 
-        SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, ph, B1t, Kml, X1v, B1v); // Assemble the linear system
+        fem.FormLinearSystem(Kl2, ess_tdof_potE, ph, B1t, Kml, X1v, B1v); // Assemble the linear system
 
         Mpe = std::make_unique<mfem::HypreBoomerAMG>(Kml);  // builds hierarchy once
         Mpe->SetPrintLevel(0);
-        SolverSteps::SolverConditions(Kml, cgPE_solver, *Mpe); // Set up the solver conditions
+        fem.SolverConditions(Kml, cgPE_solver, *Mpe); // Set up the solver conditions
 
-        SolverSteps::InitializeForceTerm(cRe, Bl2); // Initialize the force term
-        SolverSteps::Update(Bl2); // Update the force term
+        fem.InitializeForceTerm(cRe, Bl2); // Initialize the force term
+        fem.Update(Bl2); // Update the force term
         Flt = *Bl2; // Move the force term
 
-        SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, ph, Flt, Kml, X1v, Flb); // Assemble the force term system
+        fem.FormLinearSystem(Kl2, ess_tdof_potE, ph, Flt, Kml, X1v, Flb); // Assemble the force term system
 
-        SolverSteps::InitializeStiffnessMatrix(cDm, Kl1); // Initialize the diffusivity matrix
-        SolverSteps::FormLinearSystem(Kl1, boundary_dofs, ph, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
+        fem.InitializeStiffnessMatrix(cDm, Kl1); // Initialize the diffusivity matrix
+        fem.FormLinearSystem(Kl1, boundary_dofs, ph, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
     }
 
-    else if (mode == CellMode::FULL){
+    else if (mode_ == sim::CellMode::FULL){
     
         BvE = initial_value; // Set the boundary value.
-        Potentials::SetInitialPotentials(ph, BvE); // Initialize potentials
+        utils.SetInitialValue(ph, BvE); // Initialize potentials
 
-        SolverSteps::InitializeStiffnessMatrix(cKe, Kl2); // Initialize the stiffness matrix
-        SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, ph, B1t, Kml, X1v, B1v); // Assemble the linear system FULL
+        fem.InitializeStiffnessMatrix(cKe, Kl2); // Initialize the stiffness matrix
+        fem.FormLinearSystem(Kl2, ess_tdof_potE, ph, B1t, Kml, X1v, B1v); // Assemble the linear system FULL
 
         Mpe = std::make_unique<mfem::HypreBoomerAMG>(Kml);  // builds hierarchy once
         Mpe->SetPrintLevel(0);
@@ -97,16 +98,16 @@ void PotE::Initialize(CellMode mode, mfem::ParGridFunction &ph, double initial_v
         Bl2->Assemble();
         Flt = *Bl2; // Move the force term
 
-        SolverSteps::FormLinearSystem(Kl2, boundary_dofs, ph, Flt, Kml, X1v, Flb); // Assemble the force term system FULL
+        fem.FormLinearSystem(Kl2, boundary_dofs, ph, Flt, Kml, X1v, Flb); // Assemble the force term system FULL
 
-        SolverSteps::InitializeStiffnessMatrix(cDm, Kl1); // Initialize the diffusivity matrix
-        SolverSteps::FormLinearSystem(Kl1, boundary_dofs, ph, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
+        fem.InitializeStiffnessMatrix(cDm, Kl1); // Initialize the diffusivity matrix
+        fem.FormLinearSystem(Kl1, boundary_dofs, ph, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
     }
 }
 
-void PotE::TimeStep(CellMode mode, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
+void PotE::AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential)
 {
-    if(mode == CellMode::HALF){
+    if(mode_ == sim::CellMode::HALF){
 
         for (int vi = 0; vi < nV; vi++){
             dffe = exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi)); // Compute diffusivity factor
@@ -114,18 +115,18 @@ void PotE::TimeStep(CellMode mode, mfem::ParGridFunction &Cn, mfem::ParGridFunct
             kpl(vi) = psx(vi) * tc2 * Constants::D0 * dffe * Cn(vi);
         }
 
-        SolverSteps::Update(Kl1); // Update the diffusivity matrix
-        SolverSteps::FormLinearSystem(Kl1, boundary_dofs, potential, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
+        fem.Update(Kl1); // Update the diffusivity matrix
+        fem.FormLinearSystem(Kl1, boundary_dofs, potential, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
 
         Cn.GetTrueDofs(CeVn); // Get the true degrees of freedom for concentration
         Kdm.Mult(CeVn, LpCe); 
 
-        SolverSteps::Update(Kl2); // Update the conductivity matrix
+        fem.Update(Kl2); // Update the conductivity matrix
 
         mfem::ConstantCoefficient dbc_potE_Coef(BvE); // Coefficient for Dirichlet boundary conditions
         potential.ProjectBdrCoefficient(dbc_potE_Coef, dbc_bdr); // Apply Dirichlet boundary conditions
 
-        SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system
+        fem.FormLinearSystem(Kl2, ess_tdof_potE, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system
 
         Mpe->SetOperator(Kml); // Set the operator for the preconditioner
         cgPE_solver.SetPreconditioner(*Mpe);
@@ -133,7 +134,7 @@ void PotE::TimeStep(CellMode mode, mfem::ParGridFunction &Cn, mfem::ParGridFunct
 
     }
 
-    if(mode == CellMode::FULL){
+    if(mode_ == sim::CellMode::FULL){
 
         for (int vi = 0; vi < nV; vi++){
             dffe = exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi)); // Compute diffusivity factor
@@ -144,7 +145,7 @@ void PotE::TimeStep(CellMode mode, mfem::ParGridFunction &Cn, mfem::ParGridFunct
         cDm.SetGridFunction(&Dmp);
         Kl1->Update();
         Kl1->Assemble();
-        SolverSteps::FormLinearSystem(Kl1, boundary_dofs, potential, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
+        fem.FormLinearSystem(Kl1, boundary_dofs, potential, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
 
         Cn.GetTrueDofs(CeVn); // Get the true degrees of freedom for concentration
         Kdm.Mult(CeVn, LpCe); 
@@ -153,7 +154,7 @@ void PotE::TimeStep(CellMode mode, mfem::ParGridFunction &Cn, mfem::ParGridFunct
         Kl2->Update();
         Kl2->Assemble();
 
-        SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, potential, Flt, Kml, X1v, Flb); // Assemble the conductivity matrix system FULL
+        fem.FormLinearSystem(Kl2, ess_tdof_potE, potential, Flt, Kml, X1v, Flb); // Assemble the conductivity matrix system FULL
 
         Mpe->SetOperator(Kml); // Set the operator for the preconditioner
         cgPE_solver.SetPreconditioner(*Mpe);
@@ -163,7 +164,7 @@ void PotE::TimeStep(CellMode mode, mfem::ParGridFunction &Cn, mfem::ParGridFunct
 }
 
 
-void PotE::Advance(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
+void PotE::UpdatePotential(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
 {  
     RpE = Rx2;
     RpE += Rx1;
@@ -189,11 +190,11 @@ void PotE::Advance(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem:
     cgPE_solver.Mult(RHSl, Xe0); // Solve for the error term
 
     phx.Distribute(Xe0); // Distribute the updated values
-    Potentials::ComputeGlobalError(pE0, phx, psx, gerror, gtPse); // Compute global error
+    utils.CalculateGlobalError(pE0, phx, psx, gerror, gtPse); // Compute global error
 
 }
 
-void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
+void PotE::UpdatePotential(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
 {
     RpE = Rx;
     RpE.Neg();
@@ -204,7 +205,7 @@ void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
     mfem::ConstantCoefficient dbc_potE_Coef(BvE); // Coefficient for Dirichlet boundary conditions
     phx.ProjectBdrCoefficient(dbc_potE_Coef, dbc_bdr); // Apply Dirichlet boundary conditions
     
-    SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, phx, Flt, Kml, X1v, Flb); // Assemble the force term system
+    fem.FormLinearSystem(Kl2, ess_tdof_potE, phx, Flt, Kml, X1v, Flb); // Assemble the force term system
 
     RHSl = Flb;
     RHSl += LpCe;
@@ -216,7 +217,7 @@ void PotE::Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::
 
     phx.Distribute(Xe0); // Distribute the updated values
 
-    Potentials::ComputeGlobalError(pE0, phx, psx, gerror, gtPse); // Compute global error
+    utils.CalculateGlobalError(pE0, phx, psx, gerror, gtPse); // Compute global error
 }
 
 void PotE::ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {
@@ -259,7 +260,7 @@ void PotE::ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunct
 
 
 
-void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential, mfem::HypreParVector &CeVn)
+void PotE::AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential, mfem::HypreParVector &CeVn)
 {
     myid = mfem::Mpi::WorldRank();
 
@@ -272,11 +273,11 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
         kpl(vi) = psx(vi) * tc2 * Constants::D0 * dffe * Cn(vi);
     }
 
-    // SolverSteps::Update(Kl1); // Update the diffusivity matrix
+    // fem.Update(Kl1); // Update the diffusivity matrix
     cDm.SetGridFunction(&Dmp);
     Kl1->Update();
     Kl1->Assemble();
-    SolverSteps::FormLinearSystem(Kl1, boundary_dofs, potential, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
+    fem.FormLinearSystem(Kl1, boundary_dofs, potential, B1t, Kdm, X1v, B1v); // Assemble the diffusivity matrix system
 
     // std::cout << "boundary_dofs size: " << boundary_dofs.Size() << " on rank " << myid << std::endl;
 
@@ -284,7 +285,7 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
     Kdm.Mult(CeVn, LpCe); 
 
 
-    // SolverSteps::Update(Kl2); // Update the conductivity matrix
+    // fem.Update(Kl2); // Update the conductivity matrix
     cKe.SetGridFunction(&kpl);
     Kl2->Update();
     Kl2->Assemble();
@@ -296,9 +297,9 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 
     // mfem::ConstantCoefficient dbc_potE_Coef(BvE); // Coefficient for Dirichlet boundary conditions HALF
     // potential.ProjectBdrCoefficient(dbc_potE_Coef, dbc_bdr); // Apply Dirichlet boundary conditions HALF
-    // SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_potE, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system HALF
+    // fem.FormLinearSystem(Kl2, ess_tdof_list_potE, potential, B1t, Kml, X1v, B1v); // Assemble the conductivity matrix system HALF
 
-    SolverSteps::FormLinearSystem(Kl2, ess_tdof_potE, potential, Flt, Kml, X1v, Flb); // Assemble the conductivity matrix system FULL
+    fem.FormLinearSystem(Kl2, ess_tdof_potE, potential, Flt, Kml, X1v, Flb); // Assemble the conductivity matrix system FULL
 
 
     Mpe->SetOperator(Kml); // Set the operator for the preconditioner
@@ -319,7 +320,7 @@ void PotE::TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem:
 //     mfem::ConstantCoefficient dbc_potE_Coef(BvE); // Coefficient for Dirichlet boundary conditions
 //     phx.ProjectBdrCoefficient(dbc_potE_Coef, dbc_bdr); // Apply Dirichlet boundary conditions
     
-//     SolverSteps::FormLinearSystem(Kl2, ess_tdof_list_potE, phx, Flt, Kml, X1v, Flb); // Assemble the force term system
+//     fem.FormLinearSystem(Kl2, ess_tdof_list_potE, phx, Flt, Kml, X1v, Flb); // Assemble the force term system
 
 
 //     RHSl = Flb;

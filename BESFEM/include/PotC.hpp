@@ -32,7 +32,7 @@ extern double BvC;
  * related to particle potentials, including initialization, time-stepping,
  * and global error calculations
  */
-class PotC : public Potentials {
+class PotC : public PotentialBase {
 
 
 
@@ -50,6 +50,9 @@ public:
     Initialize_Geometry &geometry; ///< Geometry/mesh handler
     Domain_Parameters &domain_parameters;  ///< Domain parameters
     BoundaryConditions &boundary_conditions;
+    FEMOperators fem;
+    Utils utils;
+
 
 
     double BvC; ///< Boundary value for particle potential
@@ -60,7 +63,7 @@ public:
      * @param ph Particle potential grid function
      * @param initial_value Initial potential value
      */
-    void Initialize(mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx);
+    void SetupField(mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx);
 
     /**
      * @brief Performs time-stepping for the particle potential
@@ -68,7 +71,7 @@ public:
      * @param psx Psi potential field
      * @param phx Particle potential field
      */
-    void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
+    void AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
     
     
     /**
@@ -78,7 +81,7 @@ public:
      * @param psx       Psi phase-field mask.
      * @param potential Particle potential field (solution, in/out).
      */
-    void Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
+    void UpdatePotential(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
 
 
 

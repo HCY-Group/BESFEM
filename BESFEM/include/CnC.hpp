@@ -6,41 +6,41 @@
 class Initialize_Geometry;
 class Domain_Parameters;
 
-/**
- * @class CnC
- * @brief Derived class implementing particle concentration models for battery simulations.
- *
- * This class provides methods for initializing particle concentrations, 
- * performing time-stepping operations, and calculating reaction-related properties.
- */
-class CnC : public Concentrations {
+// /**
+//  * @class CnC
+//  * @brief Derived class implementing particle concentration models for battery simulations.
+//  *
+//  * This class provides methods for initializing particle concentrations, 
+//  * performing time-stepping operations, and calculating reaction-related properties.
+//  */
+class CnC : public ConcentrationBase {
 
 public:
 
-    /**
-     * @brief Constructor for the CnC class
-     * @param pm Pointer to the parallel mesh
-     * @param fe Pointer to the finite element space
-     * @param mh Reference to the mesh handler
-     */
+    // /**
+    //  * @brief Constructor for the CnC class
+    //  * @param pm Pointer to the parallel mesh
+    //  * @param fe Pointer to the finite element space
+    //  * @param mh Reference to the mesh handler
+    //  */
     CnC(Initialize_Geometry &geo, Domain_Parameters &para);
 
 
-    /**
-     * @brief Initializes particle concentration values and solver components
-     * @param Cn Particle concentration grid function
-     * @param initial_value Initial concentration value
-     * @param psx Potential field grid function
-     */
-    void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
+    // /**
+    //  * @brief Initializes particle concentration values and solver components
+    //  * @param Cn Particle concentration grid function
+    //  * @param initial_value Initial concentration value
+    //  * @param psx Potential field grid function
+    //  */
+    void SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
 
-    /**
-     * @brief Performs a single time step for particle concentration updates
-     * @param Rx Reaction grid function
-     * @param Cn Particle concentration grid function
-     * @param psx Potential field grid function
-     */
-    void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+    // /**
+    //  * @brief Performs a single time step for particle concentration updates
+    //  * @param Rx Reaction grid function
+    //  * @param Cn Particle concentration grid function
+    //  * @param psx Potential field grid function
+    //  */
+    void UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
 
 
@@ -49,6 +49,10 @@ private:
     Initialize_Geometry &geometry;
     Domain_Parameters &domain_parameters;
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
+    FEMOperators fem;
+    Utils utils;
+
+
 
     mfem::ParGridFunction RxC; ///< Pointer to a grid function storing reaction values
 

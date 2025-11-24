@@ -35,7 +35,7 @@ extern double BvE;
  * - Handles Dirichlet boundary conditions on marked boundaries.
  * - Provides time-stepping helpers and residual/error evaluation.
  */
-class PotE : public Potentials {
+class PotE : public PotentialBase {
 
 public:
 
@@ -44,11 +44,16 @@ public:
      * @param geo  Geometry/space container (mesh, FESpaces, BC markers).
      * @param para Domain/physics parameters (constants, totals, dt).
      */
-    PotE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc);
+    PotE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc, sim::CellMode mode);
 
     Initialize_Geometry &geometry; ///< Reference to geometry initialization
     Domain_Parameters &domain_parameters; ///< Reference to domain parameters
     BoundaryConditions &boundary_conditions;
+    sim::CellMode mode_;
+    FEMOperators fem;
+    Utils utils;
+
+
 
 
     double BvE; ///< Boundary value for electrolyte potential
@@ -63,7 +68,20 @@ public:
      * @param initial_value Initial scalar value for the potential field.
      * @param psx           Phase mask ψ_E used for weighting/BCs.
      */
-    void Initialize(sim::CellMode mode, mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
+    void SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
+
+    // /**
+    //  * @brief Advance electrolyte potential for one step (assemble/solve).
+    //  *
+    //  * Uses current concentration and phase mask to update operators and solve
+    //  * for the electrolyte potential.
+    //  *
+    //  * @param Cn        Electrolyte concentration field (input).
+    //  * @param psx       Phase mask ψ_E (input).
+    //  * @param potential Electrolyte potential grid function (in/out).
+    //  * @param CeVn      True-DoF concentration vector (input), for coupling.
+    //  */
+    void AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential, mfem::HypreParVector &CeVn);
 
     /**
      * @brief Advance electrolyte potential for one step (assemble/solve).
@@ -74,21 +92,8 @@ public:
      * @param Cn        Electrolyte concentration field (input).
      * @param psx       Phase mask ψ_E (input).
      * @param potential Electrolyte potential grid function (in/out).
-     * @param CeVn      True-DoF concentration vector (input), for coupling.
      */
-    void TimeStep(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential, mfem::HypreParVector &CeVn);
-
-    /**
-     * @brief Advance electrolyte potential for one step (assemble/solve).
-     *
-     * Uses current concentration and phase mask to update operators and solve
-     * for the electrolyte potential.
-     *
-     * @param Cn        Electrolyte concentration field (input).
-     * @param psx       Phase mask ψ_E (input).
-     * @param potential Electrolyte potential grid function (in/out).
-     */
-    void TimeStep(sim::CellMode mode, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
+    void AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
     
     
     
@@ -100,7 +105,7 @@ public:
      * @param psx    Phase mask ψ_E (input).
      * @param gerror Global error/residual (output).
      */
-    void Advance(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
+    void UpdatePotential(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
 
 
     /**
@@ -111,7 +116,7 @@ public:
      * @param psx    Phase mask ψ_E (input).
      * @param gerror Global error/residual (output).
      */
-    void Advance(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
+    void UpdatePotential(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
    
 
 private:

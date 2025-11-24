@@ -6,38 +6,37 @@
 #include "mfem.hpp"
 #include <optional>
 
-using sim::CellMode;
 
-CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc)
-    : Concentrations(geo, para), geometry(geo), domain_parameters(para), boundary_conditions(bc), fespace(geo.parfespace), nbc_bdr(bc.nbc_bdr),
+CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc, sim::CellMode mode)
+    : ConcentrationBase(geo, para), geometry(geo), domain_parameters(para), utils(geo, para), boundary_conditions(bc), fespace(geo.parfespace), nbc_bdr(bc.nbc_bdr), fem(geo.parfespace),
       De(fespace.get()), Rxe(fespace.get()), PeR(fespace.get()), cDe(&De), cAe(&Rxe), matCoef_R(&PeR),
       nbcCoef(0.0), Fet(fespace.get()), Me_solver(MPI_COMM_WORLD),
       CeV0(fespace.get()), RHCe(fespace.get()), CeVn(fespace.get()),
-      Feb(fespace.get()), X1v(fespace.get())
+      Feb(fespace.get()), X1v(fespace.get()), mode_(mode)
     
     {}
 
 
-void CnE::Initialize(CellMode mode, mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
+void CnE::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
 
-    if(mode == CellMode::HALF){
+    if(mode_ == sim::CellMode::HALF){
         std::cout << "Initializing CnE for Half Cell" << std::endl;
 
-        Concentrations::SetInitialConcentration(Cn, initial_value);
+        utils.SetInitialValue(Cn, initial_value);
 
         // Assemble mass matrix
         mfem::GridFunctionCoefficient coef(&psx);
-        SolverSteps::InitializeMassMatrix(coef, Me_init); 
-        SolverSteps::FormSystemMatrix(Me_init, boundary_dofs, Mmate); 
+        fem.InitializeMassMatrix(coef, Me_init); 
+        fem.FormSystemMatrix(Me_init, boundary_dofs, Mmate); 
         
         // Configure solver
         Me_solver.iterative_mode = false;
         Me_prec.SetType(mfem::HypreSmoother::Jacobi); // Configure the preconditioner using a Jacobi smoother
-        SolverSteps::SolverConditions(Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
+        fem.SolverConditions(Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
 
         // Initialize stiffness operator (diffusivity)
-        SolverSteps::InitializeStiffnessMatrix(cDe, Ke2); // Initialize
+        fem.InitializeStiffnessMatrix(cDe, Ke2); // Initialize
 
         // Build boundary coefficient (Neumann BC weighting)
         PeR = psx;
@@ -51,26 +50,26 @@ void CnE::Initialize(CellMode mode, mfem::ParGridFunction &Cn, double initial_va
         Be_init->Assemble();
         Fet = *Be_init;
 
-        SolverSteps::FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
+        fem.FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
     }
 
-    else if(mode == CellMode::FULL){
+    else if(mode_ == sim::CellMode::FULL){
         std::cout << "Initializing CnE for Full Cell" << std::endl;
 
-        Concentrations::SetInitialConcentration(Cn, initial_value);
+        utils.SetInitialValue(Cn, initial_value);
 
         // Assemble mass matrix
         mfem::GridFunctionCoefficient coef(&psx);
-        SolverSteps::InitializeMassMatrix(coef, Me_init); 
-        SolverSteps::FormSystemMatrix(Me_init, boundary_dofs, Mmate); 
+        fem.InitializeMassMatrix(coef, Me_init); 
+        fem.FormSystemMatrix(Me_init, boundary_dofs, Mmate); 
         
         // Configure solver
         Me_solver.iterative_mode = false; // Enable iterative mode for the solver
         Me_prec.SetType(mfem::HypreSmoother::Jacobi); // Configure the preconditioner using a Jacobi smoother
-        SolverSteps::SolverConditions(Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
+        fem.SolverConditions(Me_solver, Me_prec); // Set up the solver conditions for the mass matrix
 
         // Initialize stiffness operator (diffusivity)
-        SolverSteps::InitializeStiffnessMatrix(cDe, Ke2); // Initialize
+        fem.InitializeStiffnessMatrix(cDe, Ke2); // Initialize
 
         // Build force term (domain + boundary contributions)
         Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
@@ -78,16 +77,16 @@ void CnE::Initialize(CellMode mode, mfem::ParGridFunction &Cn, double initial_va
         Be_init->Assemble(); 
         Fet = *Be_init;
 
-        SolverSteps::FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
+        fem.FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
     }
 }
 
-void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
+void CnE::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
     {
         // Assemble reaction source term
-        Concentrations::CreateReaction(Rx, Rxe, (-1.0 * Constants::t_minus));
+        utils.InitializeReaction(Rx, Rxe, (-1.0 * Constants::t_minus));
 		cAe.SetGridFunction(&Rxe);
-        Concentrations::TotalReaction(Rxe, eCrnt);
+        utils.CalculateReactionInfx(Rxe, eCrnt);
 
         nbcCoef.constant = infx;
 		mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
@@ -107,8 +106,8 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
 		cDe.SetGridFunction(&De);
 
         // Update stiffness operator
-        SolverSteps::Update(Ke2); // Update the stiffness matrix with the new diffusivity coefficient
-        SolverSteps::FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the updated values
+        fem.Update(Ke2); // Update the stiffness matrix with the new diffusivity coefficient
+        fem.FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the updated values
    		Feb *= Constants::dt;
 
         // Crank-Nicolson matrices	
@@ -130,10 +129,10 @@ void CnE::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     }	
 
 
-void CnE::TimeStep(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
+void CnE::UpdateConcentration(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
     {
         // Assemble reaction source term
-        Concentrations::CreateReaction(RxA, RxC, Rxe, (-1.0 * Constants::t_minus));
+        utils.InitializeReaction(RxA, RxC, Rxe, (-1.0 * Constants::t_minus));
 		cAe.SetGridFunction(&Rxe);
 
         Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
@@ -150,10 +149,10 @@ void CnE::TimeStep(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem:
 		cDe.SetGridFunction(&De);
 
         // Update stiffness operator
-        // SolverSteps::Update(Ke2); // Update the stiffness matrix with the new diffusivity coefficient
+        // fem.Update(Ke2); // Update the stiffness matrix with the new diffusivity coefficient
         Ke2->Update();
         Ke2->Assemble();
-        SolverSteps::FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the updated values
+        fem.FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the updated values
    		Feb *= Constants::dt;
 
         // Crank-Nicolson matrices	
@@ -173,3 +172,37 @@ void CnE::TimeStep(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem:
         // Recover updated concentration into GridFunction
 	    Cn.Distribute(CeV0); 
     }	
+
+
+void CnE::SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {
+
+    CeC = 0.0; // Initialize total salt concentration to zero
+    
+    // Temporary grid function to hold the product of concentration and potential fields
+   static mfem::ParGridFunction CeT(fespace.get());
+
+    // Calculate the product of concentration and potential for each element
+    CeT = Cn;
+    CeT *= psx;
+    
+    // Loop through all elements to calculate the average concentration for each element
+    for (int ei = 0; ei < nE; ei++){
+        CeT.GetNodalValues(ei,VtxVal); // Retrieve the nodal values for the current element 
+        double val = 0.0;
+        for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}        
+        EAvg(ei) = val/nC; // Compute the average concentration for the element
+        // Update the total salt concentration by adding the weighted average for the element
+        CeC += EAvg(ei)*EVol(ei); 
+    }
+    
+    // Perform a global reduction to sum up the salt concentration across all MPI processes
+    MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
+    
+    // Compute the average concentration across the entire electrolyte
+    CeAvg = gCeC/gtPse;	
+
+    // Adjust the concentration field by normalizing the average concentration with the initial value
+    Cn -= (CeAvg-Ce0);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+}

@@ -4,91 +4,99 @@
 #include "Concentrations_Base.hpp"
 #include "SimTypes.hpp"
 
-/**
- * @file CnE.hpp
- * @brief Electrolyte concentration (CnE) solver for battery simulations.
- *
- * Provides initialization and Crank–Nicolson time-stepping for the electrolyte
- * concentration field using MFEM/Hypre operators, reaction coupling, and
- * Neumann boundary conditions on a marked boundary set.
- */
+// /**
+//  * @file CnE.hpp
+//  * @brief Electrolyte concentration (CnE) solver for battery simulations.
+//  *
+//  * Provides initialization and Crank–Nicolson time-stepping for the electrolyte
+//  * concentration field using MFEM/Hypre operators, reaction coupling, and
+//  * Neumann boundary conditions on a marked boundary set.
+//  */
 
 class Initialize_Geometry;
 class Domain_Parameters;
 class BoundaryConditions;
+class CellMode;
 
-/**
- * @defgroup concentrations Concentration Modules
- * @brief Classes that advance concentration fields.
- * @{
- */
+// /**
+//  * @defgroup concentrations Concentration Modules
+//  * @brief Classes that advance concentration fields.
+//  * @{
+//  */
 
 
-/**
- * @class CnE
- * @brief Electrolyte concentration solver (electrolyte phase).
- * @ingroup concentrations
- *
- * @details
- * - Assembles mass/stiffness operators in parallel (MFEM/Hypre).
- * - Handles domain and Neumann boundary forcing terms.
- * - Uses a Crank–Nicolson update for time integration.
- */
-class CnE : public Concentrations {
+// /**
+//  * @class CnE
+//  * @brief Electrolyte concentration solver (electrolyte phase).
+//  * @ingroup concentrations
+//  *
+//  * @details
+//  * - Assembles mass/stiffness operators in parallel (MFEM/Hypre).
+//  * - Handles domain and Neumann boundary forcing terms.
+//  * - Uses a Crank–Nicolson update for time integration.
+//  */
+class CnE : public ConcentrationBase {
 public:
 
-    /**
-     * @brief Construct the electrolyte solver.
-     * @param geo  Geometry/space container (mesh, FESpace, boundary markers).
-     * @param para Domain/physics parameters (time step, constants, etc.).
-     */
-    CnE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc);
+    // /**
+    //  * @brief Construct the electrolyte solver.
+    //  * @param geo  Geometry/space container (mesh, FESpace, boundary markers).
+    //  * @param para Domain/physics parameters (time step, constants, etc.).
+    //  */
+    CnE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc, sim::CellMode mode);
 
-    /**
-     * @brief Initialize solver and assemble operators.
-     *
-     * Sets the initial concentration, assembles mass and stiffness operators,
-     * prepares boundary/domain source terms, and configures solver and preconditioner.
-     *
-     * @param Cn            Electrolyte concentration grid function (in/out).
-     * @param initial_value Initial scalar value used for \p Cn.
-     * @param psx           Phase field ψ used for masking/weights/BCs.
-     */
-    void Initialize(sim::CellMode mode, mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
+    // /**
+    //  * @brief Initialize solver and assemble operators.
+    //  *
+    //  * Sets the initial concentration, assembles mass and stiffness operators,
+    //  * prepares boundary/domain source terms, and configures solver and preconditioner.
+    //  *
+    //  * @param Cn            Electrolyte concentration grid function (in/out).
+    //  * @param initial_value Initial scalar value used for \p Cn.
+    //  * @param psx           Phase field ψ used for masking/weights/BCs.
+    //  */
+    void SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
 
-    /**
-     * @brief Advance the electrolyte concentration by one timestep.
-     *
-     * Performs Crank–Nicolson assembly (left/right operators), applies
-     * updated reaction and Neumann BC contributions, and solves for the
-     * new true-DoF concentration vector before distributing back to \p Cn.
-     *
-     * @param Rx  Reaction field (input; used to assemble Rxe).
-     * @param Cn  Electrolyte concentration grid function (in/out).
-     * @param psx Phase field ψ used to mask diffusivity and BCs.
-     */
-    void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+    // /**
+    //  * @brief Advance the electrolyte concentration by one timestep.
+    //  *
+    //  * Performs Crank–Nicolson assembly (left/right operators), applies
+    //  * updated reaction and Neumann BC contributions, and solves for the
+    //  * new true-DoF concentration vector before distributing back to \p Cn.
+    //  *
+    //  * @param Rx  Reaction field (input; used to assemble Rxe).
+    //  * @param Cn  Electrolyte concentration grid function (in/out).
+    //  * @param psx Phase field ψ used to mask diffusivity and BCs.
+    //  */
+    void UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
 
-    /**
-     * @brief Advance the electrolyte concentration by one timestep.
-     *
-     * Performs Crank–Nicolson assembly (left/right operators), applies
-     * updated reaction and Neumann BC contributions, and solves for the
-     * new true-DoF concentration vector before distributing back to \p Cn.
-     *
-     * @param RxC  Reaction field cathode (input; used to assemble Rxe).
-     * @param RxA  Reaction field anode (input; used to assemble Rxe).
-     * @param Cn  Electrolyte concentration grid function (in/out).
-     * @param psx Phase field ψ used to mask diffusivity and BCs.
-     */
-    void TimeStep(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+    // /**
+    //  * @brief Advance the electrolyte concentration by one timestep.
+    //  *
+    //  * Performs Crank–Nicolson assembly (left/right operators), applies
+    //  * updated reaction and Neumann BC contributions, and solves for the
+    //  * new true-DoF concentration vector before distributing back to \p Cn.
+    //  *
+    //  * @param RxC  Reaction field cathode (input; used to assemble Rxe).
+    //  * @param RxA  Reaction field anode (input; used to assemble Rxe).
+    //  * @param Cn  Electrolyte concentration grid function (in/out).
+    //  * @param psx Phase field ψ used to mask diffusivity and BCs.
+    //  */
+    void UpdateConcentration(mfem::ParGridFunction &RxC, mfem::ParGridFunction &RxA, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+
+    void SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
     // ---------- Geometry / spaces ----------
     Initialize_Geometry &geometry;                              ///< Geometry/mesh owner
     Domain_Parameters   &domain_parameters;                     ///< Domain/physics parameters
     BoundaryConditions   &boundary_conditions;
+    sim::CellMode mode_;
+
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace;       ///< Parallel FESpace
+    FEMOperators fem;
+    Utils utils;
+
     
 
     mfem::HypreParVector CeVn; ///< Concentration at next time step
@@ -99,6 +107,8 @@ public:
     std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef; ///< Product coefficient for boundary terms
     mfem::ConstantCoefficient nbcCoef; ///< Scalar coefficient in boundary term
     mfem::GridFunctionCoefficient matCoef_R; ///< Coefficient wrapper for PeR
+    mfem::Array<int> boundary_dofs; ///< Boundary degrees of freedom
+
 
 private:
 

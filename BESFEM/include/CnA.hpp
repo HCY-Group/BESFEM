@@ -17,64 +17,64 @@
 class Initialize_Geometry;
 class Domain_Parameters;
 
-/**
- * @defgroup concentrations Concentration Modules
- * @brief Classes that advance concentration fields in the simulation.
- * @{
- */
+// /**
+//  * @defgroup concentrations Concentration Modules
+//  * @brief Classes that advance concentration fields in the simulation.
+//  * @{
+//  */
 
-/**
- * @class CnA
- * @brief Cahn–Hilliard concentration solver (solid electrode phase).
- * @ingroup concentrations
- *
- * @details
- * Implements a Cahn–Hilliard update for the concentration field:
- * - Builds/maintains mass and stiffness operators in parallel (MFEM/Hypre).
- * - Uses grid-function coefficients for mobility and reaction terms.
- * - Pulls chemical potential and mobility from tabulated data and linearly
- *   interpolates them per-DoF.
- *
- * Typical usage:
- * 1. Construct with geometry and domain parameters.
- * 2. Call Initialize() with the initial concentration and phase field \p psx.
- * 3. Repeatedly call TimeStep() each timestep.
- */
+// /**
+//  * @class CnA
+//  * @brief Cahn–Hilliard concentration solver (solid electrode phase).
+//  * @ingroup concentrations
+//  *
+//  * @details
+//  * Implements a Cahn–Hilliard update for the concentration field:
+//  * - Builds/maintains mass and stiffness operators in parallel (MFEM/Hypre).
+//  * - Uses grid-function coefficients for mobility and reaction terms.
+//  * - Pulls chemical potential and mobility from tabulated data and linearly
+//  *   interpolates them per-DoF.
+//  *
+//  * Typical usage:
+//  * 1. Construct with geometry and domain parameters.
+//  * 2. Call Initialize() with the initial concentration and phase field \p psx.
+//  * 3. Repeatedly call TimeStep() each timestep.
+//  */
 
-class CnA : public Concentrations {
+class CnA : public ConcentrationBase {
 public:
-    /**
-     * @brief Construct the Cahn–Hilliard concentration solver.
-     *
-     * @param geo  Geometry/space container (mesh, parallel FESpace, boundary DOFs).
-     * @param para Domain/physics parameters (time step, material scales, etc.).
-     */
+    // /**
+    //  * @brief Construct the Cahn–Hilliard concentration solver.
+    //  *
+    //  * @param geo  Geometry/space container (mesh, parallel FESpace, boundary DOFs).
+    //  * @param para Domain/physics parameters (time step, material scales, etc.).
+    //  */
     CnA(Initialize_Geometry &geo, Domain_Parameters &para);
 
-    /**
-     * @brief Assemble operators and prepare the solver.
-     *
-     * Sets the initial concentration value, computes initial lithiation from \p psx,
-     * assembles the mass matrix and stiffness operators, and configures the CG
-     * solver and preconditioner.
-     *
-     * @param Cn            Concentration field (solid) to initialize.
-     * @param initial_value Initial scalar value used for Cn before masking.
-     * @param psx           Phase field ψ (used for masking/region weighting).
-     */
-    void Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
+    // /**
+    //  * @brief Assemble operators and prepare the solver.
+    //  *
+    //  * Sets the initial concentration value, computes initial lithiation from \p psx,
+    //  * assembles the mass matrix and stiffness operators, and configures the CG
+    //  * solver and preconditioner.
+    //  *
+    //  * @param Cn            Concentration field (solid) to initialize.
+    //  * @param initial_value Initial scalar value used for Cn before masking.
+    //  * @param psx           Phase field ψ (used for masking/region weighting).
+    //  */
+    void SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
 
-    /**
-     * @brief Advance the concentration by one timestep (Cahn–Hilliard update).
-     *
-     * Uses tabulated \e μ(C) and \e M(C) (mobility) to build the linear systems,
-     * solves for the new concentration, and clamps void-region values.
-     *
-     * @param Rx  Reaction source field (input field used to assemble \e Rxc).
-     * @param Cn  Concentration field (in/out).
-     * @param psx Phase field ψ (masking/solid-region weighting).
-     */
-    void TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+    // /**
+    //  * @brief Advance the concentration by one timestep (Cahn–Hilliard update).
+    //  *
+    //  * Uses tabulated \e μ(C) and \e M(C) (mobility) to build the linear systems,
+    //  * solves for the new concentration, and clamps void-region values.
+    //  *
+    //  * @param Rx  Reaction source field (input field used to assemble \e Rxc).
+    //  * @param Cn  Concentration field (in/out).
+    //  * @param psx Phase field ψ (masking/solid-region weighting).
+    //  */
+    void UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
 
     
 private:
@@ -83,6 +83,10 @@ private:
     Domain_Parameters   &domain_parameters;                     ///< Domain/physics parameters
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace;       ///< Parallel FESpace 
     mfem::ParMesh *pmesh;                                       ///< Parallel mesh
+    FEMOperators fem;
+    Utils utils;
+
+
 
     // ---------- State fields (grid functions) ----------
     mfem::ParGridFunction Mub;   ///< Chemical potential field μ(C) 
@@ -133,17 +137,17 @@ private:
     double gtPsA = 0.0; ///< Global normalization for ψ (solid phase).
     double gtPsi = 0.0; ///< Global normalization for ψ (total).
 
-    /**
-     * @brief Linear interpolation utility for tabulated data.
-     *
-     * Bounds \p cn to (1e-6, 0.999999) and performs linear interpolation on
-     * the provided \p data using uniform tick spacing (0.01).
-     *
-     * @param cn    Concentration value in [0,1].
-     * @param ticks Tick vector (expected 0.00, 0.01, ..., 1.00).
-     * @param data  Data values aligned with \p ticks.
-     * @return Interpolated value at concentration \p cn.
-     */    
+    // /**
+    //  * @brief Linear interpolation utility for tabulated data.
+    //  *
+    //  * Bounds \p cn to (1e-6, 0.999999) and performs linear interpolation on
+    //  * the provided \p data using uniform tick spacing (0.01).
+    //  *
+    //  * @param cn    Concentration value in [0,1].
+    //  * @param ticks Tick vector (expected 0.00, 0.01, ..., 1.00).
+    //  * @param data  Data values aligned with \p ticks.
+    //  * @return Interpolated value at concentration \p cn.
+    //  */    
     double GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vector &data);
 
 

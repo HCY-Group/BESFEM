@@ -9,7 +9,7 @@
 using namespace std;
 
 CnC::CnC(Initialize_Geometry &geo, Domain_Parameters &para)
-    : Concentrations(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), gtPsC(para.gtPsC), gtPsi(para.gtPsi),
+    : ConcentrationBase(geo, para), geometry(geo), domain_parameters(para), fespace(geo.parfespace), fem(geo.parfespace), utils(geo,para), gtPsC(para.gtPsC), gtPsi(para.gtPsi),
     RxC(fespace.get()), Dp(fespace.get()), Mp_solver(MPI_COMM_WORLD), cAp(&RxC), cDp(&Dp), Fct(fespace.get()),
     PsVc(fespace.get()), CpV0(fespace.get()), RHCp(fespace.get()), CpVn(fespace.get())
     
@@ -23,41 +23,40 @@ CnC::CnC(Initialize_Geometry &geo, Domain_Parameters &para)
 
     }
 
-void CnC::Initialize(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
+void CnC::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
 {
-    Concentrations::SetInitialConcentration(Cn, initial_value);
-    Concentrations::LithiationCalculation(Cn, psx, gtPsC);
-
-    // Fct = mfem::ParLinearForm(fespace.get());
+    utils.SetInitialValue(Cn, initial_value);
+    utils.CalculateLithiation(Cn, psx, gtPsC);
+    Xfr = utils.GetLithiation();
 
 
     mfem::GridFunctionCoefficient coef(&psx);
-    SolverSteps::InitializeMassMatrix(coef, Mt);
-    SolverSteps::FormSystemMatrix(Mt, boundary_dofs, Mmatp);
+    fem.InitializeMassMatrix(coef, Mt);
+    fem.FormSystemMatrix(Mt, boundary_dofs, Mmatp);
 
     Mp_solver.iterative_mode = false; // Enable iterative mode for the solver
     Mp_prec.SetType(mfem::HypreSmoother::Jacobi); //
-    SolverSteps::SolverConditions(Mmatp, Mp_solver, Mp_prec); // Set up the solver conditions for the mass matrix
+    fem.SolverConditions(Mmatp, Mp_solver, Mp_prec); // Set up the solver conditions for the mass matrix
 
-    // SolverSteps::InitializeForceTerm(cAp, Bc2); // HALF
+    // fem.InitializeForceTerm(cAp, Bc2); // HALF
     // Fct = *Bc2; // Move the updated force term to Fct HALF
 
-    SolverSteps::InitializeStiffnessMatrix(cDp, Kc2); // Initialize stiffness form for particle potential HALF
+    fem.InitializeStiffnessMatrix(cDp, Kc2); // Initialize stiffness form for particle potential HALF
 
     psx.GetTrueDofs(PsVc); // Extract true degrees of freedom in the potential field
 
 }
 
-void CnC::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
+void CnC::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
 {
     // Compute the reaction field scaled by a constant factor
-    Concentrations::CreateReaction(Rx, RxC, (1.0/Constants::rho_C));
+    utils.InitializeReaction(Rx, RxC, (1.0/Constants::rho_C));
     cAp.SetGridFunction(&RxC); // Set the reaction term coefficient for the force term
 
     // std::cout << "RxC Sum before: " << RxC.Sum() << std::endl;
 
-    SolverSteps::InitializeForceTerm(cAp, Bc2);
-    SolverSteps::Update(Bc2); // Update the force term with the current reaction term
+    fem.InitializeForceTerm(cAp, Bc2);
+    fem.Update(Bc2); // Update the force term with the current reaction term
     Fct = *Bc2; // Move the updated force term to Fct
 
     for (int vi = 0; vi < nV; vi++){
@@ -66,8 +65,8 @@ void CnC::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     }
     cDp.SetGridFunction(&Dp); // Set the diffusivity coefficient for the stiffness matrix
     
-    SolverSteps::Update(Kc2); // Update the stiffness matrix with the current diffusivity coefficient
-    SolverSteps::FormLinearSystem(Kc2, boundary_dofs, Cn, Fct, Kmatp, X1v, Fcb); // Form the linear system for particle potential
+    fem.Update(Kc2); // Update the stiffness matrix with the current diffusivity coefficient
+    fem.FormLinearSystem(Kc2, boundary_dofs, Cn, Fct, Kmatp, X1v, Fcb); // Form the linear system for particle potential
     Fcb *= Constants::dt; // Scale the right-hand side vector by the time step
 
     Tmatp.reset(Add(1.0, Mmatp, -1.0* Constants::dt, Kmatp));
@@ -88,6 +87,8 @@ void CnC::TimeStep(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::P
     Cn.Distribute(CpVn);
 
     // Degree of Lithiation
-    Concentrations::LithiationCalculation(Cn, psx, gtPsC);
+    utils.CalculateLithiation(Cn, psx, gtPsC);
+    Xfr = utils.GetLithiation();
+
 
 }

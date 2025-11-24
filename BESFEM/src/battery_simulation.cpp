@@ -89,13 +89,13 @@ int main(int argc, char *argv[]) {
         CnP_together = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
 
         // always initialize electrolyte concentration & potential
-        electrolyte_concentration = std::make_unique<CnE>(geometry, domain_parameters, bc);
+        electrolyte_concentration = std::make_unique<CnE>(geometry, domain_parameters, bc, cfg.mode);
         CnE_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-        electrolyte_concentration->Initialize(cfg.mode, *CnE_gf, Constants::init_CnE, *domain_parameters.pse);
+        electrolyte_concentration->SetupField(*CnE_gf, Constants::init_CnE, *domain_parameters.pse);
 
-        electrolyte_potential = std::make_unique<PotE>(geometry, domain_parameters, bc);
+        electrolyte_potential = std::make_unique<PotE>(geometry, domain_parameters, bc, cfg.mode);
         phE_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-        electrolyte_potential->Initialize(cfg.mode, *phE_gf, Constants::init_BvE, *domain_parameters.pse);
+        electrolyte_potential->SetupField(*phE_gf, Constants::init_BvE, *domain_parameters.pse);
 
         if (cfg.mode == sim::CellMode::HALF) // HALF-CELL
         {
@@ -103,21 +103,21 @@ int main(int argc, char *argv[]) {
 
                 anode_concentration = std::make_unique<CnA>(geometry, domain_parameters);
                 CnA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-                anode_concentration->Initialize(*CnA_gf, Constants::init_CnA, *domain_parameters.psi);
+                anode_concentration->SetupField(*CnA_gf, Constants::init_CnA, *domain_parameters.psi);
 
                 anode_potential = std::make_unique<PotA>(geometry, domain_parameters, bc);
                 phA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-                anode_potential->Initialize(*phA_gf, Constants::init_BvA, *domain_parameters.psi);
+                anode_potential->SetupField(*phA_gf, Constants::init_BvA, *domain_parameters.psi);
 
             } else { // HALF-CATHODE
 
                 cathode_concentration = std::make_unique<CnC>(geometry, domain_parameters);
                 CnC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-                cathode_concentration->Initialize(*CnC_gf, Constants::init_CnC, *domain_parameters.psi);
+                cathode_concentration->SetupField(*CnC_gf, Constants::init_CnC, *domain_parameters.psi);
 
                 cathode_potential = std::make_unique<PotC>(geometry, domain_parameters, bc);
                 phC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-                cathode_potential->Initialize(*phC_gf, Constants::init_BvC, *domain_parameters.psi);
+                cathode_potential->SetupField(*phC_gf, Constants::init_BvC, *domain_parameters.psi);
 
             }
         } 
@@ -125,19 +125,19 @@ int main(int argc, char *argv[]) {
 
                 anode_concentration = std::make_unique<CnA>(geometry, domain_parameters);
                 CnA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-                anode_concentration->Initialize(*CnA_gf, Constants::init_CnA, *domain_parameters.psA);
+                anode_concentration->SetupField(*CnA_gf, Constants::init_CnA, *domain_parameters.psA);
 
                 anode_potential = std::make_unique<PotA>(geometry, domain_parameters, bc);
                 phA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-                anode_potential->Initialize(*phA_gf, Constants::init_BvA, *domain_parameters.psA);
+                anode_potential->SetupField(*phA_gf, Constants::init_BvA, *domain_parameters.psA);
 
                 cathode_concentration = std::make_unique<CnC>(geometry, domain_parameters);
                 CnC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-                cathode_concentration->Initialize(*CnC_gf, Constants::init_CnC, *domain_parameters.psC);
+                cathode_concentration->SetupField(*CnC_gf, Constants::init_CnC, *domain_parameters.psC);
 
                 cathode_potential = std::make_unique<PotC>(geometry, domain_parameters, bc);
                 phC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-                cathode_potential->Initialize(*phC_gf, Constants::init_BvC, *domain_parameters.psC);
+                cathode_potential->SetupField(*phC_gf, Constants::init_BvC, *domain_parameters.psC);
         }
 
         // Initialize Reaction
@@ -189,15 +189,15 @@ int main(int argc, char *argv[]) {
                     // ===============================  ANODE HALF-CELL  ==========================
                     // ============================================================================
 
-                    anode_concentration->TimeStep(*Rxn_gf, *CnA_gf, *domain_parameters.psi);
-                    electrolyte_concentration->TimeStep(*Rxn_gf, *CnE_gf, *domain_parameters.pse);
+                    anode_concentration->UpdateConcentration(*Rxn_gf, *CnA_gf, *domain_parameters.psi);
+                    electrolyte_concentration->UpdateConcentration(*Rxn_gf, *CnE_gf, *domain_parameters.pse);
 
                     if (t > 0 && t % 500 == 0){
                         electrolyte_concentration->SaltConservation(*CnE_gf, *domain_parameters.pse);
                     }
 
-                    anode_potential->TimeStep(*CnA_gf, *domain_parameters.psi, *phA_gf);
-                    electrolyte_potential->TimeStep(cfg.mode, *CnE_gf, *domain_parameters.pse, *phE_gf);
+                    anode_potential->AssembleSystem(*CnA_gf, *domain_parameters.psi, *phA_gf);
+                    electrolyte_potential->AssembleSystem(*CnE_gf, *domain_parameters.pse, *phE_gf);
 
                     reaction->TableExchangeCurrentDensity(*CnA_gf);
 
@@ -206,8 +206,8 @@ int main(int argc, char *argv[]) {
 
                     while (globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8) {
                         reaction->ButlerVolmer(*Rxn_gf, *CnA_gf, *CnE_gf, *phA_gf, *phE_gf);
-                        anode_potential->Advance(*Rxn_gf, *phA_gf, *domain_parameters.psi, globalerror_P);
-                        electrolyte_potential->Advance(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+                        anode_potential->UpdatePotential(*Rxn_gf, *phA_gf, *domain_parameters.psi, globalerror_P);
+                        electrolyte_potential->UpdatePotential(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
                     }
 
                 } else {
@@ -216,16 +216,16 @@ int main(int argc, char *argv[]) {
                     // ==============================  CATHODE HALF-CELL  =========================
                     // ============================================================================    
 
-                    cathode_concentration->TimeStep(*Rxn_gf, *CnC_gf, *domain_parameters.psi);
-                    electrolyte_concentration->TimeStep(*Rxn_gf, *CnE_gf, *domain_parameters.pse);
+                    cathode_concentration->UpdateConcentration(*Rxn_gf, *CnC_gf, *domain_parameters.psi);
+                    electrolyte_concentration->UpdateConcentration(*Rxn_gf, *CnE_gf, *domain_parameters.pse);
 
                     if (t > 0 && t % 500 == 0){
                         electrolyte_concentration->SaltConservation(*CnE_gf, *domain_parameters.pse);
                     }
 
-                    // cathode_potential->TimeStep(*CnC_gf, *domain_parameters.psi, *phC_gf);
+                    // cathode_potential->AssembleSystem(*CnC_gf, *domain_parameters.psi, *phC_gf);
                     *phC_gf = Constants::init_BvC;
-                    electrolyte_potential->TimeStep(cfg.mode, *CnE_gf, *domain_parameters.pse, *phE_gf);
+                    electrolyte_potential->AssembleSystem(*CnE_gf, *domain_parameters.pse, *phE_gf);
 
                     reaction->ExchangeCurrentDensity(*CnC_gf);
 
@@ -241,8 +241,8 @@ int main(int argc, char *argv[]) {
             
                     // while ((globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8)) {
                     //     reaction->ButlerVolmer(*Rxn_gf, *CnC_gf, *CnE_gf, *phC_gf, *phE_gf);
-                    //     cathode_potential->Advance(*Rxn_gf, *phC_gf, *domain_parameters.psi, globalerror_P);
-                    //     electrolyte_potential->Advance(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+                    //     cathode_potential->UpdatePotential(*Rxn_gf, *phC_gf, *domain_parameters.psi, globalerror_P);
+                    //     electrolyte_potential->UpdatePotential(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
 
                     //     // if(t > 10120 && t % 1 == 0){
                     //         // std::cout << "cathode error: " << globalerror_P << " electrolyte error: " << globalerror_E << std::endl;
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
 
                     while (globalerror_E > 1.0e-8) {
                         reaction->ButlerVolmer(*Rxn_gf, *CnC_gf, *CnE_gf, *phC_gf, *phE_gf);
-                        electrolyte_potential->Advance(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+                        electrolyte_potential->UpdatePotential(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
 
                         // if(t > 10120 && t % 1 == 0){
                             // std::cout << "cathode error: " << globalerror_P << " electrolyte error: " << globalerror_E << std::endl;
@@ -320,17 +320,17 @@ int main(int argc, char *argv[]) {
 
             while (VCell > 2.5) {
 
-                anode_concentration->TimeStep(*RxA_gf, *CnA_gf, *domain_parameters.psA);
-                cathode_concentration->TimeStep(*RxC_gf, *CnC_gf, *domain_parameters.psC);
-                electrolyte_concentration->TimeStep(*RxC_gf, *RxA_gf, *CnE_gf, *domain_parameters.pse); // with two inputs
+                anode_concentration->UpdateConcentration(*RxA_gf, *CnA_gf, *domain_parameters.psA);
+                cathode_concentration->UpdateConcentration(*RxC_gf, *CnC_gf, *domain_parameters.psC);
+                electrolyte_concentration->UpdateConcentration(*RxC_gf, *RxA_gf, *CnE_gf, *domain_parameters.pse); // with two inputs
 
                 if (t > 0 && t % 500 == 0){
                     electrolyte_concentration->SaltConservation(*CnE_gf, *domain_parameters.pse);
                 }
 
-                cathode_potential->TimeStep(*CnC_gf, *domain_parameters.psC, *phC_gf);
-                anode_potential->TimeStep(*CnA_gf, *domain_parameters.psA, *phA_gf);
-                electrolyte_potential->TimeStep(cfg.mode, *CnE_gf, *domain_parameters.pse, *phE_gf);
+                cathode_potential->AssembleSystem(*CnC_gf, *domain_parameters.psC, *phC_gf);
+                anode_potential->AssembleSystem(*CnA_gf, *domain_parameters.psA, *phA_gf);
+                electrolyte_potential->AssembleSystem(*CnE_gf, *domain_parameters.pse, *phE_gf);
 
                 reaction->ExchangeCurrentDensity(*CnC_gf, *CnA_gf); // with two inputs
 
@@ -343,9 +343,9 @@ int main(int argc, char *argv[]) {
                 while (globalerror_C > 1.0e-8 || globalerror_A > 1.0e-8 || globalerror_E > 1.0e-8) {
                 
                     reaction->ButlerVolmer(*Rxn_gf, *RxC_gf, *RxA_gf, *CnC_gf, *CnA_gf, *CnE_gf, *phC_gf, *phA_gf, *phE_gf); // 9 inputs
-                    cathode_potential->Advance(*RxC_gf, *phC_gf, *domain_parameters.psC, globalerror_C);
-                    anode_potential->Advance(*RxA_gf, *phA_gf, *domain_parameters.psA, globalerror_A);
-                    electrolyte_potential->Advance(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+                    cathode_potential->UpdatePotential(*RxC_gf, *phC_gf, *domain_parameters.psC, globalerror_C);
+                    anode_potential->UpdatePotential(*RxA_gf, *phA_gf, *domain_parameters.psA, globalerror_A);
+                    electrolyte_potential->UpdatePotential(*RxC_gf, *RxA_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
                  }
 
                 reaction->TotalReactionCurrent(*RxA_gf, global_current_A);

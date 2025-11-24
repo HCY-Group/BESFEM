@@ -1,4 +1,4 @@
-#include "../include/SolverSteps.hpp"
+#include "../include/FEMOperators.hpp"
 #include "../include/Initialize_Geometry.hpp"
 #include "../inputs/Constants.hpp"
 #include "mfem.hpp"
@@ -11,18 +11,18 @@
 using namespace std;
 
 // Constructor for shared_ptr
-SolverSteps::SolverSteps(std::shared_ptr<mfem::ParFiniteElementSpace> fespace)
+FEMOperators::FEMOperators(std::shared_ptr<mfem::ParFiniteElementSpace> fespace)
 : fespace(fespace), raw_fespace(nullptr), local_fespace(fespace.get()) {}
 
 // Constructor for raw pointer
-SolverSteps::SolverSteps(mfem::ParFiniteElementSpace* fespace)
+FEMOperators::FEMOperators(mfem::ParFiniteElementSpace* fespace)
 : raw_fespace(fespace), fespace(nullptr), local_fespace(fespace) {}
 
 // Destructor
-SolverSteps::~SolverSteps() {}
+FEMOperators::~FEMOperators() {}
 
 
-void SolverSteps::InitializeMassMatrix(mfem::Coefficient &coef, std::unique_ptr<mfem::ParBilinearForm> &M) {
+void FEMOperators::InitializeMassMatrix(mfem::Coefficient &coef, std::unique_ptr<mfem::ParBilinearForm> &M) {
 
     M = std::make_unique<mfem::ParBilinearForm>(local_fespace);
     M->AddDomainIntegrator(new mfem::MassIntegrator(coef));
@@ -32,7 +32,7 @@ void SolverSteps::InitializeMassMatrix(mfem::Coefficient &coef, std::unique_ptr<
 
 }
 
-void SolverSteps::InitializeStiffnessMatrix(mfem::Coefficient &coef, std::unique_ptr<mfem::ParBilinearForm> &K) {
+void FEMOperators::InitializeStiffnessMatrix(mfem::Coefficient &coef, std::unique_ptr<mfem::ParBilinearForm> &K) {
 
     K = std::make_unique<mfem::ParBilinearForm>(local_fespace);
     K->AddDomainIntegrator(new mfem::DiffusionIntegrator(coef));
@@ -43,7 +43,7 @@ void SolverSteps::InitializeStiffnessMatrix(mfem::Coefficient &coef, std::unique
 }
 
 
-void SolverSteps::InitializeForceTerm(
+void FEMOperators::InitializeForceTerm(
     mfem::Coefficient &coef,
     std::unique_ptr<mfem::ParLinearForm> &B)
 {
@@ -57,7 +57,7 @@ void SolverSteps::InitializeForceTerm(
 }
 
 
-void SolverSteps::FormSystemMatrix(std::unique_ptr<mfem::ParBilinearForm> &M, mfem::Array<int> &boundary_dofs, mfem::HypreParMatrix &A) {
+void FEMOperators::FormSystemMatrix(std::unique_ptr<mfem::ParBilinearForm> &M, mfem::Array<int> &boundary_dofs, mfem::HypreParMatrix &A) {
     if (!M) {
         throw std::runtime_error("Bilinear form M is not initialized.");
     }
@@ -66,7 +66,7 @@ void SolverSteps::FormSystemMatrix(std::unique_ptr<mfem::ParBilinearForm> &M, mf
 
 }
 
-void SolverSteps::FormLinearSystem(std::unique_ptr<mfem::ParBilinearForm> &K, mfem::Array<int> &boundary_dofs, mfem::ParGridFunction &x, mfem::ParLinearForm &b, mfem::HypreParMatrix &A, mfem::HypreParVector &X, mfem::HypreParVector &B) {
+void FEMOperators::FormLinearSystem(std::unique_ptr<mfem::ParBilinearForm> &K, mfem::Array<int> &boundary_dofs, mfem::ParGridFunction &x, mfem::ParLinearForm &b, mfem::HypreParMatrix &A, mfem::HypreParVector &X, mfem::HypreParVector &B) {
     if (!K) {
         throw std::runtime_error("Bilinear form K is not initialized.");
     }
@@ -74,7 +74,7 @@ void SolverSteps::FormLinearSystem(std::unique_ptr<mfem::ParBilinearForm> &K, mf
     K->FormLinearSystem(boundary_dofs, x, b, A, X, B);
 }
 
-void SolverSteps::Update(std::unique_ptr<mfem::ParLinearForm> &B) {
+void FEMOperators::Update(std::unique_ptr<mfem::ParLinearForm> &B) {
     if (!B) {
         throw std::runtime_error("Linear form is not initialized.");
     }
@@ -84,7 +84,7 @@ void SolverSteps::Update(std::unique_ptr<mfem::ParLinearForm> &B) {
     B->Assemble();
 }
 
-void SolverSteps::Update(std::unique_ptr<mfem::ParBilinearForm> &B) {
+void FEMOperators::Update(std::unique_ptr<mfem::ParBilinearForm> &B) {
     if (!B) {
         throw std::runtime_error("Bilinear form is not initialized.");
     }
@@ -94,7 +94,7 @@ void SolverSteps::Update(std::unique_ptr<mfem::ParBilinearForm> &B) {
     B->Assemble();
 }
 
-void SolverSteps::SolverConditions(mfem::HypreParMatrix &Mmat, mfem::CGSolver &solver, mfem::Solver &preconditioner){
+void FEMOperators::SolverConditions(mfem::HypreParMatrix &Mmat, mfem::CGSolver &solver, mfem::Solver &preconditioner){
     // Set up the solver for the mass matrix.
     solver.iterative_mode = false; // Use direct solving for the system matrix
     solver.SetRelTol(1e-6); // Set relative tolerance for the solver
@@ -105,7 +105,7 @@ void SolverSteps::SolverConditions(mfem::HypreParMatrix &Mmat, mfem::CGSolver &s
     solver.SetOperator(Mmat); // Set the mass matrix as the operator to solve
 }
 
-void SolverSteps::SolverConditions(mfem::CGSolver &solver, mfem::Solver &preconditioner){
+void FEMOperators::SolverConditions(mfem::CGSolver &solver, mfem::Solver &preconditioner){
     // Set up the solver for the mass matrix.
     solver.iterative_mode = false; // Use direct solving for the system matrix
     solver.SetRelTol(1e-6); // Set relative tolerance for the solver

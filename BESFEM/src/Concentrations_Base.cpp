@@ -5,8 +5,8 @@
 #include "../include/Initialize_Geometry.hpp"
 #include "mfem.hpp"
 
-Concentrations::Concentrations(Initialize_Geometry &geo, Domain_Parameters &para)
-    : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), SolverSteps(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol), gtPsi(para.gtPsi), gtPse(para.gtPse),
+ConcentrationBase::ConcentrationBase(Initialize_Geometry &geo, Domain_Parameters &para)
+    : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), domain_parameters(para), EVol(para.EVol), gtPsi(para.gtPsi), gtPse(para.gtPse),
     nE(geo.nE), nC(geo.nC), nV(geo.nV), VtxVal(geo.nC), EAvg(geo.nE), gmesh(geo.globalMesh.get())
 
 
@@ -18,138 +18,114 @@ Concentrations::Concentrations(Initialize_Geometry &geo, Domain_Parameters &para
 
 }
 
-void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double initial_value) {
+// void ConcentrationBase::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
+// void ConcentrationBase::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+
+// // void Concentrations::SetInitialConcentration(mfem::ParGridFunction &Cn, double initial_value) {
     
-    for (int i = 0; i < Cn.Size(); ++i) {
-        Cn(i) = initial_value;
-    }
+// //     for (int i = 0; i < Cn.Size(); ++i) {
+// //         Cn(i) = initial_value;
+// //     }
 
-}
+// // }
 
-void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, double gtps) {
+// // void Concentrations::LithiationCalculation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, double gtps) {
     
-    // Temporary grid function to store the product of concentration and potential
-    *TmpF = Cn; // Copy concentration values to the temporary grid function
-    *TmpF *= psx; // Element-wise multiply concentration by potential
+// //     // Temporary grid function to store the product of concentration and potential
+// //     *TmpF = Cn; // Copy concentration values to the temporary grid function
+// //     *TmpF *= psx; // Element-wise multiply concentration by potential
 
-    double lSum = 0.0; // Local sum of lithiation contributions
+// //     double lSum = 0.0; // Local sum of lithiation contributions
 
-    // Iterate over mesh elements efficiently
-    for (int ei = 0; ei < nE; ++ei) {
-        TmpF->GetNodalValues(ei, VtxVal); // Retrieve nodal values for the element
-        double val = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
-        EAvg(ei) = val / nC;
-        lSum += EAvg(ei) * EVol(ei);
-    }
+// //     // Iterate over mesh elements efficiently
+// //     for (int ei = 0; ei < nE; ++ei) {
+// //         TmpF->GetNodalValues(ei, VtxVal); // Retrieve nodal values for the element
+// //         double val = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
+// //         EAvg(ei) = val / nC;
+// //         lSum += EAvg(ei) * EVol(ei);
+// //     }
 
-    double gSum; 
-    MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
-    Xfr = gSum / gtps; // Calculate the degree of lithiation as the normalized sum
-}
+// //     double gSum; 
+// //     MPI_Allreduce(&lSum, &gSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
+// //     Xfr = gSum / gtps; // Calculate the degree of lithiation as the normalized sum
+// // }
 
-void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value) {
+// // void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value) {
 
-    Rx2 = Rx1; // Copy the input reaction field to the output reaction field
-    Rx2 *= value; // Scale the output reaction field by the specified factor
+// //     Rx2 = Rx1; // Copy the input reaction field to the output reaction field
+// //     Rx2 *= value; // Scale the output reaction field by the specified factor
 
-}
+// // }
 
-void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &Rx3, double value) {
+// // void Concentrations::CreateReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &Rx3, double value) {
 
-    Rx3 = Rx1; // Copy the input reaction field to the output reaction field
-    Rx3 += Rx2; // Add the second reaction field to the output reaction field
-    Rx3 *= value; // Scale the output reaction field by the specified factor
+// //     Rx3 = Rx1; // Copy the input reaction field to the output reaction field
+// //     Rx3 += Rx2; // Add the second reaction field to the output reaction field
+// //     Rx3 *= value; // Scale the output reaction field by the specified factor
 
-}
+// // }
 
 
-void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double &xCrnt) {
+// // void Concentrations::TotalReaction(mfem::ParGridFunction &Rx, double &xCrnt) {
     
-    xCrnt = 0.0; // Initialize the local total reaction value to zero
+// //     xCrnt = 0.0; // Initialize the local total reaction value to zero
 
-    // calculate the west boundary size
-    mfem::Vector Rmin, Rmax;
-    gmesh->GetBoundingBox(Rmin, Rmax);
+// //     // calculate the west boundary size
+// //     mfem::Vector Rmin, Rmax;
+// //     gmesh->GetBoundingBox(Rmin, Rmax);
 
-    int dim = gmesh->Dimension();
+// //     int dim = gmesh->Dimension();
    
-    if (dim == 2) L_w =  Rmax(1) - Rmin(1);
-    else if (dim == 3) L_w = (Rmax(1) - Rmin(1))*(Rmax(2) - Rmin(2));
+// //     if (dim == 2) L_w =  Rmax(1) - Rmin(1);
+// //     else if (dim == 3) L_w = (Rmax(1) - Rmin(1))*(Rmax(2) - Rmin(2));
 
-    for (int ei = 0; ei < nE; ei++) {
-        Rx.GetNodalValues(ei, VtxVal); // Retrieve the nodal values of the reaction field for the current element
-        double val = 0.0;
-        for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
-        EAvg(ei) = val / nC; // Calculate the average reaction value for the element
-        xCrnt += EAvg(ei) * EVol(ei); // Weight by the element volume and add to the total reaction
-    }
+// //     for (int ei = 0; ei < nE; ei++) {
+// //         Rx.GetNodalValues(ei, VtxVal); // Retrieve the nodal values of the reaction field for the current element
+// //         double val = 0.0;
+// //         for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}
+// //         EAvg(ei) = val / nC; // Calculate the average reaction value for the element
+// //         xCrnt += EAvg(ei) * EVol(ei); // Weight by the element volume and add to the total reaction
+// //     }
     
-    // Perform a global reduction to sum up contributions across all MPI processes
-    MPI_Allreduce(&xCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+// //     // Perform a global reduction to sum up contributions across all MPI processes
+// //     MPI_Allreduce(&xCrnt, &geCrnt, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     
-    // Calculate the reaction current density by normalizing with the domain characteristic length
-    infx = geCrnt / (L_w);
+// //     // Calculate the reaction current density by normalizing with the domain characteristic length
+// //     infx = geCrnt / (L_w);
 
-}
+// // }
 
-// std::shared_ptr<mfem::GridFunctionCoefficient> Concentrations::Diffusivity(mfem::ParGridFunction &psx, mfem::ParGridFunction &Cn, bool particle_electrolyte ){
+
+// // void Concentrations::SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {
+
+// //     CeC = 0.0; // Initialize total salt concentration to zero
     
-//     Dx = std::make_shared<mfem::ParGridFunction>(fespace.get());
+// //     // Temporary grid function to hold the product of concentration and potential fields
+// //    static mfem::ParGridFunction CeT(fespace.get());
+
+// //     // Calculate the product of concentration and potential for each element
+// //     CeT = Cn;
+// //     CeT *= psx;
     
-//     // Loop through all vertices in the domain to calculate diffusivity
-//     for (int vi = 0; vi < nV; vi++) {
-//         if (particle_electrolyte) {
-            
-//             // Compute diffusivity for the particle based on a polynomial model
-//             (*Dx)(vi) = psx(vi) * (0.0277 - 0.084 * Cn(vi) + 0.1003 * Cn(vi) * Cn(vi)) * 1.0e-8;
-            
-//             // Cap the diffusivity at a maximum value for stability
-//             if ((*Dx)(vi) > 4.6e-10) {
-//                 (*Dx)(vi) = 4.6e-10;
-//             }
-
-//         } else {
-//             // Compute diffusivity for the electrolyte based on an exponential model
-//             (*Dx)(vi) = psx(vi) * Constants::D0 * exp(-7.02 - 830 * Cn(vi) + 50000 * Cn(vi) * Cn(vi));
-//         }
-//     }
+// //     // Loop through all elements to calculate the average concentration for each element
+// //     for (int ei = 0; ei < nE; ei++){
+// //         CeT.GetNodalValues(ei,VtxVal); // Retrieve the nodal values for the current element 
+// //         double val = 0.0;
+// //         for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}        
+// //         EAvg(ei) = val/nC; // Compute the average concentration for the element
+// //         // Update the total salt concentration by adding the weighted average for the element
+// //         CeC += EAvg(ei)*EVol(ei); 
+// //     }
     
-//     // Wrap the computed diffusivity grid function in a GridFunctionCoefficient and return it
-//     return std::make_shared<mfem::GridFunctionCoefficient>(Dx.get());
-
-// }
-
-
-void Concentrations::SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {
-
-    CeC = 0.0; // Initialize total salt concentration to zero
+// //     // Perform a global reduction to sum up the salt concentration across all MPI processes
+// //     MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
     
-    // Temporary grid function to hold the product of concentration and potential fields
-   static mfem::ParGridFunction CeT(fespace.get());
+// //     // Compute the average concentration across the entire electrolyte
+// //     CeAvg = gCeC/gtPse;	
 
-    // Calculate the product of concentration and potential for each element
-    CeT = Cn;
-    CeT *= psx;
-    
-    // Loop through all elements to calculate the average concentration for each element
-    for (int ei = 0; ei < nE; ei++){
-        CeT.GetNodalValues(ei,VtxVal); // Retrieve the nodal values for the current element 
-        double val = 0.0;
-        for (int vt = 0; vt < nC; vt++){val += VtxVal[vt];}        
-        EAvg(ei) = val/nC; // Compute the average concentration for the element
-        // Update the total salt concentration by adding the weighted average for the element
-        CeC += EAvg(ei)*EVol(ei); 
-    }
-    
-    // Perform a global reduction to sum up the salt concentration across all MPI processes
-    MPI_Allreduce(&CeC, &gCeC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);			
-    
-    // Compute the average concentration across the entire electrolyte
-    CeAvg = gCeC/gtPse;	
+// //     // Adjust the concentration field by normalizing the average concentration with the initial value
+// //     Cn -= (CeAvg-Ce0);
+// //     MPI_Barrier(MPI_COMM_WORLD);
 
-    // Adjust the concentration field by normalizing the average concentration with the initial value
-    Cn -= (CeAvg-Ce0);
-    MPI_Barrier(MPI_COMM_WORLD);
-
-}
+// // }
 
