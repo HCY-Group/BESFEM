@@ -7,33 +7,21 @@ Utils::Utils(Initialize_Geometry &geo, Domain_Parameters &para)
 {
 }
 
-// =====================================================
-// Reaction assembly
-// =====================================================
-void Utils::InitializeReaction(mfem::ParGridFunction &Rx1,
-                               mfem::ParGridFunction &Rx2,
-                               double value)
+
+void Utils::InitializeReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value)
 {
     Rx2 = Rx1;
     Rx2 *= value;
 }
 
-void Utils::InitializeReaction(mfem::ParGridFunction &Rx1,
-                               mfem::ParGridFunction &Rx2,
-                               mfem::ParGridFunction &Rx3,
-                               double value)
+void Utils::InitializeReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &Rx3, double value)
 {
     Rx3 = Rx1;
     Rx3 += Rx2;
     Rx3 *= value;
 }
 
-// =====================================================
-// Lithiation calculator
-// =====================================================
-void Utils::CalculateLithiation(mfem::ParGridFunction &Cn,
-                                mfem::ParGridFunction &psx,
-                                double gtps)
+void Utils::CalculateLithiation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, double gtps)
 {
     TmpF_ = Cn;
     TmpF_ *= psx;
@@ -53,9 +41,6 @@ void Utils::CalculateLithiation(mfem::ParGridFunction &Cn,
     Xfr_ /= gtps;
 }
 
-// =====================================================
-// Reaction → current → flux
-// =====================================================
 void Utils::CalculateReactionInfx(mfem::ParGridFunction &Rx, double &xCrnt)
 {
     xCrnt = 0.0;
@@ -81,14 +66,7 @@ void Utils::CalculateReactionInfx(mfem::ParGridFunction &Rx, double &xCrnt)
     infx_ = geCrnt_ / Lw;
 }
 
-// =====================================================
-// Global error norm
-// =====================================================
-void Utils::CalculateGlobalError(mfem::ParGridFunction &px0,
-                                 mfem::ParGridFunction &potential,
-                                 mfem::ParGridFunction &psx,
-                                 double &globalerror,
-                                 double gtPsx)
+void Utils::CalculateGlobalError(mfem::ParGridFunction &px0, mfem::ParGridFunction &potential, mfem::ParGridFunction &psx, double &globalerror, double gtPsx)
 {
     TmpF_ = px0;
     TmpF_ -= potential;
@@ -101,21 +79,9 @@ void Utils::CalculateGlobalError(mfem::ParGridFunction &px0,
     globalerror /= gtPsx;
 }
 
-void Utils::SaveSimulationSnapshot(
-    int t, const std::string &outdir,
-    Initialize_Geometry &geometry,
-    Domain_Parameters &domain_parameters,
-    mfem::ParGridFunction &phA,
-    mfem::ParGridFunction &phC,
-    mfem::ParGridFunction &phE,
-    mfem::ParGridFunction &CnA,
-    mfem::ParGridFunction &CnC,
-    mfem::ParGridFunction &CnE,
-    mfem::ParGridFunction &CnApsi,
-    mfem::ParGridFunction &CnCpsi,
-    mfem::ParGridFunction &CnEpsi,
-    mfem::ParGridFunction &CnP,
-    int save_interval)
+void Utils::SaveSimulationSnapshot(int t, const std::string &outdir, Initialize_Geometry &geometry, Domain_Parameters &domain_parameters, mfem::ParGridFunction &phA,
+    mfem::ParGridFunction &phC, mfem::ParGridFunction &phE, mfem::ParGridFunction &CnA, mfem::ParGridFunction &CnC, mfem::ParGridFunction &CnE, mfem::ParGridFunction &CnApsi,
+    mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi, mfem::ParGridFunction &CnP, int save_interval)
 {
     if (t % save_interval != 0) return;
 
@@ -150,17 +116,9 @@ void Utils::SaveSimulationSnapshot(
     CnP.SaveAsOne((outdir + "/CnP" + suff).c_str());
 }
 
-void Utils::SaveSimulationSnapshot(
-    int t, const std::string &outdir,
-    Initialize_Geometry &geometry,
-    Domain_Parameters &domain_parameters,
-    mfem::ParGridFunction &phC,
-    mfem::ParGridFunction &phE,
-    mfem::ParGridFunction &CnC,
-    mfem::ParGridFunction &CnE,
-    mfem::ParGridFunction &CnCpsi,
-    mfem::ParGridFunction &CnEpsi,
-    int save_interval)
+void Utils::SaveSimulationSnapshot(int t, const std::string &outdir,
+    Initialize_Geometry &geometry, Domain_Parameters &domain_parameters, mfem::ParGridFunction &phC, mfem::ParGridFunction &phE, mfem::ParGridFunction &CnC, mfem::ParGridFunction &CnE,
+    mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi, int save_interval)
 {
     if (t % save_interval != 0) return;
 
@@ -185,8 +143,7 @@ void Utils::SaveSimulationSnapshot(
     CnEpsi.SaveAsOne((outdir + "/CnE" + suff).c_str());
 }
 
-void Utils::SetInitialValue(mfem::ParGridFunction &Cn,
-                                       double initial_value)
+void Utils::SetInitialValue(mfem::ParGridFunction &Cn, double initial_value)
     {
         for (int i = 0; i < Cn.Size(); i++)
             Cn(i) = initial_value;

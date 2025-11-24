@@ -67,33 +67,14 @@ public:
     // ------------------------------------------------------------------------
     // SaveSimulationSnapshot overloads
     // ------------------------------------------------------------------------
-    static void SaveSimulationSnapshot(
-        int t, const std::string &outdir,
-        Initialize_Geometry &geometry,
-        Domain_Parameters &domain_parameters,
-        mfem::ParGridFunction &phA,
-        mfem::ParGridFunction &phC,
-        mfem::ParGridFunction &phE,
-        mfem::ParGridFunction &CnA,
-        mfem::ParGridFunction &CnC,
-        mfem::ParGridFunction &CnE,
-        mfem::ParGridFunction &CnApsi,
-        mfem::ParGridFunction &CnCpsi,
-        mfem::ParGridFunction &CnEpsi,
-        mfem::ParGridFunction &CnP,
-        int save_interval = 500);
+    static void SaveSimulationSnapshot(int t, const std::string &outdir, Initialize_Geometry &geometry, Domain_Parameters &domain_parameters,
+        mfem::ParGridFunction &phA, mfem::ParGridFunction &phC, mfem::ParGridFunction &phE, mfem::ParGridFunction &CnA, mfem::ParGridFunction &CnC,
+        mfem::ParGridFunction &CnE, mfem::ParGridFunction &CnApsi, mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi,
+        mfem::ParGridFunction &CnP, int save_interval = 500);
 
-    static void SaveSimulationSnapshot(
-        int t, const std::string &outdir,
-        Initialize_Geometry &geometry,
-        Domain_Parameters &domain_parameters,
-        mfem::ParGridFunction &phC,
-        mfem::ParGridFunction &phE,
-        mfem::ParGridFunction &CnC,
-        mfem::ParGridFunction &CnE,
-        mfem::ParGridFunction &CnCpsi,
-        mfem::ParGridFunction &CnEpsi,
-        int save_interval = 500);
+    static void SaveSimulationSnapshot(int t, const std::string &outdir, Initialize_Geometry &geometry,
+        Domain_Parameters &domain_parameters, mfem::ParGridFunction &phC, mfem::ParGridFunction &phE,
+        mfem::ParGridFunction &CnC, mfem::ParGridFunction &CnE, mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi, int save_interval = 500);
 
 private:
 
