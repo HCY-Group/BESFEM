@@ -2,38 +2,36 @@
 #define POTE_HPP
 
 #include "Potentials_Base.hpp"
-#include "../inputs/Constants.hpp"
+#include "Constants.hpp"
 #include "SimTypes.hpp"
 
 /**
  * @file PotE.hpp
- * @brief Electrolyte potential (PotE) solver for battery simulations.
+ * @brief Electrolyte potential solver for BESFEM.
  *
- * Extends the Potentials base class to assemble/solve the electrolyte
- * potential system, including conductivity/diffusivity coupling,
- * time-stepping helpers, and error reporting.
+ * Implements initialization, conductivity/diffusivity assembly, and 
+ * time-stepping for the electrolyte potential field φ_E. This class 
+ * extends the generic PotentialBase interface and incorporates 
+ * electrolyte-specific boundary conditions, phase-field masking, and 
+ * reaction coupling.
  */
 
 /**
- * @brief Boundary value for the electrolyte potential.
+ * @brief Dirichlet boundary value for the electrolyte potential φ_E.
  */
 extern double BvE;
 
 /**
- * @defgroup potentials Potential Modules
- * @brief Classes that assemble and advance potential fields.
- * @{
- */
-
-/**
  * @class PotE
- * @brief Electrolyte potential solver (electrolyte phase).
- * @ingroup potentials
+ * @brief Electrolyte-phase potential solver.
  *
- * @details
- * - Builds conductivity/diffusivity operators in MFEM/Hypre.
- * - Handles Dirichlet boundary conditions on marked boundaries.
- * - Provides time-stepping helpers and residual/error evaluation.
+ * Responsibilities:
+ * - Initialize φ_E using user-specified initial conditions
+ * - Assemble conductivity and diffusivity operators (κ_e, D_e)
+ * - Assemble reaction/forcing terms
+ * - Solve the linear system each timestep (Hypre CG + AMG)
+ * - Provide optional coupling with concentration true-DoF vectors
+ * - Report global error metrics for convergence monitoring
  */
 class PotE : public PotentialBase {
 
@@ -41,157 +39,178 @@ public:
 
     /**
      * @brief Construct the electrolyte potential solver.
-     * @param geo  Geometry/space container (mesh, FESpaces, BC markers).
-     * @param para Domain/physics parameters (constants, totals, dt).
+     *
+     * Stores references to geometry, domain parameters, and boundary 
+     * conditions and initializes FEM helper utilities.
+     *
+     * @param geo   Geometry/mesh handler.
+     * @param para  Domain parameter container.
+     * @param bc    Boundary condition handler.
+     * @param mode  Cell mode (HALF or FULL).
      */
     PotE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc, sim::CellMode mode);
 
-    Initialize_Geometry &geometry; ///< Reference to geometry initialization
-    Domain_Parameters &domain_parameters; ///< Reference to domain parameters
-    BoundaryConditions &boundary_conditions;
-    sim::CellMode mode_;
-    FEMOperators fem;
-    Utils utils;
+    Initialize_Geometry  &geometry;            ///< Geometry and mesh infrastructure.
+    Domain_Parameters    &domain_parameters;   ///< Material and phase-field parameters.
+    BoundaryConditions   &boundary_conditions; ///< Electrode/BC configuration.
+    sim::CellMode         mode_;               ///< Half/full-cell selection mode.
 
+    FEMOperators fem; ///< FEM operator assembly utilities.
+    Utils utils;      ///< Miscellaneous helpers (clamping, reductions, etc.).
 
-
-
-    double BvE; ///< Boundary value for electrolyte potential
+    double BvE;       ///< Dirichlet boundary value for φ_E (if applicable).
 
     /**
-     * @brief Initialize electrolyte potential operators and state.
+     * @brief Initialize electrolyte-phase potential φ_E.
      *
-     * Assembles conductivity/diffusivity forms, configures solver/preconditioner,
-     * and seeds the potential field.
+     * Tasks performed:
+     * - Seed initial potential field.
+     * - Build conductivity/diffusivity operators.
+     * - Setup solver and Hypre AMG preconditioner.
      *
-     * @param Cn            Electrolyte concentration field (input).
-     * @param initial_value Initial scalar value for the potential field.
-     * @param psx           Phase mask ψ_E used for weighting/BCs.
+     * @param Cn            Electrolyte concentration field.
+     * @param initial_value Initial scalar value for φ_E.
+     * @param psx           Phase-field mask ψ_E.
      */
     void SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
 
-    // /**
-    //  * @brief Advance electrolyte potential for one step (assemble/solve).
-    //  *
-    //  * Uses current concentration and phase mask to update operators and solve
-    //  * for the electrolyte potential.
-    //  *
-    //  * @param Cn        Electrolyte concentration field (input).
-    //  * @param psx       Phase mask ψ_E (input).
-    //  * @param potential Electrolyte potential grid function (in/out).
-    //  * @param CeVn      True-DoF concentration vector (input), for coupling.
-    //  */
-    void AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential, mfem::HypreParVector &CeVn);
+    /**
+     * @brief Assemble the linear system for φ_E.
+     *
+     * This overload includes a true-DoF concentration vector CeVn
+     * which is used in high-fidelity coupling models (e.g., electrolyte transport).
+     *
+     * @param Cn        Electrolyte concentration field.
+     * @param psx       Phase-field mask ψ_E.
+     * @param potential Potential field φ_E (in/out).
+     * @param CeVn      True-DoF concentration vector for coupling.
+     */
+    void AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx,
+                        mfem::ParGridFunction &potential, mfem::HypreParVector  &CeVn);
 
     /**
-     * @brief Advance electrolyte potential for one step (assemble/solve).
+     * @brief Assemble the linear system for φ_E.
      *
-     * Uses current concentration and phase mask to update operators and solve
-     * for the electrolyte potential.
-     *
-     * @param Cn        Electrolyte concentration field (input).
-     * @param psx       Phase mask ψ_E (input).
-     * @param potential Electrolyte potential grid function (in/out).
+     * @param Cn        Electrolyte concentration field.
+     * @param psx       Phase-field mask ψ_E.
+     * @param potential Potential field φ_E (in/out).
      */
-    void AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, mfem::ParGridFunction &potential);
-    
-    
-    
-    /**
-     * @brief One higher-level advance (e.g., residual/error evaluation).
-     *
-     * @param Rx     Reaction source field (input).
-     * @param phx    Electrolyte potential field (in/out).
-     * @param psx    Phase mask ψ_E (input).
-     * @param gerror Global error/residual (output).
-     */
-    void UpdatePotential(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
-
+    void AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx,
+                        mfem::ParGridFunction &potential);
 
     /**
-     * @brief One higher-level advance with reaction field update.
-     * @param Rx1    Input reaction source field (input).
-     * @param Rx2    Input reaction source field (input).
-     * @param phx    Electrolyte potential field (in/out).
-     * @param psx    Phase mask ψ_E (input).
-     * @param gerror Global error/residual (output).
+     * @brief Advance φ_E by one timestep.
+     *
+     * Recomputes forcing terms, solves for the updated potential, and computes 
+     * a global MPI-reduced error metric.
+     *
+     * @param Rx     Reaction source field.
+     * @param phx    Potential field φ_E (in/out).
+     * @param psx    Phase mask ψ_E.
+     * @param gerror Output: global RMS/L2 error value.
      */
-    void UpdatePotential(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
-   
+    void UpdatePotential(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx,
+                         mfem::ParGridFunction &psx, double &gerror);
+
+    /**
+     * @brief Advance φ_E using two reaction fields (multi-electrode/full-cell cases).
+     *
+     * @param Rx1    Reaction source term #1.
+     * @param Rx2    Reaction source term #2.
+     * @param phx    Potential field φ_E (in/out).
+     * @param psx    Phase mask ψ_E.
+     * @param gerror Output: global RMS/L2 error value.
+     */
+    void UpdatePotential(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2,
+                         mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
 
 private:
 
-    // ---------- Spaces / BC bookkeeping ----------
-    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Parallel FE space.
-    mfem::Array<int> dbc_bdr;       ///< Dirichlet boundary markers (west).
-    mfem::Array<int> ess_tdof_list_potE; ///< Essential true DOFs on west boundary.
+    // -------------------------------------------------------------------------
+    // Spaces / BC handling
+    // -------------------------------------------------------------------------
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Parallel FE space for φ_E.
 
-    // ---------- Physical constants (derived combos) ----------
-    double tc1 = (2*Constants::t_minus - 1.0) / (2*Constants::t_minus*(1.0 - Constants::t_minus)); ///< Transport factor 1.
-    double tc2 = Constants::Cst1 / (2*Constants::t_minus*(1.0 - Constants::t_minus));               ///< Transport factor 2.
+    mfem::Array<int> dbc_bdr;           ///< Dirichlet boundary attribute markers.
+    mfem::Array<int> ess_tdof_list_potE;///< Essential true DOFs for φ_E BCs.
 
-    double dffe = 0.0; ///< Scratch for conductivity/reaction calculations.
-    double gtPse = 0.0; ///< Global total for Pse (electrolyte phase).
+    // -------------------------------------------------------------------------
+    // Physical constants (transport coefficients)
+    // -------------------------------------------------------------------------
+    double tc1 = (2 * Constants::t_minus - 1.0) / (2 * Constants::t_minus * (1.0 - Constants::t_minus));
+    double tc2 = Constants::Cst1 / (2 * Constants::t_minus * (1.0 - Constants::t_minus));
 
-    // ---------- Solver / preconditioner ----------
-    mfem::CGSolver       cgPE_solver; ///< Conjugate gradient solver.
-    std::unique_ptr<mfem::HypreBoomerAMG> Mpe; ///< BoomerAMG preconditioner (built once with KmP)
+    double dffe  = 0.0; ///< Temporary scratch value.
+    double gtPse = 0.0; ///< Global total ψ_E.
 
+    // -------------------------------------------------------------------------
+    // Solver and preconditioner
+    // -------------------------------------------------------------------------
+    mfem::CGSolver                       cgPE_solver; ///< CG solver for φ_E.
+    std::unique_ptr<mfem::HypreBoomerAMG> Mpe;         ///< AMG preconditioner.
 
-    // ---------- Forms / matrices ----------
-    std::unique_ptr<mfem::ParBilinearForm> Kl1; ///< Conductivity bilinear form.
-    std::unique_ptr<mfem::ParBilinearForm> Kl2; ///< Additional conductivity/diffusivity form.
-    std::unique_ptr<mfem::ParLinearForm>    Bl2; ///< Reaction/load linear form.
+    // -------------------------------------------------------------------------
+    // Operators (bilinear/linear forms and matrices)
+    // -------------------------------------------------------------------------
+    std::unique_ptr<mfem::ParBilinearForm> Kl1; ///< Conductivity form.
+    std::unique_ptr<mfem::ParBilinearForm> Kl2; ///< Diffusivity / extra form.
+    std::unique_ptr<mfem::ParLinearForm>    Bl2; ///< Reaction/forcing form.
 
-    mfem::HypreParMatrix Kml; ///< Stiffness matrix (conductivity).
-    mfem::HypreParMatrix Kdm; ///< Stiffness matrix (diffusivity).
+    mfem::HypreParMatrix Kml; ///< Conductivity matrix.
+    mfem::HypreParMatrix Kdm; ///< Diffusivity matrix.
+
+    // -------------------------------------------------------------------------
+    // Coefficients and material fields
+    // -------------------------------------------------------------------------
+    mfem::ParGridFunction kpl; ///< Conductivity κ_e(x).
+    mfem::ParGridFunction Dmp; ///< Diffusivity D_e(x).
+
+    mfem::GridFunctionCoefficient cKe; ///< κ_e wrapper.
+    mfem::GridFunctionCoefficient cDm; ///< D_e wrapper.
+    mfem::GridFunctionCoefficient cRe; ///< Reaction coefficient wrapper.
+
+    mfem::ParGridFunction RpE; ///< Reaction field (grid function).
+    mfem::ParGridFunction pE0; ///< Previous φ_E (grid scratch).
+
+    // -------------------------------------------------------------------------
+    // Vectors and RHS data
+    // -------------------------------------------------------------------------
+    mfem::ParLinearForm  B1t; ///< RHS (domain + boundary forcing).
+    mfem::ParLinearForm Flt;   ///< Force term linear form.
+    mfem::HypreParVector X1v; ///< Solution vector.
+    mfem::HypreParVector B1v; ///< RHS vector.
+    mfem::HypreParVector Flb; ///< Additional RHS buffer.
+    mfem::HypreParVector Xe0; ///< Scratch solution vector.
+    mfem::HypreParVector RHSl;///< RHS vector (assembled).
+    mfem::HypreParVector LpCe;///< Concentration true-DoF vector (coupling).
     mfem::HypreParVector CeVn; ///< Concentration at next time step
 
 
-    // ---------- Coefficients / fields ----------
-    mfem::ParGridFunction kpl; ///< Conductivity field κ_e(x).
-    mfem::ParGridFunction Dmp; ///< Diffusivity field D_e(x).
-    mfem::GridFunctionCoefficient cKe; ///< Coefficient wrapping κ_e.
-    mfem::GridFunctionCoefficient cDm; ///< Coefficient wrapping D_e.
-    mfem::GridFunctionCoefficient cRe; ///< Coefficient wrapping reaction term.
-    mfem::ParGridFunction RpE; ///< Reaction field for electrolyte potential.
 
-    // ---------- Vectors / RHS ----------
-    mfem::ParLinearForm  B1t; ///< RHS linear form (domain/boundary forcing).
-    mfem::HypreParVector X1v; ///< Solution vector (true DOFs).
-    mfem::HypreParVector B1v; ///< RHS vector.
-    mfem::HypreParVector Flb; ///< Auxiliary RHS vector.
-    mfem::HypreParVector Xe0; ///< Scratch solution vector.
-    mfem::ParGridFunction pE0; ///< Electrolyte potential (grid) scratch.
-    mfem::HypreParVector RHSl; ///< RHS vector (assembled).
+    mfem::Array<int> boundary_dofs; ///< Boundary DOF list.
 
-    mfem::ParLinearForm Flt;   ///< Force term linear form.
-    mfem::Array<int>     boundary_dofs; ///< Boundary DOFs list.
-
-    mfem::HypreParVector LpCe; ///< Concentration true-DoF vector (coupling).
-
-    mfem::ParGridFunction phE_bc;         // reused BC vector for gauge pin
-    bool anchor_set = false;               // track if anchor has been set
-    int myid;
+    // -------------------------------------------------------------------------
+    // Anchor/pinning (to fix gauge freedom)
+    // -------------------------------------------------------------------------
+    mfem::ParGridFunction phE_bc; ///< BC/pinning helper field.
+    bool anchor_set = false;       ///< Whether a gauge anchor has been chosen.
+    int  myid       = 0;           ///< MPI rank.
     mfem::Array<int> ess_tdof_potE;
 
-    bool pin = false;
-    int rkpp = -1;
-    mfem::Array<int> dbc_e_bdr; ///< Array marking Dirichlet boundary attributes
+    bool pin  = false; ///< Whether a pin exists.
+    int  rkpp = -1;    ///< Rank owning the pinned DOF.
 
-
-    
+    mfem::Array<int> dbc_e_bdr; ///< Additional Dirichlet markers (east).
 
     /**
-     * @brief Recompute electrolyte conductivity/diffusivity fields and coefficients.
+     * @brief Recompute electrolyte conductivity κ_e and diffusivity D_e.
+     *
+     * Applies ψ_E masking and concentration dependence.
+     *
      * @param Cn  Electrolyte concentration field.
-     * @param psx Phase mask ψ_E.
+     * @param psx Phase-field ψ_E.
      */
     void ElectrolyteConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
-
 };
-
-/** @} */ // end group potentials
-
 
 #endif // POTE_HPP

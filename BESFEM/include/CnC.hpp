@@ -6,122 +6,114 @@
 class Initialize_Geometry;
 class Domain_Parameters;
 
-// /**
-//  * @class CnC
-//  * @brief Derived class implementing particle concentration models for battery simulations.
-//  *
-//  * This class provides methods for initializing particle concentrations, 
-//  * performing time-stepping operations, and calculating reaction-related properties.
-//  */
+/**
+ * @class CnC
+ * @brief Diffusion-based concentration solver for cathode (or generic solid) particles.
+ *
+ * The CnC class implements a standard diffusion model
+ * for solid active-material particles. It assembles mass and stiffness
+ * operators, applies diffusivity and reaction coefficients, and updates the
+ * concentration field using implicit/explicit time-stepping based on MFEM
+ * and Hypre.
+ */
 class CnC : public ConcentrationBase {
-
 public:
 
-    // /**
-    //  * @brief Constructor for the CnC class
-    //  * @param pm Pointer to the parallel mesh
-    //  * @param fe Pointer to the finite element space
-    //  * @param mh Reference to the mesh handler
-    //  */
+    /**
+     * @brief Construct the diffusion-based concentration solver.
+     *
+     * @param geo  Geometry handler (parallel mesh, FE space, DOF mappings).
+     * @param para Domain parameters (material properties, operating mode).
+     */
     CnC(Initialize_Geometry &geo, Domain_Parameters &para);
 
-
-    // /**
-    //  * @brief Initializes particle concentration values and solver components
-    //  * @param Cn Particle concentration grid function
-    //  * @param initial_value Initial concentration value
-    //  * @param psx Potential field grid function
-    //  */
+    /**
+     * @brief Initialize concentration field and assemble the diffusion operators.
+     *
+     * Performs:
+     * - Initial concentration assignment (masked by ψ)
+     * - Mass-matrix assembly
+     * - Diffusion stiffness-matrix assembly
+     * - Setup of CG solver and preconditioner
+     *
+     * @param Cn            Concentration field to initialize.
+     * @param initial_value Initial scalar value for the concentration.
+     * @param psx           Phase-field ψ identifying solid region.
+     */
     void SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
 
-    // /**
-    //  * @brief Performs a single time step for particle concentration updates
-    //  * @param Rx Reaction grid function
-    //  * @param Cn Particle concentration grid function
-    //  * @param psx Potential field grid function
-    //  */
+    /**
+     * @brief Advance concentration by one timestep using diffusion.
+     *
+     * Uses current reaction field, diffusivity, and stiffness/mass operators
+     * to compute the updated concentration. Applies ψ-field masking to restrict
+     * the update to the solid region.
+     *
+     * @param Rx  Reaction term applied to the concentration.
+     * @param Cn  Concentration field (input/output).
+     * @param psx Phase-field ψ for masking solid region.
+     */
     void UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
-
-
 
 private:
 
-    Initialize_Geometry &geometry;
-    Domain_Parameters &domain_parameters;
-    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Pointer to the finite element space
-    FEMOperators fem;
-    Utils utils;
+    // -------------------------------------------------------------------------
+    // Geometry / Spaces
+    // -------------------------------------------------------------------------
+    Initialize_Geometry &geometry;        ///< Geometry and mesh structure.
+    Domain_Parameters   &domain_parameters; ///< Material and physics parameters.
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Parallel FE space.
 
+    FEMOperators fem;  ///< High-level operator builder (mass, stiffness, forms).
+    Utils utils;       ///< Utility helpers (clamping, interpolation, etc.).
 
+    // -------------------------------------------------------------------------
+    // Grid-function state (continuous FEM fields)
+    // -------------------------------------------------------------------------
+    mfem::ParGridFunction RxC; ///< Reaction term mapped to the concentration space.
+    mfem::ParGridFunction Dp;  ///< Diffusivity field D(c) over the solid region.
 
-    mfem::ParGridFunction RxC; ///< Pointer to a grid function storing reaction values
+    // -------------------------------------------------------------------------
+    // True DoF vectors (Hypre Parallel)
+    // -------------------------------------------------------------------------
+    mfem::HypreParVector PsVc; ///< ψ-field mask in true-DoF representation.
+    mfem::HypreParVector CpV0; ///< Concentration vector at the current timestep.
+    mfem::HypreParVector RHCp; ///< RHS contributions (mass-matrix product + reaction).
+    mfem::HypreParVector CpVn; ///< Concentration vector at next timestep.
 
-    mfem::HypreParVector PsVc; ///< Vector for storing true degrees of freedom in the solid region
-    mfem::HypreParVector CpV0; ///< Initial particle concentration values
-    mfem::HypreParVector RHCp; ///< Right-hand side vector for the linear system
-    mfem::HypreParVector CpVn; ///< Particle concentration values at the next time step
+    // -------------------------------------------------------------------------
+    // Operators (mass/stiffness/forcing)
+    // -------------------------------------------------------------------------
+    std::unique_ptr<mfem::ParBilinearForm> Mt; ///< Mass bilinear form.
+    mfem::HypreParMatrix Mmatp;                ///< Mass matrix.
 
-    std::unique_ptr<mfem::ParBilinearForm> Mt; ///< Mass matrix for particle concentrations
-    mfem::HypreParMatrix Mmatp; ///< Mass matrix for particle concentrations
+    mfem::CGSolver       Mp_solver;            ///< Solver for mass solves M x = b.
+    mfem::HypreSmoother  Mp_prec;              ///< Preconditioner for Mp_solver.
 
-    mfem::CGSolver Mp_solver; ///< Solver for the mass matrix
-    mfem::HypreSmoother Mp_prec; ///< Preconditioner for the mass matrix solver
+    std::unique_ptr<mfem::ParBilinearForm> Kc2; ///< Diffusion stiffness bilinear form.
+    mfem::HypreParMatrix Kmatp;                 ///< Diffusion stiffness matrix.
 
-    std::unique_ptr<mfem::ParBilinearForm> Kc2; ///< Stiffness form for particle potential
-    mfem::HypreParMatrix Kmatp; ///< Stiffness matrix for diffusion calculations
+    std::unique_ptr<mfem::ParLinearForm> Bc2;   ///< Forcing linear form.
 
-    std::unique_ptr<mfem::ParLinearForm> Bc2; ///< Linear form for the force term related to particle concentrations
+    mfem::HypreParVector Fcb; ///< RHS force-vector (true DoFs).
+    mfem::ParLinearForm Fct; ///< Assembled linear form for forcing.
 
-    mfem::HypreParVector Fcb; ///< Vector for storing the force term contributions
-    mfem::ParLinearForm Fct; ///< Linear form for the force term related to particle concentrations
+    // -------------------------------------------------------------------------
+    // Coefficients (wrap grid functions into FE operators)
+    // -------------------------------------------------------------------------
+    mfem::GridFunctionCoefficient cAp; ///< Reaction coefficient wrapper.
+    mfem::GridFunctionCoefficient cDp; ///< Diffusivity coefficient wrapper.
 
-    mfem::ParGridFunction Dp; ///< Grid function for particle diffusivity
+    // -------------------------------------------------------------------------
+    // System Matrix for Time-Stepping
+    // -------------------------------------------------------------------------
+    std::unique_ptr<mfem::HypreParMatrix> Tmatp; ///< Implicit time-step system matrix.
 
-    mfem::GridFunctionCoefficient cAp; ///< Coefficient for the reaction term
-    mfem::GridFunctionCoefficient cDp; ///< Coefficient for the diffusivity term
-
-    std::unique_ptr<mfem::HypreParMatrix> Tmatp; ///< System matrix for time-stepping
-
-    double gtPsC = 0.0; ///< Global normalization for ψ (solid phase).
+    // -------------------------------------------------------------------------
+    // Global Scaling
+    // -------------------------------------------------------------------------
+    double gtPsC = 0.0; ///< Global normalization for ψ (solid).
     double gtPsi = 0.0; ///< Global normalization for ψ (total).
-
-
-
-
-
-
-    // mfem::ParGridFunction Dp; ///< Grid function for particle diffusivity
-
-
-    // mfem::CGSolver Mp_solver; ///< Solver for the mass matrix
-    // mfem::HypreParMatrix Mmatp; ///< Mass matrix for particle concentrations
-    // mfem::HypreSmoother Mp_prec; ///< Preconditioner for the mass matrix solver
-
-    // mfem::ParLinearForm ftPC; ///< Linear form for the force term related to particle concentration
-
-    // std::shared_ptr<mfem::HypreParMatrix> Kmatp; ///< Stiffness matrix for diffusion calculations 
-    // mfem::HypreParMatrix Kmatp; ///< Stiffness matrix for diffusion calculations
-
-    // mfem::HypreParVector Fcb; ///< Vector for storing the force term contributions
-    // mfem::ParLinearForm Fct; ///< Linear form for the force term related to particle concentrations
-
-    // mfem::Array<int> boundary_dofs; ///< Array to store boundary degrees of freedom
-    // mfem::HypreParVector X1v; ///< Temporary vector used during assembly
-
-    // std::shared_ptr<mfem::HypreParVector> CpV0; ///< Initial particle concentration values
-    // mfem::HypreParVector CpV0; ///< Initial particle concentration values
-    // mfem::HypreParVector RHCp; ///< Right-hand side vector for the linear system
-    // mfem::HypreParVector CpVn; ///< Particle concentration values at the next time step
-    // std::shared_ptr<mfem::HypreParVector> CpVn; ///< Particle concentration values at the next time step
-    // std::shared_ptr<mfem::HypreParVector> RHCp; ///< Right-hand-side vector at the current time step
-    // std::unique_ptr<mfem::HypreParMatrix> Tmatp; ///< System matrix for time-stepping
-
-    // std::unique_ptr<mfem::ParBilinearForm> Mt; ///< Mass matrix for particle concentrations
-
-    // mfem::GridFunctionCoefficient cAp; ///< Coefficient for the reaction term
-    // mfem::GridFunctionCoefficient cDp; ///< Coefficient for the diffusivity term
-    // std::unique_ptr<mfem::ParLinearForm> Bc2; ///< Linear form for the force term related to particle concentrations
-    // std::unique_ptr<mfem::ParBilinearForm> Kc2; ///< Stiffness form for particle potential
 };
 
 #endif // CNC_HPP

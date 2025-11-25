@@ -1,7 +1,5 @@
-
-
 #include "../include/CnE.hpp"
-#include "../inputs/Constants.hpp"
+#include "../include/Constants.hpp"
 #include "../include/SimTypes.hpp"
 #include "mfem.hpp"
 #include <optional>

@@ -6,160 +6,194 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 /**
  * @file Domain_Parameters.hpp
- * @brief Declares the Domain_Parameters class for setting up and managing
- *        domain-specific parameters in the battery simulation.
+ * @brief Defines the Domain_Parameters class for initializing and managing
+ *        domain-specific fields and integrals in BESFEM battery simulations.
  *
- * This class is responsible for initializing grid functions (psi, pse, AvP, AvB),
- * interpolating domain parameters depending on the mesh type, computing
- * phase field totals, and calculating the target current used in the simulation.
+ * This class constructs and stores phase fields (ψ, ψₑ, ψ_A, ψ_C),
+ * surface-area fields (AvP, AvA, AvC, AvB), distance functions, and
+ * element-volume data. It also computes global integrals such as gtPsi,
+ * gtPse, gtPsA, gtPsC, and the global target current gTrgI.
  */
 
+class Initialize_Geometry;
 
 /**
  * @class Domain_Parameters
- * @brief Class for managing domain-specific parameters in battery simulations.
+ * @brief Manages domain-specific phase fields, auxiliary fields, and global integrals.
  *
- * The Domain_Parameters class initializes and stores phase fields (`psi`, `pse`)
- * as well as auxiliary fields (`AvP`, `AvB`). It also computes integral quantities
- * like `gtPsi`, `gtPse`, and the target current `gTrgI` based on the mesh type
+ * The Domain_Parameters class provides:
+ * - Construction and interpolation of phase fields: ψ (solid), ψₑ (electrolyte), ψ_A, ψ_C  
+ * - Computation of auxiliary “surface-area density” fields AvP, AvA, AvC, AvB  
+ * - Element volumes (EVol) for FEM integrations  
+ * - Computation of global totals (gtPsi, gtPse, gtPsA, gtPsC)  
+ * - Calculation of the global target current (gTrgI) used for current-controlled simulations  
+ *
+ * The results are used by concentration solvers (CnA, CnC, CnE) and potential solvers.
  */
 class Domain_Parameters {
 
 public:
 
     /**
-     * @brief Construct a new Domain_Parameters object.
-     * 
-     * @param geo Reference to the geometry initialization object, used to access
-     *        mesh, finite element space, and distance function data.
+     * @brief Construct a Domain_Parameters object.
+     *
+     * Stores a reference to geometry, allocates grid functions,
+     * initializes internal counters (nE, nV, nC), and prepares
+     * distance-function pointers.
+     *
+     * @param geo Reference to the initialized geometry (mesh, FE space, ψ distance fields).
      */
     Domain_Parameters(Initialize_Geometry &geo);
 
-    Initialize_Geometry &geometry;
+    /// Destructor.
     virtual ~Domain_Parameters();
 
     /**
-     * @brief Setup all domain parameters based on the mesh type.
-     * 
-     * Initializes grid functions, interpolates parameters (psi, pse, AvP, AvB),
-     * calculates totals, and computes the target current.
-     * 
-     * @param mesh_type Character flag for mesh geometry type:
-     *        - "r" rectangle
-     *        - "c" circle
-     *        - "d" disk
-     *        - "v" voxel
+     * @brief Initialize all domain parameters based on the mesh type.
+     *
+     * Steps:
+     * - Allocates and zeros ψ, ψₑ, ψ_A, ψ_C, AvP, AvA, AvC, AvB  
+     * - Projects/interpolates distance-function-based fields  
+     * - Computes element volumes (EVol)  
+     * - Integrates ψ and ψₑ to compute gtPsi, gtPse  
+     * - Computes global target current gTrgI  
+     *
+     * @param mesh_type Character flag identifying the mesh geometry:
+     *        - `"ml"` MATLAB mesh  
+     *        - `"v"` voxel-derived mesh  
      */
     void SetupDomainParameters(const char* mesh_type);
 
+    // -------------------------------------------------------------------------
+    // Phase fields (grid functions)
+    // -------------------------------------------------------------------------
+    std::unique_ptr<mfem::ParGridFunction> psi; ///< Solid-phase indicator (ψ).
+    std::unique_ptr<mfem::ParGridFunction> pse; ///< Electrolyte-phase indicator (ψₑ).
+    std::unique_ptr<mfem::ParGridFunction> psA; ///< Anode-phase indicator.
+    std::unique_ptr<mfem::ParGridFunction> psC; ///< Cathode-phase indicator.
 
-    std::unique_ptr<mfem::ParGridFunction> psi; ///< Solid phase potential
-    std::unique_ptr<mfem::ParGridFunction> pse; ///< Electrolyte phase potential
-    std::unique_ptr<mfem::ParGridFunction> psA; ///< Anode phase potential
-    std::unique_ptr<mfem::ParGridFunction> psC; ///< Cathode phase potential
+    // -------------------------------------------------------------------------
+    // Surface-area / geometry-related auxiliary fields
+    // -------------------------------------------------------------------------
+    std::unique_ptr<mfem::ParGridFunction> AvP; ///< Particle surface-area density.
+    std::unique_ptr<mfem::ParGridFunction> AvA; ///< Anode surface-area density.
+    std::unique_ptr<mfem::ParGridFunction> AvC; ///< Cathode surface-area density.
+    std::unique_ptr<mfem::ParGridFunction> AvB; ///< Boundary surface-area density.
 
-    std::unique_ptr<mfem::ParGridFunction> AvP; ///< Particle surface area
-    std::unique_ptr<mfem::ParGridFunction> AvA; ///< Anode surface area
-    std::unique_ptr<mfem::ParGridFunction> AvC; ///< Cathode surface area
-    std::unique_ptr<mfem::ParGridFunction> AvB; ///< Boundary surface area
+    // -------------------------------------------------------------------------
+    // Global integrals and target current
+    // -------------------------------------------------------------------------
+    double gtPsi = 0.0; ///< Global integral of ψ (solid).
+    double gtPse = 0.0; ///< Global integral of ψₑ (electrolyte).
+    double gTrgI = 0.0; ///< Global target current (galvanostatic control).
 
-    double gtPsi; ///< Global total for Psi
-    double gtPse; ///< Global total for Pse
-    double gTrgI; ///< Global target current
-    double gtPsA; ///< Global total for PsA
-    double gtPsC; ///< Global total for PsC
-    mfem::Vector EVol; ///< Element volumes
+    double gtPsA = 0.0; ///< Global integral of ψ_A (anode region).
+    double gtPsC = 0.0; ///< Global integral of ψ_C (cathode region).
 
+    mfem::Vector EVol; ///< Element volumes for FEM integration.
 
+    /// Reference to geometry handler.
+    Initialize_Geometry &geometry;
 
 private:
 
+    // -------------------------------------------------------------------------
+    // Internal setup routines
+    // -------------------------------------------------------------------------
+
+    /// Allocate grid functions (psi, pse, AvP, AvA, AvC, AvB).
     void InitializeGridFunctions();
 
     /**
-     * @brief Interpolate the distance function into domain parameters.
-     * 
-     * Projects psi and AvP depending on mesh type ("r", "c", "d", "v") 
-     * and clamps them to avoid unphysical values.
-     * 
-     * @param mesh_type Mesh type specifier.
+     * @brief Project/interpolate distance-function-based parameters.
+     *
+     * Converts dsF / dsF_A / dsF_C into phase indicators ψ, ψₑ and surface-area
+     * fields AvP, etc., depending on mesh type. Clamps values to ensure
+     * physical consistency.
+     *
+     * @param mesh_type Mesh type specifier ("ml", "v").
      */
     void InterpolateDomainParameters(const char* mesh_type);
 
     /**
-     * @brief Generic routine to compute total integral of a field.
-     * 
-     * @param grid_function The field to integrate.
-     * @param element_volumes Element volumes for weighting.
-     * @param local_total Accumulated local total (output).
-     * @param global_total Accumulated global total after MPI reduction (output).
+     * @brief Compute the local and global totals of a field.
+     *
+     * Performs:
+     * - Element-wise multiplication with the element volumes (EVol)  
+     * - Local summation  
+     * - MPI reduction to compute a global total  
+     *
+     * @param grid_function Field to integrate.
+     * @param element_volumes Precomputed element volumes.
+     * @param local_total [out] Process-local integral.
+     * @param global_total [out] MPI-reduced total.
      */
-    void CalculateTotals(const mfem::ParGridFunction& grid_function, const mfem::Vector& element_volumes, double& local_total, double& global_total);
-    
-    
+    void CalculateTotals(const mfem::ParGridFunction &grid_function, const mfem::Vector &element_volumes,
+                         double &local_total, double &global_total);
+
     /**
-     * @brief Build element volumes then integrate a phase field.
+     * @brief Compute EVol and integrate a phase field (ψ or ψₑ).
      *
-     * Fills @c EVol from the mesh, then calls @ref CalculateTotals to compute
-     * the local and global totals for the provided phase field.
+     * Fills @ref EVol using geometric data, then calls @ref CalculateTotals
+     * to compute the local and global integrals.
      *
-     * @param grid_function Phase indicator field (e.g., ψ or ψ_e).
-     * @param total         [out] Process-local total.
-     * @param global_total  [out] MPI-reduced total across all ranks.
+     * @param grid_function Phase-field indicator.
+     * @param total         [out] Local total.
+     * @param global_total  [out] Global total (MPI).
      */
-    void CalculateTotalPhaseField(const mfem::ParGridFunction& grid_function, double& total, double& global_total);
-    
+    void CalculateTotalPhaseField(const mfem::ParGridFunction &grid_function, double &total,
+                                  double &global_total);
+
     /**
-     * @brief Compute global ψ and ψ_e integrals and derive the target current.
+     * @brief Compute ψ, ψₑ integrals and derive the global target current.
      *
-     * Calls @ref CalculateTotalPhaseField for both ψ and ψ_e, then updates
-     * the global target current via @ref CalculateTargetCurrent.
+     * Calls @ref CalculateTotalPhaseField for ψ and ψₑ, then calls
+     * @ref CalculateTargetCurrent to update gTrgI.
      */
     void CalculatePhasePotentialsAndTargetCurrent();
-    
+
     /**
-     * @brief Derive the (local) target current from integrated ψ.
+     * @brief Compute local contribution to target current from ψ.
      *
-     * Uses model constants (ρ, Cr, etc.) to compute a current target from the
-     * integrated particle phase volume and then participates in a global reduction.
+     * Uses electrochemical constants (density, capacity, etc.) to convert
+     * the integrated particle-phase volume into a target current contribution.
      *
-     * @param total_psi Local integral of ψ before MPI reduction.
+     * @param total_psi Local integral of ψ.
      */
     void CalculateTargetCurrent(double total_psi);
-    
+
     /**
-     * @brief Print a summary of domain totals (rank 0 only).
+     * @brief Print diagnostic totals (rank 0 only).
      *
-     * Logs gtPsi, gtPse, and gTrgI to stdout for quick inspection.
+     * Logs gtPsi, gtPse, gTrgI, and other totals for debugging or inspection.
      */
     void PrintInfo();
-    
-    int nV; ///< Number of vertices in the mesh
-    int nE; ///< Number of elements in the mesh
-    int nC; ///< Number of corners per element
-    
-    mfem::ParGridFunction* dsF;   ///< Pointer to distance function grid
-    mfem::ParGridFunction* dsF_A; ///< Pointer to anode distance function grid
-    mfem::ParGridFunction* dsF_C; ///< Pointer to cathode distance function grid
-    mfem::ParMesh* pmesh;         ///< Pointer to parallel mesh
-    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Shared pointer to finite element space
 
+    // -------------------------------------------------------------------------
+    // Geometry / storage members
+    // -------------------------------------------------------------------------
+    int nV = 0; ///< Number of vertices.
+    int nE = 0; ///< Number of elements.
+    int nC = 0; ///< Nodes per element (corners).
 
-    double tPsi; ///< Target Psi value
-    double tPse; ///< Target Pse value
-    double trgI; ///< Target current
+    mfem::ParGridFunction *dsF     = nullptr; ///< Distance function (whole domain).
+    mfem::ParGridFunction *dsF_A   = nullptr; ///< Distance function (anode).
+    mfem::ParGridFunction *dsF_C   = nullptr; ///< Distance function (cathode).
 
-    double tPsA; ///< Target PsA value
-    double tPsC; ///< Target PsC value
+    mfem::ParMesh *pmesh = nullptr; ///< Parallel mesh reference.
+    std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Parallel FE space.
 
+    // -------------------------------------------------------------------------
+    // Target values (set via integration)
+    // -------------------------------------------------------------------------
+    double tPsi = 0.0; ///< Local ψ total before MPI reduction.
+    double tPse = 0.0; ///< Local ψₑ total before MPI reduction.
+    double trgI = 0.0; ///< Local target current before global reduction.
 
+    double tPsA = 0.0; ///< Local ψ_A total before MPI reduction.
+    double tPsC = 0.0; ///< Local ψ_C total before MPI reduction.
 };
 
-
-
-
-#endif //DOMAIN_PARAMETERS_HPP
+#endif // DOMAIN_PARAMETERS_HPP

@@ -1,5 +1,5 @@
 #include "../include/Initialize_Geometry.hpp"
-#include "../inputs/Constants.hpp"
+#include "../include/Constants.hpp"
 #include "../include/readtiff.h"
 #include "../include/SimTypes.hpp"
 #include "mfem.hpp"

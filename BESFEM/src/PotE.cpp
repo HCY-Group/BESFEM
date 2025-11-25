@@ -4,7 +4,7 @@
  */
 
 #include "../include/PotE.hpp"
-#include "../inputs/Constants.hpp"
+#include "../include/Constants.hpp"
 #include "mfem.hpp"
 #include "../include/CnE.hpp"
 #include <optional>

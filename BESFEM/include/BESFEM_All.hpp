@@ -3,7 +3,7 @@
 #include "mpi.h"
 #include "../include/SimulationConfig.hpp"
 #include "../include/Utils.hpp"
-#include "../inputs/Constants.hpp"
+#include "../include/Constants.hpp"
 #include "../include/SimTypes.hpp"
 #include "../include/Initialize_Geometry.hpp"
 #include "../include/Domain_Parameters.hpp"

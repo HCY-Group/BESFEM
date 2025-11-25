@@ -1,7 +1,7 @@
 #include "../include/BoundaryConditions.hpp"
 #include "../include/Initialize_Geometry.hpp"
 #include "../include/Domain_Parameters.hpp"
-#include "../inputs/Constants.hpp"
+#include "../include/Constants.hpp"
 #include "../include/readtiff.h"
 #include "../include/SimTypes.hpp"
 #include "mfem.hpp"
@@ -224,14 +224,6 @@ void BoundaryConditions::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
 
     double cand_dist = 0.0;
     int local_gVpp = SelectCenterPin(0.99, cand_dist);
-
-    // std::cout << "[SetupPinnedDOF] rank " << myid
-    //           << " gVpp = "  << local_gVpp
-    //           << ", element distance to center = " << cand_dist
-    //           << std::endl;
-
-    // const double *X = globalMesh.GetVertex(local_gVpp);
-    // std::cout << "Rank: " << myid << " pinned coords: (" << X[0] << ", " << X[1] << ", " << X[2] << ")\n";
 
     const double posInf = std::numeric_limits<double>::infinity();
 
@@ -528,21 +520,6 @@ int BoundaryConditions::SelectFirstPin(double threshold, double &out_dist2)
         double xc = ec[0];
         double yc = (dim > 1 ? ec[1] : 0.0);
         double zc = (dim > 2 ? ec[2] : 0.0);
-
-        // // --- Reject element touching ANY boundary ---
-        // bool elem_on_boundary =
-
-        //     // X boundaries
-        //     (std::abs(xc - minv[0]) < tol) || (std::abs(xc - maxv[0]) < tol) ||
-
-        //     // Y boundaries
-        //     (dim > 1 && (std::abs(yc - minv[1]) < tol || std::abs(yc - maxv[1]) < tol)) ||
-
-        //     // Z boundaries
-        //     (dim > 2 && (std::abs(zc - minv[2]) < tol || std::abs(zc - maxv[2]) < tol));
-
-        // if (elem_on_boundary)
-        //     continue;
 
         // Compute local element cell sizes dh_x, dh_y, dh_z from its vertices
         double ex_min = 1e300, ex_max = -1e300;

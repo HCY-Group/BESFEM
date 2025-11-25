@@ -1,7 +1,5 @@
-
-
 #include "../include/CnC.hpp"
-#include "../inputs/Constants.hpp"
+#include "../include/Constants.hpp"
 #include "mfem.hpp"
 #include <optional>
 
@@ -14,8 +12,6 @@ CnC::CnC(Initialize_Geometry &geo, Domain_Parameters &para)
     PsVc(fespace.get()), CpV0(fespace.get()), RHCp(fespace.get()), CpVn(fespace.get())
     
     {
-
-    // std::cout << "gtPsC before: " << gtPsC << std::endl;
 
     if (gtPsC < 1.0e-200){
         gtPsC = gtPsi;

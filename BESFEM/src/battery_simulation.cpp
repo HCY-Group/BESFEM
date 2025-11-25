@@ -351,7 +351,7 @@ int main(int argc, char *argv[]) {
                 reaction->TotalReactionCurrent(*RxA_gf, global_current_A);
                 reaction->TotalReactionCurrent(*RxC_gf, global_current_C);
 
-                adjust.AdjustSurfaceVoltage(global_current_A, global_current_C, *anode_potential, *cathode_potential, *phA_gf, *phC_gf, VCell);
+                adjust.AdjustConstantCurrent(global_current_A, global_current_C, *anode_potential, *cathode_potential, *phA_gf, *phC_gf, VCell);
 
                 XfrA = anode_concentration->GetLithiation();
                 XfrC = cathode_concentration->GetLithiation();

@@ -4,7 +4,7 @@
  */
 
 #include "../include/PotA.hpp"
-#include "../inputs/Constants.hpp"
+#include "../include/Constants.hpp"
 #include "mfem.hpp"
 #include <optional>
 

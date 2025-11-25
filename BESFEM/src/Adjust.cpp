@@ -16,7 +16,7 @@ Adjust::Adjust(Initialize_Geometry &geo, Domain_Parameters &para)
 {}
 
 
-void Adjust::AdjustSurfaceVoltage(double current_A, double current_C, PotA &anode_potential, PotC &cathode_potential,
+void Adjust::AdjustConstantCurrent(double current_A, double current_C, PotA &anode_potential, PotC &cathode_potential,
     mfem::ParGridFunction &phA_gf, mfem::ParGridFunction &phC_gf, double &VCell)
 {
     double Vsr;
@@ -43,7 +43,6 @@ void Adjust::AdjustSurfaceVoltage(double current_A, double current_C, PotA &anod
     phC_gf -= dV_C;
 
     // --- Compute overall cell voltage ---
-    // VCell = anode_potential.BvA - cathode_potential.BvC;
     VCell = cathode_potential.BvC - anode_potential.BvA;
 }
 
