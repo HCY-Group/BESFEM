@@ -1,70 +1,156 @@
-# BESFEM
+# BESFEM: Battery Electrode Simulation using MFEM
 
-## Things to Consider for Code Review
-- Other ways to organize the code into classes?
-- Thoughts on boundary conditions class?
-- How should users make changes? Through terminal command lines, editing Constant.cpp file, GUI?
-- Best way to switch particle concentration between diffusion and Cahn-Hilliard? Right now, the anode uses Cahn-Hilliard
+BESFEM is a high-performance, MPI-enabled electrochemical simulation framework for lithium-ion battery electrodes.  
+It supports **half-cell** and **full-cell** simulations, **Cahn–Hilliard** and **diffusion-based** transport models, and the **Smoothed Boundary Method (SBM)** for diffuse interfaces.  
+The code is written in C++ and built on top of the **MFEM** finite-element library.
 
 
+---
 
-## How to Run the Code
-1. Clone the repository
-3. `make` (you may need to update the Makefile to point to your MFEM installation)
-4. `cd bin`
-5. Example for a full cell code: `mpirun -np 2 battery_simulation -mode full -m ../inputs/mesh/Mesh_40x60x3_3D_disk_full.mesh -dA ../inputs/distance/dsF_A_40x60x3_3D_disk_full.txt -dC ../inputs/distance/dsF_C_40x60x3_3D_disk_full.txt -t ml`
-6. Example for a half cell (cathode) code: `mpirun -np 1 battery_simulation -mode half -elec cathode -m ../inputs/mesh/Mesh_40x60_F00.mesh  -dC ../inputs/distance/dsFC_41x61_F00.txt -t ml`
+## Project Structure
 
+```
+BESFEM/
+│
+├── include/             # Header files for physics modules
+├── src/                 # Source files for all simulations
+├── inputs/
+│   ├── mesh/            # Mesh files
+│   ├── distance/        # SBM distance fields
+│   └── constants/       # Material + parameter files
+│
+├── outputs/
+│   └── Results/         # Auto-generated simulation outputs
+│
+├── tests/               # Unit tests
+├── plotting/            # Plotting files
+└── bin/                 # Compiled executables
+```
 
-## Additional Command-Line Options
+---
 
+## Building BESFEM
 
-- `-m MeshFileName` This will allow you to change the .mesh file 
-- `-mode CellMode` This will allow you to change if you are simulating a half or full cell. 
-- `-elec Electrode` If you are doing a half cell simulation, this will allow you to specify which electrode you are simulating. 
-- `-dC CathodeDistanceFileName` This will allow you to change the distance .txt file for the cathode
-- `-dA AnodeDistanceFileName` This will allow you to change the distance .txt file for the anode
-- `-o Order` This will allow you to change the polynomial degree order
-- `-t MeshType` This will allow you to change the type of mesh (ml = MATLAB, v = voxel)
-- `-n NumberOfTimeSteps` This will allow you to change the number of timesteps that the simulation runs
+Ensure MFEM, HYPRE, and MPI (OpenMPI or MPICH) are installed and available.
 
+```bash
+# clone the repository
+git clone --single-branch --branch AB_OOP https://gitlab.msu.edu/hcy/besfem.git
 
-## How To Get Doxygen
+# enter into BESFEM folder
+cd BESFEM
 
-1. Run `module load Doxygen`
-2. Run `doxygen Doxyfile`
-3. cd `html`
-4. To view online when using VSCode: `python3 -m http.server 8000 --bind 127.0.0.1`
+# compile all of the code - you may need to update  the makefile MFEM/HYPRE include + library paths as needed
+make 
 
+# create directory structure for outputs
+mkdir outputs
+cd outputs
+mkdir Results
 
-## How to Plot in Python (currently only supports serial)
+# enter folder with executable file
+cd bin
+```
 
-1. Create a folder in your directory called `outputs`
-2. Within `outputs`, create another folder called `Results`
-3. When you run the code, the results will spit out inside another folder in `Results`
-4. Edit the path to which you would like to plot in `mfem_plot.ipynb`:
-    - `mesh_path = "outputs/Results/20250820_092154__nsteps=3__mesh=Mesh_3x90_r/pmesh.000000"`
-    - `field_path = "outputs/Results/20250820_092154__nsteps=3__mesh=Mesh_3x90_r/pCnCH.000000"`
-5. `Run All` and scroll down to the graph
+---
 
+## Running Simulations
 
-## How to Remove Unwanted Results Files
+### Full Cell Example
+```bash
+mpirun -np 2 ./battery_simulation \
+    -mode full \
+    -m ../inputs/mesh/Mesh_40x60x3_3D_disk_full.mesh \
+    -dA ../inputs/distance/dsF_A_40x60x3_3D_disk_full.txt \
+    -dC ../inputs/distance/dsF_C_40x60x3_3D_disk_full.txt \
+    -t ml
+```
 
-1. `cd outputs/Results`
-2. `rm -rf 2025*/`
+### Half Cell Example (Cathode)
+```bash
+mpirun -np 4 ./battery_simulation \
+    -mode half \
+    -elec cathode \
+    -m ../inputs/mesh/Mesh_40x60_F00.mesh \
+    -dC ../inputs/distance/dsFC_41x61_F00.txt \
+    -t ml
+```
 
+### Half Cell Example (Anode)
+```bash
+mpirun -np 3 ./battery_simulation \
+    -mode half \
+    -elec anode \
+    -m ../inputs/mesh/Mesh_40x60_F00.mesh \
+    -dA ../inputs/distance/dsFA_41x61_F00.txt \
+    -t ml
+```
 
+---
 
-## BESFEM Equations
+## Command Line Options
+
+| Option                  | Description                             |
+| ----------------------- | --------------------------------------- |
+| `-m <MeshFile>`         | Path to `.mesh` file                    |
+| `-mode <half/full>`     | Select simulation mode                  |
+| `-elec <anode/cathode>` | Required for half-cell mode             |
+| `-dA <file>`            | Anode distance field (`.txt`)           |
+| `-dC <file>`            | Cathode distance field (`.txt`)         |
+| `-o <order>`            | Finite element polynomial order         |
+| `-t <ml/v>`             | Mesh type: MATLAB (`ml`) or voxel (`v`) |
+| `-n <steps>`            | Number of time steps                    |
+
+---
+
+## Generating Doxygen Documentation
+
+```bash
+module load Doxygen
+doxygen Doxyfile
+cd html
+```
+Preview doxygen locally:
+```bash
+python3 -m http.server 8000 --bind 127.0.0.1
+```
+
+---
+
+## Plotting Using PyGLVis
+
+```bash
+pip install glvis
+```
+
+To plot, please reference the `pyglivs.ipynb` file within the `plotting` folder. 
+You will need to adjust the input files of `mesh` and the `GridFunction x` that you are plotting. 
+
+---
+
+## Core BESFEM Equations
 
 ![Alt text](equations.png)
 
-Additional Notes:
-- A mass matrix is used for anything with a time derivative
-    - `AddDomainIntegrator(new mfem::MassIntegrator)`
+**Mass Matrix:** used for any term with a time derivative.
+```bash
+AddDomainIntegrator(new mfem::MassIntegrator());
+```
 
-- A stiffness matrix is used for anything with ∇ (PDEs)
-    - `AddDomainIntegrator(new mfem::DiffusionIntegrator)`
-    
-- `FormLinearSystem(Array, x, b, A, X, B)` results in `A(X) = B`
+**Stiffness Matrix:** used for PDE terms involving ∇.
+```bash
+AddDomainIntegrator(new mfem::DiffusionIntegrator());
+```
+
+**Linear System Assembly:** Produces `A * X = B`
+```bash
+FormLinearSystem(ess_tdof_list, x, b, A, X, B);
+```
+
+
+
+
+
+
+
 
