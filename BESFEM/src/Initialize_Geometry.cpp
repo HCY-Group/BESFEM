@@ -22,12 +22,12 @@ Initialize_Geometry::Initialize_Geometry()
 Initialize_Geometry::~Initialize_Geometry() {}
 
 // Half Cell
-void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order) {
+void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFile, const char* mesh_type, MPI_Comm comm, int order) {
 
     myid = mfem::Mpi::WorldRank();
 
     // Adjust distance file
-    AdjustDistanceFile(distanceFile);
+    AdjustDistanceFile(distanceFile, mesh_type);
     
     // Initialize the global mesh
     InitializeGlobalMesh(meshFile);
@@ -50,16 +50,20 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
     // Print out information relative to the mesh
     PrintMeshInfo();
 
+    globalMesh->Save("gmesh");
+
+
+
 }
 
 // Full Cell
-void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFileA, const char* distanceFileC, MPI_Comm comm, int order) {
+void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFileA, const char* distanceFileC, const char* mesh_type, MPI_Comm comm, int order) {
 
     myid = mfem::Mpi::WorldRank();
 
     // Adjust distance file
-    AdjustDistanceFile(distanceFileA); // for anode
-    AdjustDistanceFile(distanceFileC); // for cathode
+    AdjustDistanceFile(distanceFileA, mesh_type); // for anode
+    AdjustDistanceFile(distanceFileC, mesh_type); // for cathode
 
     // Initialize the global mesh
     InitializeGlobalMesh(meshFile);
@@ -85,7 +89,7 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
 
 }
 
-void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile)
+void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile, const char* mesh_type)
 {
     int rank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -113,7 +117,7 @@ void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile)
             std::cout << "[AdjustDistanceFile] Before: min=" << *min_it
                       << " max=" << *max_it << " max|v|=" << max_abs << "\n";
 
-            if (max_abs > 1.0) {
+            if (strcmp(mesh_type, "ml") == 0 && max_abs > 1.0) {
                 // write backup with original data
                 std::string backup = std::string(distanceFile) + ".orig";
                 {
@@ -145,7 +149,7 @@ void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile)
                 std::cout << "[AdjustDistanceFile] After: min=" << *min2
                           << " max=" << *max2 << " max|v|=" << max_abs2 << "\n";
             } else {
-                std::cout << "[AdjustDistanceFile] No scaling needed (all |v| <= 1). File unchanged.\n";
+                std::cout << "[AdjustDistanceFile] No scaling needed (all |v| <= 1 or voxel). File unchanged.\n";
             }
         }
     }

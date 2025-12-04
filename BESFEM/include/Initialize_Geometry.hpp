@@ -49,8 +49,9 @@ public:
      * thickness across meshes of different resolutions.
      *
      * @param distanceFile Path to the distance function file.
+     * @param mesh_type Type of mesh ("ml" = MATLAB, "v" = voxel).
      */
-    void AdjustDistanceFile(const char* distanceFile);
+    void AdjustDistanceFile(const char* distanceFile, const char* mesh_type);
 
     // -------------------------------------------------------------------------
     // Mesh initialization (serial + parallel)
@@ -64,10 +65,11 @@ public:
      *
      * @param meshFile Path to mesh file.
      * @param distanceFile Distance function file.
+     * @param mesh_type Type of mesh ("ml" = MATLAB, "v" = voxel).
      * @param comm MPI communicator.
      * @param order Polynomial order for FE space.
      */
-    void InitializeMesh(const char* meshFile, const char* distanceFile, MPI_Comm comm, int order);
+    void InitializeMesh(const char* meshFile, const char* distanceFile, const char* mesh_type, MPI_Comm comm, int order);
 
     /**
      * @brief Initialize mesh and distance fields for a full-cell simulation.
@@ -77,10 +79,11 @@ public:
      * @param meshFile Path to mesh file.
      * @param distanceFileA Anode distance function file (ψ_A).
      * @param distanceFileC Cathode distance function file (ψ_C).
+     * @param mesh_type Type of mesh ("ml" = MATLAB, "v" = voxel).
      * @param comm MPI communicator.
      * @param order Polynomial order for FE space.
      */
-    void InitializeMesh(const char* meshFile, const char* distanceFileA, const char* distanceFileC, MPI_Comm comm, int order);
+    void InitializeMesh(const char* meshFile, const char* distanceFileA, const char* distanceFileC, const char* mesh_type, MPI_Comm comm, int order);
 
     /**
      * @brief Load and construct global serial MFEM mesh.

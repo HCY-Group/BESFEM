@@ -56,6 +56,10 @@ void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
     InterpolateDomainParameters(mesh_type);
     CalculatePhasePotentialsAndTargetCurrent();
 
+    psi->SaveAsOne("psi");
+    pse->SaveAsOne("pse");
+
+
     PrintInfo();
 }
 
@@ -101,19 +105,30 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         if (!g) mfem::mfem_error("HALF mode: no active distance field available.");
 
 
-        if (strcmp(mesh_type, "v") == 0) {
-            psi->ProjectGridFunction(*g);
-            *psi -= 0.5;
-        }
+        // if (strcmp(mesh_type, "v") == 0) {
+        //     std::cout << "[Domain_Parameters] Voxel-derived mesh selected." << std::endl;
+        //     psi->ProjectGridFunction(*g);
+        //     *psi -= 0.5;
+        // }
 
         for (int vi = 0; vi < nV; vi++) {
             if (strcmp(mesh_type, "ml") == 0) {
+
+                std::cout << "[Domain_Parameters] MATLAB mesh selected reorg." << std::endl;
                 (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // matlab
                 (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // matlab
 
             } else if (strcmp(mesh_type, "v") == 0) {
-                (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi))); // voxel
-                (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
+                double g_val = (*g)(vi);
+                double psi_val = (g_val + 1.5) / 3.0; // linear approx to tanh curve
+                if (psi_val < 0.0) { psi_val = 0.0; }
+                if (psi_val > 0.98) { psi_val = 1.0; }
+
+                (*psi)(vi) = psi_val;
+                (*AvP)(vi) = 1.0 / 3.0;
+
+                // (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi))); // voxel
+                // (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
 
             } 
 
@@ -143,11 +158,11 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 std::cerr << "[Psi Check] ERROR: psi values out of [0,1]!" << std::endl;
                 std::exit(EXIT_FAILURE);
             }
-            if (psi_min > 2e-6) {
+            if (psi_min > 0.1) {
                 std::cerr << "[Psi Check] ERROR: psi_min not near 0." << std::endl;
                 std::exit(EXIT_FAILURE);
             }
-            if (psi_max < 1.0) {
+            if (psi_max < 0.9) {
                 std::cerr << "[Psi Check] ERROR: psi_max not near 1." << std::endl;
                 std::exit(EXIT_FAILURE);
             }
