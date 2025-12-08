@@ -44,9 +44,9 @@ namespace Constants {
     // const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
 
 
-    const double init_Rxn = 1e-6;                             ///< initial reaction rate
+    // const double init_Rxn = 1e-6;                             ///< initial reaction rate
 
-    // const double init_Rxn = 0.0;                             ///< initial reaction rate
+    const double init_Rxn = 0.0;                             ///< initial reaction rate
     const double init_RxA = 0.0;                             ///< initial anode reaction
     const double init_RxC = 0.0;                             ///< initial cathode reaction
 

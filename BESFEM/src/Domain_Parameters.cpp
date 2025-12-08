@@ -113,8 +113,6 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
 
         for (int vi = 0; vi < nV; vi++) {
             if (strcmp(mesh_type, "ml") == 0) {
-
-                std::cout << "[Domain_Parameters] MATLAB mesh selected reorg." << std::endl;
                 (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // matlab
                 (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // matlab
 

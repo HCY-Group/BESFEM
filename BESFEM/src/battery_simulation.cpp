@@ -223,9 +223,9 @@ int main(int argc, char *argv[]) {
                         electrolyte_concentration->SaltConservation(*CnE_gf, *domain_parameters.pse);
                     }
 
-                    // cathode_potential->AssembleSystem(*CnC_gf, *domain_parameters.psi, *phC_gf);
-                    // // *phC_gf = Constants::init_BvC;
-                    // electrolyte_potential->AssembleSystem(*CnE_gf, *domain_parameters.pse, *phE_gf);
+                    cathode_potential->AssembleSystem(*CnC_gf, *domain_parameters.psi, *phC_gf);
+                    // *phC_gf = Constants::init_BvC;
+                    electrolyte_potential->AssembleSystem(*CnE_gf, *domain_parameters.pse, *phE_gf);
 
                     reaction->ExchangeCurrentDensity(*CnC_gf);
 
@@ -239,15 +239,15 @@ int main(int argc, char *argv[]) {
                     // int it = 0;
                     // const int max_bv_it = 50;
             
-                    // while ((globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8)) {
+                    while ((globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8)) {
                         reaction->ButlerVolmer(*Rxn_gf, *CnC_gf, *CnE_gf, *phC_gf, *phE_gf);
-                    //     cathode_potential->UpdatePotential(*Rxn_gf, *phC_gf, *domain_parameters.psi, globalerror_P);
-                    //     electrolyte_potential->UpdatePotential(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+                        cathode_potential->UpdatePotential(*Rxn_gf, *phC_gf, *domain_parameters.psi, globalerror_P);
+                        electrolyte_potential->UpdatePotential(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
 
                     //     // if(t > 10120 && t % 1 == 0){
                     //         // std::cout << "cathode error: " << globalerror_P << " electrolyte error: " << globalerror_E << std::endl;
                     //     // }
-                    // }
+                    }
 
                     // while (globalerror_E > 1.0e-8) {
                     //     reaction->ButlerVolmer(*Rxn_gf, *CnC_gf, *CnE_gf, *phC_gf, *phE_gf);
