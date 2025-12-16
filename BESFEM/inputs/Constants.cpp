@@ -6,7 +6,7 @@
  */
 namespace Constants {
 
-    const char* mesh_file = "../inputs/disk_Mesh_80x80x6.mesh";            ///< Path to the mesh file
+    const char* mesh_file = "../inputs/mesh/Mesh_3x90_r.mesh";            ///< Path to the mesh file
     const char* dsF_file_C = "../inputs/dsF_3x90_r.txt";               ///< Path to the cathode flux data file
     const char* dsF_file_A = "../inputs/dsF_3x90_r.txt";               ///< Path to the anode flux data file
 
