@@ -58,6 +58,7 @@ void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
 
     psi->SaveAsOne("psi");
     pse->SaveAsOne("pse");
+    AvP->SaveAsOne("AvP");
 
 
     PrintInfo();
@@ -123,10 +124,19 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 if (psi_val > 0.98) { psi_val = 1.0; }
 
                 (*psi)(vi) = psi_val;
-                (*AvP)(vi) = 1.0 / 3.0;
-
                 // (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi))); // voxel
-                // (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
+                (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
+                // (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta); // voxel
+
+                // (*AvP)(vi) = ((*g)(vi)/ 3.0) / (Constants::zeta * Constants::dh);
+
+                // double AvP_val = 2.0 * psi_val * (1.0 - psi_val) / (Constants::zeta * Constants::dh);
+
+                // (*AvP)(vi) = AvP_val;
+
+                double AvP_val = (*AvP)(vi);
+                if (AvP_val < 0.19) { AvP_val = 0.0; }
+                (*AvP)(vi) = AvP_val;
 
             } 
 
@@ -173,6 +183,8 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             if ((*AvP)(vi) * Constants::dh < 1.0e-2) { (*AvP)(vi) = 0.0; }
             if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
         }
+
+        AvB->SaveAsOne("AvB_half");
         
 
         mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
@@ -297,6 +309,7 @@ void Domain_Parameters::CalculateTotalPhaseField(const mfem::ParGridFunction& gr
     EVol.SetSize(nE);
 	for (int ei = 0; ei < nE; ei++){
         EVol(ei) = pmesh->GetElementVolume(ei);
+        // EVol(ei) /= Constants::dh * Constants::dh; // in 2D
 	}
 
     // Call the general `CalculateTotals` method for any field
@@ -332,6 +345,9 @@ void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
     // Compute target current based on total Psi, rho, Cr, and constants
     trgI = total_psi * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
 
+    // voxel
+    // trgI = (total_psi * (pow(Constants::dh, 2)))  * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
+
     // Perform global MPI reduction to get the total target current
     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 }
@@ -344,6 +360,10 @@ void Domain_Parameters::PrintInfo() {
     if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
     if (!full)
     {
+        // gtPsi *= (pow(Constants::dh, 2)); // voxel 2D
+        // gtPse *= (pow(Constants::dh, 2)); // voxel 2D
+        // gTrgI *= (pow(Constants::dh, 2)); // voxel 2D
+
         cout << "Total Psi: " << gtPsi << endl;
         cout << "Total Pse: " << gtPse << endl;
         cout << "Target Current: " << gTrgI << endl;

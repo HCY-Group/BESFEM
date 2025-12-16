@@ -159,6 +159,8 @@ private:
 
     mfem::HypreParVector CeV0; ///< Concentration at current step.
     mfem::HypreParVector RHCe; ///< RHS after CN assembly (TmatR + forcing).
+    mfem::HypreParVector PsVc; ///< ψ-field mask in true-DoF representation.
+
 };
 
 #endif // CNE_HPP

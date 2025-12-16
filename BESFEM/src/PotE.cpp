@@ -209,11 +209,11 @@ void PotE::UpdatePotential(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx
 
     RHSl = Flb;
     RHSl += LpCe;
-
+    
     pE0 = phx; // Store the current potential field
     pE0.GetTrueDofs(Xe0); // Extract degrees of freedom
 
-    cgPE_solver.Mult(RHSl, Xe0); // Solve for the error term
+    // cgPE_solver.Mult(RHSl, Xe0); // Solve for the error term
 
     phx.Distribute(Xe0); // Distribute the updated values
 

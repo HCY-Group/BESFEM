@@ -53,7 +53,6 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
     globalMesh->Save("gmesh");
 
 
-
 }
 
 // Full Cell
@@ -181,6 +180,7 @@ void Initialize_Geometry::InitializeGlobalMesh(const char* meshFile) {
     // ensure mesh supports non-conforming elements for adaptive refinement
     globalMesh->EnsureNCMesh(true);
 
+
     int e = 0;
     mfem::Array<int> vert_ids;
     globalMesh->GetElementVertices(e, vert_ids);
@@ -202,6 +202,9 @@ void Initialize_Geometry::InitializeParallelMesh(MPI_Comm comm) {
         throw std::runtime_error("Global mesh must be initialized before creating a parallel mesh.");
     }
     parallelMesh = std::make_shared<mfem::ParMesh>(comm, *globalMesh);
+    parallelMesh->SaveAsOne("pmesh");
+
+
 
     std::cout << "Rank " << myid << " owns "
               << parallelMesh->GetNE() << " elements, "

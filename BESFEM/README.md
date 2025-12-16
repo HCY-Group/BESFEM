@@ -58,32 +58,52 @@ cd bin
 
 ### Full Cell Example
 ```bash
-mpirun -np 2 ./battery_simulation \
+mpirun -np 8 ./battery_simulation \
     -mode full \
     -m ../inputs/mesh/Mesh_40x60x3_3D_disk_full.mesh \
     -dA ../inputs/distance/dsF_A_40x60x3_3D_disk_full.txt \
     -dC ../inputs/distance/dsF_C_40x60x3_3D_disk_full.txt \
     -t ml
+    -n 600
 ```
 
 ### Half Cell Example (Cathode)
 ```bash
-mpirun -np 4 ./battery_simulation \
+mpirun -np 8 ./battery_simulation \
     -mode half \
     -elec cathode \
     -m ../inputs/mesh/Mesh_40x60_F00.mesh \
     -dC ../inputs/distance/dsFC_41x61_F00.txt \
     -t ml
+    -n 1200
 ```
 
 ### Half Cell Example (Anode)
+The constants defined in `inputs/Constants.cpp` are configured for full-cell simulations by default. 
+When running a half-cell anode simulation, some constants need to be modified to ensure correct reactions. 
+Before running a half-cell anode simulation, please update the following values in `inputs/Constants.cpp`:
+
 ```bash
-mpirun -np 3 ./battery_simulation \
+// -----------------------------------------------------------------------------
+// Constants for half-cell simulation (anode side)
+// -----------------------------------------------------------------------------
+
+const double init_CnA = 2.0e-2;     ///< Initial lithium concentration in the anode
+const double init_BvA = -0.1;       ///< Anode potential boundary condition (half-cell)
+const double init_BvE = -0.4686;    ///< Electrolyte potential boundary condition (half-cell)
+const double init_CnE = 0.001;      ///< Initial lithium concentration in the electrolyte
+```
+
+Now you can go ahead and run the example:
+
+```bash
+mpirun -np 8 ./battery_simulation \
     -mode half \
     -elec anode \
     -m ../inputs/mesh/Mesh_40x60_F00.mesh \
     -dA ../inputs/distance/dsFA_41x61_F00.txt \
     -t ml
+    -n 1200
 ```
 
 ---

@@ -79,9 +79,11 @@ void PotC::AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx,
 	mfem::ConstantCoefficient dbc_e_Coef(BvC);
 
     ParticleConductivity(Cn, psx); // Update conductivity
+    // kap = 1.0; // testing
     fem.Update(Kp2); // Update the stiffness matrix
 
     potential.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr); // Apply Dirichlet boundary conditions
+    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e); // HALF
 
     fem.FormLinearSystem(Kp2, ess_tdof_list_e, potential, B1t, KmP, X1v, B1v); // Assemble the linear system
 

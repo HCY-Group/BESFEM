@@ -96,6 +96,8 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
             (*Kfw)(vi) = (*i0C)(vi) / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * (*OCV)(vi)); // forward reaction constant
             (*Kbw)(vi) = (*i0C)(vi) / (Constants::Frd * Cn(vi)) * exp(-Constants::alp * Constants::Cst1 * (*OCV)(vi)); // backward rection constant
         }
+
+        // std::cout << "i0C: " << (*i0C)(vi) << ", OCV: " << (*OCV)(vi) << ", Kfw: " << (*Kfw)(vi) << ", Kbw: " << (*Kbw)(vi) << std::endl;
     }
 }
 
@@ -185,8 +187,15 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Rx
          Rx.GetNodalValues(ei, VtxVal);
          double sum = std::accumulate(VtxVal.begin(), VtxVal.end(), 0.0);
          EAvg(ei) = sum / nC;
+        //  std::cout << "Sum at element " << ei << ": " << sum << ", Average: " << EAvg(ei) << std::endl;
          local_current += EAvg(ei) * EVol(ei);
+        //  local_current *= (pow(Constants::dh, 2)); // Scale by area element
+
      }
+
+
+
+    //  std::cout << "local current: " << local_current << std::endl;
 
     //  if (mfem::Mpi::WorldRank() == 0){std::cout << "local current: " << local_current << std::endl;}
  

@@ -39,7 +39,7 @@ void CnC::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
 
     fem.InitializeStiffnessMatrix(cDp, Kc2); // Initialize stiffness form for particle potential HALF
 
-    psx.GetTrueDofs(PsVc); // Extract true degrees of freedom in the potential field
+    psx.GetTrueDofs(PsVc); // Extract true degrees of freedom
 
 }
 
@@ -57,7 +57,7 @@ void CnC::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &
 
     for (int vi = 0; vi < nV; vi++){
         Dp(vi) = psx(vi) * (0.0277 - 0.084 * Cn(vi) + 0.1003 * Cn(vi) * Cn(vi)) * 1.0e-8;
-        if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
+        // if (Dp(vi) > 4.6e-10){Dp(vi) = 4.6e-10;}
     }
     cDp.SetGridFunction(&Dp); // Set the diffusivity coefficient for the stiffness matrix
     
@@ -76,8 +76,11 @@ void CnC::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &
 
     // Update only the solid region MAKE INTO FUNCTION
     for (int p = 0; p < CpV0.Size(); p++){
-        if (PsVc(p) < 1.0e-5){
+        if (PsVc(p) < 1.0e-5){ // 1e-1 works, but gaps still get smaller
             (CpVn)(p) = Constants::init_CnC;} // Cp0 initial value
+
+        if (CpVn(p) < 0.0){
+            (CpVn)(p) = 1.0e-6;} // prevent negative concentrations
     }
 
     Cn.Distribute(CpVn);

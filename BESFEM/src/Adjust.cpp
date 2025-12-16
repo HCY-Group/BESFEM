@@ -16,6 +16,7 @@ Adjust::Adjust(Initialize_Geometry &geo, Domain_Parameters &para)
 {}
 
 
+// Full Cell
 void Adjust::AdjustConstantCurrent(double current_A, double current_C, PotA &anode_potential, PotC &cathode_potential,
     mfem::ParGridFunction &phA_gf, mfem::ParGridFunction &phC_gf, double &VCell)
 {
@@ -45,6 +46,4 @@ void Adjust::AdjustConstantCurrent(double current_A, double current_C, PotA &ano
     // --- Compute overall cell voltage ---
     VCell = cathode_potential.BvC - anode_potential.BvA;
 }
-
-
 

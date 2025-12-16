@@ -10,7 +10,7 @@ CnE::CnE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &
       De(fespace.get()), Rxe(fespace.get()), PeR(fespace.get()), cDe(&De), cAe(&Rxe), matCoef_R(&PeR),
       nbcCoef(0.0), Fet(fespace.get()), Me_solver(MPI_COMM_WORLD),
       CeV0(fespace.get()), RHCe(fespace.get()), CeVn(fespace.get()),
-      Feb(fespace.get()), X1v(fespace.get()), mode_(mode)
+      Feb(fespace.get()), X1v(fespace.get()), mode_(mode), PsVc(fespace.get())
     
     {}
 
@@ -49,6 +49,8 @@ void CnE::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
         Fet = *Be_init;
 
         fem.FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
+    
+        // psx.GetTrueDofs(PsVc); // Extract true degrees of freedom
     }
 
     else if(mode_ == sim::CellMode::FULL){
@@ -76,6 +78,8 @@ void CnE::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
         Fet = *Be_init;
 
         fem.FormLinearSystem(Ke2, boundary_dofs, Cn, Fet, Kmate, X1v, Feb); // Form the linear system for the reaction potential
+    
+        // psx.GetTrueDofs(PsVc); // Extract true degrees of freedom
     }
 }
 
@@ -120,6 +124,14 @@ void CnE::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &
         Me_solver.SetOperator(*TmatL);
         Me_solver.SetPreconditioner(Me_prec);
         Me_solver.Mult(RHCe, CeVn) ;
+
+        // Clamp Negatives
+        for (int p = 0; p < CeVn.Size(); p++){
+            if (CeVn(p) < 0.0){
+                (CeVn)(p) = 1.0e-6;} // prevent negative concentrations
+        }
+
+        
 
         // Recover updated concentration into GridFunction
 	    Cn.Distribute(CeVn); 
@@ -166,6 +178,12 @@ void CnE::UpdateConcentration(mfem::ParGridFunction &RxC, mfem::ParGridFunction 
         // Me_solver.SetPreconditioner(Me_prec);
 
         Me_solver.Mult(RHCe, CeV0) ;
+
+        // // Update only the solid region MAKE INTO FUNCTION
+        // for (int p = 0; p < CeV0.Size(); p++){
+        //     if (PsVc(p) < 3.0e-1){ // 1e-1 works, but gaps still get smaller
+        //         (CeV0)(p) = Constants::init_CnE;} // Cp0 initial value
+        // }
 
         // Recover updated concentration into GridFunction
 	    Cn.Distribute(CeV0); 
