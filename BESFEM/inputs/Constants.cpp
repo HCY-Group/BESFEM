@@ -7,8 +7,8 @@
 namespace Constants {
 
     const char* mesh_file = "../inputs/mesh/Mesh_3x90_r.mesh";            ///< Path to the mesh file
-    const char* dsF_file_C = "../inputs/dsF_3x90_r.txt";               ///< Path to the cathode flux data file
-    const char* dsF_file_A = "../inputs/dsF_3x90_r.txt";               ///< Path to the anode flux data file
+    const char* dsF_file_C = "../inputs/distance/dsF_3x90_r.txt";               ///< Path to the cathode flux data file
+    const char* dsF_file_A = "../inputs/distance/dsF_3x90_r.txt";               ///< Path to the anode flux data file
 
     bool visualization = true;
     const int order = 1;                                    ///< Order of the finite element basis functions
