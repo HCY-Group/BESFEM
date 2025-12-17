@@ -1,7 +1,8 @@
 # General MFEM configuration
-MFEM_DIR ?= ../../..
-MFEM_BUILD_DIR ?= ../../..
-CONFIG_MK = $(MFEM_BUILD_DIR)/config/config.mk
+#MFEM_DIR ?= ../../..
+#MFEM_BUILD_DIR ?= ../../..
+#CONFIG_MK = $(MFEM_BUILD_DIR)/config/config.mk
+CONFIG_MK = $(MFEM_BUILD_DIR)/share/mfem/config.mk
 
 # Include MFEM's configuration
 -include $(CONFIG_MK)
