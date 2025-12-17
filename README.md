@@ -35,18 +35,16 @@ Ensure MFEM, HYPRE, and MPI (OpenMPI or MPICH) are installed and available.
 
 ```bash
 # clone the repository
-git clone --single-branch --branch AB_OOP https://gitlab.msu.edu/hcy/besfem.git
+git clone https://gitlab.msu.edu/hcy/besfem.git
 
-# enter into BESFEM folder
-cd BESFEM
+# enter into besfem folder
+cd besfem 
+
+# On the HPCC 
+module load MFEM
 
 # compile all of the code - you may need to update  the makefile MFEM/HYPRE include + library paths as needed
 make 
-
-# create directory structure for outputs
-mkdir outputs
-cd outputs
-mkdir Results
 
 # enter folder with executable file
 cd bin
