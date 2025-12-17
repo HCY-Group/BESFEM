@@ -63,7 +63,7 @@ mpirun -np 8 ./battery_simulation \
     -m ../inputs/mesh/Mesh_40x60x3_3D_disk_full.mesh \
     -dA ../inputs/distance/dsF_A_40x60x3_3D_disk_full.txt \
     -dC ../inputs/distance/dsF_C_40x60x3_3D_disk_full.txt \
-    -t ml
+    -t ml \
     -n 600
 ```
 
@@ -74,7 +74,7 @@ mpirun -np 8 ./battery_simulation \
     -elec cathode \
     -m ../inputs/mesh/Mesh_40x60_F00.mesh \
     -dC ../inputs/distance/dsFC_41x61_F00.txt \
-    -t ml
+    -t ml \
     -n 1200
 ```
 
@@ -102,7 +102,7 @@ mpirun -np 8 ./battery_simulation \
     -elec anode \
     -m ../inputs/mesh/Mesh_40x60_F00.mesh \
     -dA ../inputs/distance/dsFA_41x61_F00.txt \
-    -t ml
+    -t ml \
     -n 1200
 ```
 
