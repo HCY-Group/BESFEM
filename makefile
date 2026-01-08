@@ -54,14 +54,14 @@ SRC_FILES = \
     src/Adjust.cpp \
     src/Utils.cpp
 
-# SRC_FILES = example.cpp
+SRC_FILES = MinWorkEx.cpp
             
 
 # Output executable
 # EXEC = simulation
 # EXEC = serial_simulation
-EXEC_DIR = bin
-EXEC_NAME = battery_simulation
+EXEC_DIR = ./
+EXEC_NAME = MinWorkEx
 # EXEC_NAME = example
 # EXEC_NAME = full_cell
 EXEC = $(EXEC_DIR)/$(EXEC_NAME)
