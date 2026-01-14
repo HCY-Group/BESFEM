@@ -1,9 +1,5 @@
+
 #include "../include/readtiff.h"
-#include <cstdint>
-#include <tiffio.h>
-#include <fstream>
-#include <iostream>
-#include <cmath>
 
 Constraints::Constraints() : Row_begin(0), Row_end(-1), Column_begin(0), Column_end(-1), Depth_begin(0), Depth_end(-1) {}
 
@@ -21,6 +17,18 @@ TIFFReader::TIFFReader(const char* filePath, const Constraints& constraints) {
     readTIFFFields();
     setConstraints(constraints);
     TIFFSetDirectory(tiff, 0);
+
+    uint16 spp=0, bps=0, photo=0, planar=0;
+    TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &spp);
+    TIFFGetField(tiff, TIFFTAG_BITSPERSAMPLE, &bps);
+    TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
+    TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar);
+
+    std::cout << "spp=" << spp
+            << " bps=" << bps
+            << " photometric=" << photo
+            << " planar=" << planar << "\n";
+
 }
 
 void TIFFReader::readinfo() {
@@ -33,24 +41,70 @@ void TIFFReader::readinfo() {
         }
     }
 
-    for (int page = 0; page < numPages - 1; page++) {
+    std::cout << "Original TIFF Info - Width: " << Width << ", Height: " << Height
+              << ", NumPages: " << numPages << std::endl;
+
+    for (int page = 0; page < numPages; page++) {
         if (!(page > constraints.Depth_begin - 1 && page < constraints.Depth_end)) {
-            // std::cerr << "page: " << page + 1 << ", SKIPPING\n";
             TIFFSetDirectory(tiff, page);
             continue;
         }
 
-        // std::cerr << "page: " << page << ", READING\n";
+        std::cerr << "page: " << page << ", READING\n";
         TIFFSetDirectory(tiff, page);
+
+        // --- Read per-page photometric + spp (single slice is RGBA, stack is grayscale) ---
+        uint16 photo = 0;
+        TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
+
+        uint16 spp = 1;
+        TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &spp);
+
         tdata_t buf = _TIFFmalloc(TIFFScanlineSize(tiff));
-        for (int col = constraints.Column_begin; col < constraints.Column_end; col++) {
-            for (int row = constraints.Row_begin; row < constraints.Row_end; row++) {
-                TIFFReadScanline(tiff, buf, row);
-                uint8_t* pixel = (uint8_t*)buf; //cast void pointer
-                imageData[page - constraints.Depth_begin][row - constraints.Row_begin][col - constraints.Column_begin] = 1 - static_cast<int>(pixel[col]) / 255;
+
+        // IMPORTANT: read scanline once per ROW (not once per (row,col))
+        for (int row = constraints.Row_begin; row < constraints.Row_end; row++) {
+            TIFFReadScanline(tiff, buf, row);
+            uint8* p = (uint8*)buf; // scanline bytes
+
+            for (int col = constraints.Column_begin; col < constraints.Column_end; col++) {
+
+                // --- Correctly decode pixel value for grayscale vs RGBA ---
+                uint8 gray;
+                if (spp == 1) {
+                    gray = p[col];
+                } else {
+                    // packed RGBA: [R G B A] [R G B A] ...
+                    const int idx = (int)spp * col;
+                    const uint8 r = p[idx + 0];
+                    const uint8 g = p[idx + 1];
+                    const uint8 b = p[idx + 2];
+                    gray = static_cast<uint8>(0.299*r + 0.587*g + 0.114*b);
+                }
+
+                // --- Make BOTH file types mean the same thing: "solid=1 for black" ---
+                // stack: photometric=0 (MINISWHITE): 0=white, 255=black
+                // single: photometric=2 (RGB): black~0, white~255 after gray conversion
+                int solid;
+                if (photo == PHOTOMETRIC_MINISWHITE) {
+                    solid = (gray > 127) ? 0 : 1;   
+                } else {
+                    solid = (gray < 127) ? 0 : 1;  
+                }
+
+                imageData[page - constraints.Depth_begin]
+                         [row  - constraints.Row_begin]
+                         [col  - constraints.Column_begin] = solid;
             }
         }
+
         _TIFFfree(buf);
+
+        std::cout << "[TIFFReader] Constrained dimensions:\n"
+          << "  Pages   : " << (constraints.Depth_end  - constraints.Depth_begin) << "\n"
+          << "  Rows    : " << (constraints.Row_end    - constraints.Row_begin)   << "\n"
+          << "  Columns : " << (constraints.Column_end - constraints.Column_begin) << std::endl;
+
     }
 }
 
@@ -79,24 +133,27 @@ void TIFFReader::setConstraints(const Constraints& constraints) {
     this->constraints.Column_begin = std::max(constraints.Column_begin, 0);
     this->constraints.Depth_begin = std::max(constraints.Depth_begin, 0);
 
-    if (constraints.Row_end > Width) {
-        std::cerr << "Row_end (" << constraints.Row_end << ") exceeds Width (" << Width << "). Setting to Width.\n";
-        this->constraints.Row_end = Width;
+    // NOTE: keeping your structure, but fixing the Width/Height swap:
+    // Rows should clamp to Height, Columns should clamp to Width.
+
+    if (constraints.Row_end > Height) {
+        std::cerr << "Row_end (" << constraints.Row_end << ") exceeds Height (" << Height << "). Setting to Height.\n";
+        this->constraints.Row_end = Height;
     } else if (constraints.Row_end < this->constraints.Row_begin) {
-        std::cerr << "Row_end (" << constraints.Row_end << ") is less than Row_begin (" << this->constraints.Row_begin << "). Setting to Width.\n";
-        this->constraints.Row_end = Width;
+        std::cerr << "Row_end (" << constraints.Row_end << ") is less than Row_begin (" << this->constraints.Row_begin << "). Setting to Height.\n";
+        this->constraints.Row_end = Height;
     } else {
-        this->constraints.Row_end = (constraints.Row_end > -1) ? constraints.Row_end : Width;
+        this->constraints.Row_end = (constraints.Row_end > -1) ? constraints.Row_end : Height;
     }
 
-    if (constraints.Column_end > Height) {
-        std::cerr << "Column_end (" << constraints.Column_end << ") exceeds Height (" << Height << "). Setting to Height.\n";
-        this->constraints.Column_end = Height;
+    if (constraints.Column_end > Width) {
+        std::cerr << "Column_end (" << constraints.Column_end << ") exceeds Width (" << Width << "). Setting to Width.\n";
+        this->constraints.Column_end = Width;
     } else if (constraints.Column_end < this->constraints.Column_begin) {
-        std::cerr << "Column_end (" << constraints.Column_end << ") is less than Column_begin (" << this->constraints.Column_begin << "). Setting to Height.\n";
-        this->constraints.Column_end = Height;
+        std::cerr << "Column_end (" << constraints.Column_end << ") is less than Column_begin (" << this->constraints.Column_begin << "). Setting to Width.\n";
+        this->constraints.Column_end = Width;
     } else {
-        this->constraints.Column_end = (constraints.Column_end > -1) ? constraints.Column_end : Height;
+        this->constraints.Column_end = (constraints.Column_end > -1) ? constraints.Column_end : Width;
     }
 
     if (constraints.Depth_end > numPages) {
@@ -114,42 +171,3 @@ void TIFFReader::setConstraints(const Constraints& constraints) {
 std::vector<std::vector<std::vector<int>>> TIFFReader::getImageData() {
     return imageData;
 }
-       
-/*
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <tiff_file> [<Row_begin> <Row_end> <Column_begin> <Column_end> <Depth_begin> <Depth_end>]\n";
-        return 1;
-    }
-    Constraints args;
-    for (int i = 2; i < argc; ++i) {
-        int value = std::stoi(argv[i]);        switch (i) {
-            case 2:
-                args.Row_begin = value;
-                break;
-            case 3:
-                args.Row_end = value;
-                break;
-            case 4:
-                args.Column_begin = value;
-                break;
-            case 5:
-                args.Column_end = value;
-                break;
-            case 6:
-                args.Depth_begin = value;
-                break;
-            case 7:
-                args.Depth_end = value;
-                break;
-            default:
-                break;
-        }
-    }
-
-    TIFFReader reader(argv[1], args);
-    reader.readinfo();
-    reader.getImageData();
-    return 0;
-}
-*/

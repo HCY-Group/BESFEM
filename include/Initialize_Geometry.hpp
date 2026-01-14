@@ -186,6 +186,33 @@ public:
      */
     void SetupPinnedDOF(mfem::ParFiniteElementSpace& fespace);
 
+    
+    
+    /**
+     * @brief Save TIFF voxel data to a series of PGM files.
+     * 
+     * @param data voxel data.
+     * @param filename Base filename for output PGM files.
+     */
+    void SaveTiffDataToPGM(const std::vector<std::vector<std::vector<int>>> &data,
+                       const std::string &filename);
+
+    /**
+     * @brief Use MFEM-based solvers to compute distance function from voxel mask.
+     * @param dist Output unsigned distance function.
+     * @param phi_filt Output filtered level set function.
+     * @param dist_signed Optional output signed distance function (pass nullptr if not needed).
+     * @param solver_type Solver type: 0 = heat equation, 1 = p-laplace, 2 = normalization.
+     * @param t_param Time parameter for heat equation solver.
+     */
+    void ComputeDistanceFromTiffMask(
+        mfem::ParGridFunction &dist,            // output unsigned distance
+        mfem::ParGridFunction &phi_filt,        // output filtered level set
+        mfem::ParGridFunction *dist_signed,     // optional signed distance (pass nullptr if not needed)
+        int solver_type,                         // 0 heat, 1 p-lap, 2 normalization
+        double t_param                          // like MFEM miniapp, dt = t_param * dx^2 for heat
+    );
+
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
@@ -268,6 +295,12 @@ public:
 
     int myid = 0; ///< MPI rank.
     int rkpp = -1; ///< Rank that owns the pinned DOF.
+
+    std::unique_ptr<mfem::ParGridFunction> distMask;       // unsigned distance
+    std::unique_ptr<mfem::ParGridFunction> distMaskSigned; // signed distance (optional)
+    std::unique_ptr<mfem::ParGridFunction> MaskFilter;    // filtered level set
+    std::unique_ptr<mfem::ParGridFunction> MaskFilterPse;    // filtered level set (debug/useful)
+
 };
 
 #endif // INITIALIZE_GEOMETRY_HPP

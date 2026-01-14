@@ -52,7 +52,8 @@ SRC_FILES = \
     src/PotA.cpp \
     src/PotE.cpp \
     src/Adjust.cpp \
-    src/Utils.cpp
+    src/Utils.cpp \
+    src/dist_solver.cpp
 
 # SRC_FILES = example.cpp
             

@@ -47,6 +47,35 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
     // Map the global values to the local
     MapGlobalToLocal(meshFile);
 
+    // distance for tiff files
+    std::string meshFileStr(meshFile);
+    if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif")
+    {
+        distMask      = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        distMaskSigned= std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        MaskFilter   = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        MaskFilterPse = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+
+        const int solver_type = 1;
+        const double t_param = 1.0;
+
+        ComputeDistanceFromTiffMask(*distMask, *MaskFilter, distMaskSigned.get(), solver_type, t_param);
+
+        std::cout << "ComputeDistanceFromTiffMask done" << std::endl;
+
+        distMask->SaveAsOne("distMask_unsigned.gf");
+        distMaskSigned->SaveAsOne("distMask_signed.gf");
+        MaskFilter->SaveAsOne("MaskFilter.gf");
+
+        *MaskFilterPse = *MaskFilter;
+        // MaskFilterPse = 1 - MaskFilterPse
+        (*MaskFilterPse) *= -1.0;
+        (*MaskFilterPse) += 1.0;
+
+        MaskFilterPse->SaveAsOne("MaskFilter_pse.gf");
+
+    }
+
     // Print out information relative to the mesh
     PrintMeshInfo();
 
@@ -413,13 +442,15 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
-	args.Row_end      = 80;
+	args.Row_end      = 100;
 	args.Column_begin = 0;
-	args.Column_end   = 120;
+	args.Column_end   = 100;
 	TIFFReader reader(meshFile,args);
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffData;
 	tiffData = reader.getImageData();
+
+    SaveTiffDataToPGM(tiffData, "tiff_debug.pgm");
 
     return tiffData;
 }
@@ -457,4 +488,137 @@ void Initialize_Geometry::PrintMeshInfo() {
         return;
     }
 
+}
+
+void Initialize_Geometry::SaveTiffDataToPGM(const std::vector<std::vector<std::vector<int>>> &data,
+                              const std::string &filename)
+{
+    if (data.empty() || data[0].empty() || data[0][0].empty()) {
+        std::cerr << "SaveTiffDataToPGM: empty data\n";
+        return;
+    }
+
+    const auto &img = data[0];              // first slice only
+    const int height = (int)img.size();     // rows
+    const int width  = (int)img[0].size();  // columns
+
+    std::ofstream out(filename, std::ios::binary);
+    if (!out.is_open()) {
+        std::cerr << "Could not open file for writing: " << filename << "\n";
+        return;
+    }
+
+    // PGM header
+    out << "P5\n" << width << " " << height << "\n255\n";
+
+    // Write binary 0 or 255 only
+    for (int j = 0; j < height; ++j) {
+        for (int i = 0; i < width; ++i) {
+            unsigned char val;
+
+            if (img[j][i] <= 0)       val = 0;     // black
+            else                      val = 255;   // white
+
+            out.write(reinterpret_cast<char*>(&val), 1);
+        }
+    }
+
+    out.close();
+    std::cout << "Saved binary PGM (0/255) to " << filename << "\n";
+}
+
+
+#include "../include/dist_solver.hpp"
+
+
+void Initialize_Geometry::ComputeDistanceFromTiffMask(mfem::ParGridFunction &dist, mfem::ParGridFunction &filt_gf, mfem::ParGridFunction *dist_signed,
+    int solver_type, double t_param)
+
+{
+    MFEM_VERIFY(parallelMesh, "parallelMesh is not initialized.");
+    MFEM_VERIFY(parfespace, "parfespace is not initialized.");
+    MFEM_VERIFY(Vox, "Vox is not initialized (need .tif path + MapGlobalToLocal).");
+
+    MFEM_VERIFY(dist.ParFESpace() == parfespace.get(), "dist must be on parfespace.");
+    MFEM_VERIFY(filt_gf.ParFESpace() == parfespace.get(), "filt_gf must be on parfespace.");
+    if (dist_signed)
+    {
+        MFEM_VERIFY(dist_signed->ParFESpace() == parfespace.get(),
+                    "dist_signed must be on parfespace.");
+    }
+
+    double dx;
+    dx = parallelMesh->GetElementSize(0); // assuming uniform mesh
+
+    // new psi method?? PDEFilter - Poisson smoothing field
+
+    // like doughnut and cheese (1 inside, -1 outside)
+    mfem::ParGridFunction ls_coeff(parfespace.get());
+    for (int i = 0; i < ls_coeff.Size(); i++)
+    {
+        const double m = (*Vox)(i);            
+        // ls_coeff(i) = (m > 0.5) ? 0.0 : +1.0; // define what is inside vs outside (other tif with black outline)
+        // ls_coeff(i) = (m > 0.5) ? +1.0 : 0.0; // define what is inside vs outside (microstructure tif) HEAT
+        ls_coeff(i) = (m > 0.5) ? +1.0 : -1.0; // define what is inside vs outside (microstructure tif) P LAP
+        
+
+    }
+
+    // smoothing filter like example
+    const double filter_weight = 3 * dx;
+    // const double filter_weight = 1;
+
+    mfem::common::PDEFilter filter(*parallelMesh, filter_weight);
+    filter.Filter(ls_coeff, filt_gf);
+    
+    mfem::GridFunctionCoefficient ls_filt_coeff(&filt_gf);
+
+    // for (int i = 0; i < filt_gf.Size(); i++)
+    // {
+    //     if (filt_gf(i) < 0.0) filt_gf(i) = 0.0;
+    //     if (filt_gf(i) > 1.0) filt_gf(i) = 1.0;
+    // }
+
+    // distance solver
+    mfem::common::DistanceSolver *dist_solver = nullptr;
+
+    if (solver_type == 0)
+    {
+        auto *ds = new mfem::common::HeatDistanceSolver(t_param * dx * dx);
+        ds->transform = true;
+        ds->smooth_steps = 0;
+        ds->vis_glvis = false;
+        dist_solver = ds;
+    }
+    else if (solver_type == 1)
+    {
+        const int p = 10;
+        const int newton_iter = 50;
+        dist_solver = new mfem::common::PLapDistanceSolver(p, newton_iter);
+    }
+    else if (solver_type == 2)
+    {
+        dist_solver = new mfem::common::NormalizationDistanceSolver();
+    }
+    else
+    {
+        MFEM_ABORT("solver_type must be 0 (heat), 1 (p-lap), or 2 (normalization).");
+    }
+    dist_solver->print_level.Iterations();
+
+
+    dist_solver->ComputeScalarDistance(ls_filt_coeff, dist);
+
+    if (dist_signed)
+    {
+        *dist_signed = dist;
+        for (int i = 0; i < dist_signed->Size(); i++)
+        {
+            // (*dist_signed)(i) = (*dist_signed)(i) - 1.5;
+            const double s = (ls_coeff(i) >= 0.5) ? +1.0 : -1.0;
+            (*dist_signed)(i) *= s;
+        }
+    }
+
+    delete dist_solver;
 }

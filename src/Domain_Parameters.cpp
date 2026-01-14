@@ -118,13 +118,15 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // matlab
 
             } else if (strcmp(mesh_type, "v") == 0) {
-                double g_val = (*g)(vi);
-                double psi_val = (g_val + 1.5) / 3.0; // linear approx to tanh curve
-                if (psi_val < 0.0) { psi_val = 0.0; }
-                if (psi_val > 0.98) { psi_val = 1.0; }
+                // double g_val = (*g)(vi);
+                // double psi_val = g_val;
+                // double psi_val = (g_val + 1.5) / 3.0; // linear approx to tanh curve
+                // if (psi_val < 0.0) { psi_val = 0.0; }
+                // if (psi_val > 0.98) { psi_val = 1.0; }
 
-                (*psi)(vi) = psi_val;
-                // (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi))); // voxel
+                // (*psi)(vi) = (*g)(vi);
+                // // (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi))); // voxel
+                (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // voxel
                 (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
                 // (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta); // voxel
 
@@ -184,7 +186,7 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
         }
 
-        AvB->SaveAsOne("AvB_half");
+        // AvB->SaveAsOne("AvB_half");
         
 
         mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
