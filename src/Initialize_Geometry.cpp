@@ -56,15 +56,15 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
         MaskFilter   = std::make_unique<mfem::ParGridFunction>(parfespace.get());
         MaskFilterPse = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
-        const int solver_type = 1;
+        const int solver_type = 0;
         const double t_param = 1.0;
 
         ComputeDistanceFromTiffMask(*distMask, *MaskFilter, distMaskSigned.get(), solver_type, t_param);
 
         std::cout << "ComputeDistanceFromTiffMask done" << std::endl;
 
-        distMask->SaveAsOne("distMask_unsigned.gf");
-        distMaskSigned->SaveAsOne("distMask_signed.gf");
+        distMask->SaveAsOne("distMask_ScalarDistance.gf");
+        distMaskSigned->SaveAsOne("distMask_signed_heat.gf");
         MaskFilter->SaveAsOne("MaskFilter.gf");
 
         *MaskFilterPse = *MaskFilter;
@@ -442,9 +442,9 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
-	args.Row_end      = 100;
-	args.Column_begin = 0;
-	args.Column_end   = 100;
+	args.Row_end      = 4;
+	args.Column_begin = 165;
+	args.Column_end   = 205;
 	TIFFReader reader(meshFile,args);
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffData;
@@ -552,12 +552,12 @@ void Initialize_Geometry::ComputeDistanceFromTiffMask(mfem::ParGridFunction &dis
 
     // new psi method?? PDEFilter - Poisson smoothing field
 
-    // like doughnut and cheese (1 inside, -1 outside)
+    // // like doughnut and cheese (1 inside, -1 outside)
     mfem::ParGridFunction ls_coeff(parfespace.get());
     for (int i = 0; i < ls_coeff.Size(); i++)
     {
         const double m = (*Vox)(i);            
-        // ls_coeff(i) = (m > 0.5) ? 0.0 : +1.0; // define what is inside vs outside (other tif with black outline)
+    //     // ls_coeff(i) = (m > 0.5) ? 0.0 : +1.0; // define what is inside vs outside (other tif with black outline)
         // ls_coeff(i) = (m > 0.5) ? +1.0 : 0.0; // define what is inside vs outside (microstructure tif) HEAT
         ls_coeff(i) = (m > 0.5) ? +1.0 : -1.0; // define what is inside vs outside (microstructure tif) P LAP
         
@@ -565,7 +565,7 @@ void Initialize_Geometry::ComputeDistanceFromTiffMask(mfem::ParGridFunction &dis
     }
 
     // smoothing filter like example
-    const double filter_weight = 3 * dx;
+    const double filter_weight = 6 * dx;
     // const double filter_weight = 1;
 
     mfem::common::PDEFilter filter(*parallelMesh, filter_weight);
@@ -573,11 +573,12 @@ void Initialize_Geometry::ComputeDistanceFromTiffMask(mfem::ParGridFunction &dis
     
     mfem::GridFunctionCoefficient ls_filt_coeff(&filt_gf);
 
-    // for (int i = 0; i < filt_gf.Size(); i++)
-    // {
-    //     if (filt_gf(i) < 0.0) filt_gf(i) = 0.0;
-    //     if (filt_gf(i) > 1.0) filt_gf(i) = 1.0;
-    // }
+    for (int i = 0; i < filt_gf.Size(); i++)
+    {
+        filt_gf(i) = 0.5*(filt_gf(i) + 1.0);
+        // if (filt_gf(i) < 0.0) filt_gf(i) = 0.0;
+        // if (filt_gf(i) > 1.0) filt_gf(i) = 1.0;
+    }
 
     // distance solver
     mfem::common::DistanceSolver *dist_solver = nullptr;

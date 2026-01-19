@@ -112,6 +112,11 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         //     *psi -= 0.5;
         // }
 
+        // std::cout << "nV = " << nV << std::endl;
+
+        nV = pmesh->GetNV();
+        std::cout << "nV = " << nV << std::endl;
+
         for (int vi = 0; vi < nV; vi++) {
             if (strcmp(mesh_type, "ml") == 0) {
                 (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // matlab
@@ -124,9 +129,11 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 // if (psi_val < 0.0) { psi_val = 0.0; }
                 // if (psi_val > 0.98) { psi_val = 1.0; }
 
-                // (*psi)(vi) = (*g)(vi);
-                // // (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi))); // voxel
-                (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // voxel
+                (*psi)(vi) = (*g)(vi);
+                // (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi))); // voxel
+                // (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // voxel
+                // (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // matlab
+
                 (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
                 // (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta); // voxel
 
