@@ -15,13 +15,14 @@ namespace Constants {
     // const double dh =  0.0000200; 
     // const double dh = 0.0000325;                            ///< Mesh element size (disk)
     // const double dh = 1.008403361;                           ///< Mesh element size (voxel)    
-    const double dh = 1.02564 ;                           ///< Mesh element size (voxel)
+    // const double dh = 1.02564 ;                           ///< Mesh element size (voxel)
+    const double dh = 2.0202e-05;
     const double gc = 3.3800e-10 *2;			            ///< gradient coefficient
     const double zeta = 1.0;                                ///< Interfacial thickness
     const double thres = 1.0e-3;                            ///< Threshold value for numerical operations
     const double eps = 1.0e-6;                              ///< Small epsilon value for numerical tolerance
-    const double dt = 0.0105625 / 100;
-    // const double dt = 0.0105625;                            ///< Time step size 
+    // const double dt = 0.0105625 / 100;
+    const double dt = 0.0105625;                            ///< Time step size 
     // const double dt = 0.02 * 3.25e-5 * 3.25e-5 /7.3333e-10;      ///< Time step size
     const double tm = 0.0;                                  ///< Initial simulation time
     const double t_minus = 7.619047619047619e-01;           ///< Transference number

@@ -73,6 +73,8 @@ void Domain_Parameters::InitializeGridFunctions() {
     psi = std::make_unique<mfem::ParGridFunction>(fespace.get());
     pse = std::make_unique<mfem::ParGridFunction>(fespace.get());
     AvP = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP_0 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP_1 = std::make_unique<mfem::ParGridFunction>(fespace.get());
     AvB = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
     const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
@@ -94,6 +96,9 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     
     const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
     const bool is_root = (mfem::Mpi::WorldRank() == 0);
+    const int dimension = pmesh->Dimension();
+
+    std::cout << "dimension: " << dimension << std::endl;
 
 
     if (!full) {
@@ -105,15 +110,6 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
 
         if (!g) mfem::mfem_error("HALF mode: no active distance field available.");
 
-
-        // if (strcmp(mesh_type, "v") == 0) {
-        //     std::cout << "[Domain_Parameters] Voxel-derived mesh selected." << std::endl;
-        //     psi->ProjectGridFunction(*g);
-        //     *psi -= 0.5;
-        // }
-
-        // std::cout << "nV = " << nV << std::endl;
-
         nV = pmesh->GetNV();
         std::cout << "nV = " << nV << std::endl;
 
@@ -123,30 +119,8 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // matlab
 
             } else if (strcmp(mesh_type, "v") == 0) {
-                // double g_val = (*g)(vi);
-                // double psi_val = g_val;
-                // double psi_val = (g_val + 1.5) / 3.0; // linear approx to tanh curve
-                // if (psi_val < 0.0) { psi_val = 0.0; }
-                // if (psi_val > 0.98) { psi_val = 1.0; }
 
                 (*psi)(vi) = (*g)(vi);
-                // (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi))); // voxel
-                // (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // voxel
-                // (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // matlab
-
-                (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
-                // (*AvP)(vi) = -(pow(tanh((*g)(vi)), 2) - 1.0) / (2 * Constants::zeta); // voxel
-
-                // (*AvP)(vi) = ((*g)(vi)/ 3.0) / (Constants::zeta * Constants::dh);
-
-                // double AvP_val = 2.0 * psi_val * (1.0 - psi_val) / (Constants::zeta * Constants::dh);
-
-                // (*AvP)(vi) = AvP_val;
-
-                double AvP_val = (*AvP)(vi);
-                if (AvP_val < 0.19) { AvP_val = 0.0; }
-                (*AvP)(vi) = AvP_val;
-
             } 
 
             (*pse)(vi) = 1.0 - (*psi)(vi);
@@ -162,42 +136,73 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
 
         }
 
-            // ---- GLOBAL checks for psi -------------------------------------------
-            double psi_min = 0.0, psi_max = 0.0;
-            GlobalMinMax(*psi, psi_min, psi_max);
+        // =====================================================
+        //  Calculating AvP for TIF Voxel
+        // =====================================================
 
-            // Basic bounds check
-            std::cout << "[Psi Check] min = " << psi_min 
-                    << ", max = " << psi_max << " (expected min = 1e-06, max = 1)" << std::endl;
-        
+        if (strcmp(mesh_type, "v") == 0) {
 
-            if (psi_min < 0.0 || psi_max > 1.0 + 1e-6) {
-                std::cerr << "[Psi Check] ERROR: psi values out of [0,1]!" << std::endl;
-                std::exit(EXIT_FAILURE);
+            psi->GetDerivative(1, 0, *AvP_0);
+            psi->GetDerivative(1, 1, *AvP_1);
+
+            for (int vi = 0; vi < nV; vi++) {
+                if ((*AvP_0)(vi) < 0) { (*AvP_0)(vi) *= -1; }
+                if ((*AvP_1)(vi) < 0) { (*AvP_1)(vi) *= -1; }
             }
-            if (psi_min > 0.1) {
-                std::cerr << "[Psi Check] ERROR: psi_min not near 0." << std::endl;
-                std::exit(EXIT_FAILURE);
+
+            (*AvP) = 0.0;
+            (*AvP) += (*AvP_0);
+            (*AvP) += (*AvP_1);
+
+            double AvP_0_Max = AvP_0->Max();    
+            std::cout << "AvP_0_Max: " << AvP_0_Max << std::endl;
+
+            for (int vi = 0; vi < nV; vi++) {
+                if ((*AvP)(vi) > AvP_0_Max) { (*AvP)(vi) = AvP_0_Max; }
             }
-            if (psi_max < 0.9) {
-                std::cerr << "[Psi Check] ERROR: psi_max not near 1." << std::endl;
-                std::exit(EXIT_FAILURE);
-            }
+
+        }
+
+        // =====================================================
+        //  End of Calculating AvP
+        // =====================================================
+
+        // ---- GLOBAL checks for psi -------------------------------------------
+        double psi_min = 0.0, psi_max = 0.0;
+        GlobalMinMax(*psi, psi_min, psi_max);
+
+        // Basic bounds check
+        std::cout << "[Psi Check] min = " << psi_min 
+                << ", max = " << psi_max << " (expected min = 1e-06, max = 1)" << std::endl;
+    
+
+        if (psi_min < 0.0 || psi_max > 1.0 + 1e-6) {
+            std::cerr << "[Psi Check] ERROR: psi values out of [0,1]!" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        if (psi_min > 0.1) {
+            std::cerr << "[Psi Check] ERROR: psi_min not near 0." << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        if (psi_max < 0.9) {
+            std::cerr << "[Psi Check] ERROR: psi_max not near 1." << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
 
         
         AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
 
 
-        for (int vi = 0; vi < nV; vi++) {
-            if ((*AvP)(vi) * Constants::dh < 1.0e-2) { (*AvP)(vi) = 0.0; }
-            if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
-        }
+        // for (int vi = 0; vi < nV; vi++) {
+        //     if ((*AvP)(vi) * Constants::dh < 1.0e-2) { (*AvP)(vi) = 0.0; }
+        //     if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
+        // }
 
-        // AvB->SaveAsOne("AvB_half");
+        // // AvB->SaveAsOne("AvB_half");
         
 
-        mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
-        AvP->ProjectCoefficient(AvP_coeff);
+        // mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
+        // AvP->ProjectCoefficient(AvP_coeff);
 
     } else {
         // ------- FULL CELL -------

@@ -442,9 +442,9 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
-	args.Row_end      = 4;
-	args.Column_begin = 165;
-	args.Column_end   = 205;
+	args.Row_end      = 100;
+	args.Column_begin = 0;
+	args.Column_end   = 100;
 	TIFFReader reader(meshFile,args);
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffData;
@@ -460,9 +460,18 @@ std::unique_ptr<mfem::Mesh> Initialize_Geometry::CreateGlobalMeshFromTiffData(co
     int nz = tiffData.size(); // depth dimension
     int ny = tiffData[0].size(); // row dimension
     int nx = tiffData[0][0].size(); // column dimension
-    double sx = nx;  // make dx = 1 // size in x direction
-    double sy = ny;  // make dy = 1 // size in y direction
-    double sz = nz;  // make dz = 1 // size in z direction
+    
+    // double sx = nx;  // make dx = 1 // size in x direction
+    // double sy = ny;  // make dy = 1 // size in y direction
+    // double sz = nz;  // make dz = 1 // size in z direction
+
+    double scale = 2.0e-5;
+
+    double sx = nx * scale;  // make dx = 1 // size in x direction
+    double sy = ny * scale;  // make dy = 1 // size in y direction
+    double sz = nz * scale;  // make dz = 1 // size in z direction
+
+
     bool generate_edges = false; 
     bool sfc_ordering = false; 
 
@@ -479,6 +488,11 @@ std::unique_ptr<mfem::Mesh> Initialize_Geometry::CreateGlobalMeshFromTiffData(co
     }
 
     return mesh;
+
+    // std::cout << "[CreateGlobalMeshFromTiffData] nx=" << nx
+    //       << " ny=" << ny << " nz=" << nz << "\n"
+    //       << " sx=" << sx << " sy=" << sy << " sz=" << sz << std::endl;
+
 }
 
 void Initialize_Geometry::PrintMeshInfo() {
@@ -565,7 +579,7 @@ void Initialize_Geometry::ComputeDistanceFromTiffMask(mfem::ParGridFunction &dis
     }
 
     // smoothing filter like example
-    const double filter_weight = 6 * dx;
+    const double filter_weight = 3 * dx;
     // const double filter_weight = 1;
 
     mfem::common::PDEFilter filter(*parallelMesh, filter_weight);

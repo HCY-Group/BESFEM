@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
                     *CnA_gf, *CnE_gf, *CnA_gf_psi, *CnE_gf_psi, 1000); 
                 } else {
                     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phC_gf, *phE_gf, 
-                    *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 1000); 
+                    *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 3000); 
                 }
  
                 t += 1;
