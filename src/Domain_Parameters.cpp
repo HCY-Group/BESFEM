@@ -29,14 +29,6 @@ static inline void GlobalMinMax(const mfem::ParGridFunction& gf,
     MPI_Allreduce(&lmax, &gmax, 1, MPI_DOUBLE, MPI_MAX, comm);
 }
 
-static inline bool AnyRankTrue(bool local, MPI_Comm comm = MPI_COMM_WORLD)
-{
-    int l = local ? 1 : 0, g = 0;
-    MPI_Allreduce(&l, &g, 1, MPI_INT, MPI_MAX, comm);
-    return g != 0;
-}
-
-
 double gTrgI = 0.0;
 
 Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo)
@@ -98,7 +90,7 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     const bool is_root = (mfem::Mpi::WorldRank() == 0);
     const int dimension = pmesh->Dimension();
 
-    std::cout << "dimension: " << dimension << std::endl;
+    // std::cout << "dimension: " << dimension << std::endl;
 
 
     if (!full) {
@@ -111,30 +103,30 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         if (!g) mfem::mfem_error("HALF mode: no active distance field available.");
 
         nV = pmesh->GetNV();
-        std::cout << "nV = " << nV << std::endl;
+        // std::cout << "nV = " << nV << std::endl;
 
-        for (int vi = 0; vi < nV; vi++) {
-        // for (int vi = 0; vi < ndofs; vi++) {
-            if (strcmp(mesh_type, "ml") == 0) {
-                (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // matlab
-                (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // matlab
+        // for (int vi = 0; vi < nV; vi++) {
+        // // for (int vi = 0; vi < ndofs; vi++) {
+        //     if (strcmp(mesh_type, "ml") == 0) {
+        //         (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // matlab
+        //         (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // matlab
 
-            } else if (strcmp(mesh_type, "v") == 0) {
+        //     } else if (strcmp(mesh_type, "v") == 0) {
 
-                (*psi)(vi) = (*g)(vi);
-            } 
+        //         (*psi)(vi) = (*g)(vi);
+        //     } 
 
-            (*pse)(vi) = 1.0 - (*psi)(vi);
+        //     (*pse)(vi) = 1.0 - (*psi)(vi);
 
-            if ((*psi)(vi) < 0) { (*psi)(vi) = 0; }
-            if ((*psi)(vi) > 1) { (*psi)(vi) = 1; }
+        //     if ((*psi)(vi) < 0) { (*psi)(vi) = 0; }
+        //     if ((*psi)(vi) > 1) { (*psi)(vi) = 1; }
 
-            if ((*pse)(vi) < 0) { (*pse)(vi) = 0; }
-            if ((*pse)(vi) > 1) { (*pse)(vi) = 1; }
+        //     if ((*pse)(vi) < 0) { (*pse)(vi) = 0; }
+        //     if ((*pse)(vi) > 1) { (*pse)(vi) = 1; }
 
-            (*psi)(vi) += 1.0e-6; // Avoid zero values
-            (*pse)(vi) += 1.0e-6; // Avoid zero values
-        }
+        //     (*psi)(vi) += 1.0e-6; // Avoid zero values
+        //     (*pse)(vi) += 1.0e-6; // Avoid zero values
+        // }
 
         if (strcmp(mesh_type, "ml") == 0) {
             for (int vi = 0; vi < nV; vi++) {
@@ -155,10 +147,12 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         }
         
         if (strcmp(mesh_type, "v") == 0) {
+
             *psi = *geometry.MaskFilter;
-            *pse = *psi;
-            (*pse) *= -1.0;
-            (*pse) += 1.0;
+            *pse = *geometry.MaskFilterPse;
+            // *pse = *psi;
+            // (*pse) *= -1.0;
+            // (*pse) += 1.0;
 
             for (int i = 0; i < psi->Size(); i++)
             {

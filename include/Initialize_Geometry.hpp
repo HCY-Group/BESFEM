@@ -200,17 +200,13 @@ public:
     /**
      * @brief Use MFEM-based solvers to compute distance function from voxel mask.
      * @param dist Output unsigned distance function.
-     * @param phi_filt Output filtered level set function.
-     * @param dist_signed Optional output signed distance function (pass nullptr if not needed).
-     * @param solver_type Solver type: 0 = heat equation, 1 = p-laplace, 2 = normalization.
-     * @param t_param Time parameter for heat equation solver.
+     * @param filt_gf Output filtered level set function.
+     * @param mode 0 = psi (keep 1s to right), 1 = pse (keep 0s to any boundary)
      */
-    void ComputeDistanceFromTiffMask(
+    void ComputePDEFilter(
         mfem::ParGridFunction &dist,            // output unsigned distance
-        mfem::ParGridFunction &phi_filt,        // output filtered level set
-        mfem::ParGridFunction *dist_signed,     // optional signed distance (pass nullptr if not needed)
-        int solver_type,                         // 0 heat, 1 p-lap, 2 normalization
-        double t_param                          // like MFEM miniapp, dt = t_param * dx^2 for heat
+        mfem::ParGridFunction &filt_gf,        // output filtered level set
+        int mode                           // 0 = psi (keep 1s to right), 1 = pse (keep 0s to any boundary)
     );
 
     // -------------------------------------------------------------------------

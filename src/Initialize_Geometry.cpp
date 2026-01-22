@@ -2,6 +2,7 @@
 #include "../include/Constants.hpp"
 #include "../include/readtiff.h"
 #include "../include/SimTypes.hpp"
+#include "../include/dist_solver.hpp"
 #include "mfem.hpp"
 #include <tiffio.h>
 #include <fstream>
@@ -20,6 +21,63 @@ Initialize_Geometry::Initialize_Geometry()
 
 // Destructor
 Initialize_Geometry::~Initialize_Geometry() {}
+
+
+#include <queue>
+#include <cstdint>
+
+static void KeepOnlyConnectedToBoundary_2D(std::vector<uint8_t> &solid,
+                                          int nx, int ny,
+                                          bool eight_conn,
+                                          bool seed_all_boundaries = true,
+                                          int seed_side = -1)
+{
+    // seed_side: -1 = use all boundaries; 0=left, 1=right, 2=bottom, 3=top
+    auto id = [nx](int i, int j){ return i + nx*j; };
+
+    std::vector<uint8_t> keep(nx*ny, 0);
+    std::queue<std::pair<int,int>> q;
+
+    auto push = [&](int i, int j){
+        if (i < 0 || i >= nx || j < 0 || j >= ny) return;
+        int k = id(i,j);
+        if (!solid[k] || keep[k]) return;
+        keep[k] = 1;
+        q.push({i,j});
+    };
+
+    // seeds
+    if (seed_all_boundaries || seed_side == -1)
+    {
+        for (int i=0;i<nx;i++){ push(i,0); push(i,ny-1); }
+        for (int j=0;j<ny;j++){ push(0,j); push(nx-1,j); }
+    }
+    else
+    {
+        if (seed_side == 0) for (int j=0;j<ny;j++) push(0,j);         // left
+        if (seed_side == 1) for (int j=0;j<ny;j++) push(nx-1,j);      // right
+        if (seed_side == 2) for (int i=0;i<nx;i++) push(i,0);         // bottom
+        if (seed_side == 3) for (int i=0;i<nx;i++) push(i,ny-1);      // top
+    }
+
+    const int di4[4] = { 1,-1, 0, 0};
+    const int dj4[4] = { 0, 0, 1,-1};
+    const int di8[8] = { 1,-1, 0, 0, 1, 1,-1,-1};
+    const int dj8[8] = { 0, 0, 1,-1, 1,-1, 1,-1};
+
+    while (!q.empty())
+    {
+        auto [i,j] = q.front(); q.pop();
+        if (!eight_conn)
+            for (int t=0;t<4;t++) push(i+di4[t], j+dj4[t]);
+        else
+            for (int t=0;t<8;t++) push(i+di8[t], j+dj8[t]);
+    }
+
+    // remove islands
+    for (int k=0;k<nx*ny;k++) if (solid[k] && !keep[k]) solid[k] = 0;
+}
+
 
 // Half Cell
 void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFile, const char* mesh_type, MPI_Comm comm, int order) {
@@ -59,19 +117,13 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
         const int solver_type = 0;
         const double t_param = 1.0;
 
-        ComputeDistanceFromTiffMask(*distMask, *MaskFilter, distMaskSigned.get(), solver_type, t_param);
+        // ComputeDistanceFromTiffMask(*distMask, *MaskFilter, distMaskSigned.get(), solver_type, t_param);
+        ComputePDEFilter(*distMask, *MaskFilter, /*mode=*/0); 
+        ComputePDEFilter(*distMask, *MaskFilterPse, /*mode=*/1);
 
-        std::cout << "ComputeDistanceFromTiffMask done" << std::endl;
 
-        distMask->SaveAsOne("distMask_ScalarDistance.gf");
-        distMaskSigned->SaveAsOne("distMask_signed_heat.gf");
+        std::cout << "ComputePDEFilter done" << std::endl;
         MaskFilter->SaveAsOne("MaskFilter.gf");
-
-        *MaskFilterPse = *MaskFilter;
-        // MaskFilterPse = 1 - MaskFilterPse
-        (*MaskFilterPse) *= -1.0;
-        (*MaskFilterPse) += 1.0;
-
         MaskFilterPse->SaveAsOne("MaskFilter_pse.gf");
 
     }
@@ -142,8 +194,8 @@ void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile, const cha
             auto [min_it, max_it] = std::minmax_element(values.begin(), values.end());
             double max_abs = std::max(std::abs(*min_it), std::abs(*max_it));
 
-            std::cout << "[AdjustDistanceFile] Before: min=" << *min_it
-                      << " max=" << *max_it << " max|v|=" << max_abs << "\n";
+            // std::cout << "[AdjustDistanceFile] Before: min=" << *min_it
+            //           << " max=" << *max_it << " max|v|=" << max_abs << "\n";
 
             if (strcmp(mesh_type, "ml") == 0 && max_abs > 1.0) {
                 // write backup with original data
@@ -174,8 +226,8 @@ void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile, const cha
                 // quick preview after
                 auto [min2, max2] = std::minmax_element(values.begin(), values.end());
                 double max_abs2 = std::max(std::abs(*min2), std::abs(*max2));
-                std::cout << "[AdjustDistanceFile] After: min=" << *min2
-                          << " max=" << *max2 << " max|v|=" << max_abs2 << "\n";
+                // std::cout << "[AdjustDistanceFile] After: min=" << *min2
+                //           << " max=" << *max2 << " max|v|=" << max_abs2 << "\n";
             } else {
                 std::cout << "[AdjustDistanceFile] No scaling needed (all |v| <= 1 or voxel). File unchanged.\n";
             }
@@ -235,9 +287,9 @@ void Initialize_Geometry::InitializeParallelMesh(MPI_Comm comm) {
 
 
 
-    std::cout << "Rank " << myid << " owns "
-              << parallelMesh->GetNE() << " elements, "
-              << parallelMesh->GetNV() << " vertices.\n";
+    // std::cout << "Rank " << myid << " owns "
+    //           << parallelMesh->GetNE() << " elements, "
+    //           << parallelMesh->GetNV() << " vertices.\n";
 }
 
 // Function to set up the finite element space on global mesh
@@ -301,7 +353,7 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
             string line;
             for (int i = 0; i < 4; i++) {
                 if (!getline(myfile, line)) {
-                    cerr << "Error: Distance file has fewer than four header lines" << endl;
+                    cerr << "Warning: Distance file has fewer than four header lines" << endl;
                     myfile.close();
                     return;
                 }
@@ -442,9 +494,9 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
-	args.Row_end      = 100;
+	args.Row_end      = 300;
 	args.Column_begin = 0;
-	args.Column_end   = 100;
+	args.Column_end   = 300;
 	TIFFReader reader(meshFile,args);
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffData;
@@ -542,11 +594,7 @@ void Initialize_Geometry::SaveTiffDataToPGM(const std::vector<std::vector<std::v
 }
 
 
-#include "../include/dist_solver.hpp"
-
-
-void Initialize_Geometry::ComputeDistanceFromTiffMask(mfem::ParGridFunction &dist, mfem::ParGridFunction &filt_gf, mfem::ParGridFunction *dist_signed,
-    int solver_type, double t_param)
+void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::ParGridFunction &filt_gf, int mode)
 
 {
     MFEM_VERIFY(parallelMesh, "parallelMesh is not initialized.");
@@ -555,85 +603,125 @@ void Initialize_Geometry::ComputeDistanceFromTiffMask(mfem::ParGridFunction &dis
 
     MFEM_VERIFY(dist.ParFESpace() == parfespace.get(), "dist must be on parfespace.");
     MFEM_VERIFY(filt_gf.ParFESpace() == parfespace.get(), "filt_gf must be on parfespace.");
-    if (dist_signed)
-    {
-        MFEM_VERIFY(dist_signed->ParFESpace() == parfespace.get(),
-                    "dist_signed must be on parfespace.");
-    }
 
     double dx;
     dx = parallelMesh->GetElementSize(0); // assuming uniform mesh
 
     // new psi method?? PDEFilter - Poisson smoothing field
 
-    // // like doughnut and cheese (1 inside, -1 outside)
-    mfem::ParGridFunction ls_coeff(parfespace.get());
-    for (int i = 0; i < ls_coeff.Size(); i++)
-    {
-        const double m = (*Vox)(i);            
-    //     // ls_coeff(i) = (m > 0.5) ? 0.0 : +1.0; // define what is inside vs outside (other tif with black outline)
-        // ls_coeff(i) = (m > 0.5) ? +1.0 : 0.0; // define what is inside vs outside (microstructure tif) HEAT
-        ls_coeff(i) = (m > 0.5) ? +1.0 : -1.0; // define what is inside vs outside (microstructure tif) P LAP
+    // // // like doughnut and cheese (1 inside, -1 outside)
+    // mfem::ParGridFunction ls_coeff(parfespace.get());
+    // for (int i = 0; i < ls_coeff.Size(); i++)
+    // {
+    //     const double m = (*Vox)(i);            
+    // //     // ls_coeff(i) = (m > 0.5) ? 0.0 : +1.0; // define what is inside vs outside (other tif with black outline)
+    //     // ls_coeff(i) = (m > 0.5) ? +1.0 : 0.0; // define what is inside vs outside (microstructure tif) HEAT
+    //     ls_coeff(i) = (m > 0.5) ? +1.0 : -1.0; // define what is inside vs outside (microstructure tif) P LAP
         
 
-    }
+    // }
 
-    // smoothing filter like example
-    const double filter_weight = 3 * dx;
-    // const double filter_weight = 1;
+    // TRIAL START
 
-    mfem::common::PDEFilter filter(*parallelMesh, filter_weight);
-    filter.Filter(ls_coeff, filt_gf);
-    
-    mfem::GridFunctionCoefficient ls_filt_coeff(&filt_gf);
+    MFEM_VERIFY(parallelMesh->Dimension() == 2, "This 2D connectivity helper assumes a 2D TIFF slice.");
 
-    for (int i = 0; i < filt_gf.Size(); i++)
+    const int nv_loc = parallelMesh->GetNV();
+    const int ny = (int)tiffData[0].size();
+    const int nx = (int)tiffData[0][0].size();
+
+    MFEM_VERIFY(parfespace_dg, "parfespace_dg is not initialized.");
+
+    mfem::ParGridFunction ls_coeff_dg(parfespace_dg.get());
+    mfem::ParGridFunction filt_dg(parfespace_dg.get());
+
+    ls_coeff_dg = 0.0;
+    filt_dg     = 0.0;
+
+    const int rank = mfem::Mpi::WorldRank();
+    const bool eight_conn = false;
+
+    std::vector<uint8_t> fg(nx*ny, 0);
+
+    if (rank == 0)
     {
-        filt_gf(i) = 0.5*(filt_gf(i) + 1.0);
-        // if (filt_gf(i) < 0.0) filt_gf(i) = 0.0;
-        // if (filt_gf(i) > 1.0) filt_gf(i) = 1.0;
-    }
-
-    // distance solver
-    mfem::common::DistanceSolver *dist_solver = nullptr;
-
-    if (solver_type == 0)
-    {
-        auto *ds = new mfem::common::HeatDistanceSolver(t_param * dx * dx);
-        ds->transform = true;
-        ds->smooth_steps = 0;
-        ds->vis_glvis = false;
-        dist_solver = ds;
-    }
-    else if (solver_type == 1)
-    {
-        const int p = 10;
-        const int newton_iter = 50;
-        dist_solver = new mfem::common::PLapDistanceSolver(p, newton_iter);
-    }
-    else if (solver_type == 2)
-    {
-        dist_solver = new mfem::common::NormalizationDistanceSolver();
-    }
-    else
-    {
-        MFEM_ABORT("solver_type must be 0 (heat), 1 (p-lap), or 2 (normalization).");
-    }
-    dist_solver->print_level.Iterations();
-
-
-    dist_solver->ComputeScalarDistance(ls_filt_coeff, dist);
-
-    if (dist_signed)
-    {
-        *dist_signed = dist;
-        for (int i = 0; i < dist_signed->Size(); i++)
+        // base solid from TIFF: 1 = white/solid
+        std::vector<uint8_t> solid_base(nx*ny, 0);
+        for (int j=0; j<ny; ++j)
+        for (int i=0; i<nx; ++i)
         {
-            // (*dist_signed)(i) = (*dist_signed)(i) - 1.5;
-            const double s = (ls_coeff(i) >= 0.5) ? +1.0 : -1.0;
-            (*dist_signed)(i) *= s;
+            const int k = i + nx*j;
+            solid_base[k] = (tiffData[0][j][i] > 0) ? 1 : 0;
+        }
+
+        if (mode == 0)
+        {
+            // --- PSI
+            fg = solid_base;
+            KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, /*seed_all_boundaries=*/false, /*seed_side=*/1); // right
+        }
+        else if (mode == 1)
+        {
+            // --- PSE
+            for (int k=0; k<nx*ny; ++k) fg[k] = solid_base[k] ? 0 : 1; // fg=1 where void
+            KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, /*seed_all_boundaries=*/false, /*seed_side=*/0); // left
+        }
+        else
+        {
+            MFEM_ABORT("ComputeDistanceFromTiffMask: mode must be 0 (psi) or 1 (pse).");
         }
     }
 
-    delete dist_solver;
+    MPI_Bcast(fg.data(), nx*ny, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+
+    struct FGCoeff : public mfem::Coefficient
+    {
+        int nx, ny;
+        double x0, y0, dxp, dyp;
+        const std::vector<uint8_t> *fg;
+
+        FGCoeff(int nx_, int ny_, mfem::ParMesh &pmesh, const std::vector<uint8_t> &fg_)
+            : nx(nx_), ny(ny_), fg(&fg_)
+        {
+            mfem::Vector bbmin, bbmax;
+            pmesh.GetBoundingBox(bbmin, bbmax);
+            x0  = bbmin(0);
+            y0  = bbmin(1);
+            dxp = (bbmax(0) - bbmin(0)) / (nx - 1);
+            dyp = (bbmax(1) - bbmin(1)) / (ny - 1);
+        }
+
+        double Eval(mfem::ElementTransformation &T, const mfem::IntegrationPoint &ip) override
+        {
+            mfem::Vector X;
+            T.Transform(ip, X);
+
+            int i = (int)std::floor((X(0) - x0)/dxp + 0.5);
+            int j = (int)std::floor((X(1) - y0)/dyp + 0.5);
+
+            if (i < 0) i = 0; if (i > nx-1) i = nx-1;
+            if (j < 0) j = 0; if (j > ny-1) j = ny-1;
+
+            return (*fg)[i + nx*j] ? +1.0 : -1.0;
+        }
+    };
+
+
+    FGCoeff fgcoef(nx, ny, *parallelMesh, fg);
+    ls_coeff_dg.ProjectCoefficient(fgcoef);
+
+
+    // ------------------ PDEFilter on DG ------------------
+    const double filter_weight = 3 * dx;
+    mfem::common::PDEFilter filter(*parallelMesh, filter_weight);
+    filter.Filter(ls_coeff_dg, filt_dg);
+
+    // Convert to [0,1] like you did before
+    for (int i = 0; i < filt_dg.Size(); i++)
+    {
+        filt_dg(i) = 0.5*(filt_dg(i) + 1.0);
+    }
+
+    mfem::GridFunctionCoefficient ls_filt_coeff(&filt_dg);
+
+    filt_gf.ProjectGridFunction(filt_dg);
 }

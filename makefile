@@ -9,7 +9,7 @@ CONFIG_MK = $(MFEM_BUILD_DIR)/share/mfem/config.mk
 
 # Compiler and Flags
 CXX = mpicxx
-CXXFLAGS = -g -O3 -std=c++17
+CXXFLAGS = -g -O3 -std=c++17 -w
 
 # Use MFEM-provided flags (includes Hypre/Metis/etc)
 INCLUDE_FLAGS := $(MFEM_INCFLAGS)

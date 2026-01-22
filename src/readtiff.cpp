@@ -24,10 +24,10 @@ TIFFReader::TIFFReader(const char* filePath, const Constraints& constraints) {
     TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
     TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar);
 
-    std::cout << "spp=" << spp
-            << " bps=" << bps
-            << " photometric=" << photo
-            << " planar=" << planar << "\n";
+    // std::cout << "spp=" << spp
+    //         << " bps=" << bps
+    //         << " photometric=" << photo
+    //         << " planar=" << planar << "\n";
 
 }
 
