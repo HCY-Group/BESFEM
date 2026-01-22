@@ -47,7 +47,6 @@ void CnC::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &
 {
     // Compute the reaction field scaled by a constant factor
     utils.InitializeReaction(Rx, RxC, (1.0/Constants::rho_C));
-    RxC.SaveAsOne("RxC");
     cAp.SetGridFunction(&RxC); // Set the reaction term coefficient for the force term
 
     // std::cout << "RxC Sum before: " << RxC.Sum() << std::endl;

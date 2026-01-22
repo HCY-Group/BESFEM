@@ -85,22 +85,23 @@ double Reaction::GetTableValues(double cn, const mfem::Vector &ticks, const mfem
      for (int i = 0; i < Rx.Size(); ++i) {
          Rx(i) = initial_value;
 
-        if ((*AvP)(i) * Constants::dh > 0.0) {
-            Rx(i) *= (*AvP)(i);
-            Rx(i) *= Constants::dh;
-            // Rx(i) *= (*AvP)(i) * Constants::dh; // scaling Rx by AvP
-        }
+        // // testing purposes
+        // if ((*AvP)(i) * Constants::dh > 0.0) {
+        //     Rx(i) *= (*AvP)(i);
+        //     Rx(i) *= Constants::dh;
+        //     // Rx(i) *= (*AvP)(i) * Constants::dh; // scaling Rx by AvP
+        // }
 
-        if (Rx(i) > 5e-07) {
-            Rx(i) = 1.567e-36; // remove strange bump in lower left corner
-        }
+        // if (Rx(i) > 5e-07) {
+        //     Rx(i) = 1.567e-36; // remove strange bump in lower left corner
+        // }
 
-        if (Rx(i) < 8e-08) {
-            Rx(i) = 1e-10;
-        }
+        // if (Rx(i) < 8e-08) {
+        //     Rx(i) = 1e-10;
+        // }
 
-        Rx(i) *= 100; // increase scaling
-     }
+        // Rx(i) *= 100; // increase scaling for faster Rxn
+    }
  }
 
 // rate constants and exchange current density at interface

@@ -114,6 +114,7 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         std::cout << "nV = " << nV << std::endl;
 
         for (int vi = 0; vi < nV; vi++) {
+        // for (int vi = 0; vi < ndofs; vi++) {
             if (strcmp(mesh_type, "ml") == 0) {
                 (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // matlab
                 (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // matlab
@@ -133,34 +134,85 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
 
             (*psi)(vi) += 1.0e-6; // Avoid zero values
             (*pse)(vi) += 1.0e-6; // Avoid zero values
+        }
 
+        if (strcmp(mesh_type, "ml") == 0) {
+            for (int vi = 0; vi < nV; vi++) {
+                (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // matlab
+                (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // matlab
+
+                (*pse)(vi) = 1.0 - (*psi)(vi);
+
+                if ((*psi)(vi) < 0) { (*psi)(vi) = 0; }
+                if ((*psi)(vi) > 1) { (*psi)(vi) = 1; }
+
+                if ((*pse)(vi) < 0) { (*pse)(vi) = 0; }
+                if ((*pse)(vi) > 1) { (*pse)(vi) = 1; }
+
+                (*psi)(vi) += 1.0e-6; // Avoid zero values
+                (*pse)(vi) += 1.0e-6; // Avoid zero values
+            }
+        }
+        
+        if (strcmp(mesh_type, "v") == 0) {
+            *psi = *geometry.MaskFilter;
+            *pse = *psi;
+            (*pse) *= -1.0;
+            (*pse) += 1.0;
+
+            for (int i = 0; i < psi->Size(); i++)
+            {
+
+                if ((*psi)(i) < 0) { (*psi)(i) = 0; }
+                if ((*psi)(i) > 1) { (*psi)(i) = 1; }
+
+                if ((*pse)(i) < 0) { (*pse)(i) = 0; }
+                if ((*pse)(i) > 1) { (*pse)(i) = 1; }
+
+                (*psi)(i) += 1.0e-6; // Avoid zero values
+                (*pse)(i) += 1.0e-6; // Avoid zero values
+
+            }
         }
 
         // =====================================================
         //  Calculating AvP for TIF Voxel
         // =====================================================
 
-        if (strcmp(mesh_type, "v") == 0) {
-
-            psi->GetDerivative(1, 0, *AvP_0);
-            psi->GetDerivative(1, 1, *AvP_1);
-
-            for (int vi = 0; vi < nV; vi++) {
-                if ((*AvP_0)(vi) < 0) { (*AvP_0)(vi) *= -1; }
-                if ((*AvP_1)(vi) < 0) { (*AvP_1)(vi) *= -1; }
-            }
+        if (strcmp(mesh_type, "v") == 0)
+        {
+            const int dim = pmesh->Dimension(); 
+            mfem::ParGridFunction dpsi(fespace.get());
 
             (*AvP) = 0.0;
-            (*AvP) += (*AvP_0);
-            (*AvP) += (*AvP_1);
+            for (int d = 0; d < dim; d++)
+            {
+                dpsi = 0.0;
+                psi->GetDerivative(1, d, dpsi); 
 
-            double AvP_0_Max = AvP_0->Max();    
-            std::cout << "AvP_0_Max: " << AvP_0_Max << std::endl;
-
-            for (int vi = 0; vi < nV; vi++) {
-                if ((*AvP)(vi) > AvP_0_Max) { (*AvP)(vi) = AvP_0_Max; }
+                // compound squares: AvP += (dpsi)^2
+                for (int vi = 0; vi < nV; vi++)
+                {
+                    const double v = dpsi(vi);
+                    (*AvP)(vi) += v * v;
+                }
             }
 
+            // sqrt to get magnitude
+            for (int vi = 0; vi < nV; vi++)
+            {
+                (*AvP)(vi) = std::sqrt((*AvP)(vi));
+            }
+
+            // cap maximum AvP to level peaks
+            dpsi = 0.0;
+            psi->GetDerivative(1, 0, dpsi);
+            const double cap = dpsi.Max();
+            for (int vi = 0; vi < nV; vi++)
+            {
+                if ((*AvP)(vi) > cap) { (*AvP)(vi) = cap; }
+            }
+            
         }
 
         // =====================================================
