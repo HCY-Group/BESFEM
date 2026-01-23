@@ -26,11 +26,8 @@ Initialize_Geometry::~Initialize_Geometry() {}
 #include <queue>
 #include <cstdint>
 
-static void KeepOnlyConnectedToBoundary_2D(std::vector<uint8_t> &solid,
-                                          int nx, int ny,
-                                          bool eight_conn,
-                                          bool seed_all_boundaries = true,
-                                          int seed_side = -1)
+static void KeepOnlyConnectedToBoundary_2D(std::vector<uint8_t> &solid, int nx, int ny, bool eight_conn,
+                                          bool seed_all_boundaries = true, int seed_side = -1)
 {
     // seed_side: -1 = use all boundaries; 0=left, 1=right, 2=bottom, 3=top
     auto id = [nx](int i, int j){ return i + nx*j; };
@@ -117,10 +114,8 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
         const int solver_type = 0;
         const double t_param = 1.0;
 
-        // ComputeDistanceFromTiffMask(*distMask, *MaskFilter, distMaskSigned.get(), solver_type, t_param);
         ComputePDEFilter(*distMask, *MaskFilter, /*mode=*/0); 
         ComputePDEFilter(*distMask, *MaskFilterPse, /*mode=*/1);
-
 
         std::cout << "ComputePDEFilter done" << std::endl;
         MaskFilter->SaveAsOne("MaskFilter.gf");
@@ -494,9 +489,9 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
-	args.Row_end      = 300;
+	args.Row_end      = 100;
 	args.Column_begin = 0;
-	args.Column_end   = 300;
+	args.Column_end   = 100;
 	TIFFReader reader(meshFile,args);
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffData;
@@ -600,9 +595,10 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
     MFEM_VERIFY(parallelMesh, "parallelMesh is not initialized.");
     MFEM_VERIFY(parfespace, "parfespace is not initialized.");
     MFEM_VERIFY(Vox, "Vox is not initialized (need .tif path + MapGlobalToLocal).");
-
     MFEM_VERIFY(dist.ParFESpace() == parfespace.get(), "dist must be on parfespace.");
     MFEM_VERIFY(filt_gf.ParFESpace() == parfespace.get(), "filt_gf must be on parfespace.");
+    MFEM_VERIFY(parfespace_dg, "parfespace_dg is not initialized.");
+    MFEM_VERIFY(parallelMesh->Dimension() == 2, "This 2D connectivity helper assumes a 2D TIFF slice.");
 
     double dx;
     dx = parallelMesh->GetElementSize(0); // assuming uniform mesh
@@ -621,15 +617,11 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
 
     // }
 
-    // TRIAL START
-
-    MFEM_VERIFY(parallelMesh->Dimension() == 2, "This 2D connectivity helper assumes a 2D TIFF slice.");
-
     const int nv_loc = parallelMesh->GetNV();
     const int ny = (int)tiffData[0].size();
     const int nx = (int)tiffData[0][0].size();
-
-    MFEM_VERIFY(parfespace_dg, "parfespace_dg is not initialized.");
+    const int rank = mfem::Mpi::WorldRank();
+    const bool eight_conn = false;
 
     mfem::ParGridFunction ls_coeff_dg(parfespace_dg.get());
     mfem::ParGridFunction filt_dg(parfespace_dg.get());
@@ -637,14 +629,11 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
     ls_coeff_dg = 0.0;
     filt_dg     = 0.0;
 
-    const int rank = mfem::Mpi::WorldRank();
-    const bool eight_conn = false;
-
     std::vector<uint8_t> fg(nx*ny, 0);
 
     if (rank == 0)
     {
-        // base solid from TIFF: 1 = white/solid
+        // base solid from TIFF: 1 = white/solid 
         std::vector<uint8_t> solid_base(nx*ny, 0);
         for (int j=0; j<ny; ++j)
         for (int i=0; i<nx; ++i)
@@ -657,13 +646,13 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
         {
             // --- PSI
             fg = solid_base;
-            KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, /*seed_all_boundaries=*/false, /*seed_side=*/1); // right
+            KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 1); // right
         }
         else if (mode == 1)
         {
             // --- PSE
-            for (int k=0; k<nx*ny; ++k) fg[k] = solid_base[k] ? 0 : 1; // fg=1 where void
-            KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, /*seed_all_boundaries=*/false, /*seed_side=*/0); // left
+            for (int k=0; k<nx*ny; ++k) fg[k] = solid_base[k] ? 0 : 1; // fg=1 for electrolyte 
+            KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1); // left
         }
         else
         {
@@ -710,12 +699,11 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
     ls_coeff_dg.ProjectCoefficient(fgcoef);
 
 
-    // ------------------ PDEFilter on DG ------------------
+    // ------------------ PDEFilter ------------------
     const double filter_weight = 3 * dx;
     mfem::common::PDEFilter filter(*parallelMesh, filter_weight);
     filter.Filter(ls_coeff_dg, filt_dg);
 
-    // Convert to [0,1] like you did before
     for (int i = 0; i < filt_dg.Size(); i++)
     {
         filt_dg(i) = 0.5*(filt_dg(i) + 1.0);

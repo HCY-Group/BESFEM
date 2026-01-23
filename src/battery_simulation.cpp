@@ -221,62 +221,62 @@ int main(int argc, char *argv[]) {
                     cathode_concentration->UpdateConcentration(*Rxn_gf, *CnC_gf, *domain_parameters.psi);
                     electrolyte_concentration->UpdateConcentration(*Rxn_gf, *CnE_gf, *domain_parameters.pse);
 
-                //     if (t > 0 && t % 500 == 0){
-                //         electrolyte_concentration->SaltConservation(*CnE_gf, *domain_parameters.pse);
-                //     }
+                    if (t > 0 && t % 500 == 0){
+                        electrolyte_concentration->SaltConservation(*CnE_gf, *domain_parameters.pse);
+                    }
 
-                //     cathode_potential->AssembleSystem(*CnC_gf, *domain_parameters.psi, *phC_gf);
-                //     // *phC_gf = Constants::init_BvC;
-                //     electrolyte_potential->AssembleSystem(*CnE_gf, *domain_parameters.pse, *phE_gf);
-                //     // *phE_gf = Constants::init_BvE;
+                    cathode_potential->AssembleSystem(*CnC_gf, *domain_parameters.psi, *phC_gf);
+                    // *phC_gf = Constants::init_BvC;
+                    electrolyte_potential->AssembleSystem(*CnE_gf, *domain_parameters.pse, *phE_gf);
+                    // *phE_gf = Constants::init_BvE;
 
-                //     reaction->ExchangeCurrentDensity(*CnC_gf);
+                    reaction->ExchangeCurrentDensity(*CnC_gf);
 
-                //     double globalerror_P = 1.0; // Error for particle potential
-                //     double globalerror_E = 1.0; // Error for electrolyte potential
+                    double globalerror_P = 1.0; // Error for particle potential
+                    double globalerror_E = 1.0; // Error for electrolyte potential
             
-                //     while ((globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8)) {
-                //         reaction->ButlerVolmer(*Rxn_gf, *CnC_gf, *CnE_gf, *phC_gf, *phE_gf);
-                //         cathode_potential->UpdatePotential(*Rxn_gf, *phC_gf, *domain_parameters.psi, globalerror_P);
-                //         electrolyte_potential->UpdatePotential(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
-                //     }
+                    while ((globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8)) {
+                        reaction->ButlerVolmer(*Rxn_gf, *CnC_gf, *CnE_gf, *phC_gf, *phE_gf);
+                        cathode_potential->UpdatePotential(*Rxn_gf, *phC_gf, *domain_parameters.psi, globalerror_P);
+                        electrolyte_potential->UpdatePotential(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+                    }
                 }
 
-                // reaction->TotalReactionCurrent(*Rxn_gf, global_current);
+                reaction->TotalReactionCurrent(*Rxn_gf, global_current);
 
-                // double sgn = copysign(1.0, domain_parameters.gTrgI - global_current);
-                // double dV = Constants::dt * Constants::Vsr0 * sgn;
-                // electrolyte_potential->BvE += dV; // Adjust electrolyte potential based on target current
-                // *phE_gf += dV; // Update the grid function for electrolyte potential
+                double sgn = copysign(1.0, domain_parameters.gTrgI - global_current);
+                double dV = Constants::dt * Constants::Vsr0 * sgn;
+                electrolyte_potential->BvE += dV; // Adjust electrolyte potential based on target current
+                *phE_gf += dV; // Update the grid function for electrolyte potential
 
-                // if (cfg.half_electrode == sim::Electrode::ANODE) {
-                //     VCell = anode_potential->BvA - electrolyte_potential->BvE;
-                // } else {
-                //     VCell = cathode_potential->BvC - electrolyte_potential->BvE;
-                // }
+                if (cfg.half_electrode == sim::Electrode::ANODE) {
+                    VCell = anode_potential->BvA - electrolyte_potential->BvE;
+                } else {
+                    VCell = cathode_potential->BvC - electrolyte_potential->BvE;
+                }
 
-                // if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
+                if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
-                //     std::ofstream outfile("full_cell_output.txt", std::ios::app);
+                    std::ofstream outfile("full_cell_output.txt", std::ios::app);
 
-                //     const double Xfr = half_is_anode ? anode_concentration->GetLithiation() : cathode_concentration->GetLithiation();
+                    const double Xfr = half_is_anode ? anode_concentration->GetLithiation() : cathode_concentration->GetLithiation();
 
-                //     outfile << "timestep: " << t << (half_is_anode ? " [ANODE HALF-CELL]" : " [CATHODE HALF-CELL]")
-                //     << ", Xfr = " << Xfr << ", VCell = " << VCell << ", BvE = " << electrolyte_potential->BvE
-                //     << (half_is_anode ? ", BvA = " : ", BvC = ") << (half_is_anode ? anode_potential->BvA : cathode_potential->BvC)
-                //     << ", current = " << global_current << ", target current = " << domain_parameters.gTrgI << std::endl;
+                    outfile << "timestep: " << t << (half_is_anode ? " [ANODE HALF-CELL]" : " [CATHODE HALF-CELL]")
+                    << ", Xfr = " << Xfr << ", VCell = " << VCell << ", BvE = " << electrolyte_potential->BvE
+                    << (half_is_anode ? ", BvA = " : ", BvC = ") << (half_is_anode ? anode_potential->BvA : cathode_potential->BvC)
+                    << ", current = " << global_current << ", target current = " << domain_parameters.gTrgI << std::endl;
 
-                //     outfile.close(); 
-                // }
+                    outfile.close(); 
+                }
 
 
-                // if (cfg.half_electrode == sim::Electrode::ANODE) {
-                //     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phA_gf, *phE_gf, 
-                //     *CnA_gf, *CnE_gf, *CnA_gf_psi, *CnE_gf_psi, 1000); 
-                // } else {
-                //     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phC_gf, *phE_gf, 
-                //     *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 1000); 
-                // }
+                if (cfg.half_electrode == sim::Electrode::ANODE) {
+                    Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phA_gf, *phE_gf, 
+                    *CnA_gf, *CnE_gf, *CnA_gf_psi, *CnE_gf_psi, 1000); 
+                } else {
+                    Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phC_gf, *phE_gf, 
+                    *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 1000); 
+                }
  
                 t += 1;
 
