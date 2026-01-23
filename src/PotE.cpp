@@ -50,7 +50,7 @@ PotE::PotE(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions
 void PotE::SetupField(mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx)
 {
     if(mode_ == sim::CellMode::HALF){
-        std::cout << "Initializing PotE for Half Cell" << std::endl;
+        if (mfem::Mpi::WorldRank() == 0) {std::cout << "Initializing PotE for Half Cell" << std::endl;}
 
         BvE = initial_value; // Set the boundary value.
         utils.SetInitialValue(ph, BvE); // Initialize potentials

@@ -368,17 +368,23 @@ int main(int argc, char *argv[]) {
 
     if (mfem::Mpi::WorldRank() == 0) { std::cout << "Simulation complete.\n"; }
 
+    // // Finalize HYPRE processing
+    // mfem::Hypre::Finalize();
+
+    // // Finalize MPI processing
+    // mfem::Mpi::Finalize();
+
+    // End timing and output the total program execution time
+    auto program_end = high_resolution_clock::now();
+    if (mfem::Mpi::WorldRank() == 0) {std::cout << "Total Program Time: " 
+            << duration_cast<seconds>(program_end - program_start).count() 
+            << " seconds" << std::endl;}
+
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();
 
     // Finalize MPI processing
     mfem::Mpi::Finalize();
-
-    // End timing and output the total program execution time
-    auto program_end = high_resolution_clock::now();
-    std::cout << "Total Program Time: " 
-            << duration_cast<seconds>(program_end - program_start).count() 
-            << " seconds" << std::endl;
 
     return 0;
 }

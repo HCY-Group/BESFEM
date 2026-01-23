@@ -218,8 +218,8 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         GlobalMinMax(*psi, psi_min, psi_max);
 
         // Basic bounds check
-        std::cout << "[Psi Check] min = " << psi_min 
-                << ", max = " << psi_max << " (expected min = 1e-06, max = 1)" << std::endl;
+        if (mfem::Mpi::WorldRank() == 0) {std::cout << "[Psi Check] min = " << psi_min 
+                << ", max = " << psi_max << " (expected min = 1e-06, max = 1)" << std::endl;}
     
 
         if (psi_min < 0.0 || psi_max > 1.0 + 1e-6) {

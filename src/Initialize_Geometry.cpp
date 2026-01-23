@@ -117,7 +117,8 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
         ComputePDEFilter(*distMask, *MaskFilter, /*mode=*/0); 
         ComputePDEFilter(*distMask, *MaskFilterPse, /*mode=*/1);
 
-        std::cout << "ComputePDEFilter done" << std::endl;
+        if (mfem::Mpi::WorldRank() == 0) { std::cout << "ComputePDEFilter done.\n"; }
+
         MaskFilter->SaveAsOne("MaskFilter.gf");
         MaskFilterPse->SaveAsOne("MaskFilter_pse.gf");
 
@@ -203,11 +204,12 @@ void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile, const cha
                     bout << std::setprecision(10);
                     for (double x : values) bout << x << '\n';
                 }
-                std::cout << "[AdjustDistanceFile] Wrote original data to backup: " << backup << "\n";
+
+                if (mfem::Mpi::WorldRank() == 0) { std::cout << "[AdjustDistanceFile] Wrote original data to backup: " << backup << "\n"; }
 
                 // scale and overwrite original file
-                std::cout << "[AdjustDistanceFile] Scaling values by dh=" << std::setprecision(10) << Constants::dh << " and overwriting "
-                          << distanceFile << " ...\n";
+                if (mfem::Mpi::WorldRank() == 0) { std::cout << "[AdjustDistanceFile] Scaling values by dh=" << std::setprecision(10) << Constants::dh << " and overwriting "
+                          << distanceFile << " ...\n"; }
                 for (double &x : values) x *= Constants::dh;
 
                 std::ofstream out(distanceFile, std::ios::trunc);
@@ -224,7 +226,7 @@ void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile, const cha
                 // std::cout << "[AdjustDistanceFile] After: min=" << *min2
                 //           << " max=" << *max2 << " max|v|=" << max_abs2 << "\n";
             } else {
-                std::cout << "[AdjustDistanceFile] No scaling needed (all |v| <= 1 or voxel). File unchanged.\n";
+                if (mfem::Mpi::WorldRank() == 0) { std::cout << "[AdjustDistanceFile] No scaling needed (all |v| <= 1 or voxel). File unchanged.\n"; }
             }
         }
     }
@@ -239,7 +241,7 @@ void Initialize_Geometry::InitializeGlobalMesh(const char* meshFile) {
     std::string fileExtension = meshFileStr.substr(meshFileStr.find_last_of(".") + 1);
 
     if (fileExtension == "tif") {
-        std::cout << "Creating global mesh using .tif file" << std::endl;
+        if (mfem::Mpi::WorldRank() == 0) { std::cout << "Creating global mesh using .tif file" << std::endl; }
         tiffData = ReadTiffFile(meshFile); // read voxel data from tiff file
         globalMesh = CreateGlobalMeshFromTiffData(tiffData); // generate mesh from voxel data
     } 
@@ -266,8 +268,8 @@ void Initialize_Geometry::InitializeGlobalMesh(const char* meshFile) {
 
 
     double dh1 = v0.DistanceTo(v1);
-    std::cout << "Element size dh = " << dh1 << std::endl;
-    
+    if (mfem::Mpi::WorldRank() == 0) { std::cout << "Element size dh = " << dh1 << std::endl;}
+
     MPI_Barrier(MPI_COMM_WORLD);
 
 }
@@ -348,7 +350,7 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile, const char* d
             string line;
             for (int i = 0; i < 4; i++) {
                 if (!getline(myfile, line)) {
-                    cerr << "Warning: Distance file has fewer than four header lines" << endl;
+                    if (mfem::Mpi::WorldRank() == 0) {cerr << "Warning: Distance file has fewer than four header lines" << endl;}
                     myfile.close();
                     return;
                 }
@@ -482,7 +484,7 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
 // Reading .tif file and returning voxel data
 std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(const char* meshFile) {
 
-	cout << "reading tiff file" << endl;
+	if (mfem::Mpi::WorldRank() == 0) { std::cout << "reading tiff file" << std::endl; }
 	Constraints args;
 	//TODO: The code works with serial 2d, parallel 2d, and serial 3d, but not parallel 3d
 	args.Depth_begin = 0;	//only read in one slice for 2D data
@@ -585,7 +587,7 @@ void Initialize_Geometry::SaveTiffDataToPGM(const std::vector<std::vector<std::v
     }
 
     out.close();
-    std::cout << "Saved binary PGM (0/255) to " << filename << "\n";
+    if (mfem::Mpi::WorldRank() == 0) {std::cout << "Saved binary PGM (0/255) to " << filename << "\n";}
 }
 
 

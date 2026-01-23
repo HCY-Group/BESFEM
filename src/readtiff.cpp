@@ -1,5 +1,6 @@
 
 #include "../include/readtiff.h"
+#include "mfem.hpp"
 
 Constraints::Constraints() : Row_begin(0), Row_end(-1), Column_begin(0), Column_end(-1), Depth_begin(0), Depth_end(-1) {}
 
@@ -41,8 +42,8 @@ void TIFFReader::readinfo() {
         }
     }
 
-    std::cout << "Original TIFF Info - Width: " << Width << ", Height: " << Height
-              << ", NumPages: " << numPages << std::endl;
+    if (mfem::Mpi::WorldRank() == 0) { std::cout << "Original TIFF Info - Width: " << Width << ", Height: " << Height
+              << ", NumPages: " << numPages << std::endl;}
 
     for (int page = 0; page < numPages; page++) {
         if (!(page > constraints.Depth_begin - 1 && page < constraints.Depth_end)) {
@@ -50,7 +51,7 @@ void TIFFReader::readinfo() {
             continue;
         }
 
-        std::cerr << "page: " << page << ", READING\n";
+        // if (mfem::Mpi::WorldRank() == 0) {std::cerr << "page: " << page << ", READING\n";}
         TIFFSetDirectory(tiff, page);
 
         // --- Read per-page photometric + spp (single slice is RGBA, stack is grayscale) ---
@@ -100,10 +101,10 @@ void TIFFReader::readinfo() {
 
         _TIFFfree(buf);
 
-        std::cout << "[TIFFReader] Constrained dimensions:\n"
+        if (mfem::Mpi::WorldRank() == 0) {std::cout << "[TIFFReader] Constrained dimensions:\n"
           << "  Pages   : " << (constraints.Depth_end  - constraints.Depth_begin) << "\n"
           << "  Rows    : " << (constraints.Row_end    - constraints.Row_begin)   << "\n"
-          << "  Columns : " << (constraints.Column_end - constraints.Column_begin) << std::endl;
+          << "  Columns : " << (constraints.Column_end - constraints.Column_begin) << std::endl;}
 
     }
 }
