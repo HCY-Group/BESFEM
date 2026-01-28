@@ -75,6 +75,78 @@ static void KeepOnlyConnectedToBoundary_2D(std::vector<uint8_t> &solid, int nx, 
     for (int k=0;k<nx*ny;k++) if (solid[k] && !keep[k]) solid[k] = 0;
 }
 
+static void KeepOnlyConnectedToBoundary_3D(std::vector<uint8_t> &solid,
+                                          int nx, int ny, int nz,
+                                          bool twenty_six_conn,
+                                          bool seed_all_boundaries = true,
+                                          int seed_face = -1)
+{
+    // seed_face: -1 = all faces
+    // 0=xmin, 1=xmax, 2=ymin, 3=ymax, 4=zmin, 5=zmax
+    auto id = [=](int i,int j,int k){ return i + nx*j + nx*ny*k; };
+
+    std::vector<uint8_t> keep(nx*ny*nz, 0);
+    std::queue<std::tuple<int,int,int>> q;
+
+    auto push = [&](int i,int j,int k){
+        if (i<0||i>=nx||j<0||j>=ny||k<0||k>=nz) return;
+        int idx = id(i,j,k);
+        if (!solid[idx] || keep[idx]) return;
+        keep[idx] = 1;
+        q.push({i,j,k});
+    };
+
+    auto seed_face_fn = [&](int face){
+        if (face==0) for (int k=0;k<nz;k++) for (int j=0;j<ny;j++) push(0,j,k);         // xmin
+        if (face==1) for (int k=0;k<nz;k++) for (int j=0;j<ny;j++) push(nx-1,j,k);      // xmax
+        if (face==2) for (int k=0;k<nz;k++) for (int i=0;i<nx;i++) push(i,0,k);         // ymin
+        if (face==3) for (int k=0;k<nz;k++) for (int i=0;i<nx;i++) push(i,ny-1,k);      // ymax
+        if (face==4) for (int j=0;j<ny;j++) for (int i=0;i<nx;i++) push(i,j,0);         // zmin
+        if (face==5) for (int j=0;j<ny;j++) for (int i=0;i<nx;i++) push(i,j,nz-1);      // zmax
+    };
+
+    if (seed_all_boundaries || seed_face == -1)
+    {
+        for (int face=0; face<6; face++) seed_face_fn(face);
+    }
+    else
+    {
+        seed_face_fn(seed_face);
+    }
+
+    // BFS neighbors
+    if (!twenty_six_conn)
+    {
+        const int di[6]={ 1,-1, 0, 0, 0, 0};
+        const int dj[6]={ 0, 0, 1,-1, 0, 0};
+        const int dk[6]={ 0, 0, 0, 0, 1,-1};
+        while(!q.empty())
+        {
+            auto [i,j,k]=q.front(); q.pop();
+            for(int t=0;t<6;t++) push(i+di[t], j+dj[t], k+dk[t]);
+        }
+    }
+    else
+    {
+        while(!q.empty())
+        {
+            auto [i,j,k]=q.front(); q.pop();
+            for(int dk=-1; dk<=1; dk++)
+            for(int dj=-1; dj<=1; dj++)
+            for(int di=-1; di<=1; di++)
+            {
+                if (di==0 && dj==0 && dk==0) continue;
+                push(i+di, j+dj, k+dk);
+            }
+        }
+    }
+
+    // remove islands
+    for (int idx=0; idx<nx*ny*nz; idx++)
+        if (solid[idx] && !keep[idx]) solid[idx] = 0;
+}
+
+
 
 // Half Cell
 void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* distanceFile, const char* mesh_type, MPI_Comm comm, int order) {
@@ -488,7 +560,7 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	Constraints args;
 	//TODO: The code works with serial 2d, parallel 2d, and serial 3d, but not parallel 3d
 	args.Depth_begin = 0;	//only read in one slice for 2D data
-	args.Depth_end = 1;	//only read in one slice for 2D data
+	args.Depth_end = 6;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
 	args.Row_end      = 100;
@@ -600,7 +672,7 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
     MFEM_VERIFY(dist.ParFESpace() == parfespace.get(), "dist must be on parfespace.");
     MFEM_VERIFY(filt_gf.ParFESpace() == parfespace.get(), "filt_gf must be on parfespace.");
     MFEM_VERIFY(parfespace_dg, "parfespace_dg is not initialized.");
-    MFEM_VERIFY(parallelMesh->Dimension() == 2, "This 2D connectivity helper assumes a 2D TIFF slice.");
+    // MFEM_VERIFY(parallelMesh->Dimension() == 2, "This 2D connectivity helper assumes a 2D TIFF slice.");
 
     double dx;
     dx = parallelMesh->GetElementSize(0); // assuming uniform mesh
@@ -619,11 +691,78 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
 
     // }
 
-    const int nv_loc = parallelMesh->GetNV();
+    MFEM_VERIFY(parallelMesh->Dimension() == 2 || parallelMesh->Dimension() == 3,
+            "ComputePDEFilter: mesh must be 2D or 3D.");
+
+    // TIFF sizes
+    const int nz = (int)tiffData.size();
     const int ny = (int)tiffData[0].size();
     const int nx = (int)tiffData[0][0].size();
+
     const int rank = mfem::Mpi::WorldRank();
-    const bool eight_conn = false;
+    const bool eight_conn = false;        // 2D: 4/8
+    const bool twenty_six = false;        // 3D: 6/26  (set true if desired)
+
+    // IMPORTANT: fg must cover the whole volume for 3D
+    std::vector<uint8_t> fg(nx*ny*nz, 0);
+
+    if (rank == 0)
+    {
+        // base solid from TIFF: 1 = white/solid
+        std::vector<uint8_t> solid_base(nx*ny*nz, 0);
+        for (int k=0; k<nz; ++k)
+        for (int j=0; j<ny; ++j)
+        for (int i=0; i<nx; ++i)
+        {
+            const int idx = i + nx*j + nx*ny*k;
+            solid_base[idx] = (tiffData[k][j][i] > 0) ? 1 : 0;
+        }
+
+        if (mode == 0)
+        {
+            // PSI: solid phase, keep only stuff connected to a boundary
+            fg = solid_base;
+
+            if (nz == 1)
+            {
+                // right boundary in 2D (seed_side=1)
+                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 1);
+            }
+            else
+            {
+                // xmax face in 3D (seed_face=1)
+                KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, false, 1);
+            }
+        }
+        else if (mode == 1)
+        {
+            // PSE: electrolyte = NOT solid
+            for (int idx=0; idx<nx*ny*nz; ++idx) fg[idx] = solid_base[idx] ? 0 : 1;
+
+            if (nz == 1)
+            {
+                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1);
+            }
+            else
+            {
+                KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, false, 0);
+            }
+        }
+        else
+        {
+            MFEM_ABORT("ComputePDEFilter: mode must be 0 (psi) or 1 (pse).");
+        }
+    }
+
+    // Broadcast full mask to all ranks
+    MPI_Bcast(fg.data(), (int)fg.size(), MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+
+
+    // const int nv_loc = parallelMesh->GetNV();
+    // const int ny = (int)tiffData[0].size();
+    // const int nx = (int)tiffData[0][0].size();
+    // const int rank = mfem::Mpi::WorldRank();
+    // const bool eight_conn = false;
 
     mfem::ParGridFunction ls_coeff_dg(parfespace_dg.get());
     mfem::ParGridFunction filt_dg(parfespace_dg.get());
@@ -631,54 +770,66 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
     ls_coeff_dg = 0.0;
     filt_dg     = 0.0;
 
-    std::vector<uint8_t> fg(nx*ny, 0);
+    // std::vector<uint8_t> fg(nx*ny, 0);
 
-    if (rank == 0)
+    // if (rank == 0)
+    // {
+    //     // base solid from TIFF: 1 = white/solid 
+    //     std::vector<uint8_t> solid_base(nx*ny, 0);
+    //     for (int j=0; j<ny; ++j)
+    //     for (int i=0; i<nx; ++i)
+    //     {
+    //         const int k = i + nx*j;
+    //         solid_base[k] = (tiffData[0][j][i] > 0) ? 1 : 0;
+    //     }
+
+    //     if (mode == 0)
+    //     {
+    //         // --- PSI
+    //         fg = solid_base;
+    //         KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 1); // right
+    //     }
+    //     else if (mode == 1)
+    //     {
+    //         // --- PSE
+    //         for (int k=0; k<nx*ny; ++k) fg[k] = solid_base[k] ? 0 : 1; // fg=1 for electrolyte 
+    //         KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1); // left
+    //     }
+    //     else
+    //     {
+    //         MFEM_ABORT("ComputeDistanceFromTiffMask: mode must be 0 (psi) or 1 (pse).");
+    //     }
+    // }
+
+    // MPI_Bcast(fg.data(), nx*ny, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+
+    struct FGCoeffND : public mfem::Coefficient
     {
-        // base solid from TIFF: 1 = white/solid 
-        std::vector<uint8_t> solid_base(nx*ny, 0);
-        for (int j=0; j<ny; ++j)
-        for (int i=0; i<nx; ++i)
-        {
-            const int k = i + nx*j;
-            solid_base[k] = (tiffData[0][j][i] > 0) ? 1 : 0;
-        }
-
-        if (mode == 0)
-        {
-            // --- PSI
-            fg = solid_base;
-            KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 1); // right
-        }
-        else if (mode == 1)
-        {
-            // --- PSE
-            for (int k=0; k<nx*ny; ++k) fg[k] = solid_base[k] ? 0 : 1; // fg=1 for electrolyte 
-            KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1); // left
-        }
-        else
-        {
-            MFEM_ABORT("ComputeDistanceFromTiffMask: mode must be 0 (psi) or 1 (pse).");
-        }
-    }
-
-    MPI_Bcast(fg.data(), nx*ny, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
-
-    struct FGCoeff : public mfem::Coefficient
-    {
-        int nx, ny;
-        double x0, y0, dxp, dyp;
+        int nx, ny, nz;
+        int dim;
+        double x0,y0,z0, dxp,dyp,dzp;
         const std::vector<uint8_t> *fg;
 
-        FGCoeff(int nx_, int ny_, mfem::ParMesh &pmesh, const std::vector<uint8_t> &fg_)
-            : nx(nx_), ny(ny_), fg(&fg_)
+        FGCoeffND(int nx_, int ny_, int nz_, mfem::ParMesh &pmesh, const std::vector<uint8_t> &fg_)
+            : nx(nx_), ny(ny_), nz(nz_), fg(&fg_)
         {
+            dim = pmesh.Dimension();
             mfem::Vector bbmin, bbmax;
             pmesh.GetBoundingBox(bbmin, bbmax);
-            x0  = bbmin(0);
-            y0  = bbmin(1);
+
+            x0 = bbmin(0); y0 = bbmin(1);
             dxp = (bbmax(0) - bbmin(0)) / (nx - 1);
             dyp = (bbmax(1) - bbmin(1)) / (ny - 1);
+
+            if (dim == 3)
+            {
+                z0  = bbmin(2);
+                dzp = (bbmax(2) - bbmin(2)) / (nz - 1);
+            }
+            else
+            {
+                z0 = 0.0; dzp = 1.0;
+            }
         }
 
         double Eval(mfem::ElementTransformation &T, const mfem::IntegrationPoint &ip) override
@@ -688,17 +839,61 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
 
             int i = (int)std::floor((X(0) - x0)/dxp + 0.5);
             int j = (int)std::floor((X(1) - y0)/dyp + 0.5);
+            i = std::max(0, std::min(nx-1, i));
+            j = std::max(0, std::min(ny-1, j));
 
-            if (i < 0) i = 0; if (i > nx-1) i = nx-1;
-            if (j < 0) j = 0; if (j > ny-1) j = ny-1;
+            int k = 0;
+            if (dim == 3)
+            {
+                k = (int)std::floor((X(2) - z0)/dzp + 0.5);
+                k = std::max(0, std::min(nz-1, k));
+            }
 
-            return (*fg)[i + nx*j] ? +1.0 : -1.0;
+            const int idx = i + nx*j + nx*ny*k;
+            return (*fg)[idx] ? +1.0 : -1.0;
         }
     };
 
 
-    FGCoeff fgcoef(nx, ny, *parallelMesh, fg);
-    ls_coeff_dg.ProjectCoefficient(fgcoef);
+    // struct FGCoeff : public mfem::Coefficient
+    // {
+    //     int nx, ny;
+    //     double x0, y0, dxp, dyp;
+    //     const std::vector<uint8_t> *fg;
+
+    //     FGCoeff(int nx_, int ny_, mfem::ParMesh &pmesh, const std::vector<uint8_t> &fg_)
+    //         : nx(nx_), ny(ny_), fg(&fg_)
+    //     {
+    //         mfem::Vector bbmin, bbmax;
+    //         pmesh.GetBoundingBox(bbmin, bbmax);
+    //         x0  = bbmin(0);
+    //         y0  = bbmin(1);
+    //         dxp = (bbmax(0) - bbmin(0)) / (nx - 1);
+    //         dyp = (bbmax(1) - bbmin(1)) / (ny - 1);
+    //     }
+
+    //     double Eval(mfem::ElementTransformation &T, const mfem::IntegrationPoint &ip) override
+    //     {
+    //         mfem::Vector X;
+    //         T.Transform(ip, X);
+
+    //         int i = (int)std::floor((X(0) - x0)/dxp + 0.5);
+    //         int j = (int)std::floor((X(1) - y0)/dyp + 0.5);
+
+    //         if (i < 0) i = 0; if (i > nx-1) i = nx-1;
+    //         if (j < 0) j = 0; if (j > ny-1) j = ny-1;
+
+    //         return (*fg)[i + nx*j] ? +1.0 : -1.0;
+    //     }
+    // };
+
+
+    // FGCoeff fgcoef(nx, ny, *parallelMesh, fg);
+    // ls_coeff_dg.ProjectCoefficient(fgcoef);
+
+    FGCoeffND fgcoef(nx, ny, nz, *parallelMesh, fg);
+    ls_coeff_dg.ProjectCoefficient(fgcoef); 
+
 
 
     // ------------------ PDEFilter ------------------
