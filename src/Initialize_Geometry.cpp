@@ -560,7 +560,7 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	Constraints args;
 	//TODO: The code works with serial 2d, parallel 2d, and serial 3d, but not parallel 3d
 	args.Depth_begin = 0;	//only read in one slice for 2D data
-	args.Depth_end = 6;	//only read in one slice for 2D data
+	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
 	args.Row_end      = 100;
