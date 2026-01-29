@@ -9,7 +9,7 @@ CONFIG_MK = $(MFEM_BUILD_DIR)/share/mfem/config.mk
 
 # Compiler and Flags
 CXX = mpicxx
-CXXFLAGS = -g -O3 -std=c++17
+CXXFLAGS = -g -O3 -std=c++17 -w
 
 # Use MFEM-provided flags (includes Hypre/Metis/etc)
 INCLUDE_FLAGS := $(MFEM_INCFLAGS)
@@ -52,7 +52,8 @@ SRC_FILES = \
     src/PotA.cpp \
     src/PotE.cpp \
     src/Adjust.cpp \
-    src/Utils.cpp
+    src/Utils.cpp \
+    src/dist_solver.cpp
 
 # SRC_FILES = example.cpp
             

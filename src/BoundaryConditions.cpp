@@ -34,11 +34,11 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
     if (dim == 3)
     {
 
-        std::cout << "Setting up boundary conditions for 3D mesh" << std::endl;
+        if (mfem::Mpi::WorldRank() == 0) {std::cout << "Setting up boundary conditions for 3D mesh" << std::endl;}
 
         if (mode == CellMode::HALF && electrode == Electrode::ANODE)
         {
-            std::cout << "Setting up boundary conditions for Half Cell: ANODE" << std::endl;
+            if (mfem::Mpi::WorldRank() == 0) {std::cout << "Setting up boundary conditions for Half Cell: ANODE" << std::endl;}
 
             // East Neumann Boundary Condition
             nbc_e_bdr.SetSize(parallelMesh.bdr_attributes.Max());
@@ -68,7 +68,7 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
         }
         else if (mode == CellMode::HALF && electrode == Electrode::CATHODE)
         {
-            std::cout << "Setting up boundary conditions for Half Cell: CATHODE" << std::endl;
+            if (mfem::Mpi::WorldRank() == 0) {std::cout << "Setting up boundary conditions for Half Cell: CATHODE" << std::endl;}
 
             // West Neumann Boundary Condition
             nbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());
@@ -95,7 +95,7 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
         }
         else
         {
-            std::cout << "Setting up boundary conditions for Full Cell" << std::endl;
+            if (mfem::Mpi::WorldRank() == 0) {std::cout << "Setting up boundary conditions for Full Cell" << std::endl;}
 
             // West Dirichlet Boundary Condition
             dbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());
@@ -125,12 +125,11 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
     else if (dim == 2)
     {
 
-        std::cout << "Setting up boundary conditions for 2D mesh" << std::endl;
+        if (mfem::Mpi::WorldRank() == 0) {std::cout << "Setting up boundary conditions for 2D mesh" << std::endl;}
 
         if (mode == CellMode::HALF && electrode == Electrode::ANODE)
         {
-            std::cout << "Setting up boundary conditions for Half Cell: ANODE" << std::endl;
-
+            if (mfem::Mpi::WorldRank() == 0) {std::cout << "Setting up boundary conditions for Half Cell: ANODE" << std::endl;}
             // East Neumann Boundary Condition
             nbc_e_bdr.SetSize(parallelMesh.bdr_attributes.Max());
             nbc_e_bdr = 0;
@@ -159,7 +158,7 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
         }
         else if (mode == CellMode::HALF && electrode == Electrode::CATHODE)
         {
-            std::cout << "Setting up boundary conditions for Half Cell: CATHODE" << std::endl;
+            if (mfem::Mpi::WorldRank() == 0) {std::cout << "Setting up boundary conditions for Half Cell: CATHODE" << std::endl;}
 
             // West Neumann Boundary Condition - used for electrolye concentration
             nbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());
@@ -197,7 +196,7 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
         }
         else
         {
-            std::cout << "Setting up boundary conditions for Full Cell" << std::endl;
+            if (mfem::Mpi::WorldRank() == 0) {std::cout << "Setting up boundary conditions for Full Cell" << std::endl;}
 
             // West Dirichlet Boundary Condition
             dbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());

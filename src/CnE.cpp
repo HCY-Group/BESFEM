@@ -19,7 +19,7 @@ void CnE::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
 {
 
     if(mode_ == sim::CellMode::HALF){
-        std::cout << "Initializing CnE for Half Cell" << std::endl;
+       if (mfem::Mpi::WorldRank() == 0) {std::cout << "Initializing CnE for Half Cell" << std::endl;}
 
         utils.SetInitialValue(Cn, initial_value);
 
@@ -54,7 +54,7 @@ void CnE::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
     }
 
     else if(mode_ == sim::CellMode::FULL){
-        std::cout << "Initializing CnE for Full Cell" << std::endl;
+        if (mfem::Mpi::WorldRank() == 0) {std::cout << "Initializing CnE for Full Cell" << std::endl;}
 
         utils.SetInitialValue(Cn, initial_value);
 

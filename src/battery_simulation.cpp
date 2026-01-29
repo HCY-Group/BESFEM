@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
 
             for (int t = 0; t < cfg.num_timesteps; ++t) {
 
-            // while(VCell > 2.5){
+        //     // while(VCell > 2.5){
 
                 if (cfg.half_electrode == sim::Electrode::ANODE) {
                     
@@ -226,9 +226,9 @@ int main(int argc, char *argv[]) {
                     }
 
                     cathode_potential->AssembleSystem(*CnC_gf, *domain_parameters.psi, *phC_gf);
-                    *phC_gf = Constants::init_BvC;
+                    // *phC_gf = Constants::init_BvC;
                     electrolyte_potential->AssembleSystem(*CnE_gf, *domain_parameters.pse, *phE_gf);
-                    *phE_gf = Constants::init_BvE;
+                    // *phE_gf = Constants::init_BvE;
 
                     reaction->ExchangeCurrentDensity(*CnC_gf);
 
@@ -257,27 +257,38 @@ int main(int argc, char *argv[]) {
 
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
+                    std::ofstream outfile("full_cell_output.txt", std::ios::app);
+
                     const double Xfr = half_is_anode ? anode_concentration->GetLithiation() : cathode_concentration->GetLithiation();
 
-                    std::cout << "timestep: " << t << (half_is_anode ? " [ANODE HALF-CELL]" : " [CATHODE HALF-CELL]")
+                    outfile << "timestep: " << t << (half_is_anode ? " [ANODE HALF-CELL]" : " [CATHODE HALF-CELL]")
                     << ", Xfr = " << Xfr << ", VCell = " << VCell << ", BvE = " << electrolyte_potential->BvE
                     << (half_is_anode ? ", BvA = " : ", BvC = ") << (half_is_anode ? anode_potential->BvA : cathode_potential->BvC)
                     << ", current = " << global_current << ", target current = " << domain_parameters.gTrgI << std::endl;
+
+                    outfile.close(); 
                 }
 
 
                 if (cfg.half_electrode == sim::Electrode::ANODE) {
                     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phA_gf, *phE_gf, 
-                    *CnA_gf, *CnE_gf, *CnA_gf_psi, *CnE_gf_psi, 100); 
+                    *CnA_gf, *CnE_gf, *CnA_gf_psi, *CnE_gf_psi, 1000); 
                 } else {
                     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phC_gf, *phE_gf, 
-                    *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 100); 
+                    *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 1000); 
                 }
  
                 t += 1;
 
             } 
         }
+
+
+
+
+
+
+        
 
         // ============================================================================
         // ===============================  FULL-CELL  ================================
@@ -341,14 +352,13 @@ int main(int argc, char *argv[]) {
 
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
-                    // std::ofstream outfile("full_cell_output.txt", std::ios::app);
-                    // outfile 
+                    std::ofstream outfile("full_cell_output.txt", std::ios::app);
 
-                    std::cout << "timestep: " << t << " [FULL-CELL]" << ", XfrA = " << XfrA << ", XfrC = " << XfrC
+                    outfile  << "timestep: " << t << " [FULL-CELL]" << ", XfrA = " << XfrA << ", XfrC = " << XfrC
                             << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C
                             << ", VCell = " << VCell << ", Target Current = " << domain_parameters.gTrgI << std::endl;
 
-                    // outfile.close(); 
+                    outfile.close(); 
                 }
             
                 Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phA_gf, *phC_gf, *phE_gf, 
@@ -365,17 +375,23 @@ int main(int argc, char *argv[]) {
 
     if (mfem::Mpi::WorldRank() == 0) { std::cout << "Simulation complete.\n"; }
 
+    // // Finalize HYPRE processing
+    // mfem::Hypre::Finalize();
+
+    // // Finalize MPI processing
+    // mfem::Mpi::Finalize();
+
+    // End timing and output the total program execution time
+    auto program_end = high_resolution_clock::now();
+    if (mfem::Mpi::WorldRank() == 0) {std::cout << "Total Program Time: " 
+            << duration_cast<seconds>(program_end - program_start).count() 
+            << " seconds" << std::endl;}
+
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();
 
     // Finalize MPI processing
     mfem::Mpi::Finalize();
-
-    // End timing and output the total program execution time
-    auto program_end = high_resolution_clock::now();
-    std::cout << "Total Program Time: " 
-            << duration_cast<seconds>(program_end - program_start).count() 
-            << " seconds" << std::endl;
 
     return 0;
 }

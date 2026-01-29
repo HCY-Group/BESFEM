@@ -186,6 +186,29 @@ public:
      */
     void SetupPinnedDOF(mfem::ParFiniteElementSpace& fespace);
 
+    
+    
+    /**
+     * @brief Save TIFF voxel data to a series of PGM files.
+     * 
+     * @param data voxel data.
+     * @param filename Base filename for output PGM files.
+     */
+    void SaveTiffDataToPGM(const std::vector<std::vector<std::vector<int>>> &data,
+                       const std::string &filename);
+
+    /**
+     * @brief Use MFEM-based solvers to compute distance function from voxel mask.
+     * @param dist Output unsigned distance function.
+     * @param filt_gf Output filtered level set function.
+     * @param mode 0 = psi (keep 1s to right), 1 = pse (keep 0s to any boundary)
+     */
+    void ComputePDEFilter(
+        mfem::ParGridFunction &dist,            // output unsigned distance
+        mfem::ParGridFunction &filt_gf,        // output filtered level set
+        int mode                           // 0 = psi (keep 1s to right), 1 = pse (keep 0s to any boundary)
+    );
+
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
@@ -268,6 +291,12 @@ public:
 
     int myid = 0; ///< MPI rank.
     int rkpp = -1; ///< Rank that owns the pinned DOF.
+
+    std::unique_ptr<mfem::ParGridFunction> distMask;       // unsigned distance
+    std::unique_ptr<mfem::ParGridFunction> distMaskSigned; // signed distance (optional)
+    std::unique_ptr<mfem::ParGridFunction> MaskFilter;    // filtered level set
+    std::unique_ptr<mfem::ParGridFunction> MaskFilterPse;    // filtered level set (debug/useful)
+
 };
 
 #endif // INITIALIZE_GEOMETRY_HPP

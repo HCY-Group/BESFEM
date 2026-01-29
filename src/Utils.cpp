@@ -79,6 +79,7 @@ void Utils::CalculateGlobalError(mfem::ParGridFunction &px0, mfem::ParGridFuncti
     globalerror /= gtPsx;
 }
 
+// Full Cell
 void Utils::SaveSimulationSnapshot(int t, const std::string &outdir, Initialize_Geometry &geometry, Domain_Parameters &domain_parameters, mfem::ParGridFunction &phA,
     mfem::ParGridFunction &phC, mfem::ParGridFunction &phE, mfem::ParGridFunction &CnA, mfem::ParGridFunction &CnC, mfem::ParGridFunction &CnE, mfem::ParGridFunction &CnApsi,
     mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi, mfem::ParGridFunction &CnP, int save_interval)
@@ -116,6 +117,7 @@ void Utils::SaveSimulationSnapshot(int t, const std::string &outdir, Initialize_
     CnP.SaveAsOne((outdir + "/CnP" + suff).c_str());
 }
 
+// Half Cell
 void Utils::SaveSimulationSnapshot(int t, const std::string &outdir,
     Initialize_Geometry &geometry, Domain_Parameters &domain_parameters, mfem::ParGridFunction &phC, mfem::ParGridFunction &phE, mfem::ParGridFunction &CnC, mfem::ParGridFunction &CnE,
     mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi, int save_interval)
@@ -133,11 +135,11 @@ void Utils::SaveSimulationSnapshot(int t, const std::string &outdir,
     phC.SaveAsOne((outdir + "/phC" + suff).c_str());
     phE.SaveAsOne((outdir + "/phE" + suff).c_str());
 
-    CnC.SaveAsOne((outdir + "/CnC_raw" + suff).c_str());
+    CnC.SaveAsOne((outdir + "/CnP_raw" + suff).c_str());
     CnE.SaveAsOne((outdir + "/CnE_raw" + suff).c_str());
 
     CnCpsi = CnC; CnCpsi *= *domain_parameters.psi;
-    CnCpsi.SaveAsOne((outdir + "/CnC" + suff).c_str());
+    CnCpsi.SaveAsOne((outdir + "/CnP" + suff).c_str());
 
     CnEpsi = CnE; CnEpsi *= *domain_parameters.pse;
     CnEpsi.SaveAsOne((outdir + "/CnE" + suff).c_str());

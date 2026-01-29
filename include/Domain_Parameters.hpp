@@ -78,6 +78,8 @@ public:
     // Surface-area / geometry-related auxiliary fields
     // -------------------------------------------------------------------------
     std::unique_ptr<mfem::ParGridFunction> AvP; ///< Particle surface-area density.
+    std::unique_ptr<mfem::ParGridFunction> AvP_0; ///< Particle surface-area density component 0.
+    std::unique_ptr<mfem::ParGridFunction> AvP_1; ///< Particle surface-area density component 1.
     std::unique_ptr<mfem::ParGridFunction> AvA; ///< Anode surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvC; ///< Cathode surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvB; ///< Boundary surface-area density.

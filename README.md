@@ -76,6 +76,17 @@ mpirun -np 8 ./battery_simulation \
     -n 1200
 ```
 
+### Half Cell Example (Cathode & TIFF)
+```bash
+mpirun -np 8 ./battery_simulation \
+    -mode half \
+    -elec cathode \
+    -m ../inputs/II_1_bin.tif \
+    -dC ../inputs/dummy.gf \
+    -t v \
+    -n 1200
+```
+
 ### Half Cell Example (Anode)
 The constants defined in `inputs/Constants.cpp` are configured for full-cell simulations by default. 
 When running a half-cell anode simulation, some constants need to be modified to ensure correct reactions. 
