@@ -12,16 +12,12 @@ namespace Constants {
 
     bool visualization = true;
     const int order = 1;                                    ///< Order of the finite element basis functions
-    const double dh =  0.0000200; 
-    // const double dh = 0.0000325;                            ///< Mesh element size (disk)
-    // const double dh = 1.008403361;                           ///< Mesh element size (voxel)    
-    // const double dh = 1.02564 ;                           ///< Mesh element size (voxel)
-    // const double dh = 2.0202e-05;
+    // const double dh =  0.0000200; 
+    const double dh = 0.0000325;                            ///< Mesh element size (disk)
     const double gc = 3.3800e-10 *2;			            ///< gradient coefficient
     const double zeta = 1.0;                                ///< Interfacial thickness
     const double thres = 1.0e-3;                            ///< Threshold value for numerical operations
     const double eps = 1.0e-6;                              ///< Small epsilon value for numerical tolerance
-    // const double dt = 0.0105625 / 100;
     const double dt = 0.0105625;                            ///< Time step size 
     // const double dt = 0.02 * 3.25e-5 * 3.25e-5 /7.3333e-10;      ///< Time step size
     const double tm = 0.0;                                  ///< Initial simulation time
@@ -50,9 +46,9 @@ namespace Constants {
     // const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
 
 
-    const double init_Rxn = 1e-6;                             ///< initial reaction rate
+    // const double init_Rxn = 1e-6;                             ///< initial reaction rate
 
-    // const double init_Rxn = 0.0;                             ///< initial reaction rate
+    const double init_Rxn = 0.0;                             ///< initial reaction rate
     const double init_RxA = 0.0;                             ///< initial anode reaction
     const double init_RxC = 0.0;                             ///< initial cathode reaction
 

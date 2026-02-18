@@ -226,9 +226,7 @@ int main(int argc, char *argv[]) {
                     }
 
                     cathode_potential->AssembleSystem(*CnC_gf, *domain_parameters.psi, *phC_gf);
-                    // *phC_gf = Constants::init_BvC;
                     electrolyte_potential->AssembleSystem(*CnE_gf, *domain_parameters.pse, *phE_gf);
-                    // *phE_gf = Constants::init_BvE;
 
                     reaction->ExchangeCurrentDensity(*CnC_gf);
 
@@ -257,7 +255,7 @@ int main(int argc, char *argv[]) {
 
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
-                    std::ofstream outfile("full_cell_output.txt", std::ios::app);
+                    std::ofstream outfile("half_cell_output.txt", std::ios::app);
 
                     const double Xfr = half_is_anode ? anode_concentration->GetLithiation() : cathode_concentration->GetLithiation();
 
@@ -272,10 +270,10 @@ int main(int argc, char *argv[]) {
 
                 if (cfg.half_electrode == sim::Electrode::ANODE) {
                     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phA_gf, *phE_gf, 
-                    *CnA_gf, *CnE_gf, *CnA_gf_psi, *CnE_gf_psi, 1000); 
+                    *CnA_gf, *CnE_gf, *CnA_gf_psi, *CnE_gf_psi, 100); 
                 } else {
                     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phC_gf, *phE_gf, 
-                    *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 1000); 
+                    *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 100); 
                 }
  
                 t += 1;
