@@ -25,12 +25,14 @@ TIFFReader::TIFFReader(const char* filePath, const Constraints& constraints) {
     TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
     TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar);
 
-    // std::cout << "spp=" << spp
-    //         << " bps=" << bps
-    //         << " photometric=" << photo
-    //         << " planar=" << planar << "\n";
+    std::cout << "spp=" << spp
+            << " bps=" << bps
+            << " photometric=" << photo
+            << " planar=" << planar << "\n";
 
 }
+
+
 
 void TIFFReader::readinfo() {
 
@@ -71,11 +73,30 @@ void TIFFReader::readinfo() {
             for (int col = constraints.Column_begin; col < constraints.Column_end; col++) {
 
                 // --- Correctly decode pixel value for grayscale vs RGBA ---
+                // uint8 gray;
+                // if (spp == 1) {
+                //     gray = p[col];
+                // } else {
+                //     // packed RGBA: [R G B A] [R G B A] ...
+                //     const int idx = (int)spp * col;
+                //     const uint8 r = p[idx + 0];
+                //     const uint8 g = p[idx + 1];
+                //     const uint8 b = p[idx + 2];
+                //     gray = static_cast<uint8>(0.299*r + 0.587*g + 0.114*b);
+                // }
+
                 uint8 gray;
+
                 if (spp == 1) {
+                    // grayscale
                     gray = p[col];
-                } else {
-                    // packed RGBA: [R G B A] [R G B A] ...
+                }
+                else if (spp == 2) {
+                    // grayscale + alpha: [G A] [G A] ...
+                    gray = p[2*col];      // ignore alpha
+                }
+                else {
+                    // RGB/RGBA: [R G B (A)] ...
                     const int idx = (int)spp * col;
                     const uint8 r = p[idx + 0];
                     const uint8 g = p[idx + 1];
@@ -83,14 +104,13 @@ void TIFFReader::readinfo() {
                     gray = static_cast<uint8>(0.299*r + 0.587*g + 0.114*b);
                 }
 
-                // --- Make BOTH file types mean the same thing: "solid=1 for black" ---
-                // stack: photometric=0 (MINISWHITE): 0=white, 255=black
-                // single: photometric=2 (RGB): black~0, white~255 after gray conversion
                 int solid;
                 if (photo == PHOTOMETRIC_MINISWHITE) {
-                    solid = (gray > 127) ? 0 : 1;   
-                } else {
-                    solid = (gray < 127) ? 0 : 1;  
+                    // 0=white, 255=black  -> solid is WHITE, so solid when gray is LOW
+                    solid = (gray <= 127) ? 1 : 0;
+                } else { // PHOTOMETRIC_MINISBLACK (and most other cases)
+                    // 0=black, 255=white  -> solid is WHITE, so solid when gray is HIGH
+                    solid = (gray >= 127) ? 1 : 0;
                 }
 
                 imageData[page - constraints.Depth_begin]

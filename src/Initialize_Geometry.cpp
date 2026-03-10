@@ -563,9 +563,9 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
-	args.Row_end      = 100;
+	args.Row_end      = -1;
 	args.Column_begin = 0;
-	args.Column_end   = 100;
+	args.Column_end   = -1;
 	TIFFReader reader(meshFile,args);
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffData;
@@ -717,6 +717,22 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
             const int idx = i + nx*j + nx*ny*k;
             solid_base[idx] = (tiffData[k][j][i] > 0) ? 1 : 0;
         }
+
+        // if (mode == 0)
+        // {
+        //     // PSI: solid (white in your TIFF)
+        //     fg = solid_base;
+        // }
+        // else if (mode == 1)
+        // {
+        //     // PSE: electrolyte = NOT solid
+        //     for (int idx = 0; idx < nx*ny*nz; ++idx)
+        //         fg[idx] = solid_base[idx] ? 0 : 1;
+        // }
+        // else
+        // {
+        //     MFEM_ABORT("ComputePDEFilter: mode must be 0 (psi) or 1 (pse).");
+        // }
 
         if (mode == 0)
         {

@@ -179,9 +179,11 @@ int main(int argc, char *argv[]) {
                 VCell = cathode_potential->BvC - electrolyte_potential->BvE;
             }
 
-            for (int t = 0; t < cfg.num_timesteps; ++t) {
+            // std::cout << "Initial VCell: " << VCell << std::endl;
 
-        //     // while(VCell > 2.5){
+            // for (int t = 0; t < cfg.num_timesteps; ++t) {
+
+            while(VCell > 0.01){
 
                 if (cfg.half_electrode == sim::Electrode::ANODE) {
                     
@@ -268,13 +270,13 @@ int main(int argc, char *argv[]) {
                 }
 
 
-                if (cfg.half_electrode == sim::Electrode::ANODE) {
-                    Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phA_gf, *phE_gf, 
-                    *CnA_gf, *CnE_gf, *CnA_gf_psi, *CnE_gf_psi, 100); 
-                } else {
-                    Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phC_gf, *phE_gf, 
-                    *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 100); 
-                }
+                // if (cfg.half_electrode == sim::Electrode::ANODE) {
+                //     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phA_gf, *phE_gf, 
+                //     *CnA_gf, *CnE_gf, *CnA_gf_psi, *CnE_gf_psi, 1000); 
+                // } else {
+                //     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phC_gf, *phE_gf, 
+                //     *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 1000); 
+                // }
  
                 t += 1;
 
@@ -299,12 +301,12 @@ int main(int argc, char *argv[]) {
 
             int t = 0;
 
-            for (int t = 0; t < cfg.num_timesteps; ++t) {
+            // for (int t = 0; t < cfg.num_timesteps; ++t) {
             // while (XfrC < 0.85) {
 
             VCell = Constants::init_BvC - Constants::init_BvA;
 
-            // while (VCell > 2.5) {
+            while (VCell > 2.5) {
 
                 anode_concentration->UpdateConcentration(*RxA_gf, *CnA_gf, *domain_parameters.psA);
                 cathode_concentration->UpdateConcentration(*RxC_gf, *CnC_gf, *domain_parameters.psC);
@@ -354,13 +356,14 @@ int main(int argc, char *argv[]) {
 
                     outfile  << "timestep: " << t << " [FULL-CELL]" << ", XfrA = " << XfrA << ", XfrC = " << XfrC
                             << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C
-                            << ", VCell = " << VCell << ", Target Current = " << domain_parameters.gTrgI << std::endl;
+                            << ", VCell = " << VCell << ", Target Current = " << domain_parameters.gTrgI
+                            << ", BvA = " << anode_potential->BvA << ", BvC = " << cathode_potential->BvC << ", BvE = " << electrolyte_potential->BvE << std::endl;
 
                     outfile.close(); 
                 }
             
                 Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phA_gf, *phC_gf, *phE_gf, 
-                    *CnA_gf, *CnC_gf, *CnE_gf, *CnA_gf_psi, *CnC_gf_psi, *CnE_gf_psi, *CnP_together, 100);
+                    *CnA_gf, *CnC_gf, *CnE_gf, *CnA_gf_psi, *CnC_gf_psi, *CnE_gf_psi, *CnP_together, 1000);
                  
 
                 t += 1;

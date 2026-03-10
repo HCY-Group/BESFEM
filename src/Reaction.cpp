@@ -50,10 +50,14 @@
 
  
     std::ifstream myXfile("../inputs/C_Li_X_101.txt"); // ticks
-    std::ifstream mydFfile("../inputs/C_Li_M6_101.txt"); // chemical potential
-    std::ifstream myMBfile("../inputs/C_Li_Mb5_101.txt"); // mobility
-    std::ifstream myOCVfile("../inputs/C_Li_O3_101.txt"); // OCV
-    std::ifstream myi0file("../inputs/C_Li_J2_101.txt"); // i0
+    // std::ifstream mydFfile("../inputs/C_Li_M6_101.txt"); // chemical potential
+    std::ifstream mydFfile("../inputs/LFP_Chm_Pot.txt"); // chemical potential
+    // std::ifstream myMBfile("../inputs/C_Li_Mb5_101.txt"); // mobility
+    std::ifstream myMBfile("../inputs/LFP_Mobility.txt"); // mobility
+    // std::ifstream myOCVfile("../inputs/C_Li_O3_101.txt"); // OCV
+    std::ifstream myOCVfile("../inputs/LFP_OCV.txt"); // OCV
+    // std::ifstream myi0file("../inputs/C_Li_J2_101.txt"); // i0
+    std::ifstream myi0file("../inputs/LFP_i0.txt"); // i0
     
     for (int i = 0; i < 101; i++) myXfile >> Ticks(i);
     for (int i = 0; i < 101; i++) mydFfile >> chmPot(i);

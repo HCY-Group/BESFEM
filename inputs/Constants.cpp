@@ -26,24 +26,27 @@ namespace Constants {
     const double Frd = 96485.3365;                          ///< Faraday constant
     const double Cst1 = 1.6021766e-19 / (1.3806488e-23 * 300.0);   ///< Constant derived from the Nernst equation (e/kT for T = 300 K)
     const double alp = 0.5;                                 ///< Symmetry factor for electrochemical kinetics
-    const double rho_A = 0.0312;                             ///< Anode Lithium site density (graphite)
+    // const double rho_A = 0.0312;                             ///< Anode Lithium site density (graphite)
+    const double rho_A = 0.0228;                             ///< Anode Lithium site density (LFP)
     const double rho_C = 0.0501;                             ///< Cathode Lithium site density (NMC)
-    const double Cr = 3.0;                                   ///< C-rate for charging/discharging cycles
+    const double Cr = 0.5;                                   ///< C-rate for charging/discharging cycles
     const double Vsr0 = 0.009466;                                 ///< Voltage scanning rate (same value for anode, cathode, and electrolyte)
     const double VCut = 0.0;                                ///< Cut-off voltage
-    const double init_CnA = 0.95;                        ///< initial concentration in the anode (full)
+    // const double init_CnA = 0.95;                        ///< initial concentration in the anode (full)
     const double init_CnC = 0.30;                            ///< initial concentration in the cathode
-    const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
-    const double init_BvA = -0.01;                            ///< boundary condition for anode potential (full)
+    // const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
+    // const double init_BvA = -0.01;                            ///< boundary condition for anode potential (full)
     const double init_BvC = 3.96;                         ///< boundary condition for cathode potential
-    const double init_BvE = -0.1;                         ///< boundary condition for electrolyte potential (full & half cathode)
+    // const double init_BvE = -0.1;                         ///< boundary condition for electrolyte potential (full & half cathode)
 
 
     // constants for half cell - anode side 
-    // const double init_CnA = 2.0e-2;                        ///< initial concentration in the anode (half)
+    const double init_CnA = 2.0e-2;                        ///< initial concentration in the anode (half)
     // const double init_BvA = -0.1;                            ///< boundary condition for anode potential (half)
     // const double init_BvE = -0.4686;                               ///< boundary condition for eletrolyte potential (half anode)
-    // const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
+    const double init_BvA = 2.8;                            ///< boundary condition for anode potential (LFP half)
+    const double init_BvE = -0.4;                               ///< boundary condition for eletrolyte potential (LFP half)
+    const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
 
 
     // const double init_Rxn = 1e-6;                             ///< initial reaction rate
