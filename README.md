@@ -35,10 +35,10 @@ Ensure MFEM, HYPRE, and MPI (OpenMPI or MPICH) are installed and available.
 
 ```bash
 # clone the repository
-git clone https://gitlab.msu.edu/hcy/besfem.git
+git clone https://github.com/HCY-Group/BESFEM.git
 
 # enter into besfem folder
-cd besfem 
+cd BESFEM 
 
 # On the HPCC 
 module load MFEM
