@@ -51,6 +51,8 @@ void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
     psi->SaveAsOne("psi");
     pse->SaveAsOne("pse");
     AvP->SaveAsOne("AvP");
+    AvE->SaveAsOne("AvE");
+    AvB->SaveAsOne("AvB");
 
 
     PrintInfo();
@@ -68,6 +70,7 @@ void Domain_Parameters::InitializeGridFunctions() {
     AvP_0 = std::make_unique<mfem::ParGridFunction>(fespace.get());
     AvP_1 = std::make_unique<mfem::ParGridFunction>(fespace.get());
     AvB = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvE = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
     const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
     if (full) {
@@ -206,6 +209,41 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             {
                 if ((*AvP)(vi) > cap) { (*AvP)(vi) = cap; }
             }
+
+
+            // AvE
+            
+            
+            mfem::ParGridFunction dpse(fespace.get());
+
+            (*AvE) = 0.0;
+            for (int d = 0; d < dim; d++)
+            {
+                dpse = 0.0;
+                pse->GetDerivative(1, d, dpse); 
+
+                // compound squares: AvE += (dpse)^2
+                for (int vi = 0; vi < nV; vi++)
+                {
+                    const double v = dpse(vi);
+                    (*AvE)(vi) += v * v;
+                }
+            }
+
+            // sqrt to get magnitude
+            for (int vi = 0; vi < nV; vi++)
+            {
+                (*AvE)(vi) = std::sqrt((*AvE)(vi));
+            }
+
+            // cap maximum AvE to level peaks
+            dpse = 0.0;
+            pse->GetDerivative(1, 0, dpse);
+            const double cap_pse = dpse.Max();
+            for (int vi = 0; vi < nV; vi++)
+            {
+                if ((*AvE)(vi) > cap_pse) { (*AvE)(vi) = cap_pse; }
+            }
             
         }
 
@@ -234,9 +272,17 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             std::cerr << "[Psi Check] ERROR: psi_max not near 1." << std::endl;
             std::exit(EXIT_FAILURE);
         }
-
         
         AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
+        *AvB *= *AvE;
+
+        for (int vi = 0; vi < nV; vi++)
+        {
+            (*AvB)(vi) = std::sqrt((*AvB)(vi));
+        }
+
+        // *AvB = std::sqrt(*AvB);
+        // *AvB *= pow(*AvB, 0.5);
 
 
         // for (int vi = 0; vi < nV; vi++) {
