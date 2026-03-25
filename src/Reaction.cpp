@@ -84,23 +84,6 @@ double Reaction::GetTableValues(double cn, const mfem::Vector &ticks, const mfem
  {
      for (int i = 0; i < Rx.Size(); ++i) {
          Rx(i) = initial_value;
-
-        // // testing purposes
-        // if ((*AvP)(i) * Constants::dh > 0.0) {
-        //     Rx(i) *= (*AvP)(i);
-        //     Rx(i) *= Constants::dh;
-        //     // Rx(i) *= (*AvP)(i) * Constants::dh; // scaling Rx by AvP
-        // }
-
-        // if (Rx(i) > 5e-07) {
-        //     Rx(i) = 1.567e-36; // remove strange bump in lower left corner
-        // }
-
-        // if (Rx(i) < 8e-08) {
-        //     Rx(i) = 1e-10;
-        // }
-
-        // Rx(i) *= 100; // increase scaling for faster Rxn
     }
  }
 
@@ -169,6 +152,8 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn
 
         }
     }
+
+    Rx.SaveAsOne("Rxn");
 }
 
 void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &Cn3, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2, mfem::ParGridFunction &phx3)
