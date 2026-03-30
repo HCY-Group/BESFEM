@@ -263,70 +263,6 @@ int main(int argc, char *argv[]) {
 
                 reaction->TotalReactionCurrent(*Rxn_gf, global_current);
 
-                // double Vsr;
-                // double dCrnt = std::abs(global_current - domain_parameters.gTrgI);
-
-                // if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.05)
-                //     Vsr = 0.25 * Constants::Vsr0;
-                // else if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.10)
-                //     Vsr = 0.25 * Constants::Vsr0;
-                // else
-                //     Vsr = 1.0 * Constants::Vsr0;
-
-                // double sgn = std::copysign(1.0, domain_parameters.gTrgI - global_current);
-                // double dV = Constants::dt * Vsr * sgn * 2.0;
-
-                // electrolyte_potential->BvE += dV;
-                // *phE_gf += dV;
-
-                // double Vsr;
-                // double dCrnt = std::abs(global_current - domain_parameters.gTrgI);
-
-                // if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.05)
-                //     Vsr = 0.25 * Constants::Vsr0;
-                // else if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.10)
-                //     Vsr = 0.50 * Constants::Vsr0;
-                // else
-                //     Vsr = 1.0 * Constants::Vsr0;
-
-                // double err = domain_parameters.gTrgI - global_current;
-                // double rel_err = err / std::abs(domain_parameters.gTrgI);
-
-                // double dV = 0.0;
-                // if (std::abs(rel_err) >= 1.0e-4) {
-                //     dV = Constants::dt * Vsr * rel_err * 2.5;
-                // }
-
-                // double dVmax = 1.0e-4;
-                // if (dV >  dVmax) dV =  dVmax;
-                // if (dV < -dVmax) dV = -dVmax;
-
-                // electrolyte_potential->BvE += dV;
-                // *phE_gf += dV;
-
-                // double Vsr;
-                // double dCrnt = std::abs(global_current - domain_parameters.gTrgI);
-
-                // if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.05)
-                //     Vsr = 0.025 * Constants::Vsr0;
-                // else if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.10)
-                //     Vsr = 0.25 * Constants::Vsr0;
-                // else
-                //     Vsr = 1.0 * Constants::Vsr0;
-
-                // double err = domain_parameters.gTrgI - global_current;
-                // double rel_err = err / std::abs(domain_parameters.gTrgI);
-
-                // double dV = Constants::dt * Vsr * rel_err;
-
-                // // optional clamp
-                // double dVmax = 1.0e-4;
-                // if (dV >  dVmax) dV =  dVmax;
-                // if (dV < -dVmax) dV = -dVmax;
-
-                // electrolyte_potential->BvE += dV;
-                // *phE_gf += dV;
-
                 double sgn = copysign(1.0, domain_parameters.gTrgI - global_current);
                 double dV = Constants::dt * Constants::Vsr0 * sgn;
                 electrolyte_potential->BvE += dV; // Adjust electrolyte potential based on target current
@@ -338,7 +274,6 @@ int main(int argc, char *argv[]) {
                     VCell = cathode_potential->BvC - electrolyte_potential->BvE;
                 }
 
-                // if (t % 100 == 0 && t % 500 != 0 && mfem::Mpi::WorldRank() == 0) {
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
                     std::ofstream outfile("half_cell_output.txt", std::ios::app);
