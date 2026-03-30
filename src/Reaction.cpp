@@ -84,30 +84,22 @@ double Reaction::GetTableValues(double cn, const mfem::Vector &ticks, const mfem
  {
      for (int i = 0; i < Rx.Size(); ++i) {
          Rx(i) = initial_value;
-
-        // // testing purposes
-        // if ((*AvP)(i) * Constants::dh > 0.0) {
-        //     Rx(i) *= (*AvP)(i);
-        //     Rx(i) *= Constants::dh;
-        //     // Rx(i) *= (*AvP)(i) * Constants::dh; // scaling Rx by AvP
-        // }
-
-        // if (Rx(i) > 5e-07) {
-        //     Rx(i) = 1.567e-36; // remove strange bump in lower left corner
-        // }
-
-        // if (Rx(i) < 8e-08) {
-        //     Rx(i) = 1e-10;
-        // }
-
-        // Rx(i) *= 100; // increase scaling for faster Rxn
     }
  }
 
 // rate constants and exchange current density at interface
 void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
     for (int vi = 0; vi < nV; vi++){
-        if((*AvB)(vi) * Constants::dh > 0.0){ 
+        if((*AvB)(vi) * Constants::dh > 1e-1){ 
+
+            // if (vi == 238 && mfem::Mpi::WorldRank() == 0) {
+            //     std::cout << "vi = " << vi
+            //               << ", AvP = " << (*AvP)(vi)
+            //               << ", AvB = " << (*AvB)(vi)
+            //               << ", Cn = " << Cn(vi)
+            //               << std::endl;
+            // }
+
             double val = -0.2 * (Cn(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn(vi) - 3.195);
             (*i0C)(vi) = pow(10.0, val) * 1.0e-3; // Exchange current density
             (*OCV)(vi) = 1.095 * Cn(vi) * Cn(vi) - 8.324e-7 * exp(14.31 * Cn(vi)) + 4.692 * exp(-0.5389 * Cn(vi)); // open circuit voltage
@@ -161,14 +153,37 @@ void Reaction::TableExchangeCurrentDensity(mfem::ParGridFunction &Cn)
 
 void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2)
 {
+    Rx = 0.0; // Reset reaction rate field before accumulation
+    
+   
     for (int vi = 0; vi < nV; vi++){
-        if ( (*AvB)(vi) * Constants::dh > 0.0 ){ // Check for interface presence
+        if ( (*AvB)(vi) * Constants::dh > 1e-1 ){ // Check for interface presence TRY 1E-1 AND NOT 0
             (*dPHE)(vi) = phx1(vi) - phx2(vi); // Voltage drop across the interface
-            Rx(vi) = (*AvP)(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
+
+            // double eta = phx1(vi) - phx2(vi);
+            // double arg = Constants::alp * Constants::Cst1 * eta;
+
+            // if (!std::isfinite(eta) || !std::isfinite(arg) ||
+            //     !std::isfinite(Cn1(vi)) || !std::isfinite(Cn2(vi)) ||
+            //     !std::isfinite((*Kfw)(vi)) || !std::isfinite((*Kbw)(vi)) ||
+            //     !std::isfinite((*AvB)(vi))) {
+            //     std::cout << "BAD BV INPUT at vi = " << vi
+            //             << " eta = " << eta
+            //             << " arg = " << arg
+            //             << " Cn1 = " << Cn1(vi)
+            //             << " Cn2 = " << Cn2(vi)
+            //             << " Kfw = " << (*Kfw)(vi)
+            //             << " Kbw = " << (*Kbw)(vi)
+            //             << " AvB = " << (*AvB)(vi) << std::endl;
+            //     MFEM_ABORT("Non-finite ButlerVolmer input");
+            // }
+            Rx(vi) = (*AvB)(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
 					                   (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
 
         }
     }
+
+    Rx.SaveAsOne("Rxn");
 }
 
 void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &Cn3, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2, mfem::ParGridFunction &phx3)

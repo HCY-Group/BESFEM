@@ -83,6 +83,7 @@ public:
     std::unique_ptr<mfem::ParGridFunction> AvA; ///< Anode surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvC; ///< Cathode surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvB; ///< Boundary surface-area density.
+    std::unique_ptr<mfem::ParGridFunction> AvE; ///< Electrolyte surface-area density.
 
     // -------------------------------------------------------------------------
     // Global integrals and target current

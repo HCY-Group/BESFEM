@@ -51,6 +51,8 @@ void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
     psi->SaveAsOne("psi");
     pse->SaveAsOne("pse");
     AvP->SaveAsOne("AvP");
+    AvE->SaveAsOne("AvE");
+    AvB->SaveAsOne("AvB");
 
 
     PrintInfo();
@@ -68,6 +70,7 @@ void Domain_Parameters::InitializeGridFunctions() {
     AvP_0 = std::make_unique<mfem::ParGridFunction>(fespace.get());
     AvP_1 = std::make_unique<mfem::ParGridFunction>(fespace.get());
     AvB = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvE = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
     const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
     if (full) {
@@ -90,9 +93,6 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     const bool is_root = (mfem::Mpi::WorldRank() == 0);
     const int dimension = pmesh->Dimension();
 
-    // std::cout << "dimension: " << dimension << std::endl;
-
-
     if (!full) {
         // ------- HALF CELL (unchanged, but read from best available dsF) -------
         const mfem::ParGridFunction* g =
@@ -103,30 +103,6 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         if (!g) mfem::mfem_error("HALF mode: no active distance field available.");
 
         nV = pmesh->GetNV();
-        // std::cout << "nV = " << nV << std::endl;
-
-        // for (int vi = 0; vi < nV; vi++) {
-        // // for (int vi = 0; vi < ndofs; vi++) {
-        //     if (strcmp(mesh_type, "ml") == 0) {
-        //         (*psi)(vi) = 0.5 * (1.0 + tanh((*g)(vi) / (Constants::zeta * Constants::dh))); // matlab
-        //         (*AvP)(vi) = -(pow(tanh((*g)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // matlab
-
-        //     } else if (strcmp(mesh_type, "v") == 0) {
-
-        //         (*psi)(vi) = (*g)(vi);
-        //     } 
-
-        //     (*pse)(vi) = 1.0 - (*psi)(vi);
-
-        //     if ((*psi)(vi) < 0) { (*psi)(vi) = 0; }
-        //     if ((*psi)(vi) > 1) { (*psi)(vi) = 1; }
-
-        //     if ((*pse)(vi) < 0) { (*pse)(vi) = 0; }
-        //     if ((*pse)(vi) > 1) { (*pse)(vi) = 1; }
-
-        //     (*psi)(vi) += 1.0e-6; // Avoid zero values
-        //     (*pse)(vi) += 1.0e-6; // Avoid zero values
-        // }
 
         if (strcmp(mesh_type, "ml") == 0) {
             for (int vi = 0; vi < nV; vi++) {
@@ -198,13 +174,28 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 (*AvP)(vi) = std::sqrt((*AvP)(vi));
             }
 
-            // cap maximum AvP to level peaks
-            dpsi = 0.0;
-            psi->GetDerivative(1, 0, dpsi);
-            const double cap = dpsi.Max();
+            
+            // AvE
+            mfem::ParGridFunction dpse(fespace.get());
+
+            (*AvE) = 0.0;
+            for (int d = 0; d < dim; d++)
+            {
+                dpse = 0.0;
+                pse->GetDerivative(1, d, dpse); 
+
+                // compound squares: AvE += (dpse)^2
+                for (int vi = 0; vi < nV; vi++)
+                {
+                    const double v = dpse(vi);
+                    (*AvE)(vi) += v * v;
+                }
+            }
+
+            // sqrt to get magnitude
             for (int vi = 0; vi < nV; vi++)
             {
-                if ((*AvP)(vi) > cap) { (*AvP)(vi) = cap; }
+                (*AvE)(vi) = std::sqrt((*AvE)(vi));
             }
             
         }
@@ -235,20 +226,34 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             std::exit(EXIT_FAILURE);
         }
 
+        // =====================================================
+        //  Calculating AvB
+        // =====================================================
         
         AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
 
+        if (strcmp(mesh_type, "v") == 0) {
 
-        // for (int vi = 0; vi < nV; vi++) {
-        //     if ((*AvP)(vi) * Constants::dh < 1.0e-2) { (*AvP)(vi) = 0.0; }
-        //     if ((*AvB)(vi) * Constants::dh < 1.0e-6) { (*AvB)(vi) = 0.0; }
-        // }
+            *AvB *= *AvE;
 
-        // // AvB->SaveAsOne("AvB_half");
-        
+            for (int vi = 0; vi < nV; vi++)
+            {
+                (*AvB)(vi) = std::sqrt((*AvB)(vi));
+            }
 
-        // mfem::GridFunctionCoefficient AvP_coeff(AvP.get());
-        // AvP->ProjectCoefficient(AvP_coeff);
+            for (int vi = 0; vi < psi->Size(); vi++)
+            {
+                const double psi_v = (*psi)(vi);
+                const double pse_v = (*pse)(vi);
+
+                const bool in_overlap =
+                    (psi_v > 0.05 && psi_v < 0.95) &&
+                    (pse_v > 0.05 && pse_v < 0.95);
+
+                if (!in_overlap) { (*AvB)(vi) = 0.0; }
+            }
+
+        }
 
     } else {
         // ------- FULL CELL -------
@@ -320,19 +325,11 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         
         AvB = std::make_unique<mfem::ParGridFunction>(*AvA);
         
-
-
         for (int vi = 0; vi < nV; vi++) {
             if ((*AvA)(vi) * Constants::dh < Constants::thres) { (*AvA)(vi) = 0.0; }
             if ((*AvC)(vi) * Constants::dh < Constants::thres) { (*AvC)(vi) = 0.0; }
             if ((*AvB)(vi) * Constants::dh < 1.0e-5) { (*AvB)(vi) = 0.0; }
         }
-        
-        // mfem::GridFunctionCoefficient AvA_coeff(AvA.get());
-        // AvA->ProjectCoefficient(AvA_coeff);
-
-        // mfem::GridFunctionCoefficient AvC_coeff(AvC.get());
-        // AvC->ProjectCoefficient(AvC_coeff);
 
     }
 }
@@ -405,9 +402,6 @@ void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
     // Compute target current based on total Psi, rho, Cr, and constants
     trgI = total_psi * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
 
-    // voxel
-    // trgI = (total_psi * (pow(Constants::dh, 2)))  * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
-
     // Perform global MPI reduction to get the total target current
     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 }
@@ -420,10 +414,6 @@ void Domain_Parameters::PrintInfo() {
     if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
     if (!full)
     {
-        // gtPsi *= (pow(Constants::dh, 2)); // voxel 2D
-        // gtPse *= (pow(Constants::dh, 2)); // voxel 2D
-        // gTrgI *= (pow(Constants::dh, 2)); // voxel 2D
-
         cout << "Total Psi: " << gtPsi << endl;
         cout << "Total Pse: " << gtPse << endl;
         cout << "Target Current: " << gTrgI << endl;

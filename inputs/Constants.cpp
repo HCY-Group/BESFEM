@@ -13,7 +13,8 @@ namespace Constants {
     bool visualization = true;
     const int order = 1;                                    ///< Order of the finite element basis functions
     // const double dh =  0.0000200; 
-    const double dh = 0.0000325;                            ///< Mesh element size (disk)
+    // const double dh = 0.0000325;                            ///< Mesh element size (disk)
+    const double dh = 2.07407e-05;                            ///< Mesh element size (TIFF)
     const double gc = 3.3800e-10 *2;			            ///< gradient coefficient
     const double zeta = 1.0;                                ///< Interfacial thickness
     const double thres = 1.0e-3;                            ///< Threshold value for numerical operations
@@ -28,7 +29,7 @@ namespace Constants {
     const double alp = 0.5;                                 ///< Symmetry factor for electrochemical kinetics
     const double rho_A = 0.0312;                             ///< Anode Lithium site density (graphite)
     const double rho_C = 0.0501;                             ///< Cathode Lithium site density (NMC)
-    const double Cr = 3.0;                                   ///< C-rate for charging/discharging cycles
+    const double Cr = 2.0;                                   ///< C-rate for charging/discharging cycles
     const double Vsr0 = 0.009466;                                 ///< Voltage scanning rate (same value for anode, cathode, and electrolyte)
     const double VCut = 0.0;                                ///< Cut-off voltage
     const double init_CnA = 0.95;                        ///< initial concentration in the anode (full)
@@ -46,7 +47,7 @@ namespace Constants {
     // const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
 
 
-    // const double init_Rxn = 1e-6;                             ///< initial reaction rate
+    // const double init_Rxn = 1e-7;                             ///< initial reaction rate
 
     const double init_Rxn = 0.0;                             ///< initial reaction rate
     const double init_RxA = 0.0;                             ///< initial anode reaction

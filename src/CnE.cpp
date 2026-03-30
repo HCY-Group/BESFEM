@@ -217,7 +217,14 @@ void CnE::SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx
     // Compute the average concentration across the entire electrolyte
     CeAvg = gCeC/gtPse;	
 
-    // Adjust the concentration field by normalizing the average concentration with the initial value
+    // // Adjust the concentration field by normalizing the average concentration with the initial value
+
+    // double damp = 1e-2;
+
+    // for (int i = 0; i < Cn.Size(); i++) {
+    //     Cn(i) -= damp * (CeAvg - Ce0) * psx(i); 
+    // }    
+
     Cn -= (CeAvg-Ce0);
     MPI_Barrier(MPI_COMM_WORLD);
 

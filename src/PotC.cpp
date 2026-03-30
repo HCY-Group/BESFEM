@@ -128,4 +128,3 @@ void PotC::ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction
 }
 
 
-

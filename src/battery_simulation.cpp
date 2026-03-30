@@ -164,14 +164,13 @@ int main(int argc, char *argv[]) {
 
         // Main Simulation Loop
 
-        int t = 0;
-
         // ============================================================================
-        // ===============================  HALF-CELL  ================================
+        // =================  HALF-CELL TIME STEPPING  ================================
         // ============================================================================
 
         if (cfg.mode == sim::CellMode::HALF) {
 
+            int t = 0;
 
             if (cfg.half_electrode == sim::Electrode::ANODE) {
                 VCell = anode_potential->BvA - electrolyte_potential->BvE;
@@ -179,14 +178,14 @@ int main(int argc, char *argv[]) {
                 VCell = cathode_potential->BvC - electrolyte_potential->BvE;
             }
 
-            for (int t = 0; t < cfg.num_timesteps; ++t) {
+            // for (int t = 0; t < cfg.num_timesteps; ++t) {
 
-        //     // while(VCell > 2.5){
+            while (VCell > 2.5){
 
                 if (cfg.half_electrode == sim::Electrode::ANODE) {
                     
                     // ============================================================================
-                    // ===============================  ANODE HALF-CELL  ==========================
+                    // =================  ANODE HALF-CELL TIME STEPPING  ==========================
                     // ============================================================================
 
                     anode_concentration->UpdateConcentration(*Rxn_gf, *CnA_gf, *domain_parameters.psi);
@@ -214,9 +213,11 @@ int main(int argc, char *argv[]) {
                 } else {
                 
                     // ============================================================================
-                    // ==============================  CATHODE HALF-CELL  =========================
+                    // ================  CATHODE HALF-CELL TIME STEPPING  =========================
                     // ============================================================================   
 
+
+                    // std:cout << "Time step: " << t << ", running cathode half-cell update..." << std::endl;
 
                     cathode_concentration->UpdateConcentration(*Rxn_gf, *CnC_gf, *domain_parameters.psi);
                     electrolyte_concentration->UpdateConcentration(*Rxn_gf, *CnE_gf, *domain_parameters.pse);
@@ -233,11 +234,31 @@ int main(int argc, char *argv[]) {
                     double globalerror_P = 1.0; // Error for particle potential
                     double globalerror_E = 1.0; // Error for electrolyte potential
             
-                    while ((globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8)) {
+                    int iter = 0; 
+
+                    // while ((globalerror_P > 1.0e-6 || globalerror_E > 1.0e-6)) {
+                    while ((globalerror_P > 1.0e-6)) {
+
                         reaction->ButlerVolmer(*Rxn_gf, *CnC_gf, *CnE_gf, *phC_gf, *phE_gf);
                         cathode_potential->UpdatePotential(*Rxn_gf, *phC_gf, *domain_parameters.psi, globalerror_P);
                         electrolyte_potential->UpdatePotential(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
+
+                        if (iter == 100 && mfem::Mpi::WorldRank() == 0) {
+                            std::cout << "WARNING: More than 100 iterations in the while loop at time step: "
+                                    << t << " | globalerror_P = " << globalerror_P
+                                    << ", globalerror_E = " << globalerror_E << std::endl;                            
+                        }
+
+                        if (iter > 500 && mfem::Mpi::WorldRank() == 0) {
+                            std::cout << "Exceeded 500 Iterations in While Loop; Break While Loop " << t << std::endl;
+                        }
+                        if (iter > 500) {
+                            break;
+                        }
+
+                        iter++;
                     }
+
                 }
 
                 reaction->TotalReactionCurrent(*Rxn_gf, global_current);
@@ -270,10 +291,10 @@ int main(int argc, char *argv[]) {
 
                 if (cfg.half_electrode == sim::Electrode::ANODE) {
                     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phA_gf, *phE_gf, 
-                    *CnA_gf, *CnE_gf, *CnA_gf_psi, *CnE_gf_psi, 100); 
+                    *CnA_gf, *CnE_gf, *CnA_gf_psi, *CnE_gf_psi, 1000); 
                 } else {
                     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phC_gf, *phE_gf, 
-                    *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 100); 
+                    *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 1000); 
                 }
  
                 t += 1;
@@ -281,15 +302,8 @@ int main(int argc, char *argv[]) {
             } 
         }
 
-
-
-
-
-
-        
-
         // ============================================================================
-        // ===============================  FULL-CELL  ================================
+        // =================  FULL-CELL TIME STEPPING  ================================
         // ============================================================================
 
         if(cfg.mode == sim::CellMode::FULL) {
