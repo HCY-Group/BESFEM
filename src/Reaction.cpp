@@ -16,8 +16,6 @@
  Reaction::Reaction(Initialize_Geometry &geo, Domain_Parameters &para)
      : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo),
        domain_parameters(para), EVol(para.EVol),
-    //    AvP(para.AvP ? para.AvP.get() : nullptr), AvB(para.AvB ? para.AvB.get() : nullptr),
-    //    AvA(para.AvA ? para.AvA.get() : nullptr), AvC(para.AvC ? para.AvC.get() : nullptr)
     AvP(para.AvP ? para.AvP.get() : nullptr),
     AvB(para.AvB ? para.AvB.get() : nullptr),
     AvA(para.AvA ? para.AvA.get() : nullptr),
@@ -92,14 +90,6 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
     for (int vi = 0; vi < nV; vi++){
         if((*AvB)(vi) * Constants::dh > 1e-1){ 
 
-            // if (vi == 238 && mfem::Mpi::WorldRank() == 0) {
-            //     std::cout << "vi = " << vi
-            //               << ", AvP = " << (*AvP)(vi)
-            //               << ", AvB = " << (*AvB)(vi)
-            //               << ", Cn = " << Cn(vi)
-            //               << std::endl;
-            // }
-
             double val = -0.2 * (Cn(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn(vi) - 3.195);
             (*i0C)(vi) = pow(10.0, val) * 1.0e-3; // Exchange current density
             (*OCV)(vi) = 1.095 * Cn(vi) * Cn(vi) - 8.324e-7 * exp(14.31 * Cn(vi)) + 4.692 * exp(-0.5389 * Cn(vi)); // open circuit voltage
@@ -159,31 +149,11 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn
     for (int vi = 0; vi < nV; vi++){
         if ( (*AvB)(vi) * Constants::dh > 1e-1 ){ // Check for interface presence TRY 1E-1 AND NOT 0
             (*dPHE)(vi) = phx1(vi) - phx2(vi); // Voltage drop across the interface
-
-            // double eta = phx1(vi) - phx2(vi);
-            // double arg = Constants::alp * Constants::Cst1 * eta;
-
-            // if (!std::isfinite(eta) || !std::isfinite(arg) ||
-            //     !std::isfinite(Cn1(vi)) || !std::isfinite(Cn2(vi)) ||
-            //     !std::isfinite((*Kfw)(vi)) || !std::isfinite((*Kbw)(vi)) ||
-            //     !std::isfinite((*AvB)(vi))) {
-            //     std::cout << "BAD BV INPUT at vi = " << vi
-            //             << " eta = " << eta
-            //             << " arg = " << arg
-            //             << " Cn1 = " << Cn1(vi)
-            //             << " Cn2 = " << Cn2(vi)
-            //             << " Kfw = " << (*Kfw)(vi)
-            //             << " Kbw = " << (*Kbw)(vi)
-            //             << " AvB = " << (*AvB)(vi) << std::endl;
-            //     MFEM_ABORT("Non-finite ButlerVolmer input");
-            // }
             Rx(vi) = (*AvB)(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
 					                   (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
 
         }
     }
-
-    Rx.SaveAsOne("Rxn");
 }
 
 void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &Cn3, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2, mfem::ParGridFunction &phx3)
@@ -203,8 +173,6 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Rx
             }
     }
 
-    // std::cout << "dPHC min/max: " << dPHC->Min() << " " << dPHC->Max() << std::endl;
-    // std::cout << "dPHA min/max: " << dPHA->Min() << " " << dPHA->Max() << std::endl;
 }
 
 

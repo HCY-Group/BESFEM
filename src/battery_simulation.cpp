@@ -178,9 +178,9 @@ int main(int argc, char *argv[]) {
                 VCell = cathode_potential->BvC - electrolyte_potential->BvE;
             }
 
-            // for (int t = 0; t < cfg.num_timesteps; ++t) {
+            for (int t = 0; t < cfg.num_timesteps; ++t) {
 
-            while (VCell > 2.5){
+            // while (VCell > 2.5){
 
                 if (cfg.half_electrode == sim::Electrode::ANODE) {
                     
@@ -217,8 +217,6 @@ int main(int argc, char *argv[]) {
                     // ============================================================================   
 
 
-                    // std:cout << "Time step: " << t << ", running cathode half-cell update..." << std::endl;
-
                     cathode_concentration->UpdateConcentration(*Rxn_gf, *CnC_gf, *domain_parameters.psi);
                     electrolyte_concentration->UpdateConcentration(*Rxn_gf, *CnE_gf, *domain_parameters.pse);
 
@@ -236,8 +234,7 @@ int main(int argc, char *argv[]) {
             
                     int iter = 0; 
 
-                    // while ((globalerror_P > 1.0e-6 || globalerror_E > 1.0e-6)) {
-                    while ((globalerror_P > 1.0e-6)) {
+                    while ((globalerror_P > 1.0e-6 || globalerror_E > 1.0e-6)) {
 
                         reaction->ButlerVolmer(*Rxn_gf, *CnC_gf, *CnE_gf, *phC_gf, *phE_gf);
                         cathode_potential->UpdatePotential(*Rxn_gf, *phC_gf, *domain_parameters.psi, globalerror_P);

@@ -706,6 +706,8 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
     // IMPORTANT: fg must cover the whole volume for 3D
     std::vector<uint8_t> fg(nx*ny*nz, 0);
 
+    // Boundary Rules: [0] = west, [1] = east, [2] = south, [3] = north, [4] = bottom, [5] = top
+
     if (rank == 0)
     {
         // base solid from TIFF: 1 = white/solid
@@ -725,8 +727,7 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
 
             if (nz == 1)
             {
-                // right boundary in 2D (seed_side=1)
-                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 0); 
+                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 1); // psi boundary
             }
             else
             {
@@ -741,7 +742,7 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
 
             if (nz == 1)
             {
-                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 1);
+                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 0); // pse boundary
                 // KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1); // all boundaries
             }
             else
