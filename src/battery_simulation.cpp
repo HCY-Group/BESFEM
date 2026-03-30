@@ -217,6 +217,8 @@ int main(int argc, char *argv[]) {
                     // ============================================================================   
 
 
+                    // std:cout << "Time step: " << t << ", running cathode half-cell update..." << std::endl;
+
                     cathode_concentration->UpdateConcentration(*Rxn_gf, *CnC_gf, *domain_parameters.psi);
                     electrolyte_concentration->UpdateConcentration(*Rxn_gf, *CnE_gf, *domain_parameters.pse);
 
@@ -234,21 +236,23 @@ int main(int argc, char *argv[]) {
             
                     int iter = 0; 
 
-                    while ((globalerror_P > 1.0e-8 || globalerror_E > 1.0e-8)) {
+                    // while ((globalerror_P > 1.0e-6 || globalerror_E > 1.0e-6)) {
+                    while ((globalerror_P > 1.0e-6)) {
+
                         reaction->ButlerVolmer(*Rxn_gf, *CnC_gf, *CnE_gf, *phC_gf, *phE_gf);
                         cathode_potential->UpdatePotential(*Rxn_gf, *phC_gf, *domain_parameters.psi, globalerror_P);
                         electrolyte_potential->UpdatePotential(*Rxn_gf, *phE_gf, *domain_parameters.pse, globalerror_E);
 
-                        if (iter == 50 && mfem::Mpi::WorldRank() == 0) {
-                            std::cout << "WARNING: Nonlinear loop hit max iterations at timestep "
+                        if (iter == 100 && mfem::Mpi::WorldRank() == 0) {
+                            std::cout << "WARNING: More than 100 iterations in the while loop at time step: "
                                     << t << " | globalerror_P = " << globalerror_P
                                     << ", globalerror_E = " << globalerror_E << std::endl;                            
                         }
 
+                        if (iter > 500 && mfem::Mpi::WorldRank() == 0) {
+                            std::cout << "Exceeded 500 Iterations in While Loop; Break While Loop " << t << std::endl;
+                        }
                         if (iter > 500) {
-                            if (mfem::Mpi::WorldRank() == 0) {
-                                std::cout << "ERROR: Nonlinear loop runaway at timestep " << t << std::endl;
-                            }
                             break;
                         }
 
@@ -258,6 +262,70 @@ int main(int argc, char *argv[]) {
                 }
 
                 reaction->TotalReactionCurrent(*Rxn_gf, global_current);
+
+                // double Vsr;
+                // double dCrnt = std::abs(global_current - domain_parameters.gTrgI);
+
+                // if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.05)
+                //     Vsr = 0.25 * Constants::Vsr0;
+                // else if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.10)
+                //     Vsr = 0.25 * Constants::Vsr0;
+                // else
+                //     Vsr = 1.0 * Constants::Vsr0;
+
+                // double sgn = std::copysign(1.0, domain_parameters.gTrgI - global_current);
+                // double dV = Constants::dt * Vsr * sgn * 2.0;
+
+                // electrolyte_potential->BvE += dV;
+                // *phE_gf += dV;
+
+                // double Vsr;
+                // double dCrnt = std::abs(global_current - domain_parameters.gTrgI);
+
+                // if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.05)
+                //     Vsr = 0.25 * Constants::Vsr0;
+                // else if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.10)
+                //     Vsr = 0.50 * Constants::Vsr0;
+                // else
+                //     Vsr = 1.0 * Constants::Vsr0;
+
+                // double err = domain_parameters.gTrgI - global_current;
+                // double rel_err = err / std::abs(domain_parameters.gTrgI);
+
+                // double dV = 0.0;
+                // if (std::abs(rel_err) >= 1.0e-4) {
+                //     dV = Constants::dt * Vsr * rel_err * 2.5;
+                // }
+
+                // double dVmax = 1.0e-4;
+                // if (dV >  dVmax) dV =  dVmax;
+                // if (dV < -dVmax) dV = -dVmax;
+
+                // electrolyte_potential->BvE += dV;
+                // *phE_gf += dV;
+
+                // double Vsr;
+                // double dCrnt = std::abs(global_current - domain_parameters.gTrgI);
+
+                // if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.05)
+                //     Vsr = 0.025 * Constants::Vsr0;
+                // else if (dCrnt < std::abs(domain_parameters.gTrgI) * 0.10)
+                //     Vsr = 0.25 * Constants::Vsr0;
+                // else
+                //     Vsr = 1.0 * Constants::Vsr0;
+
+                // double err = domain_parameters.gTrgI - global_current;
+                // double rel_err = err / std::abs(domain_parameters.gTrgI);
+
+                // double dV = Constants::dt * Vsr * rel_err;
+
+                // // optional clamp
+                // double dVmax = 1.0e-4;
+                // if (dV >  dVmax) dV =  dVmax;
+                // if (dV < -dVmax) dV = -dVmax;
+
+                // electrolyte_potential->BvE += dV;
+                // *phE_gf += dV;
 
                 double sgn = copysign(1.0, domain_parameters.gTrgI - global_current);
                 double dV = Constants::dt * Constants::Vsr0 * sgn;
@@ -270,6 +338,7 @@ int main(int argc, char *argv[]) {
                     VCell = cathode_potential->BvC - electrolyte_potential->BvE;
                 }
 
+                // if (t % 100 == 0 && t % 500 != 0 && mfem::Mpi::WorldRank() == 0) {
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
                     std::ofstream outfile("half_cell_output.txt", std::ios::app);

@@ -87,15 +87,36 @@ void TIFFReader::readinfo() {
                 // stack: photometric=0 (MINISWHITE): 0=white, 255=black
                 // single: photometric=2 (RGB): black~0, white~255 after gray conversion
                 int solid;
-                if (photo == PHOTOMETRIC_MINISWHITE) {
-                    solid = (gray > 127) ? 0 : 1;   
+
+                if (spp >= 3) {                     // RGB case: white = particle
+                    solid = (gray > 127) ? 1 : 0;
                 }
-                if (photo == PHOTOMETRIC_MINISBLACK) {
+                else if (photo == PHOTOMETRIC_MINISBLACK) {
+                    // grayscale MINISBLACK: black = particle
+                    solid = (gray < 127) ? 1 : 0;
+                }
+                else if (photo == PHOTOMETRIC_MINISWHITE) {
+                    // grayscale MINISWHITE: white = particle
                     solid = (gray < 127) ? 1 : 0;
                 }
                 else {
-                    solid = (gray < 127) ? 0 : 1;  
+                    // fallback: assume black = particle
+                    solid = (gray < 127) ? 1 : 0;
                 }
+
+
+
+
+
+                // if (photo == PHOTOMETRIC_MINISWHITE) {
+                //     solid = (gray > 127) ? 0 : 1;   
+                // }
+                // if (photo == PHOTOMETRIC_MINISBLACK) {
+                //     solid = (gray < 127) ? 1 : 0;
+                // }
+                // else {
+                //     solid = (gray < 127) ? 0 : 1;  
+                // }
 
                 imageData[page - constraints.Depth_begin]
                          [row  - constraints.Row_begin]

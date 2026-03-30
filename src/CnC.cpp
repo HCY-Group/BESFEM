@@ -76,7 +76,7 @@ void CnC::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &
 
     // Update only the solid region MAKE INTO FUNCTION
     for (int p = 0; p < CpV0.Size(); p++){
-        if (PsVc(p) < 1.0e-5){ // 1e-1 works, but gaps still get smaller
+        if (PsVc(p) < 1e-5){ // 1e-1 works, but gaps still get smaller
             (CpVn)(p) = Constants::init_CnC;} // Cp0 initial value
 
         if (CpVn(p) < 0.0){

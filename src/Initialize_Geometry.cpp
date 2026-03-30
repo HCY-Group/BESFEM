@@ -741,8 +741,8 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
 
             if (nz == 1)
             {
-                // KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 1); // left boundary in 2D (seed_side=0)
-                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1); // all boundaries
+                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 0); // left boundary in 2D (seed_side=0)
+                // KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1); // all boundaries
             }
             else
             {

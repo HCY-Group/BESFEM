@@ -201,14 +201,14 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 (*AvP)(vi) = std::sqrt((*AvP)(vi));
             }
 
-            // cap maximum AvP to level peaks
-            dpsi = 0.0;
-            psi->GetDerivative(1, 0, dpsi);
-            const double cap = dpsi.Max();
-            for (int vi = 0; vi < nV; vi++)
-            {
-                if ((*AvP)(vi) > cap) { (*AvP)(vi) = cap; }
-            }
+            // // cap maximum AvP to level peaks
+            // dpsi = 0.0;
+            // psi->GetDerivative(1, 0, dpsi);
+            // const double cap = dpsi.Max();
+            // for (int vi = 0; vi < nV; vi++)
+            // {
+            //     if ((*AvP)(vi) > cap) { (*AvP)(vi) = cap; }
+            // }
 
 
             // AvE
@@ -236,14 +236,14 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
                 (*AvE)(vi) = std::sqrt((*AvE)(vi));
             }
 
-            // cap maximum AvE to level peaks
-            dpse = 0.0;
-            pse->GetDerivative(1, 0, dpse);
-            const double cap_pse = dpse.Max();
-            for (int vi = 0; vi < nV; vi++)
-            {
-                if ((*AvE)(vi) > cap_pse) { (*AvE)(vi) = cap_pse; }
-            }
+            // // cap maximum AvE to level peaks
+            // dpse = 0.0;
+            // pse->GetDerivative(1, 0, dpse);
+            // const double cap_pse = dpse.Max();
+            // for (int vi = 0; vi < nV; vi++)
+            // {
+            //     if ((*AvE)(vi) > cap_pse) { (*AvE)(vi) = cap_pse; }
+            // }
             
         }
 
@@ -280,6 +280,23 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         {
             (*AvB)(vi) = std::sqrt((*AvB)(vi));
         }
+
+        for (int vi = 0; vi < psi->Size(); vi++)
+        {
+            const double psi_v = (*psi)(vi);
+            const double pse_v = (*pse)(vi);
+
+            const bool in_overlap =
+                (psi_v > 0.05 && psi_v < 0.95) &&
+                (pse_v > 0.05 && pse_v < 0.95);
+
+            if (!in_overlap) { (*AvB)(vi) = 0.0; }
+        }
+
+        // for (int vi = 0; vi < nV; vi++) {
+        //     // if ((*AvP)(vi) * Constants::dh < 1.0e-2) { (*AvP)(vi) = 0.0; }
+        //     if ((*AvB)(vi) * Constants::dh < 1.0e-1) { (*AvB)(vi) = 0.0; }
+        // }
 
         // *AvB = std::sqrt(*AvB);
         // *AvB *= pow(*AvB, 0.5);

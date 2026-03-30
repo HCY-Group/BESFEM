@@ -166,17 +166,17 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
             // West Neumann Boundary Condition - used for electrolye concentration
             nbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());
             nbc_w_bdr = 0;
-            nbc_w_bdr[2] = 1; // Matlab
-            nbc_w_bdr[3] = 1; // Voxel
-            nbc_w_bdr[1] = 1; // Voxel
+            // nbc_w_bdr[2] = 1; // Matlab
+            // nbc_w_bdr[3] = 1; // Voxel
+            // nbc_w_bdr[1] = 1; // Voxel
             nbc_w_bdr[0] = 1; // Voxel
 
             // West Dirichlet Boundary Condition - used for electrolyte potential 
             dbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());
             dbc_w_bdr = 0;
-            dbc_w_bdr[2] = 1; // Matlab
-            dbc_w_bdr[3] = 1; // Voxel
-            dbc_w_bdr[1] = 1; // Voxel
+            // dbc_w_bdr[2] = 1; // Matlab
+            // dbc_w_bdr[3] = 1; // Voxel
+            // dbc_w_bdr[1] = 1; // Voxel
             dbc_w_bdr[0] = 1; // Voxel
 
             ess_tdof_list_w.SetSize(0);
