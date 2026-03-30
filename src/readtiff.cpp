@@ -104,20 +104,6 @@ void TIFFReader::readinfo() {
                     solid = (gray < 127) ? 1 : 0;
                 }
 
-
-
-
-
-                // if (photo == PHOTOMETRIC_MINISWHITE) {
-                //     solid = (gray > 127) ? 0 : 1;   
-                // }
-                // if (photo == PHOTOMETRIC_MINISBLACK) {
-                //     solid = (gray < 127) ? 1 : 0;
-                // }
-                // else {
-                //     solid = (gray < 127) ? 0 : 1;  
-                // }
-
                 imageData[page - constraints.Depth_begin]
                          [row  - constraints.Row_begin]
                          [col  - constraints.Column_begin] = solid;

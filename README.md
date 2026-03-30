@@ -77,6 +77,39 @@ mpirun -np 8 ./battery_simulation \
 ```
 
 ### Half Cell Example (Cathode & TIFF)
+To run this TIFF example, you will need to modify the boundary conditions and 2D Connectivity regions. 
+First go to `src/Initialize_Geometry.cpp` and ensure the lines below are changed to reflect the following:
+
+```bash
+    
+    KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 0); // psi boundary
+
+    KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 1); // pse boundary
+
+```
+
+Next, go to `src/BoundaryConditions.cpp` and ensure the lines below are changed to reflect the following:
+
+```bash
+    // Neumann Boundary Condition - used for electrolye concentration
+    nbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());
+    nbc_w_bdr = 0;
+    nbc_w_bdr[2] = 1; 
+
+    // Dirichlet Boundary Condition - used for electrolyte potential 
+    dbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());
+    dbc_w_bdr = 0;
+    dbc_w_bdr[2] = 1;
+
+    // Dirichlet Boundary Condition - used for particle potential
+    dbc_e_bdr.SetSize(parallelMesh.bdr_attributes.Max());
+    dbc_e_bdr = 0;
+    dbc_e_bdr[0] = 1;
+
+```
+
+Then to run the simulation:
+
 ```bash
 mpirun -np 8 ./battery_simulation \
     -mode half \

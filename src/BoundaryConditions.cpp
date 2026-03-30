@@ -163,31 +163,22 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
         {
             if (mfem::Mpi::WorldRank() == 0) {std::cout << "Setting up boundary conditions for Half Cell: CATHODE" << std::endl;}
 
-            // West Neumann Boundary Condition - used for electrolye concentration
+            // Neumann Boundary Condition - used for electrolye concentration
             nbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());
             nbc_w_bdr = 0;
-            // nbc_w_bdr[2] = 1; // Matlab
-            // nbc_w_bdr[3] = 1; // Voxel
-            // nbc_w_bdr[1] = 1; // Voxel
-            nbc_w_bdr[0] = 1; // Voxel
+            nbc_w_bdr[2] = 1; 
 
             // West Dirichlet Boundary Condition - used for electrolyte potential 
             dbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());
             dbc_w_bdr = 0;
-            // dbc_w_bdr[2] = 1; // Matlab
-            // dbc_w_bdr[3] = 1; // Voxel
-            // dbc_w_bdr[1] = 1; // Voxel
-            dbc_w_bdr[0] = 1; // Voxel
+            dbc_w_bdr[2] = 1; 
 
             ess_tdof_list_w.SetSize(0);
 
             // East Dirichlet Boundary Condition - used for particle potential
             dbc_e_bdr.SetSize(parallelMesh.bdr_attributes.Max());
             dbc_e_bdr = 0;
-            dbc_e_bdr[2] = 1; // Matlab
-            // dbc_e_bdr[2] = 1; // Voxel
-            // dbc_e_bdr[0] = 1; // Voxel
-            // dbc_e_bdr[1] = 1; // Voxel
+            dbc_e_bdr[0] = 1;
 
             ess_tdof_list_e.SetSize(0);
             parfespace.GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
