@@ -93,6 +93,9 @@ namespace Constants {
     extern const double init_RxA; ///< Initial anode reaction rate.
     extern const double init_RxC; ///< Initial cathode reaction rate.
 
+    extern const double RT;   ///< RT constant at 300K.
+    extern const double Perm; ///< Permittivity constant.
+
 } // namespace Constants
 
 #endif // CONSTANTS_HPP

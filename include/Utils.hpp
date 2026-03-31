@@ -219,6 +219,12 @@ public:
         mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi,
         int save_interval = 500);
 
+    static void SaveSimulationSnapshotMulti(int t, const std::string &outdir,
+    Initialize_Geometry &geometry, Domain_Parameters &domain_parameters,
+    mfem::ParGridFunction &CnC_1, mfem::ParGridFunction &CnC_2, mfem::ParGridFunction &CnC_3,
+    mfem::ParGridFunction &C1_out, mfem::ParGridFunction &C2_out, mfem::ParGridFunction &C3_out,
+    int save_interval = 500);
+
 private:
 
     // Stored references

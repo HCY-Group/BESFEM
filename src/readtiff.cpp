@@ -42,8 +42,11 @@ void TIFFReader::readinfo() {
         }
     }
 
-    if (mfem::Mpi::WorldRank() == 0) { std::cout << "Original TIFF Info - Width: " << Width << ", Height: " << Height
-              << ", NumPages: " << numPages << std::endl;}
+    if (mfem::Mpi::WorldRank() == 0) {
+        std::cout << "Original TIFF Info - Width: " << Width
+                  << ", Height: " << Height
+                  << ", NumPages: " << numPages << std::endl;
+    }
 
     for (int page = 0; page < numPages; page++) {
         if (!(page > constraints.Depth_begin - 1 && page < constraints.Depth_end)) {
@@ -51,10 +54,8 @@ void TIFFReader::readinfo() {
             continue;
         }
 
-        // if (mfem::Mpi::WorldRank() == 0) {std::cerr << "page: " << page << ", READING\n";}
         TIFFSetDirectory(tiff, page);
 
-        // --- Read per-page photometric + spp (single slice is RGBA, stack is grayscale) ---
         uint16 photo = 0;
         TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
 
@@ -63,62 +64,124 @@ void TIFFReader::readinfo() {
 
         tdata_t buf = _TIFFmalloc(TIFFScanlineSize(tiff));
 
-        // IMPORTANT: read scanline once per ROW (not once per (row,col))
         for (int row = constraints.Row_begin; row < constraints.Row_end; row++) {
             TIFFReadScanline(tiff, buf, row);
-            uint8* p = (uint8*)buf; // scanline bytes
+            uint8* p = (uint8*)buf;
 
             for (int col = constraints.Column_begin; col < constraints.Column_end; col++) {
+                uint8 gray = 0;
 
-                // --- Correctly decode pixel value for grayscale vs RGBA ---
-                uint8 gray;
                 if (spp == 1) {
                     gray = p[col];
                 } else {
-                    // packed RGBA: [R G B A] [R G B A] ...
                     const int idx = (int)spp * col;
                     const uint8 r = p[idx + 0];
                     const uint8 g = p[idx + 1];
                     const uint8 b = p[idx + 2];
+
+                    // For label TIFFs, RGB should ideally not be used,
+                    // but if it is, convert to grayscale.
                     gray = static_cast<uint8>(0.299*r + 0.587*g + 0.114*b);
                 }
 
-                // --- Make BOTH file types mean the same thing: "solid=1 for black" ---
-                // stack: photometric=0 (MINISWHITE): 0=white, 255=black
-                // single: photometric=2 (RGB): black~0, white~255 after gray conversion
-                int solid;
-
-                if (spp >= 3) {                     // RGB case: white = particle
-                    solid = (gray > 127) ? 1 : 0;
-                }
-                else if (photo == PHOTOMETRIC_MINISBLACK) {
-                    // grayscale MINISBLACK: black = particle
-                    solid = (gray < 127) ? 1 : 0;
-                }
-                else if (photo == PHOTOMETRIC_MINISWHITE) {
-                    // grayscale MINISWHITE: white = particle
-                    solid = (gray < 127) ? 1 : 0;
-                }
-                else {
-                    // fallback: assume black = particle
-                    solid = (gray < 127) ? 1 : 0;
-                }
-
+                // PRESERVE LABEL VALUE DIRECTLY
                 imageData[page - constraints.Depth_begin]
                          [row  - constraints.Row_begin]
-                         [col  - constraints.Column_begin] = solid;
+                         [col  - constraints.Column_begin] = static_cast<int>(gray);
             }
         }
 
         _TIFFfree(buf);
-
-        if (mfem::Mpi::WorldRank() == 0) {std::cout << "[TIFFReader] Constrained dimensions:\n"
-          << "  Pages   : " << (constraints.Depth_end  - constraints.Depth_begin) << "\n"
-          << "  Rows    : " << (constraints.Row_end    - constraints.Row_begin)   << "\n"
-          << "  Columns : " << (constraints.Column_end - constraints.Column_begin) << std::endl;}
-
     }
 }
+
+// void TIFFReader::readinfo() {
+
+//     imageData.resize(constraints.Depth_end - constraints.Depth_begin);
+//     for (int page = constraints.Depth_begin; page < constraints.Depth_end; ++page) {
+//         imageData[page - constraints.Depth_begin].resize(constraints.Row_end - constraints.Row_begin);
+//         for (int row = constraints.Row_begin; row < constraints.Row_end; ++row) {
+//             imageData[page - constraints.Depth_begin][row - constraints.Row_begin].resize(constraints.Column_end - constraints.Column_begin);
+//         }
+//     }
+
+//     if (mfem::Mpi::WorldRank() == 0) { std::cout << "Original TIFF Info - Width: " << Width << ", Height: " << Height
+//               << ", NumPages: " << numPages << std::endl;}
+
+//     for (int page = 0; page < numPages; page++) {
+//         if (!(page > constraints.Depth_begin - 1 && page < constraints.Depth_end)) {
+//             TIFFSetDirectory(tiff, page);
+//             continue;
+//         }
+
+//         // if (mfem::Mpi::WorldRank() == 0) {std::cerr << "page: " << page << ", READING\n";}
+//         TIFFSetDirectory(tiff, page);
+
+//         // --- Read per-page photometric + spp (single slice is RGBA, stack is grayscale) ---
+//         uint16 photo = 0;
+//         TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
+
+//         uint16 spp = 1;
+//         TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &spp);
+
+//         tdata_t buf = _TIFFmalloc(TIFFScanlineSize(tiff));
+
+//         // IMPORTANT: read scanline once per ROW (not once per (row,col))
+//         for (int row = constraints.Row_begin; row < constraints.Row_end; row++) {
+//             TIFFReadScanline(tiff, buf, row);
+//             uint8* p = (uint8*)buf; // scanline bytes
+
+//             for (int col = constraints.Column_begin; col < constraints.Column_end; col++) {
+
+//                 // --- Correctly decode pixel value for grayscale vs RGBA ---
+//                 uint8 gray;
+//                 if (spp == 1) {
+//                     gray = p[col];
+//                 } else {
+//                     // packed RGBA: [R G B A] [R G B A] ...
+//                     const int idx = (int)spp * col;
+//                     const uint8 r = p[idx + 0];
+//                     const uint8 g = p[idx + 1];
+//                     const uint8 b = p[idx + 2];
+//                     gray = static_cast<uint8>(0.299*r + 0.587*g + 0.114*b);
+//                 }
+
+//                 // --- Make BOTH file types mean the same thing: "solid=1 for black" ---
+//                 // stack: photometric=0 (MINISWHITE): 0=white, 255=black
+//                 // single: photometric=2 (RGB): black~0, white~255 after gray conversion
+//                 int solid;
+
+//                 if (spp >= 3) {                     // RGB case: white = particle
+//                     solid = (gray > 127) ? 1 : 0;
+//                 }
+//                 else if (photo == PHOTOMETRIC_MINISBLACK) {
+//                     // grayscale MINISBLACK: black = particle
+//                     solid = (gray < 127) ? 1 : 0;
+//                 }
+//                 else if (photo == PHOTOMETRIC_MINISWHITE) {
+//                     // grayscale MINISWHITE: white = particle
+//                     solid = (gray < 127) ? 1 : 0;
+//                 }
+//                 else {
+//                     // fallback: assume black = particle
+//                     solid = (gray < 127) ? 1 : 0;
+//                 }
+
+//                 imageData[page - constraints.Depth_begin]
+//                          [row  - constraints.Row_begin]
+//                          [col  - constraints.Column_begin] = solid;
+//             }
+//         }
+
+//         _TIFFfree(buf);
+
+//         if (mfem::Mpi::WorldRank() == 0) {std::cout << "[TIFFReader] Constrained dimensions:\n"
+//           << "  Pages   : " << (constraints.Depth_end  - constraints.Depth_begin) << "\n"
+//           << "  Rows    : " << (constraints.Row_end    - constraints.Row_begin)   << "\n"
+//           << "  Columns : " << (constraints.Column_end - constraints.Column_begin) << std::endl;}
+
+//     }
+// }
 
 TIFFReader::~TIFFReader() {
     if (tiff != nullptr) {

@@ -27,6 +27,21 @@ public:
      */
     CnC(Initialize_Geometry &geo, Domain_Parameters &para);
 
+    // /**
+    //  * @brief Initialize concentration field and assemble the diffusion operators.
+    //  *
+    //  * Performs:
+    //  * - Initial concentration assignment (masked by ψ)
+    //  * - Mass-matrix assembly
+    //  * - Diffusion stiffness-matrix assembly
+    //  * - Setup of CG solver and preconditioner
+    //  *
+    //  * @param Cn            Concentration field to initialize.
+    //  * @param initial_value Initial scalar value for the concentration.
+    //  * @param psx           Phase-field ψ identifying solid region.
+    //  */
+    // void SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
+
     /**
      * @brief Initialize concentration field and assemble the diffusion operators.
      *
@@ -39,21 +54,80 @@ public:
      * @param Cn            Concentration field to initialize.
      * @param initial_value Initial scalar value for the concentration.
      * @param psx           Phase-field ψ identifying solid region.
+     * @param gtPsx         Global integral of ψ for normalization.
      */
-    void SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx);
+    void SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, double gtPsx);
+
+
+    // /**
+    //  * @brief Advance concentration by one timestep using diffusion.
+    //  *
+    //  * Uses current reaction field, diffusivity, and stiffness/mass operators
+    //  * to compute the updated concentration. Applies ψ-field masking to restrict
+    //  * the update to the solid region.
+    //  *
+    //  * @param Rx  Reaction term applied to the concentration.
+    //  * @param Cn  Concentration field (input/output).
+    //  * @param psx Phase-field ψ for masking solid region.
+    //  */
+    // void UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+
 
     /**
-     * @brief Advance concentration by one timestep using diffusion.
+     * @brief Advance electrolyte concentration with particle interactions.
      *
-     * Uses current reaction field, diffusivity, and stiffness/mass operators
-     * to compute the updated concentration. Applies ψ-field masking to restrict
-     * the update to the solid region.
+     * Updates the electrolyte concentration field using a Crank–Nicolson scheme
+     * that includes particle interaction effects (e.g., AB, AC).
      *
-     * @param Rx  Reaction term applied to the concentration.
-     * @param Cn  Concentration field (input/output).
-     * @param psx Phase-field ψ for masking solid region.
+     * @param Rx  Reaction field (combined or single-source).
+     * @param Cn  Electrolyte concentration field (input/output).
+     * @param psx Phase-field ψ for diffusivity/BC masking.
+     * @param gtPsx Global normalization of ψ (used for boundary conditions).
+     * @param weight_elec Weighting function for electrode contributions.
+     * @param sum_AB Summation of particle interactions for AB.
+     * @param weight_AB Weighting function for AB interactions.
+     * @param grad_AB Gradient of AB interactions.
+     * @param sum_AC Summation of particle interactions for AC.
+     * @param weight_AC Weighting function for AC interactions.
+     * @param grad_AC Gradient of AC interactions.
+     * @param mu_A Chemical potential of particle A.
+     * @param mu_B Chemical potential of particle B.
+     * @param mu_C Chemical potential of particle C.
+     * @param psiA Phase-field ψ for particle A.
+     * @param psiB Phase-field ψ for particle B.
+     * @param psiC Phase-field ψ for particle C.
      */
-    void UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+    void UpdateConcentration(mfem::ParGridFunction &Rx,
+                             mfem::ParGridFunction &Cn,
+                             mfem::ParGridFunction &psx,
+                             double gtPsx,
+                             mfem::ParGridFunction &weight_elec,
+                             mfem::ParGridFunction &sum_AB,
+                             mfem::ParGridFunction &weight_AB,
+                             mfem::ParGridFunction &grad_AB,
+                             mfem::ParGridFunction &sum_AC,
+                             mfem::ParGridFunction &weight_AC,
+                             mfem::ParGridFunction &grad_AC,
+                             mfem::ParGridFunction &mu_A, mfem::ParGridFunction &mu_B, mfem::ParGridFunction &mu_C, mfem::ParGridFunction &mu_D, mfem::ParGridFunction &psiA, mfem::ParGridFunction &psiB, mfem::ParGridFunction &psiC);
+
+            // void UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, double gtPsx) override;
+            // // {
+            // //     mfem::ParGridFunction W(psx.ParFESpace());
+            // //     W = 1.0;
+            // //     UpdateConcentration(Rx, Cn, psx, gtPsx, W);
+            // // }
+
+            /**
+             * @brief Compute particle-particle interaction effects.
+             * 
+             * @param sum_part Summation of particle interactions.
+             * @param weight Weighting function for interaction.
+             * @param grad_psi Gradient of the phase-field ψ.
+             * @param mu_1 Chemical potential of particle 1.
+             * @param mu_2 Chemical potential of particle 2.
+             */
+            void Particle_Particle(mfem::ParGridFunction &sum_part, mfem::ParGridFunction &weight, mfem::ParGridFunction &grad_psi, mfem::ParGridFunction &mu_1, mfem::ParGridFunction &mu_2);
+
 
 private:
 

@@ -209,6 +209,12 @@ public:
         int mode                           // 0 = psi (keep 1s to right), 1 = pse (keep 0s to any boundary)
     );
 
+    void ComputePDEFilterLabel(mfem::ParGridFunction &dist,
+                           mfem::ParGridFunction &filt_gf,
+                           int target_label,
+                           bool keep_boundary_connected,
+                           int seed_side_or_face = -1);
+
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
@@ -296,6 +302,10 @@ public:
     std::unique_ptr<mfem::ParGridFunction> distMaskSigned; // signed distance (optional)
     std::unique_ptr<mfem::ParGridFunction> MaskFilter;    // filtered level set
     std::unique_ptr<mfem::ParGridFunction> MaskFilterPse;    // filtered level set (debug/useful)
+
+    std::unique_ptr<mfem::ParGridFunction> MaskFilter1;
+    std::unique_ptr<mfem::ParGridFunction> MaskFilter2;
+    std::unique_ptr<mfem::ParGridFunction> MaskFilter3;
 
 };
 

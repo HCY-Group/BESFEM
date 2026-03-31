@@ -54,6 +54,18 @@ void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
     AvE->SaveAsOne("AvE");
     AvB->SaveAsOne("AvB");
 
+    ps1->SaveAsOne("ps1");
+    ps2->SaveAsOne("ps2");
+    ps3->SaveAsOne("ps3");
+
+    AvP_1->SaveAsOne("AvP_1");
+    AvP_2->SaveAsOne("AvP_2");
+    AvP_3->SaveAsOne("AvP_3");
+
+    AvP_E_1->SaveAsOne("AvP_E_1");
+    AvP_E_2->SaveAsOne("AvP_E_2");
+    AvP_E_3->SaveAsOne("AvP_E_3");
+
 
     PrintInfo();
 }
@@ -69,8 +81,45 @@ void Domain_Parameters::InitializeGridFunctions() {
     AvP = std::make_unique<mfem::ParGridFunction>(fespace.get());
     AvP_0 = std::make_unique<mfem::ParGridFunction>(fespace.get());
     AvP_1 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP_2 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP_3 = std::make_unique<mfem::ParGridFunction>(fespace.get());
     AvB = std::make_unique<mfem::ParGridFunction>(fespace.get());
     AvE = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
+    AvP_1_2 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP_2_3 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP_3_1 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP_1_2_3 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
+    AvP_E_1 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP_E_2 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP_E_3 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
+    AvP_all_1 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP_all_2 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    AvP_all_3 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
+    ps1   = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    ps2   = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    ps3   = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
+    Weight_all_1 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    Weight_all_2 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    Weight_all_3 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
+    Weight_1_2 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    Weight_2_3 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    Weight_3_1 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
+    Weight_E_1 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    Weight_E_2 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    Weight_E_3 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
+    psi_1_2 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    psi_2_3 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    psi_3_1 = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
+    denom = std::make_unique<mfem::ParGridFunction>(fespace.get());
 
     const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
     if (full) {
@@ -122,87 +171,298 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
             }
         }
         
+        // if (strcmp(mesh_type, "v") == 0) {
+
+        //     *psi = *geometry.MaskFilter;
+        //     *pse = *geometry.MaskFilterPse;
+
+        //     for (int i = 0; i < psi->Size(); i++)
+        //     {
+
+        //         if ((*psi)(i) < 0) { (*psi)(i) = 0; }
+        //         if ((*psi)(i) > 1) { (*psi)(i) = 1; }
+
+        //         if ((*pse)(i) < 0) { (*pse)(i) = 0; }
+        //         if ((*pse)(i) > 1) { (*pse)(i) = 1; }
+
+        //         (*psi)(i) += 1.0e-6; // Avoid zero values
+        //         (*pse)(i) += 1.0e-6; // Avoid zero values
+
+        //     }
+        // }
+
         if (strcmp(mesh_type, "v") == 0) {
 
-            *psi = *geometry.MaskFilter;
+            MFEM_VERIFY(geometry.Vox, "geometry.Vox is not initialized.");
+
+            *ps1 = *geometry.MaskFilter1;
+            *ps2 = *geometry.MaskFilter2;
+            *ps3 = *geometry.MaskFilter3;
             *pse = *geometry.MaskFilterPse;
-            // *pse = *psi;
-            // (*pse) *= -1.0;
-            // (*pse) += 1.0;
+
+            *psi = 0.0;
+            *psi += *ps1;
+            *psi += *ps2;
+            *psi += *ps3;
 
             for (int i = 0; i < psi->Size(); i++)
             {
+                if ((*psi)(i) < 0) { (*psi)(i) = 0.0; }
+                if ((*psi)(i) > 1) { (*psi)(i) = 1.0; }
 
-                if ((*psi)(i) < 0) { (*psi)(i) = 0; }
-                if ((*psi)(i) > 1) { (*psi)(i) = 1; }
+                if ((*pse)(i) < 0) { (*pse)(i) = 0.0; }
+                if ((*pse)(i) > 1) { (*pse)(i) = 1.0; }
 
-                if ((*pse)(i) < 0) { (*pse)(i) = 0; }
-                if ((*pse)(i) > 1) { (*pse)(i) = 1; }
+                if ((*ps1)(i) < 0) { (*ps1)(i) = 0.0; }
+                if ((*ps1)(i) > 1) { (*ps1)(i) = 1.0; }
 
-                (*psi)(i) += 1.0e-6; // Avoid zero values
-                (*pse)(i) += 1.0e-6; // Avoid zero values
+                if ((*ps2)(i) < 0) { (*ps2)(i) = 0.0; }
+                if ((*ps2)(i) > 1) { (*ps2)(i) = 1.0; }
 
+                if ((*ps3)(i) < 0) { (*ps3)(i) = 0.0; }
+                if ((*ps3)(i) > 1) { (*ps3)(i) = 1.0; }
+
+                (*psi)(i) += 1.0e-6;
+                (*pse)(i) += 1.0e-6;
+                (*ps1)(i) += 1.0e-6;
+                (*ps2)(i) += 1.0e-6;
+                (*ps3)(i) += 1.0e-6;
             }
         }
 
-        // =====================================================
-        //  Calculating AvP for TIF Voxel
-        // =====================================================
+        // -------------------------------------------------
+        // MULTI PARTICLE AvP
+        // -------------------------------------------------
 
-        if (strcmp(mesh_type, "v") == 0)
+        if (strcmp(mesh_type, "v") == 0) 
         {
-            const int dim = pmesh->Dimension(); 
-            mfem::ParGridFunction dpsi(fespace.get());
 
-            (*AvP) = 0.0;
-            for (int d = 0; d < dim; d++)
+            auto ComputeGradMagnitude = [&](const mfem::ParGridFunction &phase_in,
+                                            mfem::ParGridFunction &AvP_out)
             {
-                dpsi = 0.0;
-                psi->GetDerivative(1, d, dpsi); 
+                const int dim = pmesh->Dimension();
+                mfem::ParGridFunction dphase(fespace.get());
 
-                // compound squares: AvP += (dpsi)^2
-                for (int vi = 0; vi < nV; vi++)
+                AvP_out = 0.0;
+
+                for (int d = 0; d < dim; ++d)
                 {
-                    const double v = dpsi(vi);
-                    (*AvP)(vi) += v * v;
+                    dphase = 0.0;
+
+                    // GetDerivative is non-const in practice, so copy if needed
+                    mfem::ParGridFunction phase_tmp(phase_in);
+                    phase_tmp.GetDerivative(1, d, dphase);
+
+                    for (int vi = 0; vi < nV; ++vi)
+                    {
+                        const double v = dphase(vi);
+                        AvP_out(vi) += v * v;
+                    }
                 }
-            }
 
-            // sqrt to get magnitude
-            for (int vi = 0; vi < nV; vi++)
-            {
-                (*AvP)(vi) = std::sqrt((*AvP)(vi));
-            }
-
-            
-            // AvE
-            mfem::ParGridFunction dpse(fespace.get());
-
-            (*AvE) = 0.0;
-            for (int d = 0; d < dim; d++)
-            {
-                dpse = 0.0;
-                pse->GetDerivative(1, d, dpse); 
-
-                // compound squares: AvE += (dpse)^2
-                for (int vi = 0; vi < nV; vi++)
+                for (int vi = 0; vi < nV; ++vi)
                 {
-                    const double v = dpse(vi);
-                    (*AvE)(vi) += v * v;
+                    AvP_out(vi) = std::sqrt(AvP_out(vi));
                 }
+            };
+
+            ComputeGradMagnitude(*psi, *AvP);      // total solid
+            ComputeGradMagnitude(*ps1, *AvP_1);
+            ComputeGradMagnitude(*ps2, *AvP_2);
+            ComputeGradMagnitude(*ps3, *AvP_3);
+
+
+            auto BuildPairInterface = [&](mfem::ParGridFunction &out,
+                                const mfem::ParGridFunction &psa,
+                                const mfem::ParGridFunction &psb,
+                                const mfem::ParGridFunction &AvPa,
+                                const mfem::ParGridFunction &AvPb)
+            {
+                out = psa;      // psa
+                out *= AvPb;    // psa * AvPb
+
+                mfem::ParGridFunction tmp(fespace.get());
+                tmp = psb;      // psb
+                tmp *= AvPa;    // psb * AvPa
+                out += tmp;     // psa*AvPb + psb*AvPa
+
+                mfem::ParGridFunction overlap(fespace.get());
+                overlap = psa;
+                overlap *= psb; // psa * psb
+
+                out *= overlap;
+                out *= 4.0;
+
+                for (int vi = 0; vi < out.Size(); ++vi)
+                {
+                    if (out(vi) > 9000.0)
+                    {
+                        out(vi) = 1.4e4;
+                    }
+                }
+            };
+
+            BuildPairInterface(*AvP_1_2, *ps1, *ps2, *AvP_1, *AvP_2);
+            BuildPairInterface(*AvP_2_3, *ps2, *ps3, *AvP_2, *AvP_3);
+            BuildPairInterface(*AvP_3_1, *ps3, *ps1, *AvP_3, *AvP_1);
+
+            auto BuildElectrolyteInterface = [&](mfem::ParGridFunction &out,
+                                     const mfem::ParGridFunction &pse_in,
+                                     const mfem::ParGridFunction &AvPk)
+            {
+                out = pse_in;
+                out *= AvPk;
+            };
+
+            BuildElectrolyteInterface(*AvP_E_1, *pse, *AvP_1);
+            BuildElectrolyteInterface(*AvP_E_2, *pse, *AvP_2);
+            BuildElectrolyteInterface(*AvP_E_3, *pse, *AvP_3);
+
+            *AvP_1_2_3 = 0.0;
+            *AvP_1_2_3 += *AvP_1_2;
+            *AvP_1_2_3 += *AvP_2_3;
+            *AvP_1_2_3 += *AvP_3_1;
+
+            *AvP_all_1 = 0.0;
+            *AvP_all_1 += *AvP_1_2;
+            *AvP_all_1 += *AvP_3_1;
+
+            *AvP_all_2 = 0.0;
+            *AvP_all_2 += *AvP_1_2;
+            *AvP_all_2 += *AvP_2_3;
+
+            *AvP_all_3 = 0.0;
+            *AvP_all_3 += *AvP_3_1;
+            *AvP_all_3 += *AvP_2_3;
+
+            *denom = 0.0;
+            *denom += *AvP_1_2_3;
+            *denom += *AvP_E_1;
+            *denom += *AvP_E_2;
+            *denom += *AvP_E_3;
+
+            *psi_1_2 = *ps1;
+            *psi_1_2 += *ps2;
+            for (int vi = 0; vi < nV; ++vi)
+            {
+                if ((*psi_1_2)(vi) > 1.0) { (*psi_1_2)(vi) = 1.0; }
             }
 
-            // sqrt to get magnitude
-            for (int vi = 0; vi < nV; vi++)
+            *psi_2_3 = *ps2;
+            *psi_2_3 += *ps3;
+            for (int vi = 0; vi < nV; ++vi)
             {
-                (*AvE)(vi) = std::sqrt((*AvE)(vi));
+                if ((*psi_2_3)(vi) > 1.0) { (*psi_2_3)(vi) = 1.0; }
             }
-            
+
+            *psi_3_1 = *ps3;
+            *psi_3_1 += *ps1;
+            for (int vi = 0; vi < nV; ++vi)
+            {
+                if ((*psi_3_1)(vi) > 1.0) { (*psi_3_1)(vi) = 1.0; }
+            }
+
+            auto ComputeWeight = [&](mfem::ParGridFunction &weight_out,
+                         const mfem::ParGridFunction &num_in,
+                         const mfem::ParGridFunction *mask_in = nullptr)
+            {
+                weight_out = 0.0;
+
+                const double beta = 0.8;
+                const double eps  = 1e-30;
+
+                for (int vi = 0; vi < nV; ++vi)
+                {
+                    const double num = num_in(vi);
+                    const double den = (*denom)(vi);
+
+                    double ratio = 0.0;
+                    if (den > eps)
+                    {
+                        ratio = num / den;
+                        if (ratio < 0.0) ratio = 0.0;
+                    }
+
+                    weight_out(vi) = std::pow(ratio, beta);
+                }
+
+                if (mask_in) { weight_out *= *mask_in; }
+            };
+
+            ComputeWeight(*Weight_E_1, *AvP_E_1);
+            ComputeWeight(*Weight_E_2, *AvP_E_2);
+            ComputeWeight(*Weight_E_3, *AvP_E_3);
+
+            ComputeWeight(*Weight_all_1, *AvP_all_1, psi.get());
+            ComputeWeight(*Weight_all_2, *AvP_all_2, psi.get());
+            ComputeWeight(*Weight_all_3, *AvP_all_3, psi.get());
+
+            ComputeWeight(*Weight_1_2, *AvP_1_2, psi_1_2.get());
+            ComputeWeight(*Weight_2_3, *AvP_2_3, psi_2_3.get());
+            ComputeWeight(*Weight_3_1, *AvP_3_1, psi_3_1.get());
+
         }
 
-        // =====================================================
-        //  End of Calculating AvP
-        // =====================================================
+
+
+        // // =====================================================
+        // //  Calculating AvP for TIF Voxel
+        // // =====================================================
+
+        // if (strcmp(mesh_type, "v") == 0)
+        // {
+        //     const int dim = pmesh->Dimension(); 
+        //     mfem::ParGridFunction dpsi(fespace.get());
+
+        //     (*AvP) = 0.0;
+        //     for (int d = 0; d < dim; d++)
+        //     {
+        //         dpsi = 0.0;
+        //         psi->GetDerivative(1, d, dpsi); 
+
+        //         // compound squares: AvP += (dpsi)^2
+        //         for (int vi = 0; vi < nV; vi++)
+        //         {
+        //             const double v = dpsi(vi);
+        //             (*AvP)(vi) += v * v;
+        //         }
+        //     }
+
+        //     // sqrt to get magnitude
+        //     for (int vi = 0; vi < nV; vi++)
+        //     {
+        //         (*AvP)(vi) = std::sqrt((*AvP)(vi));
+        //     }
+
+            
+        //     // AvE
+        //     mfem::ParGridFunction dpse(fespace.get());
+
+        //     (*AvE) = 0.0;
+        //     for (int d = 0; d < dim; d++)
+        //     {
+        //         dpse = 0.0;
+        //         pse->GetDerivative(1, d, dpse); 
+
+        //         // compound squares: AvE += (dpse)^2
+        //         for (int vi = 0; vi < nV; vi++)
+        //         {
+        //             const double v = dpse(vi);
+        //             (*AvE)(vi) += v * v;
+        //         }
+        //     }
+
+        //     // sqrt to get magnitude
+        //     for (int vi = 0; vi < nV; vi++)
+        //     {
+        //         (*AvE)(vi) = std::sqrt((*AvE)(vi));
+        //     }
+            
+        // }
+
+        // // =====================================================
+        // //  End of Calculating AvP
+        // // =====================================================
 
         // ---- GLOBAL checks for psi -------------------------------------------
         double psi_min = 0.0, psi_max = 0.0;
@@ -383,7 +643,15 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
         // Calculate totals for Psi and Pse fields
         CalculateTotalPhaseField(*psi, tPsi, gtPsi);
         CalculateTotalPhaseField(*pse, tPse, gtPse);
-        CalculateTargetCurrent(tPsi);
+        CalculateTargetCurrent(tPsi, gTrgI);
+
+        CalculateTotalPhaseField(*ps1, tPsi1, gtPsi1);
+        CalculateTotalPhaseField(*ps2, tPsi2, gtPsi2);
+        CalculateTotalPhaseField(*ps3, tPsi3, gtPsi3);
+
+        CalculateTargetCurrent(tPsi1, gTrg1);
+        CalculateTargetCurrent(tPsi2, gTrg2);
+        CalculateTargetCurrent(tPsi3, gTrg3);
     }
 
     // Full Cell : use psA, psC
@@ -392,18 +660,30 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
         CalculateTotalPhaseField(*psA, tPsA, gtPsA);
         CalculateTotalPhaseField(*psC, tPsC, gtPsC);
         CalculateTotalPhaseField(*pse, tPse, gtPse);
-        CalculateTargetCurrent(tPsC);
+        CalculateTargetCurrent(tPsC, gTrgI);
     }
 
 }
 
-void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
+// void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
+
+//     // Compute target current based on total Psi, rho, Cr, and constants
+//     trgI = total_psi * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
+
+//     // Perform global MPI reduction to get the total target current
+//     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+// }
+
+void Domain_Parameters::CalculateTargetCurrent(double total_psi, double &global_total) {
 
     // Compute target current based on total Psi, rho, Cr, and constants
     trgI = total_psi * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
 
+    // voxel
+    // trgI = (total_psi * (pow(Constants::dh, 2)))  * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
+
     // Perform global MPI reduction to get the total target current
-    MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&trgI, &global_total, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 }
 
 

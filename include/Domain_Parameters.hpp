@@ -74,16 +74,50 @@ public:
     std::unique_ptr<mfem::ParGridFunction> psA; ///< Anode-phase indicator.
     std::unique_ptr<mfem::ParGridFunction> psC; ///< Cathode-phase indicator.
 
+    std::unique_ptr<mfem::ParGridFunction> ps1;
+    std::unique_ptr<mfem::ParGridFunction> ps2;
+    std::unique_ptr<mfem::ParGridFunction> ps3;
+
+    std::unique_ptr<mfem::ParGridFunction> psi_1_2;
+    std::unique_ptr<mfem::ParGridFunction> psi_2_3;
+    std::unique_ptr<mfem::ParGridFunction> psi_3_1;
+
+    std::unique_ptr<mfem::ParGridFunction> denom;
+
+    std::unique_ptr<mfem::ParGridFunction> Weight_all_1;
+    std::unique_ptr<mfem::ParGridFunction> Weight_all_2;
+    std::unique_ptr<mfem::ParGridFunction> Weight_all_3;
+
+    std::unique_ptr<mfem::ParGridFunction> Weight_1_2;
+    std::unique_ptr<mfem::ParGridFunction> Weight_2_3;
+    std::unique_ptr<mfem::ParGridFunction> Weight_3_1;
+
+    std::unique_ptr<mfem::ParGridFunction> Weight_E_1;
+    std::unique_ptr<mfem::ParGridFunction> Weight_E_2;
+    std::unique_ptr<mfem::ParGridFunction> Weight_E_3;
+
     // -------------------------------------------------------------------------
     // Surface-area / geometry-related auxiliary fields
     // -------------------------------------------------------------------------
     std::unique_ptr<mfem::ParGridFunction> AvP; ///< Particle surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvP_0; ///< Particle surface-area density component 0.
     std::unique_ptr<mfem::ParGridFunction> AvP_1; ///< Particle surface-area density component 1.
+    std::unique_ptr<mfem::ParGridFunction> AvP_2; ///< Particle surface-area density component 2.
+    std::unique_ptr<mfem::ParGridFunction> AvP_3; ///< Particle surface-area density component 3.
     std::unique_ptr<mfem::ParGridFunction> AvA; ///< Anode surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvC; ///< Cathode surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvB; ///< Boundary surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvE; ///< Electrolyte surface-area density.
+    std::unique_ptr<mfem::ParGridFunction> AvP_1_2; ///< Interface area density between phase 1 and 2.
+    std::unique_ptr<mfem::ParGridFunction> AvP_2_3; ///< Interface area density between phase 2 and 3.
+    std::unique_ptr<mfem::ParGridFunction> AvP_3_1; ///< Interface area density between phase 3 and 1.
+    std::unique_ptr<mfem::ParGridFunction> AvP_E_1; ///< Interface area density between particle and electrolyte for phase 1.
+    std::unique_ptr<mfem::ParGridFunction> AvP_E_2; ///< Interface area density between particle and electrolyte for phase 2.
+    std::unique_ptr<mfem::ParGridFunction> AvP_E_3; ///< Interface area density between particle and electrolyte for phase 3.
+    std::unique_ptr<mfem::ParGridFunction> AvP_all_1; ///< Total interface area density for phase 1.
+    std::unique_ptr<mfem::ParGridFunction> AvP_all_2; ///< Total interface area density for phase 2.
+    std::unique_ptr<mfem::ParGridFunction> AvP_all_3; ///< Total interface area density for phase 3.
+    std::unique_ptr<mfem::ParGridFunction> AvP_1_2_3; ///< Interface area density between all phases.
 
     // -------------------------------------------------------------------------
     // Global integrals and target current
@@ -91,6 +125,14 @@ public:
     double gtPsi = 0.0; ///< Global integral of ψ (solid).
     double gtPse = 0.0; ///< Global integral of ψₑ (electrolyte).
     double gTrgI = 0.0; ///< Global target current (galvanostatic control).
+
+    double gTrg1 = 0.0; ///< Global target current for phase 1.
+    double gTrg2 = 0.0; ///< Global target current for phase 2.
+    double gTrg3 = 0.0; ///< Global target current for phase 3.
+
+    double gtPsi1 = 0.0; ///< Global integral of ψ for phase 1.
+    double gtPsi2 = 0.0; ///< Global integral of ψ for phase
+    double gtPsi3 = 0.0; ///< Global integral of ψ for phase 3.
 
     double gtPsA = 0.0; ///< Global integral of ψ_A (anode region).
     double gtPsC = 0.0; ///< Global integral of ψ_C (cathode region).
@@ -164,8 +206,9 @@ private:
      * the integrated particle-phase volume into a target current contribution.
      *
      * @param total_psi Local integral of ψ.
+     * @param global_total [out] Global target current contribution after MPI reduction.
      */
-    void CalculateTargetCurrent(double total_psi);
+    void CalculateTargetCurrent(double total_psi, double &global_total);
 
     /**
      * @brief Print diagnostic totals (rank 0 only).
@@ -194,6 +237,10 @@ private:
     double tPsi = 0.0; ///< Local ψ total before MPI reduction.
     double tPse = 0.0; ///< Local ψₑ total before MPI reduction.
     double trgI = 0.0; ///< Local target current before global reduction.
+
+    double tPsi1 = 0.0; ///< Local ψ for phase 1 total before MPI reduction.
+    double tPsi2 = 0.0; ///< Local ψ for phase 2 total before MPI reduction.
+    double tPsi3 = 0.0; ///< Local ψ for phase 3 total before MPI reduction.
 
     double tPsA = 0.0; ///< Local ψ_A total before MPI reduction.
     double tPsC = 0.0; ///< Local ψ_C total before MPI reduction.
