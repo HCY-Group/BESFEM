@@ -450,6 +450,21 @@ int main(int argc, char *argv[]) {
                 //     outfile.close(); 
                 // }
 
+                if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
+
+                    std::ofstream outfile("half_cell_output.txt", std::ios::app);
+
+                    const double Xfr_1 = cathode_concentration_1->GetLithiation();
+                    const double Xfr_2 = cathode_concentration_2->GetLithiation();
+                    const double Xfr_3 = cathode_concentration_3->GetLithiation();
+
+                    outfile << "timestep: " << t << " [CATHODE HALF-CELL]"
+                    << ", Xfr_1 = " << Xfr_1 << ", Xfr_2 = " << Xfr_2 << ", Xfr_3 = " << Xfr_3
+                    << std::endl;
+
+                    outfile.close(); 
+                }
+
 
                 // if (cfg.half_electrode == sim::Electrode::ANODE) {
                 //     Utils::SaveSimulationSnapshot(t, outdir, geometry, domain_parameters, *phA_gf, *phE_gf, 
@@ -466,12 +481,12 @@ int main(int argc, char *argv[]) {
 
             } 
 
-            const double Xfr_all = cathode_concentration->GetLithiation();
-            const double Xfr_1 = cathode_concentration_1->GetLithiation();
-            const double Xfr_2 = cathode_concentration_2->GetLithiation();
-            const double Xfr_3 = cathode_concentration_3->GetLithiation();
+            // const double Xfr_all = cathode_concentration->GetLithiation();
+            // const double Xfr_1 = cathode_concentration_1->GetLithiation();
+            // const double Xfr_2 = cathode_concentration_2->GetLithiation();
+            // const double Xfr_3 = cathode_concentration_3->GetLithiation();
 
-            if (mfem::Mpi::WorldRank() == 0) {std::cout << "Lithiation Fraction All: " << Xfr_all << " Lithiation Fraction Group 1: " << Xfr_1 << " Lithiation Fraction Group 2: " << Xfr_2 <<  " Lithiation Fraction Group 3: " << Xfr_3 << std::endl;}
+            // if (mfem::Mpi::WorldRank() == 0) {std::cout << "Lithiation Fraction All: " << Xfr_all << " Lithiation Fraction Group 1: " << Xfr_1 << " Lithiation Fraction Group 2: " << Xfr_2 <<  " Lithiation Fraction Group 3: " << Xfr_3 << std::endl;}
 
         }
 

@@ -1131,34 +1131,4 @@ void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist,
     mfem::GridFunctionCoefficient ls_filt_coeff(&filt_dg);
 
     filt_gf.ProjectGridFunction(filt_dg);
-
-    // // ---------- Use same PDE filter machinery as your current ComputePDEFilter ----------
-    // // mfem::common::PDEFilter filter(parfespace_dg.get());
-    // // filter.Filter(ls_coeff_dg, filt_dg, dx);
-    // mfem::common::PDEFilter filter(*parallelMesh, dx);
-    // filter.Filter(ls_coeff_dg, filt_dg);
-
-    // filt_gf.ProjectGridFunction(filt_dg);
-
-    // for (int i = 0; i < filt_gf.Size(); i++)
-    // {
-    //     if (filt_gf(i) < 0.0) filt_gf(i) = 0.0;
-    //     if (filt_gf(i) > 1.0) filt_gf(i) = 1.0;
-    //     filt_gf(i) += 1.0e-6;
-    // }
-
-    // double lmin = 1.0e30, lmax = -1.0e30;
-    // for (int i = 0; i < filt_gf.Size(); i++) {
-    //     lmin = std::min(lmin, filt_gf(i));
-    //     lmax = std::max(lmax, filt_gf(i));
-    // }
-
-    // double gmin = 0.0, gmax = 0.0;
-    // MPI_Allreduce(&lmin, &gmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-    // MPI_Allreduce(&lmax, &gmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-
-    // if (mfem::Mpi::WorldRank() == 0) {
-    //     std::cout << "[ComputePDEFilterLabel] label " << target_label
-    //               << " min = " << gmin << ", max = " << gmax << std::endl;
-    // }
 }
