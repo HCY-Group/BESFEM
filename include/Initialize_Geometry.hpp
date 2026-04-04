@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include "SimTypes.hpp"
+#include <set>
 
 using namespace std;
 
@@ -213,7 +214,11 @@ public:
                            mfem::ParGridFunction &filt_gf,
                            int target_label,
                            bool keep_boundary_connected,
-                           int seed_side_or_face = -1);
+                           int seed_side_or_face = -1
+    );
+
+    
+    std::vector<int> GetParticleLabelsFromTiff() const;
 
     // -------------------------------------------------------------------------
     // Accessors
@@ -303,9 +308,12 @@ public:
     std::unique_ptr<mfem::ParGridFunction> MaskFilter;    // filtered level set
     std::unique_ptr<mfem::ParGridFunction> MaskFilterPse;    // filtered level set (debug/useful)
 
-    std::unique_ptr<mfem::ParGridFunction> MaskFilter1;
-    std::unique_ptr<mfem::ParGridFunction> MaskFilter2;
-    std::unique_ptr<mfem::ParGridFunction> MaskFilter3;
+    // std::unique_ptr<mfem::ParGridFunction> MaskFilter1;
+    // std::unique_ptr<mfem::ParGridFunction> MaskFilter2;
+    // std::unique_ptr<mfem::ParGridFunction> MaskFilter3;
+
+    std::vector<int> particle_labels;  // nonzero labels found in TIFF
+    std::vector<std::unique_ptr<mfem::ParGridFunction>> MaskFilters;
 
 };
 

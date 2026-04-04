@@ -184,18 +184,42 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
 
         MaskFilter    = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // total solid
         MaskFilterPse = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // electrolyte
-        MaskFilter1   = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // label 1
-        MaskFilter2   = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // label 2
-        MaskFilter3   = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // label 3
+        // MaskFilter1   = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // label 1
+        // MaskFilter2   = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // label 2
+        // MaskFilter3   = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // label 3
 
         // Keep your old total-solid and electrolyte filters
         ComputePDEFilter(*distMask, *MaskFilter,    /*mode=*/0);
         ComputePDEFilter(*distMask, *MaskFilterPse, /*mode=*/1);
 
-        // New label-specific filters
-        ComputePDEFilterLabel(*distMask, *MaskFilter1, 1, false);
-        ComputePDEFilterLabel(*distMask, *MaskFilter2, 2, false);
-        ComputePDEFilterLabel(*distMask, *MaskFilter3, 3, false);
+        // discover particle labels automatically from TIFF
+        particle_labels = GetParticleLabelsFromTiff();
+
+        if (mfem::Mpi::WorldRank() == 0)
+        {
+            std::cout << "[Initialize_Geometry] particle labels found: ";
+            for (int lbl : particle_labels) std::cout << lbl << " ";
+            std::cout << std::endl;
+        }
+
+        // allocate one filtered mask per particle label
+        MaskFilters.clear();
+        MaskFilters.resize(particle_labels.size());
+
+        for (int k = 0; k < (int)particle_labels.size(); ++k)
+        {
+            MaskFilters[k] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+            ComputePDEFilterLabel(*distMask, *MaskFilters[k], particle_labels[k], false);
+
+            std::ostringstream name;
+            name << "MaskFilter_label_" << particle_labels[k] << ".gf";
+            MaskFilters[k]->SaveAsOne(name.str().c_str());
+        }
+
+        // // New label-specific filters
+        // ComputePDEFilterLabel(*distMask, *MaskFilter1, 1, false);
+        // ComputePDEFilterLabel(*distMask, *MaskFilter2, 2, false);
+        // ComputePDEFilterLabel(*distMask, *MaskFilter3, 3, false);
 
         if (mfem::Mpi::WorldRank() == 0) {
             std::cout << "ComputePDEFilter done.\n";
@@ -203,9 +227,14 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
 
         MaskFilter->SaveAsOne("MaskFilter.gf");
         MaskFilterPse->SaveAsOne("MaskFilter_pse.gf");
-        MaskFilter1->SaveAsOne("MaskFilter1.gf");
-        MaskFilter2->SaveAsOne("MaskFilter2.gf");
-        MaskFilter3->SaveAsOne("MaskFilter3.gf");
+        // MaskFilter1->SaveAsOne("MaskFilter1.gf");
+        // MaskFilter2->SaveAsOne("MaskFilter2.gf");
+        // MaskFilter3->SaveAsOne("MaskFilter3.gf");
+
+        if (mfem::Mpi::WorldRank() == 0) {
+            std::cout << "ComputePDEFilter done.\n";
+        }
+
     }
 
     // // distance for tiff files
@@ -269,6 +298,20 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, const char* dista
     // Print out information relative to the mesh
     PrintMeshInfo();
 
+}
+
+std::vector<int> Initialize_Geometry::GetParticleLabelsFromTiff() const
+{
+    std::set<int> labels;
+
+    for (const auto &slice : tiffData)
+    for (const auto &row   : slice)
+    for (int v : row)
+    {
+        if (v != 0) { labels.insert(v); } // 0 is electrolyte
+    }
+
+    return std::vector<int>(labels.begin(), labels.end());
 }
 
 void Initialize_Geometry::AdjustDistanceFile(const char* distanceFile, const char* mesh_type)

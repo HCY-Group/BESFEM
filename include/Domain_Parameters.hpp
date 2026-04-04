@@ -139,6 +139,9 @@ public:
 
     mfem::Vector EVol; ///< Element volumes for FEM integration.
 
+    std::vector<int> particle_labels;
+    std::vector<std::unique_ptr<mfem::ParGridFunction>> ps;
+
     /// Reference to geometry handler.
     Initialize_Geometry &geometry;
 
