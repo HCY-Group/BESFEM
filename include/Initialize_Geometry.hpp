@@ -312,7 +312,7 @@ public:
     // std::unique_ptr<mfem::ParGridFunction> MaskFilter2;
     // std::unique_ptr<mfem::ParGridFunction> MaskFilter3;
 
-    std::vector<int> particle_labels;  // nonzero labels found in TIFF
+    std::vector<int> particle_labels; 
     std::vector<std::unique_ptr<mfem::ParGridFunction>> MaskFilters;
 
 };
