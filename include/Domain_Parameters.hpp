@@ -75,7 +75,7 @@ public:
     std::unique_ptr<mfem::ParGridFunction> psC; ///< Cathode-phase indicator.
 
     std::unique_ptr<mfem::ParGridFunction> denom;
-    
+
     // -------------------------------------------------------------------------
     // Surface-area / geometry-related auxiliary fields
     // -------------------------------------------------------------------------
@@ -113,6 +113,9 @@ public:
     std::vector<std::unique_ptr<mfem::ParGridFunction>> WeightEs;
     std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> psi_Pairs;
     std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> WeightPairs;
+    std::vector<double> tPs;
+    std::vector<double> gtPs;
+    std::vector<double> gTrgPs;
 
     /// Reference to geometry handler.
     Initialize_Geometry &geometry;

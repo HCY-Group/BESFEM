@@ -48,7 +48,7 @@ void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
 
     InitializeGridFunctions();
     InterpolateDomainParameters(mesh_type);
-    // CalculatePhasePotentialsAndTargetCurrent();
+    CalculatePhasePotentialsAndTargetCurrent();
 
     psi->SaveAsOne("psi");
     pse->SaveAsOne("pse");
@@ -81,7 +81,7 @@ void Domain_Parameters::SetupDomainParameters(const char* mesh_type){
         }
     }
 
-    // PrintInfo();
+    PrintInfo();
 }
 
 void Domain_Parameters::InitializeGridFunctions() {
@@ -145,7 +145,24 @@ void Domain_Parameters::InitializeGridFunctions() {
         WeightEs[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
     }
 
+    tPs.clear();
+    tPs.resize(particle_labels.size());
+
+    gtPs.clear();
+    gtPs.resize(particle_labels.size());
+
+    gTrgPs.clear();
+    gTrgPs.resize(particle_labels.size());
+
+    for (int k = 0; k < (int)particle_labels.size(); ++k)
+    { 
+        tPs[k] = 0.0; 
+        gtPs[k] = 0.0;
+        gTrgPs[k] = 0.0;
+    }
+
     denom = std::make_unique<mfem::ParGridFunction>(fespace.get());
+
 
     const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
     if (full) {
@@ -412,305 +429,312 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
         }
 
 
-    //     // =====================================================
-    //     //  Calculating AvP for TIF Voxel
-    //     // =====================================================
+        // // =====================================================
+        // //  Calculating AvP for TIF Voxel
+        // // =====================================================
 
-    //     if (strcmp(mesh_type, "v") == 0)
-    //     {
-    //         const int dim = pmesh->Dimension(); 
-    //         mfem::ParGridFunction dpsi(fespace.get());
+        // if (strcmp(mesh_type, "v") == 0)
+        // {
+        //     const int dim = pmesh->Dimension(); 
+        //     mfem::ParGridFunction dpsi(fespace.get());
 
-    //         (*AvP) = 0.0;
-    //         for (int d = 0; d < dim; d++)
-    //         {
-    //             dpsi = 0.0;
-    //             psi->GetDerivative(1, d, dpsi); 
+        //     (*AvP) = 0.0;
+        //     for (int d = 0; d < dim; d++)
+        //     {
+        //         dpsi = 0.0;
+        //         psi->GetDerivative(1, d, dpsi); 
 
-    //             // compound squares: AvP += (dpsi)^2
-    //             for (int vi = 0; vi < nV; vi++)
-    //             {
-    //                 const double v = dpsi(vi);
-    //                 (*AvP)(vi) += v * v;
-    //             }
-    //         }
+        //         // compound squares: AvP += (dpsi)^2
+        //         for (int vi = 0; vi < nV; vi++)
+        //         {
+        //             const double v = dpsi(vi);
+        //             (*AvP)(vi) += v * v;
+        //         }
+        //     }
 
-    //         // sqrt to get magnitude
-    //         for (int vi = 0; vi < nV; vi++)
-    //         {
-    //             (*AvP)(vi) = std::sqrt((*AvP)(vi));
-    //         }
+        //     // sqrt to get magnitude
+        //     for (int vi = 0; vi < nV; vi++)
+        //     {
+        //         (*AvP)(vi) = std::sqrt((*AvP)(vi));
+        //     }
 
             
-    //         // AvE
-    //         mfem::ParGridFunction dpse(fespace.get());
+        //     // AvE
+        //     mfem::ParGridFunction dpse(fespace.get());
 
-    //         (*AvE) = 0.0;
-    //         for (int d = 0; d < dim; d++)
-    //         {
-    //             dpse = 0.0;
-    //             pse->GetDerivative(1, d, dpse); 
+        //     (*AvE) = 0.0;
+        //     for (int d = 0; d < dim; d++)
+        //     {
+        //         dpse = 0.0;
+        //         pse->GetDerivative(1, d, dpse); 
 
-    //             // compound squares: AvE += (dpse)^2
-    //             for (int vi = 0; vi < nV; vi++)
-    //             {
-    //                 const double v = dpse(vi);
-    //                 (*AvE)(vi) += v * v;
-    //             }
-    //         }
+        //         // compound squares: AvE += (dpse)^2
+        //         for (int vi = 0; vi < nV; vi++)
+        //         {
+        //             const double v = dpse(vi);
+        //             (*AvE)(vi) += v * v;
+        //         }
+        //     }
 
-    //         // sqrt to get magnitude
-    //         for (int vi = 0; vi < nV; vi++)
-    //         {
-    //             (*AvE)(vi) = std::sqrt((*AvE)(vi));
-    //         }
+        //     // sqrt to get magnitude
+        //     for (int vi = 0; vi < nV; vi++)
+        //     {
+        //         (*AvE)(vi) = std::sqrt((*AvE)(vi));
+        //     }
             
-    //     }
+        // }
 
-    //     // =====================================================
-    //     //  End of Calculating AvP
-    //     // =====================================================
+        // =====================================================
+        //  End of Calculating AvP
+        // =====================================================
 
-    //     // ---- GLOBAL checks for psi -------------------------------------------
-    //     double psi_min = 0.0, psi_max = 0.0;
-    //     GlobalMinMax(*psi, psi_min, psi_max);
+        // ---- GLOBAL checks for psi -------------------------------------------
+        double psi_min = 0.0, psi_max = 0.0;
+        GlobalMinMax(*psi, psi_min, psi_max);
 
-    //     // Basic bounds check
-    //     if (mfem::Mpi::WorldRank() == 0) {std::cout << "[Psi Check] min = " << psi_min 
-    //             << ", max = " << psi_max << " (expected min = 1e-06, max = 1)" << std::endl;}
+        // Basic bounds check
+        if (mfem::Mpi::WorldRank() == 0) {std::cout << "[Psi Check] min = " << psi_min 
+                << ", max = " << psi_max << " (expected min = 1e-06, max = 1)" << std::endl;}
     
 
-    //     if (psi_min < 0.0 || psi_max > 1.0 + 1e-6) {
-    //         std::cerr << "[Psi Check] ERROR: psi values out of [0,1]!" << std::endl;
-    //         std::exit(EXIT_FAILURE);
-    //     }
-    //     if (psi_min > 0.1) {
-    //         std::cerr << "[Psi Check] ERROR: psi_min not near 0." << std::endl;
-    //         std::exit(EXIT_FAILURE);
-    //     }
-    //     if (psi_max < 0.9) {
-    //         std::cerr << "[Psi Check] ERROR: psi_max not near 1." << std::endl;
-    //         std::exit(EXIT_FAILURE);
-    //     }
+        if (psi_min < 0.0 || psi_max > 1.0 + 1e-6) {
+            std::cerr << "[Psi Check] ERROR: psi values out of [0,1]!" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        if (psi_min > 0.1) {
+            std::cerr << "[Psi Check] ERROR: psi_min not near 0." << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        if (psi_max < 0.9) {
+            std::cerr << "[Psi Check] ERROR: psi_max not near 1." << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
 
-    //     // =====================================================
-    //     //  Calculating AvB
-    //     // =====================================================
+        // // =====================================================
+        // //  Calculating AvB
+        // // =====================================================
         
-    //     AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
+        // AvB = std::make_unique<mfem::ParGridFunction>(*AvP);
 
-    //     if (strcmp(mesh_type, "v") == 0) {
+        // if (strcmp(mesh_type, "v") == 0) {
 
-    //         *AvB *= *AvE;
+        //     *AvB *= *AvE;
 
-    //         for (int vi = 0; vi < nV; vi++)
-    //         {
-    //             (*AvB)(vi) = std::sqrt((*AvB)(vi));
-    //         }
+        //     for (int vi = 0; vi < nV; vi++)
+        //     {
+        //         (*AvB)(vi) = std::sqrt((*AvB)(vi));
+        //     }
 
-    //         for (int vi = 0; vi < psi->Size(); vi++)
-    //         {
-    //             const double psi_v = (*psi)(vi);
-    //             const double pse_v = (*pse)(vi);
+        //     for (int vi = 0; vi < psi->Size(); vi++)
+        //     {
+        //         const double psi_v = (*psi)(vi);
+        //         const double pse_v = (*pse)(vi);
 
-    //             const bool in_overlap =
-    //                 (psi_v > 0.05 && psi_v < 0.95) &&
-    //                 (pse_v > 0.05 && pse_v < 0.95);
+        //         const bool in_overlap =
+        //             (psi_v > 0.05 && psi_v < 0.95) &&
+        //             (pse_v > 0.05 && pse_v < 0.95);
 
-    //             if (!in_overlap) { (*AvB)(vi) = 0.0; }
-    //         }
+        //         if (!in_overlap) { (*AvB)(vi) = 0.0; }
+        //     }
 
-    //     }
+        // }
 
-    // } else {
-    //     // ------- FULL CELL -------
+    } else {
+        // ------- FULL CELL -------
 
-    //     for (int vi = 0; vi < nV; vi++) {
-    //         if (strcmp(mesh_type, "ml") == 0) {
-    //             (*psA)(vi) = 0.5 * (1.0 + tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh))); // matlab
-    //             (*AvA)(vi) = -(pow(tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (Constants::zeta * Constants::dh); // matlab
-    //             (*psC)(vi) = 0.5 * (1.0 + tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh))); // matlab
-    //             (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (Constants::zeta * Constants::dh); // matlab
+        for (int vi = 0; vi < nV; vi++) {
+            if (strcmp(mesh_type, "ml") == 0) {
+                (*psA)(vi) = 0.5 * (1.0 + tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh))); // matlab
+                (*AvA)(vi) = -(pow(tanh((*dsF_A)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (Constants::zeta * Constants::dh); // matlab
+                (*psC)(vi) = 0.5 * (1.0 + tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh))); // matlab
+                (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi) / (Constants::zeta * Constants::dh)), 2) - 1.0) / (Constants::zeta * Constants::dh); // matlab
 
-    //         } else if (strcmp(mesh_type, "v") == 0) {
-    //             (*psA)(vi) = 0.5 * (1.0 + tanh((*dsF_A)(vi))); // voxel
-    //             (*AvA)(vi) = -(pow(tanh((*dsF_A)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
-    //             (*psC)(vi) = 0.5 * (1.0 + tanh((*dsF_C)(vi))); // voxel
-    //             (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
+            } else if (strcmp(mesh_type, "v") == 0) {
+                (*psA)(vi) = 0.5 * (1.0 + tanh((*dsF_A)(vi))); // voxel
+                (*AvA)(vi) = -(pow(tanh((*dsF_A)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
+                (*psC)(vi) = 0.5 * (1.0 + tanh((*dsF_C)(vi))); // voxel
+                (*AvC)(vi) = -(pow(tanh((*dsF_C)(vi)), 2) - 1.0) / (2 * Constants::zeta * Constants::dh); // voxel
 
-    //         }
+            }
 
-    //         (*pse)(vi) = 1.0 - (*psA)(vi) - (*psC)(vi);
+            (*pse)(vi) = 1.0 - (*psA)(vi) - (*psC)(vi);
 
-    //         if ((*psA)(vi) < Constants::eps) { (*psA)(vi) = Constants::eps; }
-    //         if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }
-    //         if ((*psC)(vi) < Constants::eps) { (*psC)(vi) = Constants::eps; }
+            if ((*psA)(vi) < Constants::eps) { (*psA)(vi) = Constants::eps; }
+            if ((*pse)(vi) < Constants::eps) { (*pse)(vi) = Constants::eps; }
+            if ((*psC)(vi) < Constants::eps) { (*psC)(vi) = Constants::eps; }
 
-    //     }
+        }
 
-    //         *psi = 0.0;
-    //         *psi += *psA;
-    //         *psi += *psC;
+            *psi = 0.0;
+            *psi += *psA;
+            *psi += *psC;
 
-    //         double psA_min = 0, psA_max = 0, psC_min = 0, psC_max = 0;
-    //         GlobalMinMax(*psA, psA_min, psA_max);
-    //         GlobalMinMax(*psC, psC_min, psC_max);
+            double psA_min = 0, psA_max = 0, psC_min = 0, psC_max = 0;
+            GlobalMinMax(*psA, psA_min, psA_max);
+            GlobalMinMax(*psC, psC_min, psC_max);
 
-    //         // Basic bounds check
-    //         std::cout << "[PsA Check] min = " << psA_min 
-    //                 << ", max = " << psA_max << " (expected min = 1e-06, max = 1)" << std::endl;
+            // Basic bounds check
+            std::cout << "[PsA Check] min = " << psA_min 
+                    << ", max = " << psA_max << " (expected min = 1e-06, max = 1)" << std::endl;
 
-    //         if (psA_min < 0.0 || psA_max > 1.0 + 1e-6) {
-    //             std::cerr << "[PsA Check] ERROR: psA values out of [0,1]!" << std::endl;
-    //             std::exit(EXIT_FAILURE);
-    //         }
-    //         if (psA_min > 2e-6) {
-    //             std::cerr << "[PsA Check] ERROR: psA_min not near 0." << std::endl;
-    //             std::exit(EXIT_FAILURE);
-    //         }
-    //         if (psA_max < 0.9) {
-    //             std::cerr << "[PsA Check] ERROR: psA_max not near 1." << std::endl;
-    //             std::exit(EXIT_FAILURE);
-    //         }
+            if (psA_min < 0.0 || psA_max > 1.0 + 1e-6) {
+                std::cerr << "[PsA Check] ERROR: psA values out of [0,1]!" << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+            if (psA_min > 2e-6) {
+                std::cerr << "[PsA Check] ERROR: psA_min not near 0." << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+            if (psA_max < 0.9) {
+                std::cerr << "[PsA Check] ERROR: psA_max not near 1." << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
 
-    //         std::cout << "[psC Check] min = " << psC_min 
-    //             << ", max = " << psC_max << " (expected min = 1e-06, max = 1)" << std::endl;
+            std::cout << "[psC Check] min = " << psC_min 
+                << ", max = " << psC_max << " (expected min = 1e-06, max = 1)" << std::endl;
 
-    //         if (psC_min < 0.0 || psC_max > 1.0 + 1e-6) {
-    //             std::cerr << "[psC Check] ERROR: psC values out of [0,1]!" << std::endl;
-    //             std::exit(EXIT_FAILURE);
-    //         }
-    //         if (psC_min > 2e-6) {
-    //             std::cerr << "[psC Check] ERROR: psC_min not near 0." << std::endl;
-    //             std::exit(EXIT_FAILURE);
-    //         }
-    //         if (psC_max < 0.9) {
-    //             std::cerr << "[psC Check] ERROR: psC_max not near 1." << std::endl;
-    //             std::exit(EXIT_FAILURE);
-    //         }
+            if (psC_min < 0.0 || psC_max > 1.0 + 1e-6) {
+                std::cerr << "[psC Check] ERROR: psC values out of [0,1]!" << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+            if (psC_min > 2e-6) {
+                std::cerr << "[psC Check] ERROR: psC_min not near 0." << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+            if (psC_max < 0.9) {
+                std::cerr << "[psC Check] ERROR: psC_max not near 1." << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
 
         
-    //     AvB = std::make_unique<mfem::ParGridFunction>(*AvA);
+        AvB = std::make_unique<mfem::ParGridFunction>(*AvA);
         
-    //     for (int vi = 0; vi < nV; vi++) {
-    //         if ((*AvA)(vi) * Constants::dh < Constants::thres) { (*AvA)(vi) = 0.0; }
-    //         if ((*AvC)(vi) * Constants::dh < Constants::thres) { (*AvC)(vi) = 0.0; }
-    //         if ((*AvB)(vi) * Constants::dh < 1.0e-5) { (*AvB)(vi) = 0.0; }
-    //     }
+        for (int vi = 0; vi < nV; vi++) {
+            if ((*AvA)(vi) * Constants::dh < Constants::thres) { (*AvA)(vi) = 0.0; }
+            if ((*AvC)(vi) * Constants::dh < Constants::thres) { (*AvC)(vi) = 0.0; }
+            if ((*AvB)(vi) * Constants::dh < 1.0e-5) { (*AvB)(vi) = 0.0; }
+        }
 
     }
 }
 
-// void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction& grid_function, const mfem::Vector& element_volumes, double& local_total, double& global_total) {
-//     local_total = 0.0;
+void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction& grid_function, const mfem::Vector& element_volumes, double& local_total, double& global_total) {
+    local_total = 0.0;
 
-//     // Average value for each element
-//     mfem::Vector element_avg_values(nE);
+    // Average value for each element
+    mfem::Vector element_avg_values(nE);
 
-//     for (int ei = 0; ei < pmesh->GetNE(); ei++) {
-//         mfem::Array<double> vertex_values(nC);
-//         grid_function.GetNodalValues(ei, vertex_values);
+    for (int ei = 0; ei < pmesh->GetNE(); ei++) {
+        mfem::Array<double> vertex_values(nC);
+        grid_function.GetNodalValues(ei, vertex_values);
 
-//         // Compute the average value over all corners of the element
-//         double avg_value = 0.0;
-//         for (int vt = 0; vt < nC; vt++) {
-//             avg_value += vertex_values[vt];
-//         }
-//         avg_value /= nC;
+        // Compute the average value over all corners of the element
+        double avg_value = 0.0;
+        for (int vt = 0; vt < nC; vt++) {
+            avg_value += vertex_values[vt];
+        }
+        avg_value /= nC;
 
-//         element_avg_values(ei) = avg_value;
+        element_avg_values(ei) = avg_value;
 
-//         // Accumulate the weighted value for the current element
-//         local_total += avg_value * element_volumes(ei);
-//     }
+        // Accumulate the weighted value for the current element
+        local_total += avg_value * element_volumes(ei);
+    }
 
-//     // Perform global MPI reduction to sum values across all processes
-//     MPI_Allreduce(&local_total, &global_total, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-// }
+    // Perform global MPI reduction to sum values across all processes
+    MPI_Allreduce(&local_total, &global_total, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+}
 
-// void Domain_Parameters::CalculateTotalPhaseField(const mfem::ParGridFunction& grid_function, double& total, double& global_total) {
+void Domain_Parameters::CalculateTotalPhaseField(const mfem::ParGridFunction& grid_function, double& total, double& global_total) {
 
-//     EVol.SetSize(nE);
-// 	for (int ei = 0; ei < nE; ei++){
-//         EVol(ei) = pmesh->GetElementVolume(ei);
-//         // EVol(ei) /= Constants::dh * Constants::dh; // in 2D
-// 	}
+    EVol.SetSize(nE);
+	for (int ei = 0; ei < nE; ei++){
+        EVol(ei) = pmesh->GetElementVolume(ei);
+        // EVol(ei) /= Constants::dh * Constants::dh; // in 2D
+	}
 
-//     // Call the general `CalculateTotals` method for any field
-//     CalculateTotals(grid_function, EVol, total, global_total);
+    // Call the general `CalculateTotals` method for any field
+    CalculateTotals(grid_function, EVol, total, global_total);
 
-// }
+}
 
-// void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
+void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
 
-//     const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
+    const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
 
-//     // Half Cell : use psi
-//     if (!full) {
-//         // Calculate totals for Psi and Pse fields
-//         CalculateTotalPhaseField(*psi, tPsi, gtPsi);
-//         CalculateTotalPhaseField(*pse, tPse, gtPse);
-//         CalculateTargetCurrent(tPsi, gTrgI);
+    // Half Cell : use psi
+    if (!full) {
+        // Calculate totals for Psi and Pse fields
+        CalculateTotalPhaseField(*psi, tPsi, gtPsi);
+        CalculateTotalPhaseField(*pse, tPse, gtPse);
+        CalculateTargetCurrent(tPsi, gTrgI);
 
-//         CalculateTotalPhaseField(*ps1, tPsi1, gtPsi1);
-//         CalculateTotalPhaseField(*ps2, tPsi2, gtPsi2);
-//         CalculateTotalPhaseField(*ps3, tPsi3, gtPsi3);
+        // CalculateTotalPhaseField(*ps1, tPsi1, gtPsi1);
+        // CalculateTotalPhaseField(*ps2, tPsi2, gtPsi2);
+        // CalculateTotalPhaseField(*ps3, tPsi3, gtPsi3);
 
-//         CalculateTargetCurrent(tPsi1, gTrg1);
-//         CalculateTargetCurrent(tPsi2, gTrg2);
-//         CalculateTargetCurrent(tPsi3, gTrg3);
-//     }
+        for (int k = 0; k < (int)ps.size(); ++k)
+        {
+            CalculateTotalPhaseField(*ps[k], tPs[k], gtPs[k]);
+            CalculateTargetCurrent(tPs[k], gTrgPs[k]);
+        }
+        
 
-//     // Full Cell : use psA, psC
-//     else {
-//         // Calculate totals for PsA, PsC, and Pse fields
-//         CalculateTotalPhaseField(*psA, tPsA, gtPsA);
-//         CalculateTotalPhaseField(*psC, tPsC, gtPsC);
-//         CalculateTotalPhaseField(*pse, tPse, gtPse);
-//         CalculateTargetCurrent(tPsC, gTrgI);
-//     }
+        // CalculateTargetCurrent(tPsi1, gTrg1);
+        // CalculateTargetCurrent(tPsi2, gTrg2);
+        // CalculateTargetCurrent(tPsi3, gTrg3);
+    }
 
-// }
+    // Full Cell : use psA, psC
+    else {
+        // Calculate totals for PsA, PsC, and Pse fields
+        CalculateTotalPhaseField(*psA, tPsA, gtPsA);
+        CalculateTotalPhaseField(*psC, tPsC, gtPsC);
+        CalculateTotalPhaseField(*pse, tPse, gtPse);
+        CalculateTargetCurrent(tPsC, gTrgI);
+    }
 
-// // void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
+}
 
-// //     // Compute target current based on total Psi, rho, Cr, and constants
-// //     trgI = total_psi * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
-
-// //     // Perform global MPI reduction to get the total target current
-// //     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-// // }
-
-// void Domain_Parameters::CalculateTargetCurrent(double total_psi, double &global_total) {
+// void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
 
 //     // Compute target current based on total Psi, rho, Cr, and constants
 //     trgI = total_psi * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
 
-//     // voxel
-//     // trgI = (total_psi * (pow(Constants::dh, 2)))  * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
-
 //     // Perform global MPI reduction to get the total target current
-//     MPI_Allreduce(&trgI, &global_total, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+//     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 // }
 
+void Domain_Parameters::CalculateTargetCurrent(double total_psi, double &global_total) {
 
-// void Domain_Parameters::PrintInfo() {
+    // Compute target current based on total Psi, rho, Cr, and constants
+    trgI = total_psi * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
 
-//     const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
+    // voxel
+    // trgI = (total_psi * (pow(Constants::dh, 2)))  * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
 
-//     if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
-//     if (!full)
-//     {
-//         cout << "Total Psi: " << gtPsi << endl;
-//         cout << "Total Pse: " << gtPse << endl;
-//         cout << "Target Current: " << gTrgI << endl;
-//     }
-//     else
-//     {
-//         cout << "Total PsA: " << gtPsA << endl;
-//         cout << "Total PsC: " << gtPsC << endl;
-//         cout << "Total Pse: " << gtPse << endl;
-//         cout << "Target Current: " << gTrgI << endl;
-//     }
-// }
+    // Perform global MPI reduction to get the total target current
+    MPI_Allreduce(&trgI, &global_total, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+}
+
+
+void Domain_Parameters::PrintInfo() {
+
+    const bool full = (dsF_A != nullptr) && (dsF_C != nullptr);
+
+    if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
+    if (!full)
+    {
+        cout << "Total Psi: " << gtPsi << endl;
+        cout << "Total Pse: " << gtPse << endl;
+        cout << "Target Current: " << gTrgI << endl;
+    }
+    else
+    {
+        cout << "Total PsA: " << gtPsA << endl;
+        cout << "Total PsC: " << gtPsC << endl;
+        cout << "Total Pse: " << gtPse << endl;
+        cout << "Target Current: " << gTrgI << endl;
+    }
+}
 
