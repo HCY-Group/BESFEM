@@ -168,18 +168,25 @@ void Utils::SaveSimulationSnapshotMulti(int t, const std::string &outdir, Initia
     CnC_2.SaveAsOne((outdir + "/CnC_2" + suff).c_str());
     CnC_3.SaveAsOne((outdir + "/CnC_3" + suff).c_str());
 
-    C1_out = CnC_1; C1_out *= *domain_parameters.ps1;
+    C1_out = CnC_1; C1_out *= *domain_parameters.ps[0];
     C1_out.SaveAsOne((outdir + "/C1_out" + suff).c_str());
-
-    C2_out = CnC_2; C2_out *= *domain_parameters.ps2;
+    C2_out = CnC_2; C2_out *= *domain_parameters.ps[1];
     C2_out.SaveAsOne((outdir + "/C2_out" + suff).c_str());
-
-    C3_out = CnC_3; C3_out *= *domain_parameters.ps3;
+    C3_out = CnC_3; C3_out *= *domain_parameters.ps[2];
     C3_out.SaveAsOne((outdir + "/C3_out" + suff).c_str());
 
-    auto &psi1 = *domain_parameters.ps1;
-    auto &psi2 = *domain_parameters.ps2;
-    auto &psi3 = *domain_parameters.ps3;
+    // C1_out = CnC_1; C1_out *= *domain_parameters.ps1;
+    // C1_out.SaveAsOne((outdir + "/C1_out" + suff).c_str());
+
+    // C2_out = CnC_2; C2_out *= *domain_parameters.ps2;
+    // C2_out.SaveAsOne((outdir + "/C2_out" + suff).c_str());
+
+    // C3_out = CnC_3; C3_out *= *domain_parameters.ps3;
+    // C3_out.SaveAsOne((outdir + "/C3_out" + suff).c_str());
+
+    auto &psi1 = *domain_parameters.ps[0];
+    auto &psi2 = *domain_parameters.ps[1];
+    auto &psi3 = *domain_parameters.ps[2];
 
     mfem::ParGridFunction psi_union(CnC_1.ParFESpace());
     psi_union = psi1; psi_union += psi2; psi_union += psi3;

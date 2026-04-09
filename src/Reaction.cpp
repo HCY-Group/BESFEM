@@ -223,7 +223,7 @@
        domain_parameters(para), EVol(para.EVol),
     //    AvP(para.AvP ? para.AvP.get() : nullptr), AvB(para.AvB ? para.AvB.get() : nullptr),
     //    AvA(para.AvA ? para.AvA.get() : nullptr), AvC(para.AvC ? para.AvC.get() : nullptr)
-    AvP(para.AvP_E_1 ? para.AvP_E_1.get() : nullptr),
+    // AvP(para.AvP_E_1 ? para.AvP_E_1.get() : nullptr),
     AvB(para.AvB ? para.AvB.get() : nullptr),
     AvA(para.AvA ? para.AvA.get() : nullptr),
     AvC(para.AvC ? para.AvC.get() : nullptr)

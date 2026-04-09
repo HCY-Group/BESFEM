@@ -74,50 +74,16 @@ public:
     std::unique_ptr<mfem::ParGridFunction> psA; ///< Anode-phase indicator.
     std::unique_ptr<mfem::ParGridFunction> psC; ///< Cathode-phase indicator.
 
-    std::unique_ptr<mfem::ParGridFunction> ps1;
-    std::unique_ptr<mfem::ParGridFunction> ps2;
-    std::unique_ptr<mfem::ParGridFunction> ps3;
-
-    std::unique_ptr<mfem::ParGridFunction> psi_1_2;
-    std::unique_ptr<mfem::ParGridFunction> psi_2_3;
-    std::unique_ptr<mfem::ParGridFunction> psi_3_1;
-
     std::unique_ptr<mfem::ParGridFunction> denom;
-
-    std::unique_ptr<mfem::ParGridFunction> Weight_all_1;
-    std::unique_ptr<mfem::ParGridFunction> Weight_all_2;
-    std::unique_ptr<mfem::ParGridFunction> Weight_all_3;
-
-    std::unique_ptr<mfem::ParGridFunction> Weight_1_2;
-    std::unique_ptr<mfem::ParGridFunction> Weight_2_3;
-    std::unique_ptr<mfem::ParGridFunction> Weight_3_1;
-
-    std::unique_ptr<mfem::ParGridFunction> Weight_E_1;
-    std::unique_ptr<mfem::ParGridFunction> Weight_E_2;
-    std::unique_ptr<mfem::ParGridFunction> Weight_E_3;
-
+    
     // -------------------------------------------------------------------------
     // Surface-area / geometry-related auxiliary fields
     // -------------------------------------------------------------------------
     std::unique_ptr<mfem::ParGridFunction> AvP; ///< Particle surface-area density.
-    std::unique_ptr<mfem::ParGridFunction> AvP_0; ///< Particle surface-area density component 0.
-    std::unique_ptr<mfem::ParGridFunction> AvP_1; ///< Particle surface-area density component 1.
-    std::unique_ptr<mfem::ParGridFunction> AvP_2; ///< Particle surface-area density component 2.
-    std::unique_ptr<mfem::ParGridFunction> AvP_3; ///< Particle surface-area density component 3.
     std::unique_ptr<mfem::ParGridFunction> AvA; ///< Anode surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvC; ///< Cathode surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvB; ///< Boundary surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvE; ///< Electrolyte surface-area density.
-    std::unique_ptr<mfem::ParGridFunction> AvP_1_2; ///< Interface area density between phase 1 and 2.
-    std::unique_ptr<mfem::ParGridFunction> AvP_2_3; ///< Interface area density between phase 2 and 3.
-    std::unique_ptr<mfem::ParGridFunction> AvP_3_1; ///< Interface area density between phase 3 and 1.
-    std::unique_ptr<mfem::ParGridFunction> AvP_E_1; ///< Interface area density between particle and electrolyte for phase 1.
-    std::unique_ptr<mfem::ParGridFunction> AvP_E_2; ///< Interface area density between particle and electrolyte for phase 2.
-    std::unique_ptr<mfem::ParGridFunction> AvP_E_3; ///< Interface area density between particle and electrolyte for phase 3.
-    std::unique_ptr<mfem::ParGridFunction> AvP_all_1; ///< Total interface area density for phase 1.
-    std::unique_ptr<mfem::ParGridFunction> AvP_all_2; ///< Total interface area density for phase 2.
-    std::unique_ptr<mfem::ParGridFunction> AvP_all_3; ///< Total interface area density for phase 3.
-    std::unique_ptr<mfem::ParGridFunction> AvP_1_2_3; ///< Interface area density between all phases.
 
     // -------------------------------------------------------------------------
     // Global integrals and target current
@@ -141,6 +107,12 @@ public:
 
     std::vector<int> particle_labels;
     std::vector<std::unique_ptr<mfem::ParGridFunction>> ps;
+    std::vector<std::unique_ptr<mfem::ParGridFunction>> AvPs;
+    std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> AvP_Pairs;
+    std::vector<std::unique_ptr<mfem::ParGridFunction>> AvEs;
+    std::vector<std::unique_ptr<mfem::ParGridFunction>> WeightEs;
+    std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> psi_Pairs;
+    std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> WeightPairs;
 
     /// Reference to geometry handler.
     Initialize_Geometry &geometry;

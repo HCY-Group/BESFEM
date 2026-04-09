@@ -225,6 +225,9 @@ public:
     mfem::ParGridFunction &C1_out, mfem::ParGridFunction &C2_out, mfem::ParGridFunction &C3_out,
     int save_interval = 500);
 
+    // std::vector<std::unique_ptr<mfem::ParGridFunction>> psis; ///< Vector of pointers to phase masks (ψ) for each particle group.
+
+
 private:
 
     // Stored references
