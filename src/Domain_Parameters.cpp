@@ -650,7 +650,6 @@ void Domain_Parameters::CalculateTotalPhaseField(const mfem::ParGridFunction& gr
     EVol.SetSize(nE);
 	for (int ei = 0; ei < nE; ei++){
         EVol(ei) = pmesh->GetElementVolume(ei);
-        // EVol(ei) /= Constants::dh * Constants::dh; // in 2D
 	}
 
     // Call the general `CalculateTotals` method for any field
@@ -669,20 +668,12 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
         CalculateTotalPhaseField(*pse, tPse, gtPse);
         CalculateTargetCurrent(tPsi, gTrgI);
 
-        // CalculateTotalPhaseField(*ps1, tPsi1, gtPsi1);
-        // CalculateTotalPhaseField(*ps2, tPsi2, gtPsi2);
-        // CalculateTotalPhaseField(*ps3, tPsi3, gtPsi3);
-
         for (int k = 0; k < (int)ps.size(); ++k)
         {
             CalculateTotalPhaseField(*ps[k], tPs[k], gtPs[k]);
             CalculateTargetCurrent(tPs[k], gTrgPs[k]);
         }
         
-
-        // CalculateTargetCurrent(tPsi1, gTrg1);
-        // CalculateTargetCurrent(tPsi2, gTrg2);
-        // CalculateTargetCurrent(tPsi3, gTrg3);
     }
 
     // Full Cell : use psA, psC
@@ -696,22 +687,10 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
 
 }
 
-// void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
-
-//     // Compute target current based on total Psi, rho, Cr, and constants
-//     trgI = total_psi * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
-
-//     // Perform global MPI reduction to get the total target current
-//     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-// }
-
 void Domain_Parameters::CalculateTargetCurrent(double total_psi, double &global_total) {
 
     // Compute target current based on total Psi, rho, Cr, and constants
     trgI = total_psi * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
-
-    // voxel
-    // trgI = (total_psi * (pow(Constants::dh, 2)))  * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
 
     // Perform global MPI reduction to get the total target current
     MPI_Allreduce(&trgI, &global_total, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
