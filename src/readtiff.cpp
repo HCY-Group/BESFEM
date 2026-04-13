@@ -25,10 +25,10 @@ TIFFReader::TIFFReader(const char* filePath, const Constraints& constraints) {
     TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
     TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar);
 
-    std::cout << "spp=" << spp
-            << " bps=" << bps
-            << " photometric=" << photo
-            << " planar=" << planar << "\n";
+    // std::cout << "spp=" << spp
+    //         << " bps=" << bps
+    //         << " photometric=" << photo
+    //         << " planar=" << planar << "\n";
 
 }
 
@@ -66,12 +66,12 @@ void TIFFReader::readinfo() {
         // IMPORTANT: read scanline once per ROW (not once per (row,col))
         for (int row = constraints.Row_begin; row < constraints.Row_end; row++) {
             TIFFReadScanline(tiff, buf, row);
-            uint8* p = (uint8*)buf; // scanline bytes
+            uint8* p = (uint8*)buf; 
 
             for (int col = constraints.Column_begin; col < constraints.Column_end; col++) {
 
                 // --- Correctly decode pixel value for grayscale vs RGBA ---
-                uint8 gray;
+                uint8 gray = 0;
                 if (spp == 1) {
                     gray = p[col];
                 } else {
