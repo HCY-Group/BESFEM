@@ -40,7 +40,7 @@ namespace Constants {
     const double init_BvE = -0.1;                         ///< boundary condition for electrolyte potential (full & half cathode)
 
 
-    // constants for half cell - anode side 
+    // // constants for half cell - anode side 
     // const double init_CnA = 2.0e-2;                        ///< initial concentration in the anode (half)
     // const double init_BvA = -0.1;                            ///< boundary condition for anode potential (half)
     // const double init_BvE = -0.4686;                               ///< boundary condition for eletrolyte potential (half anode)

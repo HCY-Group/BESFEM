@@ -103,7 +103,7 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn){
 
 void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2){
     for (int vi = 0; vi < nV; vi++){
-        if((*AvC)(vi) * Constants::dh > 0.05{ 
+        if((*AvC)(vi) * Constants::dh > 0.05){ 
             double val = -0.2 * (Cn1(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn1(vi) - 3.195);
             (*i0CC)(vi) = pow(10.0, val) * 1.0e-3; // Exchange current density
             (*OCVC)(vi) = 1.095 * Cn1(vi) * Cn1(vi) - 8.324e-7 * exp(14.31 * Cn1(vi)) + 4.692 * exp(-0.5389 * Cn1(vi)); // open circuit voltage
