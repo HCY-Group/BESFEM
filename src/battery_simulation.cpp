@@ -57,30 +57,30 @@ int main(int argc, char *argv[]) {
         Domain_Parameters domain_parameters(geometry);
         domain_parameters.SetupDomainParameters(cfg.mesh_type);
 
-    //     // Initialize Boundary Conditions 
-    //     BoundaryConditions bc(geometry, domain_parameters);
-    //     if (cfg.mode == sim::CellMode::HALF) {
-    //         bc.SetupBoundaryConditions(sim::CellMode::HALF, cfg.half_electrode);
-    //     } else {
-    //         bc.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
-    //     }
+        // Initialize Boundary Conditions 
+        BoundaryConditions bc(geometry, domain_parameters);
+        if (cfg.mode == sim::CellMode::HALF) {
+            bc.SetupBoundaryConditions(sim::CellMode::HALF, cfg.half_electrode);
+        } else {
+            bc.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
+        }
 
-    //     // Define Adjuster for Surface Voltage & Current
-    //     Adjust adjust(geometry, domain_parameters);
+        // Define Adjuster for Surface Voltage & Current
+        Adjust adjust(geometry, domain_parameters);
 
-    //     // Initialize Concentrations & Potentials
-    //     std::unique_ptr<mfem::ParGridFunction> CnA_gf, phA_gf, CnA_gf_psi;
-    //     std::unique_ptr<CnA> anode_concentration;
-    //     std::unique_ptr<PotA> anode_potential;
+        // Initialize Concentrations & Potentials
+        std::unique_ptr<mfem::ParGridFunction> CnA_gf, phA_gf, CnA_gf_psi;
+        std::unique_ptr<CnA> anode_concentration;
+        std::unique_ptr<PotA> anode_potential;
 
-    //     std::unique_ptr<mfem::ParGridFunction> CnC_gf, phC_gf, CnC_gf_psi;
-    //     std::unique_ptr<CnC> cathode_concentration;
-    //     std::unique_ptr<PotC> cathode_potential;
+        std::unique_ptr<mfem::ParGridFunction> CnC_gf, phC_gf, CnC_gf_psi;
+        std::unique_ptr<CnC> cathode_concentration;
+        std::unique_ptr<PotC> cathode_potential;
 
-    //     std::unique_ptr<CnC> cathode_concentration_1, cathode_concentration_2, cathode_concentration_3;
-    //     std::unique_ptr<mfem::ParGridFunction> CnC_gf_1, phC_gf_1, CnC_gf_psi_1;
-    //     std::unique_ptr<mfem::ParGridFunction> CnC_gf_2, phC_gf_2, CnC_gf_psi_2;
-    //     std::unique_ptr<mfem::ParGridFunction> CnC_gf_3, phC_gf_3, CnC_gf_psi_3;
+        // std::unique_ptr<CnC> cathode_concentration_1, cathode_concentration_2, cathode_concentration_3;
+        // std::unique_ptr<mfem::ParGridFunction> CnC_gf_1, phC_gf_1, CnC_gf_psi_1;
+        // std::unique_ptr<mfem::ParGridFunction> CnC_gf_2, phC_gf_2, CnC_gf_psi_2;
+        // std::unique_ptr<mfem::ParGridFunction> CnC_gf_3, phC_gf_3, CnC_gf_psi_3;
 
     //     std::unique_ptr<mfem::ParGridFunction> C1_out, C2_out, C3_out;
     //     C1_out = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
