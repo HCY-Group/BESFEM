@@ -178,9 +178,14 @@ int main(int argc, char *argv[]) {
                 VCell = cathode_potential->BvC - electrolyte_potential->BvE;
             }
 
+            const double I_mag = std::abs(domain_parameters.gTrgI);
+
+            bool reversed_once = false;
+            bool reversed_twice = false;
+
             for (int t = 0; t < cfg.num_timesteps; ++t) {
 
-            // while (VCell > 2.5){
+            // while (VCell < 0.60){
 
                 if (cfg.half_electrode == sim::Electrode::ANODE) {
                     
@@ -271,11 +276,27 @@ int main(int argc, char *argv[]) {
                     VCell = cathode_potential->BvC - electrolyte_potential->BvE;
                 }
 
+                const double Xfr = half_is_anode ? anode_concentration->GetLithiation() : cathode_concentration->GetLithiation();
+
+
+                // Minor-loop logic for anode half-cell
+                if (cfg.half_electrode == sim::Electrode::ANODE) {
+                    if (!reversed_once && Xfr <= 0.70) {
+                        domain_parameters.gTrgI = +I_mag;   // reverse into charge
+                        reversed_once = true;
+                    }
+
+                    if (reversed_once && !reversed_twice && Xfr >= 0.82) {
+                        domain_parameters.gTrgI = -I_mag;   // reverse back into discharge
+                        reversed_twice = true;
+                    }
+                }
+
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
                     std::ofstream outfile("half_cell_output.txt", std::ios::app);
 
-                    const double Xfr = half_is_anode ? anode_concentration->GetLithiation() : cathode_concentration->GetLithiation();
+                    // const double Xfr = half_is_anode ? anode_concentration->GetLithiation() : cathode_concentration->GetLithiation();
 
                     outfile << "timestep: " << t << (half_is_anode ? " [ANODE HALF-CELL]" : " [CATHODE HALF-CELL]")
                     << ", Xfr = " << Xfr << ", VCell = " << VCell << ", BvE = " << electrolyte_potential->BvE
@@ -294,7 +315,7 @@ int main(int argc, char *argv[]) {
                     *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 1000); 
                 }
  
-                t += 1;
+                // t += 1;
 
             } 
         }
