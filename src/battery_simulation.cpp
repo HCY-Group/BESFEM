@@ -182,10 +182,12 @@ int main(int argc, char *argv[]) {
 
             bool reversed_once = false;
             bool reversed_twice = false;
+            bool reversed_three = false;
+            bool reversed_four = false;
 
-            for (int t = 0; t < cfg.num_timesteps; ++t) {
+            // for (int t = 0; t < cfg.num_timesteps; ++t) {
 
-            // while (VCell < 0.60){
+            while (VCell < 0.60){
 
                 if (cfg.half_electrode == sim::Electrode::ANODE) {
                     
@@ -286,15 +288,25 @@ int main(int argc, char *argv[]) {
                         reversed_once = true;
                     }
 
-                    if (reversed_once && !reversed_twice && Xfr >= 0.82) {
+                    if (reversed_once && !reversed_twice && Xfr >= 0.80) {
                         domain_parameters.gTrgI = -I_mag;   // reverse back into discharge
                         reversed_twice = true;
+                    }
+
+                    if (!reversed_twice && Xfr <= 0.45) {
+                        domain_parameters.gTrgI = +I_mag;   // reverse into charge again
+                        reversed_three = true;
+                    }
+
+                    if (reversed_three && !reversed_four && Xfr >= 0.55) {
+                        domain_parameters.gTrgI = -I_mag;   // reverse back into discharge again
+                        reversed_four = true;
                     }
                 }
 
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
-                    std::ofstream outfile("half_cell_output.txt", std::ios::app);
+                    std::ofstream outfile("half_cell_output_hysteresis_4.txt", std::ios::app);
 
                     // const double Xfr = half_is_anode ? anode_concentration->GetLithiation() : cathode_concentration->GetLithiation();
 
@@ -315,7 +327,7 @@ int main(int argc, char *argv[]) {
                     *CnC_gf, *CnE_gf, *CnC_gf_psi, *CnE_gf_psi, 1000); 
                 }
  
-                // t += 1;
+                t += 1;
 
             } 
         }
