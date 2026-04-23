@@ -53,7 +53,8 @@ SRC_FILES = \
     src/PotE.cpp \
     src/Adjust.cpp \
     src/Utils.cpp \
-    src/dist_solver.cpp
+    src/dist_solver.cpp \
+    src/SimulationState.cpp
 
 # SRC_FILES = example.cpp
             

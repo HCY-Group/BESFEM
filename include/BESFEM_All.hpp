@@ -18,4 +18,5 @@
 #include "../include/Reaction.hpp"
 #include "../include/Adjust.hpp"
 #include "../include/BoundaryConditions.hpp"
+#include "../include/SimulationState.hpp"
 

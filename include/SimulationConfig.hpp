@@ -2,6 +2,7 @@
 #include "SimTypes.hpp"
 #include "Constants.hpp"
 #include <string>
+#include <vector>
 
 /**
  * @file SimulationConfig.hpp
@@ -39,6 +40,10 @@ struct SimulationConfig {
     
     int order = Constants::order; ///< Finite element polynomial order.
     int num_timesteps = 1000;     ///< Number of global time steps for the simulation.
+
+
+    std::vector<double> init_anode_particles;
+    std::vector<double> init_cathode_particles;
 };
 
 /**
@@ -76,3 +81,4 @@ SimulationConfig ParseSimulationArgs(int argc, char *argv[]);
  * @param argv Argument vector (for error messages).
  */
 void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[]);
+

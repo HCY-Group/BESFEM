@@ -49,10 +49,10 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
         return data(idx) + (cn - ticks(idx)) / 0.01 * (data(idx + 1) - data(idx));
     }
  
- void CnA::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx)
+ void CnA::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, double gtPsx)
     {
         utils.SetInitialValue(Cn, initial_value); // initial value: 2.02d-2
-        utils.CalculateLithiation(Cn, psx, gtPsA); // Calculate the initial concentration based on the potential field
+        utils.CalculateLithiation(Cn, psx, gtPsx); // Calculate the initial concentration based on the potential field
         Xfr = utils.GetLithiation();
 
 
@@ -79,10 +79,41 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
 
 
     }
+
+void CnA::Particle_Particle(mfem::ParGridFunction &sum_part, mfem::ParGridFunction &weight, mfem::ParGridFunction &grad_psi, mfem::ParGridFunction &mu_1, mfem::ParGridFunction &mu_2)
+{
+
+    for (int vi = 0; vi < nV; vi++){
+
+        double grad_psi_val = grad_psi(vi);
+        double weight_val = weight(vi);
+        double mu1_val = mu_1(vi);
+        double mu2_val = mu_2(vi);
+
+        sum_part(vi) = weight_val * grad_psi_val * Constants::rho_C * (1.0/Constants::RT) * Constants::Perm * (mu2_val - mu1_val);
+    }
+
+    // sum_part.SaveAsOne("sum_part");
+
+}
  
- void CnA::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx)
+ void CnA::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, double gtPsx, mfem::ParGridFunction &weight_elec, 
+    mfem::ParGridFunction &sum_AB, mfem::ParGridFunction &weight_AB, mfem::ParGridFunction &grad_AB, mfem::ParGridFunction &sum_AC, mfem::ParGridFunction &weight_AC, 
+    mfem::ParGridFunction &grad_AC, mfem::ParGridFunction &mu_A, mfem::ParGridFunction &mu_B, mfem::ParGridFunction &mu_C, mfem::ParGridFunction &mu_D,
+    mfem::ParGridFunction &psiA, mfem::ParGridFunction &psiB, mfem::ParGridFunction &psiC)
     {
         utils.InitializeReaction(Rx, RxA, (1.0/Constants::rho_A));
+
+
+        RxA *= weight_elec; // Scale the reaction term by the electrode weighting function
+
+        Particle_Particle(sum_AB, weight_AB, grad_AB, mu_A, mu_B); // Compute particle-particle interaction for AB
+        Particle_Particle(sum_AC, weight_AC, grad_AC, mu_A, mu_C); // Compute particle-particle interaction for AC
+
+        RxA += sum_AB; // Add AB interaction to the reaction term
+        RxA += sum_AC; // Add AC interaction to the reaction term
+
+
         cAp.SetGridFunction(&RxA); // Set the reaction term coefficient for the force term
 
         // std::cout << "RxA Sum before: " << RxA.Sum() << std::endl;
@@ -139,6 +170,8 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
 
         utils.CalculateLithiation(Cn, psx, gtPsA); // Update the degree of lithiation based on the new concentration values
         Xfr = utils.GetLithiation();
+
+        Rx = RxA; // Update the reaction field for output or further processing
 
 
     }
