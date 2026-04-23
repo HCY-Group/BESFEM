@@ -317,26 +317,24 @@ void CnE::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParG
 
 // void CnE::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, double gtPsx)
 
-void CnE::UpdateConcentration(mfem::ParGridFunction &Rx,
-                             mfem::ParGridFunction &Cn,
-                             mfem::ParGridFunction &psx,
-                             double gtPsx,
-                             mfem::ParGridFunction &weight_elec,
-                             mfem::ParGridFunction &sum_AB,
-                             mfem::ParGridFunction &weight_AB,
-                             mfem::ParGridFunction &grad_AB,
-                             mfem::ParGridFunction &sum_AC,
-                             mfem::ParGridFunction &weight_AC,
-                             mfem::ParGridFunction &grad_AC,
-                             mfem::ParGridFunction &mu_A, mfem::ParGridFunction &mu_B, mfem::ParGridFunction &mu_C, mfem::ParGridFunction &mu_D, mfem::ParGridFunction &psiA, mfem::ParGridFunction &psiB, mfem::ParGridFunction &psiC)
-
+// void CnE::UpdateConcentration(mfem::ParGridFunction &Rx,
+//                              mfem::ParGridFunction &Cn,
+//                              mfem::ParGridFunction &psx,
+//                              double gtPsx,
+//                              mfem::ParGridFunction &weight_elec,
+//                              mfem::ParGridFunction &sum_AB,
+//                              mfem::ParGridFunction &weight_AB,
+//                              mfem::ParGridFunction &grad_AB,
+//                              mfem::ParGridFunction &sum_AC,
+//                              mfem::ParGridFunction &weight_AC,
+//                              mfem::ParGridFunction &grad_AC,
+//                              mfem::ParGridFunction &mu_A, mfem::ParGridFunction &mu_B, mfem::ParGridFunction &mu_C, mfem::ParGridFunction &mu_D, mfem::ParGridFunction &psiA, mfem::ParGridFunction &psiB, mfem::ParGridFunction &psiC)
+void CnE::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx,
+                            double gtPsx, mfem::ParGridFunction &weight_elec, const std::vector<ConcentrationBase::PairCoupling> &pair_terms)
     {
         (void)weight_elec;
-        (void)sum_AB; (void)weight_AB; (void)grad_AB;
-        (void)sum_AC; (void)weight_AC; (void)grad_AC;
-        (void)psiA; (void)psiB; (void)psiC;
-        (void)mu_A; (void)mu_B; (void)mu_C; (void)mu_D;
-        
+        (void)pair_terms;
+
         // Assemble reaction source term
         utils.InitializeReaction(Rx, Rxe, (-1.0 * Constants::t_minus));
 		cAe.SetGridFunction(&Rxe);

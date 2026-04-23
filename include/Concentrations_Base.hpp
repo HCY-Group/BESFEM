@@ -141,6 +141,7 @@
 #include "Utils.hpp"
 #include "FEMOperators.hpp"
 #include <memory>
+#include <vector>
 
 /**
  * @class ConcentrationBase
@@ -233,39 +234,54 @@ public:
     //                         0.0, 0.0, 0.0);
     // }
 
+    struct PairCoupling
+    {
+        mfem::ParGridFunction *sum_part = nullptr;   // workspace/output
+        mfem::ParGridFunction *weight   = nullptr;   // pair weight
+        mfem::ParGridFunction *grad_psi = nullptr;   // pair interface field
+        mfem::ParGridFunction *mu_self  = nullptr;   // this particle's mu on this pair
+        mfem::ParGridFunction *mu_nbr   = nullptr;   // neighbor particle's mu on this pair
+    };
 
-    /**
-     * @brief Advance the concentration field by one timestep.
-     *
-     * Each derived solver implements its own update method:
-     * - CnA → Cahn–Hilliard  
-     * - CnC → standard diffusion  
-     * - CnE → electrolyte CN update  
-     *
-     * @param Rx  Reaction/source field for this timestep.
-     * @param Cn  Concentration field (input/output).
-     * @param psx Phase-field ψ for masking region.
-     * @param gtPsx Global normalization of ψ (used for boundary conditions).
-     * @param weight_elec Additional weighting function for specialized updates.
-     * @param sum_AB Summation of particle interactions for AB.
-     * @param weight_AB Weighting function for AB interactions.
-     * @param grad_AB Gradient of AB interactions.
-     * @param sum_AC Summation of particle interactions for AC.
-     * @param weight_AC Weighting function for AC interactions.     
-     * @param grad_AC Gradient of AC interactions.
-     * @param mu_A Chemical potential of particle A.
-     * @param mu_B Chemical potential of particle B.
-     * @param mu_C Chemical potential of particle C.
-     * @param mu_D Chemical potential of particle D.
-     * @param psiA Phase-field ψ for particle A.
-     * @param psiB Phase-field ψ for particle B.
-     * @param psiC Phase-field ψ for particle C.
-     */
     virtual void UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn,
                                      mfem::ParGridFunction &psx, double gtPsx, mfem::ParGridFunction &weight_elec,
-                                     mfem::ParGridFunction &sum_AB, mfem::ParGridFunction &weight_AB, mfem::ParGridFunction &grad_AB,
-                                     mfem::ParGridFunction &sum_AC, mfem::ParGridFunction &weight_AC, mfem::ParGridFunction &grad_AC,
-                                     mfem::ParGridFunction &mu_A, mfem::ParGridFunction &mu_B, mfem::ParGridFunction &mu_C, mfem::ParGridFunction &mu_D, mfem::ParGridFunction &psiA, mfem::ParGridFunction &psiB, mfem::ParGridFunction &psiC) = 0;
+                                     const std::vector<PairCoupling> &pair_terms) = 0;
+
+
+
+
+    // /**
+    //  * @brief Advance the concentration field by one timestep.
+    //  *
+    //  * Each derived solver implements its own update method:
+    //  * - CnA → Cahn–Hilliard  
+    //  * - CnC → standard diffusion  
+    //  * - CnE → electrolyte CN update  
+    //  *
+    //  * @param Rx  Reaction/source field for this timestep.
+    //  * @param Cn  Concentration field (input/output).
+    //  * @param psx Phase-field ψ for masking region.
+    //  * @param gtPsx Global normalization of ψ (used for boundary conditions).
+    //  * @param weight_elec Additional weighting function for specialized updates.
+    //  * @param sum_AB Summation of particle interactions for AB.
+    //  * @param weight_AB Weighting function for AB interactions.
+    //  * @param grad_AB Gradient of AB interactions.
+    //  * @param sum_AC Summation of particle interactions for AC.
+    //  * @param weight_AC Weighting function for AC interactions.     
+    //  * @param grad_AC Gradient of AC interactions.
+    //  * @param mu_A Chemical potential of particle A.
+    //  * @param mu_B Chemical potential of particle B.
+    //  * @param mu_C Chemical potential of particle C.
+    //  * @param mu_D Chemical potential of particle D.
+    //  * @param psiA Phase-field ψ for particle A.
+    //  * @param psiB Phase-field ψ for particle B.
+    //  * @param psiC Phase-field ψ for particle C.
+    //  */
+    // virtual void UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn,
+    //                                  mfem::ParGridFunction &psx, double gtPsx, mfem::ParGridFunction &weight_elec,
+    //                                  mfem::ParGridFunction &sum_AB, mfem::ParGridFunction &weight_AB, mfem::ParGridFunction &grad_AB,
+    //                                  mfem::ParGridFunction &sum_AC, mfem::ParGridFunction &weight_AC, mfem::ParGridFunction &grad_AC,
+    //                                  mfem::ParGridFunction &mu_A, mfem::ParGridFunction &mu_B, mfem::ParGridFunction &mu_C, mfem::ParGridFunction &mu_D, mfem::ParGridFunction &psiA, mfem::ParGridFunction &psiB, mfem::ParGridFunction &psiC) = 0;
 
     /**
      * @brief Return the current degree of lithiation or salt fraction.
@@ -276,6 +292,16 @@ public:
      * - CnE → electrolyte salt inventory  
      */
     double GetLithiation() const { return Xfr; }
+
+
+    // struct PairCoupling
+    // {
+    //     mfem::ParGridFunction *sum_part = nullptr;   // workspace/output
+    //     mfem::ParGridFunction *weight   = nullptr;   // pair weight
+    //     mfem::ParGridFunction *grad_psi = nullptr;   // pair interface field
+    //     mfem::ParGridFunction *mu_self  = nullptr;   // this particle's mu on this pair
+    //     mfem::ParGridFunction *mu_nbr   = nullptr;   // neighbor particle's mu on this pair
+    // };
 
     // -------------------------------------------------------------------------
     // Global state / diagnostics

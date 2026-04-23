@@ -219,11 +219,15 @@ public:
         mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi,
         int save_interval = 500);
 
-    static void SaveSimulationSnapshotMulti(int t, const std::string &outdir,
-    Initialize_Geometry &geometry, Domain_Parameters &domain_parameters,
-    mfem::ParGridFunction &CnC_1, mfem::ParGridFunction &CnC_2, mfem::ParGridFunction &CnC_3,
-    mfem::ParGridFunction &C1_out, mfem::ParGridFunction &C2_out, mfem::ParGridFunction &C3_out,
-    int save_interval = 500);
+    static void SaveSimulationSnapshotMulti(int t, const std::string &outdir, Initialize_Geometry &geometry,
+        Domain_Parameters &domain_parameters, const std::vector<mfem::ParGridFunction*> &particle_cn,
+        std::vector<std::unique_ptr<mfem::ParGridFunction>> &particle_out, int save_interval = 1000);
+
+    // static void SaveSimulationSnapshotMulti(int t, const std::string &outdir,
+    // Initialize_Geometry &geometry, Domain_Parameters &domain_parameters,
+    // mfem::ParGridFunction &CnC_1, mfem::ParGridFunction &CnC_2, mfem::ParGridFunction &CnC_3,
+    // mfem::ParGridFunction &C1_out, mfem::ParGridFunction &C2_out, mfem::ParGridFunction &C3_out,
+    // int save_interval = 500);
 
     // std::vector<std::unique_ptr<mfem::ParGridFunction>> psis; ///< Vector of pointers to phase masks (ψ) for each particle group.
 

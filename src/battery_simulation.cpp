@@ -99,10 +99,89 @@ int main(int argc, char *argv[]) {
                 }
                 else
                 {
-                    // RunHalfCellSimulation(state, geometry, domain_parameters, bc, adjust, outdir, cfg);
+                    const int np = static_cast<int>(state.cathode_particles.size());
+                    UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters);
+
+                    for (int j = 0; j < np; ++j)
+                    {
+                        *state.cathode_particles[j].Rx_src = Constants::init_RxC;
+                    }
+
+                    for (int j = 0; j < np; ++j) {
+                        std::vector<ConcentrationBase::PairCoupling> pair_terms;
+                        
+                        for (int k = 0; k < np; ++k)
+                        {
+                            if (j == k) { continue; }
+
+                            const int a = std::min(j, k);
+                            const int b = std::max(j, k);
+
+                            ConcentrationBase::PairCoupling pair;
+                            pair.sum_part = state.sum_pairs[a][b].get();
+                            pair.weight   = domain_parameters.WeightPairs[a][b].get();
+                            pair.grad_psi = domain_parameters.AvP_Pairs[a][b].get();
+
+                            if (j < k)
+                            {
+                                pair.mu_self = state.mu_pair_a[a][b].get();
+                                pair.mu_nbr  = state.mu_pair_b[a][b].get();
+                            }
+                            else
+                            {
+                                pair.mu_self = state.mu_pair_b[a][b].get();
+                                pair.mu_nbr  = state.mu_pair_a[a][b].get();
+                            }
+
+                            pair_terms.push_back(pair);
+
+                            if (mfem::Mpi::WorldRank() == 0 && t == 1)
+                            {
+                                std::cout << "[DEBUG] Pair (j,k) = (" << j << "," << k << ")"
+                                        << " | stored as (a,b) = (" << a << "," << b << ")"; 
+                                std::cout << std::endl;
+                            }
+
+                        }
+
+                        state.cathode_particles[j].concentration->UpdateConcentration(*state.cathode_particles[j].Rx_src, *state.cathode_particles[j].Cn_gf,
+                            *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
+                    }
+
+
+                    
                 }
+
+                if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
+                {
+                    std::ofstream outfile("trial.txt", std::ios::app);
+                    outfile << "timestep: " << t << " [CATHODE HALF-CELL]";
+                    const int np = static_cast<int>(state.cathode_particles.size());
+
+                    for (int j = 0; j < np; ++j)
+                    {
+                        const double Xfr = state.cathode_particles[j].concentration->GetLithiation();
+                        outfile << ", Xfr_" << j << " = " << Xfr;
+                    }
+
+                    outfile << std::endl;
+                    outfile.close();
+                }
+
+                std::vector<mfem::ParGridFunction*> cathode_cn_fields;
+                cathode_cn_fields.reserve(state.cathode_particles.size());
+
+                for (auto &p : state.cathode_particles)
+                {
+                    cathode_cn_fields.push_back(p.Cn_gf.get());
+                }
+
+                Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters,
+                    cathode_cn_fields, state.cathode_out, 1000);
             }
         }
+
+        
         
         // else
         // {

@@ -80,9 +80,25 @@ double CnA::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vec
 
     }
 
-void CnA::Particle_Particle(mfem::ParGridFunction &sum_part, mfem::ParGridFunction &weight, mfem::ParGridFunction &grad_psi, mfem::ParGridFunction &mu_1, mfem::ParGridFunction &mu_2)
-{
+// void CnA::Particle_Particle(mfem::ParGridFunction &sum_part, mfem::ParGridFunction &weight, mfem::ParGridFunction &grad_psi, mfem::ParGridFunction &mu_1, mfem::ParGridFunction &mu_2)
+// {
 
+//     for (int vi = 0; vi < nV; vi++){
+
+//         double grad_psi_val = grad_psi(vi);
+//         double weight_val = weight(vi);
+//         double mu1_val = mu_1(vi);
+//         double mu2_val = mu_2(vi);
+
+//         sum_part(vi) = weight_val * grad_psi_val * Constants::rho_C * (1.0/Constants::RT) * Constants::Perm * (mu2_val - mu1_val);
+//     }
+
+//     // sum_part.SaveAsOne("sum_part");
+
+// }
+
+void CnA::ComputePairFlux(mfem::ParGridFunction &sum_part, mfem::ParGridFunction &weight, mfem::ParGridFunction &grad_psi, mfem::ParGridFunction &mu_1, mfem::ParGridFunction &mu_2)
+{
     for (int vi = 0; vi < nV; vi++){
 
         double grad_psi_val = grad_psi(vi);
@@ -90,28 +106,41 @@ void CnA::Particle_Particle(mfem::ParGridFunction &sum_part, mfem::ParGridFuncti
         double mu1_val = mu_1(vi);
         double mu2_val = mu_2(vi);
 
-        sum_part(vi) = weight_val * grad_psi_val * Constants::rho_C * (1.0/Constants::RT) * Constants::Perm * (mu2_val - mu1_val);
+        sum_part(vi) = weight_val * grad_psi_val * Constants::rho_A * (1.0/Constants::RT) * Constants::Perm * (mu2_val - mu1_val);
     }
-
-    // sum_part.SaveAsOne("sum_part");
 
 }
  
- void CnA::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, double gtPsx, mfem::ParGridFunction &weight_elec, 
-    mfem::ParGridFunction &sum_AB, mfem::ParGridFunction &weight_AB, mfem::ParGridFunction &grad_AB, mfem::ParGridFunction &sum_AC, mfem::ParGridFunction &weight_AC, 
-    mfem::ParGridFunction &grad_AC, mfem::ParGridFunction &mu_A, mfem::ParGridFunction &mu_B, mfem::ParGridFunction &mu_C, mfem::ParGridFunction &mu_D,
-    mfem::ParGridFunction &psiA, mfem::ParGridFunction &psiB, mfem::ParGridFunction &psiC)
-    {
+//  void CnA::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx, double gtPsx, mfem::ParGridFunction &weight_elec, 
+//     mfem::ParGridFunction &sum_AB, mfem::ParGridFunction &weight_AB, mfem::ParGridFunction &grad_AB, mfem::ParGridFunction &sum_AC, mfem::ParGridFunction &weight_AC, 
+//     mfem::ParGridFunction &grad_AC, mfem::ParGridFunction &mu_A, mfem::ParGridFunction &mu_B, mfem::ParGridFunction &mu_C, mfem::ParGridFunction &mu_D,
+//     mfem::ParGridFunction &psiA, mfem::ParGridFunction &psiB, mfem::ParGridFunction &psiC)
+void CnA::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx,
+                            double gtPsx, mfem::ParGridFunction &weight_elec, const std::vector<ConcentrationBase::PairCoupling> &pair_terms)
+    {   
         utils.InitializeReaction(Rx, RxA, (1.0/Constants::rho_A));
-
-
         RxA *= weight_elec; // Scale the reaction term by the electrode weighting function
 
-        Particle_Particle(sum_AB, weight_AB, grad_AB, mu_A, mu_B); // Compute particle-particle interaction for AB
-        Particle_Particle(sum_AC, weight_AC, grad_AC, mu_A, mu_C); // Compute particle-particle interaction for AC
+        // Particle_Particle(sum_AB, weight_AB, grad_AB, mu_A, mu_B); // Compute particle-particle interaction for AB
+        // Particle_Particle(sum_AC, weight_AC, grad_AC, mu_A, mu_C); // Compute particle-particle interaction for AC
 
-        RxA += sum_AB; // Add AB interaction to the reaction term
-        RxA += sum_AC; // Add AC interaction to the reaction term
+        // RxA += sum_AB; // Add AB interaction to the reaction term
+        // RxA += sum_AC; // Add AC interaction to the reaction term
+
+        // Add all particle-particle pair exchange terms
+        for (const auto &pair : pair_terms)
+        {
+            MFEM_VERIFY(pair.sum_part, "pair.sum_part is null");
+            MFEM_VERIFY(pair.weight,   "pair.weight is null");
+            MFEM_VERIFY(pair.grad_psi, "pair.grad_psi is null");
+            MFEM_VERIFY(pair.mu_self,  "pair.mu_self is null");
+            MFEM_VERIFY(pair.mu_nbr,   "pair.mu_nbr is null");
+
+            ComputePairFlux(*pair.sum_part, *pair.weight, *pair.grad_psi, *pair.mu_self, *pair.mu_nbr);
+
+            RxA += *pair.sum_part;
+        }
+
 
 
         cAp.SetGridFunction(&RxA); // Set the reaction term coefficient for the force term

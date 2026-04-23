@@ -59,6 +59,13 @@ struct SimulationState
 
     std::vector<AnodeParticleState> anode_particles;
     std::vector<CathodeParticleState> cathode_particles;
+
+    std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> mu_pair_a;
+    std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> mu_pair_b;
+    std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> sum_pairs;
+
+    std::vector<std::unique_ptr<mfem::ParGridFunction>> cathode_out;
+    std::vector<std::unique_ptr<mfem::ParGridFunction>> anode_out;
 };
 
 void InitializeFields(
@@ -67,5 +74,7 @@ void InitializeFields(
     Domain_Parameters& domain_parameters,
     BoundaryConditions& bc,
     const SimulationConfig& cfg);
+
+void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters);
 
 #endif
