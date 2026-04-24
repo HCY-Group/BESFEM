@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
                     const int np = static_cast<int>(state.cathode_particles.size());
                     UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters);
 
+                    // Assign Reaction Source
                     for (int j = 0; j < np; ++j)
                     {
                         *state.cathode_particles[j].Rx_src = Constants::init_RxC;
@@ -109,40 +110,42 @@ int main(int argc, char *argv[]) {
 
                     for (int j = 0; j < np; ++j) {
                         std::vector<ConcentrationBase::PairCoupling> pair_terms;
+
+                        Pairs(state, geometry, domain_parameters, j, pair_terms, np);
                         
-                        for (int k = 0; k < np; ++k)
-                        {
-                            if (j == k) { continue; }
+                        // for (int k = 0; k < np; ++k)
+                        // {
+                        //     if (j == k) { continue; }
 
-                            const int a = std::min(j, k);
-                            const int b = std::max(j, k);
+                        //     const int a = std::min(j, k);
+                        //     const int b = std::max(j, k);
 
-                            ConcentrationBase::PairCoupling pair;
-                            pair.sum_part = state.sum_pairs[a][b].get();
-                            pair.weight   = domain_parameters.WeightPairs[a][b].get();
-                            pair.grad_psi = domain_parameters.AvP_Pairs[a][b].get();
+                        //     ConcentrationBase::PairCoupling pair;
+                        //     pair.sum_part = state.sum_pairs[a][b].get();
+                        //     pair.weight   = domain_parameters.WeightPairs[a][b].get();
+                        //     pair.grad_psi = domain_parameters.AvP_Pairs[a][b].get();
 
-                            if (j < k)
-                            {
-                                pair.mu_self = state.mu_pair_a[a][b].get();
-                                pair.mu_nbr  = state.mu_pair_b[a][b].get();
-                            }
-                            else
-                            {
-                                pair.mu_self = state.mu_pair_b[a][b].get();
-                                pair.mu_nbr  = state.mu_pair_a[a][b].get();
-                            }
+                        //     if (j < k)
+                        //     {
+                        //         pair.mu_self = state.mu_pair_a[a][b].get();
+                        //         pair.mu_nbr  = state.mu_pair_b[a][b].get();
+                        //     }
+                        //     else
+                        //     {
+                        //         pair.mu_self = state.mu_pair_b[a][b].get();
+                        //         pair.mu_nbr  = state.mu_pair_a[a][b].get();
+                        //     }
 
-                            pair_terms.push_back(pair);
+                        //     pair_terms.push_back(pair);
 
-                            if (mfem::Mpi::WorldRank() == 0 && t == 1)
-                            {
-                                std::cout << "[DEBUG] Pair (j,k) = (" << j << "," << k << ")"
-                                        << " | stored as (a,b) = (" << a << "," << b << ")"; 
-                                std::cout << std::endl;
-                            }
+                        //     if (mfem::Mpi::WorldRank() == 0 && t == 1)
+                        //     {
+                        //         std::cout << "[DEBUG] Pair (j,k) = (" << j << "," << k << ")"
+                        //                 << " | stored as (a,b) = (" << a << "," << b << ")"; 
+                        //         std::cout << std::endl;
+                        //     }
 
-                        }
+                        // }
 
                         state.cathode_particles[j].concentration->UpdateConcentration(*state.cathode_particles[j].Rx_src, *state.cathode_particles[j].Cn_gf,
                             *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
