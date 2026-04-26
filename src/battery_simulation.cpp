@@ -100,58 +100,54 @@ int main(int argc, char *argv[]) {
                 else
                 {
                     const int np = static_cast<int>(state.cathode_particles.size());
+                    std::vector<double> global_currents(np, 0.0);
+
                     UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters);
 
-                    // Assign Reaction Source
+                    *state.Rxn_gf = 0.0;
                     for (int j = 0; j < np; ++j)
                     {
-                        *state.cathode_particles[j].Rx_src = Constants::init_RxC;
-                    }
-
-                    for (int j = 0; j < np; ++j) {
-                        std::vector<ConcentrationBase::PairCoupling> pair_terms;
-
-                        Pairs(state, geometry, domain_parameters, j, pair_terms, np);
+                        *state.cathode_particles[j].Rx_src = *state.cathode_particles[j].Rxn_gf;
+                        *state.Rxn_gf += *state.cathode_particles[j].Rxn_gf;
                         
-                        // for (int k = 0; k < np; ++k)
-                        // {
-                        //     if (j == k) { continue; }
-
-                        //     const int a = std::min(j, k);
-                        //     const int b = std::max(j, k);
-
-                        //     ConcentrationBase::PairCoupling pair;
-                        //     pair.sum_part = state.sum_pairs[a][b].get();
-                        //     pair.weight   = domain_parameters.WeightPairs[a][b].get();
-                        //     pair.grad_psi = domain_parameters.AvP_Pairs[a][b].get();
-
-                        //     if (j < k)
-                        //     {
-                        //         pair.mu_self = state.mu_pair_a[a][b].get();
-                        //         pair.mu_nbr  = state.mu_pair_b[a][b].get();
-                        //     }
-                        //     else
-                        //     {
-                        //         pair.mu_self = state.mu_pair_b[a][b].get();
-                        //         pair.mu_nbr  = state.mu_pair_a[a][b].get();
-                        //     }
-
-                        //     pair_terms.push_back(pair);
-
-                        //     if (mfem::Mpi::WorldRank() == 0 && t == 1)
-                        //     {
-                        //         std::cout << "[DEBUG] Pair (j,k) = (" << j << "," << k << ")"
-                        //                 << " | stored as (a,b) = (" << a << "," << b << ")"; 
-                        //         std::cout << std::endl;
-                        //     }
-
-                        // }
-
+                        std::vector<ConcentrationBase::PairCoupling> pair_terms;
+                        Pairs(state, geometry, domain_parameters, j, pair_terms, np, t);
+                        
                         state.cathode_particles[j].concentration->UpdateConcentration(*state.cathode_particles[j].Rx_src, *state.cathode_particles[j].Cn_gf,
                             *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
                     }
 
+                    state.electrolyte_concentration->UpdateConcentration(*state.Rxn_gf, *state.CnE_gf,
+                        *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
+                        
+                    if (t > 0 && t % 50 == 0) {
+                        state.electrolyte_concentration->SaltConservation(*state.CnE_gf, *domain_parameters.pse);
+                    }     
 
+                    *state.phC_gf = Constants::init_BvC;
+                    *state.phE_gf = Constants::init_BvE;
+
+                    for (int j = 0; j < np; ++j)
+                    {
+                        state.cathode_particles[j].reaction->ExchangeCurrentDensity(*state.cathode_particles[j].Cn_gf, *domain_parameters.AvEs[j]);
+                        // while loop
+                        state.cathode_particles[j].reaction->ButlerVolmer(*state.cathode_particles[j].Rxn_gf, *state.cathode_particles[j].Cn_gf,*state.CnE_gf,
+                            *state.phC_gf, *state.phE_gf, *domain_parameters.AvEs[j]);
+                        // while loop
+                        state.cathode_particles[j].reaction->TotalReactionCurrent(*state.cathode_particles[j].Rxn_gf, global_currents[j]);
+                    }
+
+                    if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
+                    {
+                        std::ofstream outfile("currents.txt", std::ios::app);
+                        outfile << "timestep: " << t;
+
+                        for (int j = 0; j < np; ++j)
+                        {
+                            outfile << ", Current_" << j << " = " << global_currents[j] << ", Target_" << j << " = " << domain_parameters.gTrgPs[j];
+                        }
+                        outfile << std::endl;
+                    }
                     
                 }
 
@@ -164,7 +160,7 @@ int main(int argc, char *argv[]) {
                     for (int j = 0; j < np; ++j)
                     {
                         const double Xfr = state.cathode_particles[j].concentration->GetLithiation();
-                        outfile << ", Xfr_" << j << " = " << Xfr;
+                        outfile << ", Xfr_" << j << " = " << Xfr ;
                     }
 
                     outfile << std::endl;

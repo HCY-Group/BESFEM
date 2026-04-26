@@ -18,8 +18,8 @@ struct AnodeParticleState
     std::unique_ptr<mfem::ParGridFunction> Rxn_gf;
     std::unique_ptr<mfem::ParGridFunction> Rx_src;
 
-    std::unique_ptr<PotA> potential;
-    std::unique_ptr<mfem::ParGridFunction> ph_gf;
+    // std::unique_ptr<PotA> potential;
+    // std::unique_ptr<mfem::ParGridFunction> ph_gf;
 };
 
 struct CathodeParticleState
@@ -34,8 +34,8 @@ struct CathodeParticleState
     std::unique_ptr<mfem::ParGridFunction> Rxn_gf;
     std::unique_ptr<mfem::ParGridFunction> Rx_src;
 
-    std::unique_ptr<PotC> potential;
-    std::unique_ptr<mfem::ParGridFunction> ph_gf;
+    // std::unique_ptr<PotC> potential;
+    // std::unique_ptr<mfem::ParGridFunction> ph_gf;
 };
 
 struct SimulationState
@@ -77,6 +77,6 @@ void InitializeFields(
 
 void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters);
 
-void Pairs(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters, int j, std::vector<ConcentrationBase::PairCoupling>& pair_terms, int np);
+void Pairs(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters, int j, std::vector<ConcentrationBase::PairCoupling>& pair_terms, int np, int t);
 
 #endif

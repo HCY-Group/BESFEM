@@ -46,7 +46,7 @@ static void InitializePairWorkspaces(SimulationState& state, Initialize_Geometry
     }
 }
 
-static inline double CathodeMuFromC(double c)
+static inline double NMC_mu(double c)
 {
     return -Constants::Frd * ((1.095 * c * c) - (8.234e-7 * std::exp(14.31 * c)) + (4.692 * std::exp(-0.5389 * c)));
 }
@@ -73,8 +73,8 @@ void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geom
             {
                 if (pair_if(vi) > 1000.0)
                 {
-                    mu_j(vi) = CathodeMuFromC(Cj(vi));
-                    mu_k(vi) = CathodeMuFromC(Ck(vi));
+                    mu_j(vi) = NMC_mu(Cj(vi));
+                    mu_k(vi) = NMC_mu(Ck(vi));
                 }
             }
         }
@@ -118,8 +118,8 @@ static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry
         p.Rxn_gf        = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         p.Rx_src        = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
 
-        p.potential     = std::make_unique<PotA>(geometry, domain_parameters, bc);
-        p.ph_gf         = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+        // p.potential     = std::make_unique<PotA>(geometry, domain_parameters, bc);
+        // p.ph_gf         = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         
         p.reaction->Initialize(*p.Rxn_gf, Constants::init_Rxn);
 
@@ -131,7 +131,7 @@ static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry
         }
 
         p.concentration->SetupField(*p.Cn_gf, init_cn, *domain_parameters.ps[k], domain_parameters.gtPs[k]);
-        p.potential->SetupField(*p.ph_gf, Constants::init_BvA, *domain_parameters.ps[k]);
+        // p.potential->SetupField(*p.ph_gf, Constants::init_BvA, *domain_parameters.ps[k]);
     }
 }
 
@@ -171,8 +171,8 @@ static void InitializeCathodeParticles(SimulationState& state, Initialize_Geomet
         p.Rxn_gf        = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         p.Rx_src        = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
 
-        p.potential     = std::make_unique<PotC>(geometry, domain_parameters, bc);
-        p.ph_gf         = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+        // p.potential     = std::make_unique<PotC>(geometry, domain_parameters, bc);
+        // p.ph_gf         = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
 
         p.reaction->Initialize(*p.Rxn_gf, Constants::init_Rxn);
 
@@ -184,7 +184,7 @@ static void InitializeCathodeParticles(SimulationState& state, Initialize_Geomet
         }
 
         p.concentration->SetupField(*p.Cn_gf, init_cn, *domain_parameters.ps[k], domain_parameters.gtPs[k]);
-        p.potential->SetupField(*p.ph_gf, Constants::init_BvC, *domain_parameters.ps[k]);
+        // p.potential->SetupField(*p.ph_gf, Constants::init_BvC, *domain_parameters.ps[k]);
     }
 }
 
@@ -294,7 +294,7 @@ void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Dom
     }
 }
 
-void Pairs(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters, int j, std::vector<ConcentrationBase::PairCoupling>& pair_terms, int np)
+void Pairs(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters, int j, std::vector<ConcentrationBase::PairCoupling>& pair_terms, int np, int t)
 {                        
     for (int k = 0; k < np; ++k)
     {
@@ -323,8 +323,7 @@ void Pairs(SimulationState& state, Initialize_Geometry& geometry, Domain_Paramet
 
         if (mfem::Mpi::WorldRank() == 0 && t == 1)
         {
-            std::cout << "[DEBUG] Pair (j,k) = (" << j << "," << k << ")"
-                    << " | stored as (a,b) = (" << a << "," << b << ")"; 
+            std::cout << "[DEBUG] Pair (j,k) = (" << j << "," << k << ")"; 
             std::cout << std::endl;
         }
 
