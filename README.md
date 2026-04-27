@@ -62,7 +62,7 @@ This is an example for running a cathode half-cell simulation that involves thre
 The particle groups are automatically identified in `src/Initialize_Geometry.cpp`. The initial concentration values of the particle groups can be changed in `src/battery_simulation.cpp`:
 
 ```bash
-    cfg.init_cathode_particles = {0.15, 0.20, 0.10};
+cfg.init_cathode_particles = {0.15, 0.20, 0.10};
 ```
 
  At this point, it is assumed that all of the particles are the same material (NMC).
