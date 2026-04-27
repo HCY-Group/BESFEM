@@ -46,9 +46,46 @@ static void InitializePairWorkspaces(SimulationState& state, Initialize_Geometry
     }
 }
 
+static inline double GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vector &data)
+{
+    if (cn < 1.0e-6) cn = 1.0e-6;
+    if (cn > 0.999999) cn = 0.999999;
+
+    int idx = std::floor(cn / 0.01);
+    if (idx < 0) idx = 0;
+    if (idx > 99) idx = 99;
+
+    return data(idx) + (cn - ticks(idx)) / 0.01 * (data(idx + 1) - data(idx));
+}
+
 static inline double NMC_mu(double c)
 {
     return -Constants::Frd * ((1.095 * c * c) - (8.234e-7 * std::exp(14.31 * c)) + (4.692 * std::exp(-0.5389 * c)));
+}
+
+static inline double Graphite_mu(double c)
+{
+    static mfem::Vector Ticks(101);
+    static mfem::Vector chmPot(101);
+    static bool loaded = false;
+
+    if (!loaded)
+    {
+        std::ifstream myXfile("../inputs/C_Li_X_101.txt");
+        std::ifstream mydFfile("../inputs/C_Li_M6_101.txt");
+
+        if (!myXfile || !mydFfile)
+        {
+            mfem::mfem_error("Could not open graphite chemical potential input files.");
+        }
+
+        for (int i = 0; i < 101; i++) myXfile >> Ticks(i);
+        for (int i = 0; i < 101; i++) mydFfile >> chmPot(i);
+
+        loaded = true;
+    }
+
+    return GetTableValues(c, Ticks, chmPot);
 }
 
 void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters)
@@ -64,17 +101,47 @@ void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geom
 
             auto& mu_j = *state.mu_pair_a[j][k];
             auto& mu_k = *state.mu_pair_b[j][k];
-            auto& pair_if = *domain_parameters.AvP_Pairs[j][k];
+            auto& AvP_pair = *domain_parameters.AvP_Pairs[j][k];
 
             mu_j = 0.0;
             mu_k = 0.0;
 
             for (int vi = 0; vi < geometry.nV; ++vi)
             {
-                if (pair_if(vi) > 1000.0)
+                if (AvP_pair(vi) > 1000.0)
                 {
                     mu_j(vi) = NMC_mu(Cj(vi));
                     mu_k(vi) = NMC_mu(Ck(vi));
+                }
+            }
+        }
+    }
+}
+
+void UpdateAnodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters)
+{
+    const int np = static_cast<int>(state.anode_particles.size());
+
+    for (int j = 0; j < np; ++j)
+    {
+        for (int k = j + 1; k < np; ++k)
+        {
+            auto& Cj = *state.anode_particles[j].Cn_gf;
+            auto& Ck = *state.anode_particles[k].Cn_gf;
+
+            auto& mu_j = *state.mu_pair_a[j][k];
+            auto& mu_k = *state.mu_pair_b[j][k];
+            auto& AvP_pair = *domain_parameters.AvP_Pairs[j][k];
+
+            mu_j = 0.0;
+            mu_k = 0.0;
+
+            for (int vi = 0; vi < geometry.nV; ++vi)
+            {
+                if (AvP_pair(vi) > 1000.0)
+                {
+                    mu_j(vi) = Graphite_mu(Cj(vi));
+                    mu_k(vi) = Graphite_mu(Ck(vi));
                 }
             }
         }

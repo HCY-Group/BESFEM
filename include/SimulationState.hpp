@@ -66,11 +66,13 @@ struct SimulationState
 
     std::vector<std::unique_ptr<mfem::ParGridFunction>> cathode_out;
     std::vector<std::unique_ptr<mfem::ParGridFunction>> anode_out;
+
 };
 
 void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters, BoundaryConditions& bc, const SimulationConfig& cfg);
 
 void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters);
+void UpdateAnodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters);
 
 void Pairs(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters, int j, std::vector<ConcentrationBase::PairCoupling>& pair_terms, int np, int t);
 

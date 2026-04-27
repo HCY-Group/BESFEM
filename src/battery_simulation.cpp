@@ -29,8 +29,8 @@ int main(int argc, char *argv[]) {
     SimulationConfig cfg = ParseSimulationArgs(argc, argv);
     ValidateConfig(cfg, argc, argv);
 
-    cfg.init_cathode_particles = {0.15, 0.20, 0.10};
-    cfg.init_anode_particles   = {0.8, 0.7, 0.9}; 
+    cfg.init_cathode_particles = {0.3, 0.4, 0.5};
+    cfg.init_anode_particles   = {0.05, 0.2, 0.1}; 
 
     std::string outdir = Utils::BuildRunOutdir(cfg.mesh_file, cfg.num_timesteps);
     if (mfem::Mpi::WorldRank() == 0)
@@ -78,7 +78,9 @@ int main(int argc, char *argv[]) {
 
         // double VCell = 0.0;
 
-        // Main time-stepping loop
+        // ============================================================================
+        // ===============================  TIME STEP LOOP  ===========================
+        // ============================================================================
 
         if (cfg.mode == sim::CellMode::HALF)
         {
@@ -95,7 +97,72 @@ int main(int argc, char *argv[]) {
 
                 if (cfg.half_electrode == sim::Electrode::ANODE)
                 {
-                    // RunHalfCellSimulation(state, geometry, domain_parameters, bc, adjust, outdir, cfg);
+                    const int np = static_cast<int>(state.anode_particles.size());
+                    std::vector<double> global_currents(np, 0.0);
+
+                    UpdateAnodePairChemicalPotentials(state, geometry, domain_parameters);
+
+                    *state.Rxn_gf = 0.0;
+                    for (int j = 0; j < np; ++j)
+                    {
+                        *state.anode_particles[j].Rx_src = *state.anode_particles[j].Rxn_gf;
+                        *state.Rxn_gf += *state.anode_particles[j].Rxn_gf;
+
+                        std::vector<ConcentrationBase::PairCoupling> pair_terms;
+                        Pairs(state, geometry, domain_parameters, j, pair_terms, np, t);
+
+                        state.anode_particles[j].concentration->UpdateConcentration(*state.anode_particles[j].Rx_src, *state.anode_particles[j].Cn_gf,
+                            *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
+
+                    }
+
+                    state.electrolyte_concentration->UpdateConcentration(*state.Rxn_gf, *state.CnE_gf,
+                        *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
+
+                    if (t > 0 && t % 50 == 0) {
+                        state.electrolyte_concentration->SaltConservation(*state.CnE_gf, *domain_parameters.pse);
+                    }
+
+                    *state.phA_gf = Constants::init_BvA;
+                    *state.phE_gf = Constants::init_BvE;
+
+                    for (int j = 0; j < np; ++j)
+                    {
+                        state.anode_particles[j].reaction->TableExchangeCurrentDensity(*state.anode_particles[j].Cn_gf, *domain_parameters.AvEs[j]);
+                        // while loop
+                        state.anode_particles[j].reaction->ButlerVolmer(*state.anode_particles[j].Rxn_gf, *state.anode_particles[j].Cn_gf,*state.CnE_gf,
+                            *state.phA_gf, *state.phE_gf, *domain_parameters.AvEs[j]);
+                        // while loop
+                        state.anode_particles[j].reaction->TotalReactionCurrent(*state.anode_particles[j].Rxn_gf, global_currents[j]);
+                    }
+
+                    if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
+                    {
+                        std::ofstream outfile("anode_currents_mp.txt", std::ios::app);
+                        outfile << "timestep: " << t;
+
+                        for (int j = 0; j < np; ++j)
+                        {
+                            outfile << ", Current_" << j << " = " << global_currents[j] << ", Target_" << j << " = " << domain_parameters.gTrgPs[j];
+                        }
+                        outfile << std::endl;
+                    }
+
+                    if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
+                    {
+                        std::ofstream outfile("anode_concentrations_mp.txt", std::ios::app);
+                        outfile << "timestep: " << t << " [ANODE HALF-CELL]";
+
+                        for (int j = 0; j < np; ++j)
+                        {
+                            const double Xfr = state.anode_particles[j].concentration->GetLithiation();
+                            outfile << ", Xfr_" << j << " = " << Xfr ;
+                        }
+
+                        outfile << std::endl;
+                    }
+
+                    
                 }
                 else
                 {
@@ -139,7 +206,7 @@ int main(int argc, char *argv[]) {
 
                     if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
                     {
-                        std::ofstream outfile("currents_mp.txt", std::ios::app);
+                        std::ofstream outfile("cathode_currents_mp.txt", std::ios::app);
                         outfile << "timestep: " << t;
 
                         for (int j = 0; j < np; ++j)
@@ -148,24 +215,38 @@ int main(int argc, char *argv[]) {
                         }
                         outfile << std::endl;
                     }
+
+                    if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
+                    {
+                        std::ofstream outfile("cathode_concentrations_mp.txt", std::ios::app);
+                        outfile << "timestep: " << t << " [CATHODE HALF-CELL]";
+
+                        for (int j = 0; j < np; ++j)
+                        {
+                            const double Xfr = state.cathode_particles[j].concentration->GetLithiation();
+                            outfile << ", Xfr_" << j << " = " << Xfr ;
+                        }
+
+                        outfile << std::endl;
+                    }
                     
                 }
 
-                if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
-                {
-                    std::ofstream outfile("concentrations_mp.txt", std::ios::app);
-                    outfile << "timestep: " << t << " [CATHODE HALF-CELL]";
-                    const int np = static_cast<int>(state.cathode_particles.size());
+                // if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
+                // {
+                //     std::ofstream outfile("concentrations_mp.txt", std::ios::app);
+                //     outfile << "timestep: " << t << " [CATHODE HALF-CELL]";
+                //     const int np = static_cast<int>(state.cathode_particles.size());
 
-                    for (int j = 0; j < np; ++j)
-                    {
-                        const double Xfr = state.cathode_particles[j].concentration->GetLithiation();
-                        outfile << ", Xfr_" << j << " = " << Xfr ;
-                    }
+                //     for (int j = 0; j < np; ++j)
+                //     {
+                //         const double Xfr = state.cathode_particles[j].concentration->GetLithiation();
+                //         outfile << ", Xfr_" << j << " = " << Xfr ;
+                //     }
 
-                    outfile << std::endl;
-                    outfile.close();
-                }
+                //     outfile << std::endl;
+                //     outfile.close();
+                // }
 
                 std::vector<mfem::ParGridFunction*> cathode_cn_fields;
                 cathode_cn_fields.reserve(state.cathode_particles.size());

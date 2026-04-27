@@ -360,18 +360,21 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn1, mfem::ParGridF
     }
 }
 
-void Reaction::TableExchangeCurrentDensity(mfem::ParGridFunction &Cn)
+void Reaction::TableExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &AvP_in)
 {
     for (int vi = 0; vi < nV; vi++) {
-        double cn_val = Cn(vi);
 
-        double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
-        double ocv = GetTableValues(cn_val, Ticks, OCV_file);
+        if ((AvP_in)(vi) * Constants::dh > 0.0) { // Check for interface presence
+            double cn_val = Cn(vi);
 
-        (*i0C)(vi) = i0;
-        (*OCV)(vi) = ocv;
-        (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
-        (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
+            double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
+            double ocv = GetTableValues(cn_val, Ticks, OCV_file);
+
+            (*i0C)(vi) = i0;
+            (*OCV)(vi) = ocv;
+            (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
+            (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
+        }
     
     }
 }

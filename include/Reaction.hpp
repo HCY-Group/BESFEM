@@ -271,8 +271,9 @@ public:
      * to populate reaction-related material fields.
      *
      * @param Cn Concentration field used in the lookup.
+     * @param AvP_in Surface-area weighting function for the interface.
      */
-    void TableExchangeCurrentDensity(mfem::ParGridFunction &Cn);
+    void TableExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &AvP_in);
 
     /**
      * @brief Compute exchange-current density (single concentration field).
