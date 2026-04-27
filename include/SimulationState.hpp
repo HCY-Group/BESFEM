@@ -18,8 +18,8 @@ struct AnodeParticleState
     std::unique_ptr<mfem::ParGridFunction> Rxn_gf;
     std::unique_ptr<mfem::ParGridFunction> Rx_src;
 
-    // std::unique_ptr<PotA> potential;
-    // std::unique_ptr<mfem::ParGridFunction> ph_gf;
+    std::unique_ptr<PotA> potential;
+    std::unique_ptr<mfem::ParGridFunction> ph_gf;
 };
 
 struct CathodeParticleState
@@ -34,8 +34,8 @@ struct CathodeParticleState
     std::unique_ptr<mfem::ParGridFunction> Rxn_gf;
     std::unique_ptr<mfem::ParGridFunction> Rx_src;
 
-    // std::unique_ptr<PotC> potential;
-    // std::unique_ptr<mfem::ParGridFunction> ph_gf;
+    std::unique_ptr<PotC> potential;
+    std::unique_ptr<mfem::ParGridFunction> ph_gf;
 };
 
 struct SimulationState

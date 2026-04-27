@@ -118,7 +118,7 @@ void CnA::ComputePairFlux(mfem::ParGridFunction &sum_part, mfem::ParGridFunction
 void CnA::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx,
                             double gtPsx, mfem::ParGridFunction &weight_elec, const std::vector<ConcentrationBase::PairCoupling> &pair_terms)
     {   
-        utils.InitializeReaction(Rx, RxA, (1.0/Constants::rho_A));
+        utils.InitializeReaction(Rx, RxA, (1.0));
         RxA *= weight_elec; // Scale the reaction term by the electrode weighting function
 
         // Particle_Particle(sum_AB, weight_AB, grad_AB, mu_A, mu_B); // Compute particle-particle interaction for AB
@@ -190,14 +190,14 @@ void CnA::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &
         // Ensure that the concentration values are within the valid range
         for (int i = 0; i < CpV0.Size(); i++) {
             if (PsVc(i) < 1.0e-5) {
-                (CpV0)(i) = Constants::init_CnA; // Reset to initial concentration if potential is too low
+                (CpVn)(i) = CpV0(i); // Reset to initial concentration if potential is too low
             }
         }
 
         // recover the GridFunction from the HypreParVector
         Cn.Distribute(CpV0); 
 
-        utils.CalculateLithiation(Cn, psx, gtPsA); // Update the degree of lithiation based on the new concentration values
+        utils.CalculateLithiation(Cn, psx, gtPsx); // Update the degree of lithiation based on the new concentration values
         Xfr = utils.GetLithiation();
 
         Rx = RxA; // Update the reaction field for output or further processing

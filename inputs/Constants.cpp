@@ -32,21 +32,21 @@ namespace Constants {
     const double Cr = 2.0;                                   ///< C-rate for charging/discharging cycles
     const double Vsr0 = 0.009466;                                 ///< Voltage scanning rate (same value for anode, cathode, and electrolyte)
     const double VCut = 0.0;                                ///< Cut-off voltage
-    // const double init_CnA = 0.95;                        ///< initial concentration in the anode (full)
+    const double init_CnA = 0.95;                        ///< initial concentration in the anode (full)
     const double init_CnC = 0.30;                            ///< initial concentration in the cathode
-    // const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
-    // const double init_BvA = -0.01;                            ///< boundary condition for anode potential (full)
+    const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
+    const double init_BvA = -0.01;                            ///< boundary condition for anode potential (full)
     const double init_BvC = 3.96;                         ///< boundary condition for cathode potential
-    // const double init_BvE = -0.1;                         ///< boundary condition for electrolyte potential (full & half cathode)
+    const double init_BvE = -0.1;                         ///< boundary condition for electrolyte potential (full & half cathode)
     const double RT = 2494.33859;                           ///< RT constant at 300K
     const double Perm = 1.0e-5;                              ///< Permittivity constant (paper uses 1.0e-7)
 
 
-    // constants for half cell - anode side 
-    const double init_CnA = 2.0e-2;                        ///< initial concentration in the anode (half)
-    const double init_BvA = -0.1;                            ///< boundary condition for anode potential (half)
-    const double init_BvE = -0.4686;                               ///< boundary condition for eletrolyte potential (half anode)
-    const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
+    // // constants for half cell - anode side 
+    // const double init_CnA = 2.0e-2;                        ///< initial concentration in the anode (half)
+    // const double init_BvA = -0.1;                            ///< boundary condition for anode potential (half)
+    // const double init_BvE = -0.4686;                               ///< boundary condition for eletrolyte potential (half anode)
+    // const double init_CnE = 0.001;                           ///< initial concentration in the electrolyte
 
 
     // const double init_Rxn = 1e-7;                             ///< initial reaction rate

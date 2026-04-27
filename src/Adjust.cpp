@@ -47,3 +47,5 @@ void Adjust::AdjustConstantCurrent(double current_A, double current_C, PotA &ano
     VCell = cathode_potential.BvC - anode_potential.BvA;
 }
 
+
+
