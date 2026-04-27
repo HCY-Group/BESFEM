@@ -1,8 +1,10 @@
-# BESFEM: Battery Electrode Simulation using MFEM
+# BESFEM: Battery Electrode Simulation using MFEM (Multi-Particle)
 
 BESFEM is a high-performance, MPI-enabled electrochemical simulation framework for lithium-ion battery electrodes.  
 It supports **half-cell** and **full-cell** simulations, **Cahn–Hilliard** and **diffusion-based** transport models, and the **Smoothed Boundary Method (SBM)** for diffuse interfaces.  
 The code is written in C++ and built on top of the **MFEM** finite-element library.
+
+This branch supports the development of utilizing BESFEM for multi-particle applications. This is useful to understand the impacts of an electrode with blended chemistry. For example: a silicon-carbon anode. 
 
 
 ---
@@ -25,6 +27,7 @@ BESFEM/
 ├── tests/               # Unit tests
 ├── plotting/            # Plotting files
 └── bin/                 # Compiled executables
+
 ```
 
 ---
@@ -54,7 +57,21 @@ cd bin
 
 ## Running Simulations
 
-### Full Cell Example
+### Half Cell Example (Multi-Particle Cathode & TIFF)
+This is an example for running a cathode half-cell simulation that involves three different particle groups. 
+The particle groups are automatically identified in `src/Initialize_Geometry.cpp`. The initial concentration values of the particle groups can be changed in `src/battery_simulation.cpp`. At this point, it is assumed that all of the particles are the same material (NMC).
+
+```bash
+mpirun -np 8 ./battery_simulation \
+    -mode half \
+    -elec cathode \
+    -m ../inputs/colored_labels_labels.tif  \
+    -dC ../inputs/dummy.gf \
+    -t v \
+    -n 3200
+```
+
+<!-- ### Full Cell Example
 ```bash
 mpirun -np 8 ./battery_simulation \
     -mode full \
@@ -146,7 +163,7 @@ mpirun -np 8 ./battery_simulation \
     -dA ../inputs/distance/dsFA_41x61_F00.txt \
     -t ml \
     -n 1200
-```
+``` -->
 
 ---
 

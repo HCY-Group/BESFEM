@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 
                     if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
                     {
-                        std::ofstream outfile("currents.txt", std::ios::app);
+                        std::ofstream outfile("currents_mp.txt", std::ios::app);
                         outfile << "timestep: " << t;
 
                         for (int j = 0; j < np; ++j)
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
 
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
                 {
-                    std::ofstream outfile("trial.txt", std::ios::app);
+                    std::ofstream outfile("concentrations_mp.txt", std::ios::app);
                     outfile << "timestep: " << t << " [CATHODE HALF-CELL]";
                     const int np = static_cast<int>(state.cathode_particles.size());
 
