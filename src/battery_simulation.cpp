@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
                 VCell = cathode_potential->BvC - electrolyte_potential->BvE;
             }
 
-            for (int t = 0; t < cfg.num_timesteps; ++t) {
+            for (int t = 0; t < cfg.num_timesteps;) {
 
             // while (VCell > 2.5){
 
@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
 
             int t = 0;
 
-            for (int t = 0; t < cfg.num_timesteps; ++t) {
+            for (int t = 0; t < cfg.num_timesteps;) {
             // while (XfrC < 0.85) {
 
             VCell = Constants::init_BvC - Constants::init_BvA;
@@ -352,12 +352,6 @@ int main(int argc, char *argv[]) {
 
                 XfrA = anode_concentration->GetLithiation();
                 XfrC = cathode_concentration->GetLithiation();
-
-                // Synchronize lithiation across ranks
-                double global_XfrC;
-                MPI_Allreduce(&XfrC, &global_XfrC, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-                global_XfrC /= mfem::Mpi::WorldSize();
-                XfrC = global_XfrC; 
 
                 if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0) {
 
