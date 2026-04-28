@@ -68,8 +68,9 @@ public:
      * @param mesh_type Type of mesh ("ml" = MATLAB, "v" = voxel).
      * @param comm MPI communicator.
      * @param order Polynomial order for FE space.
+     * @param half_electrode Electrode type for half-cell simulation.
      */
-    void InitializeMesh(const char* meshFile, const char* distanceFile, const char* mesh_type, MPI_Comm comm, int order);
+    void InitializeMesh(const char* meshFile, const char* distanceFile, const char* mesh_type, MPI_Comm comm, int order, sim::Electrode half_electrode);
 
     /**
      * @brief Initialize mesh and distance fields for a full-cell simulation.

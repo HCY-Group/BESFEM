@@ -94,13 +94,18 @@ void Domain_Parameters::InterpolateDomainParameters(const char* mesh_type) {
     const int dimension = pmesh->Dimension();
 
     if (!full) {
-        // ------- HALF CELL (unchanged, but read from best available dsF) -------
-        const mfem::ParGridFunction* g =
-              dsF_A ? dsF_A
-            : dsF_C ? dsF_C
-            : dsF;
 
-        if (!g) mfem::mfem_error("HALF mode: no active distance field available.");
+        const mfem::ParGridFunction* g = nullptr;
+        if (dsF_A) {
+            g = dsF_A;
+            active_rho = Constants::rho_A;
+        } else if (dsF_C) {
+            g = dsF_C;
+            active_rho = Constants::rho_C;
+        } else {
+            g = dsF;
+            active_rho = Constants::rho_C; // default to cathode density for full cell
+        }
 
         nV = pmesh->GetNV();
 
@@ -383,7 +388,7 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
         // Calculate totals for Psi and Pse fields
         CalculateTotalPhaseField(*psi, tPsi, gtPsi);
         CalculateTotalPhaseField(*pse, tPse, gtPse);
-        CalculateTargetCurrent(tPsi);
+        CalculateTargetCurrent(tPsi, active_rho); // use active material density for half cell current calculation
     }
 
     // Full Cell : use psA, psC
@@ -392,15 +397,15 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent() {
         CalculateTotalPhaseField(*psA, tPsA, gtPsA);
         CalculateTotalPhaseField(*psC, tPsC, gtPsC);
         CalculateTotalPhaseField(*pse, tPse, gtPse);
-        CalculateTargetCurrent(tPsC);
+        CalculateTargetCurrent(tPsC, Constants::rho_C); // use cathode material for full cell current calculation
     }
 
 }
 
-void Domain_Parameters::CalculateTargetCurrent(double total_psi) {
+void Domain_Parameters::CalculateTargetCurrent(double total_psi, double rho) {
 
     // Compute target current based on total Psi, rho, Cr, and constants
-    trgI = total_psi * Constants::rho_C * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
+    trgI = total_psi * rho * (0.95 - 0.3) / (3600.0 / Constants::Cr); // bounds of cathode 
 
     // Perform global MPI reduction to get the total target current
     MPI_Allreduce(&trgI, &gTrgI, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);

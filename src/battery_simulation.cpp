@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
         // Initialize Mesh & Geometry
         Initialize_Geometry geometry;
         if (cfg.mode == sim::CellMode::HALF) {
-            geometry.InitializeMesh(cfg.mesh_file, active_dsF, cfg.mesh_type, MPI_COMM_WORLD, cfg.order);
+            geometry.InitializeMesh(cfg.mesh_file, active_dsF, cfg.mesh_type, MPI_COMM_WORLD, cfg.order, cfg.half_electrode);
         } else {
             geometry.InitializeMesh(cfg.mesh_file, cfg.dsF_file_A, cfg.dsF_file_C, cfg.mesh_type, MPI_COMM_WORLD, cfg.order);
         }

@@ -164,8 +164,9 @@ private:
      * the integrated particle-phase volume into a target current contribution.
      *
      * @param total_psi Local integral of ψ.
+     * @param rho Material density (e.g., ρ_C for cathode) to compute current from volume.
      */
-    void CalculateTargetCurrent(double total_psi);
+    void CalculateTargetCurrent(double total_psi, double rho);
 
     /**
      * @brief Print diagnostic totals (rank 0 only).
@@ -197,6 +198,8 @@ private:
 
     double tPsA = 0.0; ///< Local ψ_A total before MPI reduction.
     double tPsC = 0.0; ///< Local ψ_C total before MPI reduction.
+
+    double active_rho = 0.0; ///< Active material density used for current calculation.
 };
 
 #endif // DOMAIN_PARAMETERS_HPP
