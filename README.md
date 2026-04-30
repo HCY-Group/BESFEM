@@ -4,7 +4,7 @@ BESFEM is a high-performance, MPI-enabled electrochemical simulation framework f
 It supports **half-cell** and **full-cell** simulations, **Cahn–Hilliard** and **diffusion-based** transport models, and the **Smoothed Boundary Method (SBM)** for diffuse interfaces.  
 The code is written in C++ and built on top of the **MFEM** finite-element library.
 
-This branch only simulates the domain parameter for model usage. After running this code, \psi, \pse, \AvP, \AvE, and mesh will be available to plot. 
+This branch only simulates the domain parameter for model usage. After running this code: $\psi$, $\psi_{e}$, $\{AvP}$, $\{AvE}$, and the mesh will be available to plot. 
 
 ---
 
