@@ -1,9 +1,10 @@
-# BESFEM: Battery Electrode Simulation using MFEM
+# BESFEM: Battery Electrode Simulation using MFEM (Only Domain Parameters)
 
 BESFEM is a high-performance, MPI-enabled electrochemical simulation framework for lithium-ion battery electrodes.  
 It supports **half-cell** and **full-cell** simulations, **Cahn–Hilliard** and **diffusion-based** transport models, and the **Smoothed Boundary Method (SBM)** for diffuse interfaces.  
 The code is written in C++ and built on top of the **MFEM** finite-element library.
 
+This branch only simulates the domain parameter for model usage. After running this code, \psi, \pse, \AvP, \AvE, and mesh will be available to plot. 
 
 ---
 
@@ -62,7 +63,7 @@ mpirun -np 8 ./battery_simulation \
     -dA ../inputs/distance/dsF_A_40x60x3_3D_disk_full.txt \
     -dC ../inputs/distance/dsF_C_40x60x3_3D_disk_full.txt \
     -t ml \
-    -n 600
+    -n 1
 ```
 
 ### Half Cell Example (Cathode)
@@ -73,12 +74,12 @@ mpirun -np 8 ./battery_simulation \
     -m ../inputs/mesh/Mesh_40x60_F00.mesh \
     -dC ../inputs/distance/dsFC_41x61_F00.txt \
     -t ml \
-    -n 1200
+    -n 1
 ```
 
 ### Half Cell Example (Cathode & TIFF)
 To run this TIFF example, you will need to modify the boundary conditions and 2D Connectivity regions. 
-First go to `src/Initialize_Geometry.cpp` and ensure the lines below are changed to reflect the following:
+First go to `src/Initialize_Geometry.cpp` and ensure the lines below are changed to reflect the following for connectivity:
 
 ```bash
     
@@ -88,7 +89,7 @@ First go to `src/Initialize_Geometry.cpp` and ensure the lines below are changed
 
 ```
 
-Next, go to `src/BoundaryConditions.cpp` and ensure the lines below are changed to reflect the following:
+<!-- Next, go to `src/BoundaryConditions.cpp` and ensure the lines below are changed to reflect the following:
 
 ```bash
     // Neumann Boundary Condition - used for electrolye concentration
@@ -106,7 +107,7 @@ Next, go to `src/BoundaryConditions.cpp` and ensure the lines below are changed 
     dbc_e_bdr = 0;
     dbc_e_bdr[0] = 1;
 
-```
+``` -->
 
 Then to run the simulation:
 
@@ -117,10 +118,10 @@ mpirun -np 8 ./battery_simulation \
     -m ../inputs/II_1_bin.tif \
     -dC ../inputs/dummy.gf \
     -t v \
-    -n 1200
+    -n 1
 ```
 
-### Half Cell Example (Anode)
+<!-- ### Half Cell Example (Anode)
 The constants defined in `inputs/Constants.cpp` are configured for full-cell simulations by default. 
 When running a half-cell anode simulation, some constants need to be modified to ensure correct reactions. 
 Before running a half-cell anode simulation, please update the following values in `inputs/Constants.cpp`:
@@ -146,7 +147,7 @@ mpirun -np 8 ./battery_simulation \
     -dA ../inputs/distance/dsFA_41x61_F00.txt \
     -t ml \
     -n 1200
-```
+``` -->
 
 ---
 

@@ -572,9 +572,9 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
 	args.Depth_end = 1;	//only read in one slice for 2D data
 	// get a smaller subset so it runs faster
 	args.Row_begin    = 0;
-	args.Row_end      = 100;
+	args.Row_end      = -1;
 	args.Column_begin = 0;
-	args.Column_end   = 100;
+	args.Column_end   = -1;
 	TIFFReader reader(meshFile,args);
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffData;
@@ -736,7 +736,7 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
 
             if (nz == 1)
             {
-                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 1); // psi boundary
+                // KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 1); // psi boundary
             }
             else
             {
@@ -751,7 +751,7 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
 
             if (nz == 1)
             {
-                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 0); // pse boundary
+                // KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 0); // pse boundary
                 // KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1); // all boundaries
             }
             else
@@ -908,7 +908,7 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
 
 
     // ------------------ PDEFilter ------------------
-    const double filter_weight = 3 * dx;
+    const double filter_weight = 13 * dx;
     mfem::common::PDEFilter filter(*parallelMesh, filter_weight);
     filter.Filter(ls_coeff_dg, filt_dg);
 
