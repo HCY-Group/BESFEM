@@ -134,26 +134,28 @@ int main(int argc, char *argv[]) {
                         state.electrolyte_concentration->SaltConservation(*state.CnE_gf, *domain_parameters.pse);
                     }
 
-                    // for (int j = 0; j < np; ++j)
-                    // {
-                    //     state.anode_particles[j].potential->AssembleSystem(*state.anode_particles[j].Cn_gf, *domain_parameters.ps[j], *state.anode_particles[j].ph_gf);
-                    // }
-                    // state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
+                    for (int j = 0; j < np; ++j)
+                    {
+                        state.anode_particles[j].potential->AssembleSystem(*state.anode_particles[j].Cn_gf, *domain_parameters.ps[j], *state.anode_particles[j].ph_gf);
+                    }
+                    state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
 
                     // *state.phA_gf = Constants::init_BvA;
                     // *state.phE_gf = Constants::init_BvE;
 
-                    // double globalerror_P = 1.0; // Error for particle potential
-                    // double globalerror_E = 1.0; // Error for electrolyte potential
+                    double globalerror_P = 1.0; // Error for particle potential
+                    double globalerror_E = 1.0; // Error for electrolyte potential
 
                     for (int j = 0; j < np; ++j)
                     {
                         state.anode_particles[j].reaction->TableExchangeCurrentDensity(*state.anode_particles[j].Cn_gf, *domain_parameters.AvEs[j]);
                         // while loop
-                        state.anode_particles[j].reaction->ButlerVolmer(*state.anode_particles[j].Rxn_gf, *state.anode_particles[j].Cn_gf,*state.CnE_gf,
-                            *state.phA_gf, *state.phE_gf, *domain_parameters.AvEs[j]);
-                        // state.anode_particles[j].potential->UpdatePotential(*state.anode_particles[j].Rxn_gf, *state.anode_particles[j].ph_gf, *domain_parameters.ps[j], globalerror_P);
-                        // state.electrolyte_potential->UpdatePotential(*state.anode_particles[j].Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E); // convergence issue
+                        while (globalerror_P > 1e-6 || globalerror_E > 1e-6) {
+                            state.anode_particles[j].reaction->ButlerVolmer(*state.anode_particles[j].Rxn_gf, *state.anode_particles[j].Cn_gf,*state.CnE_gf,
+                                *state.phA_gf, *state.phE_gf, *domain_parameters.AvEs[j]);
+                            state.anode_particles[j].potential->UpdatePotential(*state.anode_particles[j].Rxn_gf, *state.anode_particles[j].ph_gf, *domain_parameters.ps[j], globalerror_P);
+                            state.electrolyte_potential->UpdatePotential(*state.anode_particles[j].Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
+                        }
                         // while loop
                         state.anode_particles[j].reaction->TotalReactionCurrent(*state.anode_particles[j].Rxn_gf, global_currents[j]);
                     }
@@ -229,22 +231,25 @@ int main(int argc, char *argv[]) {
                         state.electrolyte_concentration->SaltConservation(*state.CnE_gf, *domain_parameters.pse);
                     }   
                     
-                    // for (int j = 0; j < np; ++j)
-                    // {
-                    //     state.cathode_particles[j].potential->AssembleSystem(*state.cathode_particles[j].Cn_gf, *domain_parameters.ps[j], *state.cathode_particles[j].ph_gf);
-                    // }
-                    // state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
+                    for (int j = 0; j < np; ++j)
+                    {
+                        state.cathode_particles[j].potential->AssembleSystem(*state.cathode_particles[j].Cn_gf, *domain_parameters.ps[j], *state.cathode_particles[j].ph_gf);
+                    }
+                    state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
 
-
-                    // *state.phC_gf = Constants::init_BvC;
-                    // *state.phE_gf = Constants::init_BvE;
+                    double globalerror_P = 1.0; // Error for particle potential
+                    double globalerror_E = 1.0; // Error for electrolyte potential
 
                     for (int j = 0; j < np; ++j)
                     {
                         state.cathode_particles[j].reaction->ExchangeCurrentDensity(*state.cathode_particles[j].Cn_gf, *domain_parameters.AvEs[j]);
                         // while loop
-                        state.cathode_particles[j].reaction->ButlerVolmer(*state.cathode_particles[j].Rxn_gf, *state.cathode_particles[j].Cn_gf,*state.CnE_gf,
-                            *state.phC_gf, *state.phE_gf, *domain_parameters.AvEs[j]);
+                        while (globalerror_P > 1e-6 || globalerror_E > 1e-6) {
+                            state.cathode_particles[j].reaction->ButlerVolmer(*state.cathode_particles[j].Rxn_gf, *state.cathode_particles[j].Cn_gf,*state.CnE_gf,
+                                *state.phC_gf, *state.phE_gf, *domain_parameters.AvEs[j]);
+                            state.cathode_particles[j].potential->UpdatePotential(*state.cathode_particles[j].Rxn_gf, *state.cathode_particles[j].ph_gf, *domain_parameters.ps[j], globalerror_P);
+                            state.electrolyte_potential->UpdatePotential(*state.cathode_particles[j].Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
+                        }
                         // while loop
                         state.cathode_particles[j].reaction->TotalReactionCurrent(*state.cathode_particles[j].Rxn_gf, global_currents[j]);
                     }
