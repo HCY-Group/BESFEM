@@ -95,6 +95,30 @@ void PotC::AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx,
 
 }
 
+void PotC::AssembleSystemMulti(const std::vector<mfem::ParGridFunction*> &Cn_groups, const std::vector<mfem::ParGridFunction*> &psi_groups, mfem::ParGridFunction &potential)
+{
+    mfem::ConstantCoefficient dbc_e_Coef(BvC);
+
+    // Build one effective conductivity field from all particles
+    ParticleConductivityMulti(Cn_groups, psi_groups);
+
+    // Update stiffness matrix using the new kap field
+    fem.Update(Kp2);
+
+    potential.ProjectBdrCoefficient(dbc_e_Coef, dbc_e_bdr);
+    fespace->GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
+
+    fem.FormLinearSystem(Kp2, ess_tdof_list_e, potential,
+                         B1t, KmP, X1v, B1v);
+
+    Mpp = std::make_unique<mfem::HypreBoomerAMG>(KmP);
+    Mpp->SetPrintLevel(0);
+
+    cgPP_solver.SetPreconditioner(*Mpp);
+    cgPP_solver.SetOperator(KmP);
+}
+
+
 void PotC::UpdatePotential(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror)
 {
     RpP = Rx;
@@ -124,6 +148,18 @@ void PotC::UpdatePotential(mfem::ParGridFunction &Rx, mfem::ParGridFunction &phx
 void PotC::ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx){
     for (int vi = 0; vi < nV; vi++){
         kap(vi) = psx(vi) * (0.01929 + 0.7045 * tanh(2.399 * Cn(vi)) - 0.7238 * tanh(2.412 * Cn(vi)) - 4.2106e-6);
+    }
+}
+
+void PotC::ParticleConductivityMulti(const std::vector<mfem::ParGridFunction*> &Cn_groups, const std::vector<mfem::ParGridFunction*> &psi_groups){
+    for (int vi = 0; vi < nV; vi++){
+        double kap_sum = 0.0;
+        for (size_t i = 0; i < Cn_groups.size(); ++i){
+            double Cn_val = (*Cn_groups[i])(vi);
+            double psx_val = (*psi_groups[i])(vi);
+            kap_sum += psx_val * (0.01929 + 0.7045 * tanh(2.399 * Cn_val) - 0.7238 * tanh(2.412 * Cn_val) - 4.2106e-6);
+        }
+        kap(vi) = kap_sum;
     }
 }
 

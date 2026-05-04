@@ -81,6 +81,9 @@ public:
     void AssembleSystem(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx,
                         mfem::ParGridFunction &potential) override;
 
+
+    void AssembleSystemMulti(const std::vector<mfem::ParGridFunction*> &Cn_groups, const std::vector<mfem::ParGridFunction*> &psi_groups, mfem::ParGridFunction &potential);
+
     /**
      * @brief Advance φ_C by one timestep.
      *
@@ -106,6 +109,8 @@ private:
      * @param psx Phase-field mask ψ_C.
      */
     void ParticleConductivity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx);
+
+    void ParticleConductivityMulti(const std::vector<mfem::ParGridFunction*> &Cn_groups, const std::vector<mfem::ParGridFunction*> &psi_groups);
 
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Parallel FE space for φ_C
 
