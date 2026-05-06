@@ -39,7 +39,7 @@ namespace Constants {
     const double init_BvC = 3.96;                         ///< boundary condition for cathode potential
     const double init_BvE = -0.1;                         ///< boundary condition for electrolyte potential (full & half cathode)
     const double RT = 2494.33859;                           ///< RT constant at 300K
-    const double Perm = 1.0e-5;                              ///< Permittivity constant (paper uses 1.0e-7)
+    const double Perm = 0.0;                              ///< Permittivity constant (paper uses 1.0e-7)
 
 
     // // constants for half cell - anode side 

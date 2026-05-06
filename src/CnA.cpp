@@ -118,7 +118,15 @@ void CnA::ComputePairFlux(mfem::ParGridFunction &sum_part, mfem::ParGridFunction
 void CnA::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx,
                             double gtPsx, mfem::ParGridFunction &weight_elec, const std::vector<ConcentrationBase::PairCoupling> &pair_terms)
     {   
-        utils.InitializeReaction(Rx, RxA, (1.0));
+        
+        
+        if (Constants::Perm > 0.0){
+            utils.InitializeReaction(Rx, RxA, (1.0)); // no rho in this term when perm is nonzero since it's already included in the pair flux calculation
+        } else {
+            utils.InitializeReaction(Rx, RxA, (1.0/Constants::rho_A)); // account for rho when perm is 0
+        }
+        
+        // utils.InitializeReaction(Rx, RxA, (1.0));
         RxA *= weight_elec; // Scale the reaction term by the electrode weighting function
 
         // Particle_Particle(sum_AB, weight_AB, grad_AB, mu_A, mu_B); // Compute particle-particle interaction for AB
@@ -130,14 +138,7 @@ void CnA::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &
         // Add all particle-particle pair exchange terms
         for (const auto &pair : pair_terms)
         {
-            MFEM_VERIFY(pair.sum_part, "pair.sum_part is null");
-            MFEM_VERIFY(pair.weight,   "pair.weight is null");
-            MFEM_VERIFY(pair.grad_psi, "pair.grad_psi is null");
-            MFEM_VERIFY(pair.mu_self,  "pair.mu_self is null");
-            MFEM_VERIFY(pair.mu_nbr,   "pair.mu_nbr is null");
-
             ComputePairFlux(*pair.sum_part, *pair.weight, *pair.grad_psi, *pair.mu_self, *pair.mu_nbr);
-
             RxA += *pair.sum_part;
         }
 

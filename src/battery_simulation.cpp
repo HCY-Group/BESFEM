@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     SimulationConfig cfg = ParseSimulationArgs(argc, argv);
     ValidateConfig(cfg, argc, argv);
 
-    cfg.init_cathode_particles = {0.30, 0.31, 0.305};
+    cfg.init_cathode_particles = {0.30, 0.30, 0.30};
     cfg.init_anode_particles   = {0.2, 0.15, 0.10}; 
 
     std::string outdir = Utils::BuildRunOutdir(cfg.mesh_file, cfg.num_timesteps);
@@ -204,6 +204,9 @@ int main(int argc, char *argv[]) {
 
                     
                 }
+                    // ============================================================================
+                    // ===============================  CATHODE  ==================================
+                    // ============================================================================
                 else
                 {
                     const int np = static_cast<int>(state.cathode_particles.size());
@@ -235,15 +238,15 @@ int main(int argc, char *argv[]) {
                     // Assemble one combined cathode potential
                     // ============================================================
 
-                    std::vector<mfem::ParGridFunction*> cathode_cn_fields;
-                    std::vector<mfem::ParGridFunction*> cathode_psi_fields;
-
-                    cathode_cn_fields.reserve(np);
-                    cathode_psi_fields.reserve(np);
+                    std::vector<mfem::ParGridFunction*> cathode_cn_fields; // vector of pointers to cathode concentration fields
+                    std::vector<mfem::ParGridFunction*> cathode_psi_fields; // vector of pointers to cathode potential fields
+ 
+                    cathode_cn_fields.reserve(np); // pre-allocate memory
+                    cathode_psi_fields.reserve(np); // pre-allocate memory
 
                     for (int j = 0; j < np; ++j)
                     {
-                        cathode_cn_fields.push_back(state.cathode_particles[j].Cn_gf.get());
+                        cathode_cn_fields.push_back(state.cathode_particles[j].Cn_gf.get()); 
                         cathode_psi_fields.push_back(domain_parameters.ps[j].get());
                     }
 
@@ -311,7 +314,7 @@ int main(int argc, char *argv[]) {
 
                     if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
                     {
-                        std::ofstream outfile("cathode_concentrations_mp.txt", std::ios::app);
+                        std::ofstream outfile("cathode_concentrations_mp_same.txt", std::ios::app);
 
                         double XfrC_avg = 0.0;
                         double total_weight = 0.0;
@@ -339,50 +342,6 @@ int main(int argc, char *argv[]) {
                         outfile << ", XfrC_avg = " << XfrC_avg;
                         outfile << std::endl;
                     }
-
-                    // if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
-                    // {
-                    //     std::ofstream outfile("cathode_concentrations_mp.txt", std::ios::app);
-
-                    //     outfile << "timestep: " << t
-                    //             << " [CATHODE HALF-CELL]"
-                    //             << ", VCell = " << VCell;
-
-                    //     for (int j = 0; j < np; ++j)
-                    //     {
-                    //         const double Xfr = state.cathode_particles[j].concentration->GetLithiation();
-                    //         outfile << ", Xfr_" << j << " = " << Xfr;
-                    //     }
-
-                    //     outfile << std::endl;
-                    // }
-
-
-                    // if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
-                    // {
-                    //     std::ofstream outfile("cathode_currents_mp.txt", std::ios::app);
-                    //     outfile << "timestep: " << t;
-
-                    //     for (int j = 0; j < np; ++j)
-                    //     {
-                    //         outfile << ", Current_" << j << " = " << global_currents[j] << ", Target_" << j << " = " << domain_parameters.gTrgPs[j];
-                    //     }
-                    //     outfile << std::endl;
-                    // }
-
-                    // if (t % 100 == 0 && mfem::Mpi::WorldRank() == 0)
-                    // {
-                    //     std::ofstream outfile("cathode_concentrations_mp.txt", std::ios::app);
-                    //     outfile << "timestep: " << t << " [CATHODE HALF-CELL]";
-
-                    //     for (int j = 0; j < np; ++j)
-                    //     {
-                    //         const double Xfr = state.cathode_particles[j].concentration->GetLithiation();
-                    //         outfile << ", Xfr_" << j << " = " << Xfr ;
-                    //     }
-
-                    //     outfile << std::endl;
-                    // }
                     
                 }
 
