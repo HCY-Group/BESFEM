@@ -1,4 +1,5 @@
 #include "../include/SimulationConfig.hpp"
+#include "../include/MaterialProperties.hpp"
 #include "mfem.hpp"
 
 #include <cstring>
@@ -9,6 +10,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <cmath>
+
 
 static std::string Trim(const std::string& s)
 {
@@ -311,8 +314,92 @@ SimulationConfig ParseSimulationArgs(int argc, char *argv[])
     return cfg;
 }
 
+static bool IsCathodeMaterial(sim::MaterialType m)
+{
+    return m == sim::MaterialType::NMC ||
+           m == sim::MaterialType::LFP;
+}
+
+static bool IsAnodeMaterial(sim::MaterialType m)
+{
+    return m == sim::MaterialType::Graphite;
+}
+static void CheckCathodeInitialBoundaryFromOCV(const SimulationConfig& cfg)
+{
+    const double tolerance = 0.3;
+
+    for (size_t i = 0; i < cfg.cathode_materials.size(); i++)
+    {
+        sim::MaterialType material = cfg.cathode_materials[i];
+        double x = cfg.init_cathode_particles[i];
+
+        double expected_ocv = MaterialProperties::OCV(material, x);
+
+        if (std::abs(cfg.init_BvC - expected_ocv) > tolerance)
+        {
+            std::stringstream ss;
+            ss << "init_BvC = " << cfg.init_BvC
+               << " is far from the OCV curve value for cathode particle "
+               << i << ". For x = " << x
+               << ", suggested init_BvC is about "
+               << expected_ocv << ".";
+
+            mfem::mfem_error(ss.str().c_str());
+        }
+    }
+}
+static void CheckAnodeInitialBoundaryFromOCV(const SimulationConfig& cfg)
+{
+    const double tolerance = 0.1;
+
+    for (size_t i = 0; i < cfg.anode_materials.size(); i++)
+    {
+        sim::MaterialType material = cfg.anode_materials[i];
+        double x = cfg.init_anode_particles[i];
+
+        double expected_ocv = MaterialProperties::OCV(material, x);
+
+        if (std::abs(cfg.init_BvA - expected_ocv) > tolerance)
+        {
+            std::stringstream ss;
+            ss << "init_BvA = " << cfg.init_BvA
+               << " is far from the OCV curve value for anode particle "
+               << i << ". For x = " << x
+               << ", suggested init_BvA is about "
+               << expected_ocv << ".";
+
+            mfem::mfem_error(ss.str().c_str());
+        }
+    }
+}
+static void CheckParticleStoichiometry(
+    const std::vector<double>& values,
+    const std::string& name)
+{
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        double x = values[i];
+
+        if (x < 0.0 || x > 1.0)
+        {
+            std::stringstream ss;
+            ss << name << "[" << i << "] = " << x
+               << " is invalid. Initial particle stoichiometry "
+               << "must be between 0 and 1.";
+
+            mfem::mfem_error(ss.str().c_str());
+        }
+    }
+}
+
 void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
 {
+    if (cfg.mode != sim::CellMode::HALF)
+    {
+        mfem::mfem_error(
+            "Only HALF-CATHODE mode is currently implemented.");
+    }
+
     if (cfg.mode == sim::CellMode::FULL)
     {
         if (!cfg.dsF_file_A || !cfg.dsF_file_C)
@@ -337,6 +424,17 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
 
     if (!cfg.mesh_file)
         mfem::mfem_error("mesh_file cannot be empty.");
+    std::ifstream mesh_test(cfg.mesh_file);
+
+    if (!mesh_test.good())
+    {
+        std::stringstream ss;
+        ss << "Mesh file not found: "
+           << cfg.mesh_file
+           << ". Please check that the file exists and the path is correct.";
+    
+        mfem::mfem_error(ss.str().c_str());
+    }
 
     if (std::strcmp(cfg.mesh_type, "ml") != 0 &&
         std::strcmp(cfg.mesh_type, "v")  != 0)
@@ -347,6 +445,9 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
     if (cfg.num_timesteps <= 0)
         mfem::mfem_error("num_steps must be positive.");
 
+
+    if (cfg.mode == sim::CellMode::FULL)
+{
     if (cfg.cathode_materials.empty())
         mfem::mfem_error("cathode_materials cannot be empty.");
 
@@ -358,7 +459,78 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
 
     if (cfg.init_anode_particles.empty())
         mfem::mfem_error("init_anode_particles cannot be empty.");
+    }
+    else
+    {
+    const bool cathode = cfg.half_electrode == sim::Electrode::CATHODE;
 
+    if (cathode)
+    {
+        if (cfg.cathode_materials.empty())
+            mfem::mfem_error("cathode_materials cannot be empty.");
+
+        if (cfg.init_cathode_particles.empty())
+            mfem::mfem_error("init_cathode_particles cannot be empty.");
+        CheckCathodeInitialBoundaryFromOCV(cfg);
+    }
+    else
+    {
+        if (cfg.anode_materials.empty())
+            mfem::mfem_error("anode_materials cannot be empty.");
+
+        if (cfg.init_anode_particles.empty())
+            mfem::mfem_error("init_anode_particles cannot be empty.");
+        CheckAnodeInitialBoundaryFromOCV(cfg);
+
+    }
+}
+    if (cfg.mode == sim::CellMode::FULL)
+    {
+        CheckParticleStoichiometry(
+            cfg.init_cathode_particles,
+            "init_cathode_particles");
+    
+        CheckParticleStoichiometry(
+            cfg.init_anode_particles,
+            "init_anode_particles");
+    }
+    else
+    {
+        const bool cathode =
+            cfg.half_electrode == sim::Electrode::CATHODE;
+    
+        if (cathode)
+        {
+            CheckParticleStoichiometry(
+                cfg.init_cathode_particles,
+                "init_cathode_particles");
+        }
+        else
+        {
+            CheckParticleStoichiometry(
+                cfg.init_anode_particles,
+                "init_anode_particles");
+        }
+    }
+    const bool cathode = cfg.half_electrode == sim::Electrode::CATHODE;
+    if (cathode)
+    {
+        if (!std::isfinite(cfg.init_BvC) || !std::isfinite(cfg.init_BvE) || !std::isfinite(cfg.init_CnE))
+        {
+            mfem::mfem_error(
+                "Invalid init_BvC. HALF-CATHODE mode requires init_BvC to be finite.");
+        }
+    }
+    else
+    {
+        if (!std::isfinite(cfg.init_BvA) || !std::isfinite(cfg.init_BvE) || !std::isfinite(cfg.init_CnE))
+        {
+            mfem::mfem_error(
+                "Invalid init_BvA. HALF-ANODE mode requires init_BvA to be finite.");
+        }
+    }
+    if (cfg.mode == sim::CellMode::FULL)
+    {
     if (cfg.cathode_materials.size() != cfg.init_cathode_particles.size())
     {
         mfem::mfem_error(
@@ -370,7 +542,68 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
         mfem::mfem_error(
             "anode_materials and init_anode_particles must have the same length.");
     }
-}
+
+    for (auto m : cfg.cathode_materials)
+    {
+        if (!IsCathodeMaterial(m))
+        {
+            mfem::mfem_error(
+                "Invalid cathode_materials: cathode can only use NMC or LFP. "
+                "Graphite is an anode material.");
+        }
+    }
+
+    for (auto m : cfg.anode_materials)
+    {
+        if (!IsAnodeMaterial(m))
+        {
+            mfem::mfem_error(
+                "Invalid anode_materials: anode can only use graphite.");
+        }
+    }
+    }
+    else
+    {
+    const bool cathode =
+        cfg.half_electrode == sim::Electrode::CATHODE;
+
+    if (cathode)
+    {
+        if (cfg.cathode_materials.size() != cfg.init_cathode_particles.size())
+        {
+            mfem::mfem_error(
+                "cathode_materials and init_cathode_particles must have the same length.");
+        }
+
+        for (auto m : cfg.cathode_materials)
+        {
+            if (!IsCathodeMaterial(m))
+            {
+                mfem::mfem_error(
+                    "Invalid cathode_materials: cathode can only use NMC or LFP. "
+                    "Graphite is an anode material.");
+            }
+        }
+    }
+    else
+    {
+        if (cfg.anode_materials.size() != cfg.init_anode_particles.size())
+        {
+            mfem::mfem_error(
+                "anode_materials and init_anode_particles must have the same length.");
+        }
+
+        for (auto m : cfg.anode_materials)
+        {
+            if (!IsAnodeMaterial(m))
+            {
+                mfem::mfem_error(
+                    "Invalid anode_materials: anode can only use graphite.");
+            }
+        }
+    }
+    }
+    }
 
 void PrintAvailableSimulationOptions()
 {

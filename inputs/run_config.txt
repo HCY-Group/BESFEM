@@ -19,4 +19,5 @@ init_anode_particles = 0.02, 0.02, 0.02
 init_CnE = 0.001
 init_BvA = -0.1
 init_BvC = 3.96
+#init_BvC = 10
 init_BvE = -0.4686
