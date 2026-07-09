@@ -3,6 +3,6 @@ description: Battery Electrode Simulation Finite Electrode
 theme: just-the-docs
 
 url: "https://trahman64.github.io"
-baseurl: "/BESFEM_WEBSITE"
+baseurl: "/BESFEM"
 aux_links:
   GitHub Repository: https://github.com/HCY-Group/BESFEM
