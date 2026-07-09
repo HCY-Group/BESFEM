@@ -1,7 +1,8 @@
 title: BESFEM
 description: Battery Electrode Simulation Finite Electrode
-theme: just-the-docs
-
+remote_theme: just-the-docs/just-the-docs
+plugins:
+  - jekyll-remote-theme
 url: "https://trahman64.github.io"
 baseurl: "/BESFEM"
 aux_links:
