@@ -1,0 +1,5 @@
+<map id="ElectrolytePotential" name="ElectrolytePotential">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,81,155,109"/>
+<area shape="rect" id="Node000002" href="$classPotentialBase.html" title="Abstract base class for BESFEM electric&#45;potential solvers." alt="" coords="24,5,136,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="83,48,83,81,77,81,77,48"/>
+</map>
