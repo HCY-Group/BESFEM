@@ -120,11 +120,12 @@ int main(int argc, char *argv[]) {
 
         mfem::ParGridFunction ones(*domain_parameters.pse);
         ones = 1.0;
+        ones *= *domain_parameters.AvEs[0];
 
         //state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, *domain_parameters.psi, globalerror_P);
         //state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
-        state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, ones, globalerror_P);
-        state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, ones, globalerror_E);
+        state.cathode_potential->UpdatePotential(ones, *state.phC_gf, *domain_parameters.psi, globalerror_P);
+        state.electrolyte_potential->UpdatePotential(ones, *state.phE_gf, *domain_parameters.psi, globalerror_E);
         
         state.Rxn_gf->SaveAsOne("rxn_test");
         domain_parameters.psi->SaveAsOne("psi_test");
