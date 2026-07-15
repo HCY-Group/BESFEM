@@ -117,8 +117,13 @@ int main(int argc, char *argv[]) {
         double globalerror_P = 1.0; // Error for particle potential
         double globalerror_E = 1.0; // Error for electrolyte potential
 
-        state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, *domain_parameters.psi, globalerror_P);
-        state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
+        mfem::ParGridFunction ones(*domain_parameters.pse);
+        ones = 1.0;
+
+        //state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, *domain_parameters.psi, globalerror_P);
+        //state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
+        state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, ones, globalerror_P);
+        state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, ones, globalerror_E);
         
         state.Rxn_gf->SaveAsOne("rxn_test");
         domain_parameters.psi->SaveAsOne("psi_test");
