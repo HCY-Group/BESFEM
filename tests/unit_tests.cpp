@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+    {
 
     SimulationConfig cfg = ParseSimulationArgs(argc, argv);
     ValidateConfig(cfg, argc, argv);
@@ -530,6 +531,8 @@ int main(int argc, char *argv[]) {
             << " seconds" << std::endl;}
 
 */
+    }
+    
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();
 
