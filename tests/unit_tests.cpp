@@ -29,37 +29,11 @@ int main(int argc, char *argv[]) {
     SimulationConfig cfg = ParseSimulationArgs(argc, argv);
     ValidateConfig(cfg, argc, argv);
 
-    //std::string outdir = Utils::BuildRunOutdir(cfg.mesh_file, cfg.num_timesteps);
-    //if (mfem::Mpi::WorldRank() == 0)
-    //{
-    //    std::filesystem::create_directories(outdir);
-    //}
-    
-    // const char* active_dsF = (cfg.half_electrode == sim::Electrode::CATHODE) ? cfg.dsF_file_C : cfg.dsF_file_A;
-
     MPI_Barrier(MPI_COMM_WORLD);
 
     bool half_mode     = (cfg.mode == sim::CellMode::HALF);
     bool half_is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
 
-/*
-        // ============================================================================
-        // ===============================  START SIMULATION  =========================
-        // ============================================================================
-
-        if (mfem::Mpi::WorldRank() == 0)
-        {
-            std::cout << "\n===== Simulation Parameters =====\n"
-                    << "output_dir = " << outdir << "\n"
-                    << "dt   = " << cfg.dt   << "\n"
-                    << "dh   = " << cfg.dh   << "\n"
-                    << "gc   = " << cfg.gc   << "\n"
-                    << "Cr   = " << cfg.Cr   << "\n"
-                    << "Vsr0 = " << cfg.Vsr0 << "\n"
-                    << "=================================\n"
-                    << std::endl;
-        }
-*/
 
         // Initialize Mesh & Geometry
         Initialize_Geometry geometry(cfg);
@@ -96,6 +70,49 @@ int main(int argc, char *argv[]) {
         // =====================
         // poisson equation
         // =====================
+        if (cfg.half_electrode == sim::Electrode::ANODE)
+        {
+        std::vector<mfem::ParGridFunction*> anode_cn_fields; // vector of pointers to cathode concentration fields
+        std::vector<mfem::ParGridFunction*> anode_psi_fields; // vector of pointers to cathode potential fields
+        std::vector<sim::MaterialType> anode_materials; // vector of cathode material types
+                    
+        const int np = static_cast<int>(state.anode_particles.size());
+ 
+        anode_cn_fields.reserve(np); // pre-allocate memory
+        anode_psi_fields.reserve(np); // pre-allocate memory
+        anode_materials.reserve(np); // pre-allocate memory
+
+        for (int j = 0; j < np; ++j)
+        {
+            anode_cn_fields.push_back(state.anode_particles[j].Cn_gf.get()); 
+            anode_psi_fields.push_back(domain_parameters.ps[j].get());
+            anode_materials.push_back(state.anode_particles[j].material);
+        }
+        state.anode_potential->AssembleSystem(anode_cn_fields, anode_psi_fields, anode_materials, *state.phA_gf);
+        state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
+
+        double globalerror_P = 1.0; // Error for particle potential
+        double globalerror_E = 1.0; // Error for electrolyte potential
+
+        mfem::ParGridFunction ones(*domain_parameters.pse);
+        ones = 1.0;
+        ones *= *domain_parameters.AvEs[0];
+
+        //state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, *domain_parameters.psi, globalerror_P);
+        //state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
+        state.anode_potential->UpdatePotential(ones, *state.phA_gf, *domain_parameters.psi, globalerror_P);
+        state.electrolyte_potential->UpdatePotential(ones, *state.phE_gf, *domain_parameters.psi, globalerror_E);
+        
+        state.Rxn_gf->SaveAsOne("rxn_test");
+        domain_parameters.psi->SaveAsOne("psi_test");
+        domain_parameters.pse->SaveAsOne("pse_test");
+        state.phA_gf->SaveAsOne("phiA");
+        state.phE_gf->SaveAsOne("phiE");
+        std::cout << "Global errors: " << globalerror_P << " " << globalerror_E << std::endl;
+        } 
+        
+        else
+        {
         std::vector<mfem::ParGridFunction*> cathode_cn_fields; // vector of pointers to cathode concentration fields
         std::vector<mfem::ParGridFunction*> cathode_psi_fields; // vector of pointers to cathode potential fields
         std::vector<sim::MaterialType> cathode_materials; // vector of cathode material types
@@ -133,6 +150,7 @@ int main(int argc, char *argv[]) {
         state.phC_gf->SaveAsOne("phiC");
         state.phE_gf->SaveAsOne("phiE");
         std::cout << "Global errors: " << globalerror_P << " " << globalerror_E << std::endl;
+        }
 /*
         // double VCell = 0.0;
 
