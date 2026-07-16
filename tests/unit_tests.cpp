@@ -31,9 +31,6 @@ int main(int argc, char *argv[]) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    bool half_mode     = (cfg.mode == sim::CellMode::HALF);
-    bool half_is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
-
 
         // Initialize Mesh & Geometry
         Initialize_Geometry geometry(cfg);
