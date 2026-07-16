@@ -22,9 +22,9 @@ combine_particles = true
 
 num_steps = 1
 
-dt = 1.2e-04
+dt = 6.2e-06
 dh = 8.0e-07
-gc = 6.38e-12
+gc = 6.38e-16
 
 # ============================================================
 # CURRENT CONTROL

@@ -1,6 +1,6 @@
 #!/bin/bash --login
 # Job name: 
-#SBATCH --job-name=slurm_besfem-6.38e-16-4hrs-mob1e-13-TRUE-LARGE
+#SBATCH --job-name=slurm_besfem-6.38e-16-48hrs-mob1e-13-dt6.2e-6
 
 # Number of nodes
 #SBATCH --nodes=2
@@ -17,7 +17,7 @@
 # Wall time
 # Format: "minutes", "hours:minutes:seconds", 
 # "days-hours", or "days-hours:minutes"
-#SBATCH --time=04:00:00
+#SBATCH --time=48:00:00
 
 # Mail type
 # e.g., which events trigger email notifications
