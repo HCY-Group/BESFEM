@@ -1,3 +1,23 @@
+// Unit tests and benchmark tests
+// compile with make test
+// run with: ./unit_tests -cfg ../tests/test_run_config.txt
+
+// Benchmark tests implemented:
+// -ElectrolytePotential::UpdatePotential
+// -ElectrodePotential::UpdatePotential
+
+// Benchmark tests planned (but not yet implemented):
+// -ElectrolyteDiffusion::UpdateConcentration
+// -ElectrodeDiffusion::UpdateConcentration
+// -ElectrodeCahnHilliard::UpdateConcentration
+
+// Other Tests we should do, need to plan how to do them:
+// -TiffReader
+// -Test if "islands" are still in geometry
+// -probably at least one for each source file...
+
+
+
 #include "mfem.hpp"
 #include "mpi.h"
 #include "../include/BESFEM_All.hpp"
@@ -91,21 +111,22 @@ int main(int argc, char *argv[]) {
         double globalerror_P = 1.0; // Error for particle potential
         double globalerror_E = 1.0; // Error for electrolyte potential
 
-        mfem::ParGridFunction ones(*domain_parameters.pse);
-        ones = 1.0;
-        ones *= *domain_parameters.AvEs[0];
+        mfem::ParGridFunction Rxn_p(*domain_parameters.AvEs[0]);
+        mfem::ParGridFunction Rxn_e(*domain_parameters.AvEs[0]);
 
         //state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, *domain_parameters.psi, globalerror_P);
         //state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
-        state.anode_potential->UpdatePotential(ones, *state.phA_gf, *domain_parameters.psi, globalerror_P);
-        state.electrolyte_potential->UpdatePotential(ones, *state.phE_gf, *domain_parameters.psi, globalerror_E);
+        state.anode_potential->UpdatePotential(Rxn_p, *state.phA_gf, *domain_parameters.psi, globalerror_P);
+        state.electrolyte_potential->UpdatePotential(Rxn_e, *state.phE_gf, *domain_parameters.psi, globalerror_E);
         
         state.Rxn_gf->SaveAsOne("rxn_test");
         domain_parameters.psi->SaveAsOne("psi_test");
         domain_parameters.pse->SaveAsOne("pse_test");
         state.phA_gf->SaveAsOne("phiA");
         state.phE_gf->SaveAsOne("phiE");
-        std::cout << "Global errors: " << globalerror_P << " " << globalerror_E << std::endl;
+        std::cout << "Faraday: " << Constants::Frd << std::endl;
+        //TODO: figure out how to return kappa values from electrode and electrolyte 
+        //std::cout << "Global errors: " << globalerror_P << " " << globalerror_E << std::endl;
         } 
         
         else
@@ -132,21 +153,20 @@ int main(int argc, char *argv[]) {
         double globalerror_P = 1.0; // Error for particle potential
         double globalerror_E = 1.0; // Error for electrolyte potential
 
-        mfem::ParGridFunction ones(*domain_parameters.pse);
-        ones = 1.0;
-        ones *= *domain_parameters.AvEs[0];
+        mfem::ParGridFunction Rxn_p(*domain_parameters.AvEs[0]);
+        mfem::ParGridFunction Rxn_e(*domain_parameters.AvEs[0]);
 
         //state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, *domain_parameters.psi, globalerror_P);
         //state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
-        state.cathode_potential->UpdatePotential(ones, *state.phC_gf, *domain_parameters.psi, globalerror_P);
-        state.electrolyte_potential->UpdatePotential(ones, *state.phE_gf, *domain_parameters.psi, globalerror_E);
+        state.cathode_potential->UpdatePotential(Rxn_p, *state.phC_gf, *domain_parameters.psi, globalerror_P);
+        state.electrolyte_potential->UpdatePotential(Rxn_e, *state.phE_gf, *domain_parameters.psi, globalerror_E);
         
         state.Rxn_gf->SaveAsOne("rxn_test");
         domain_parameters.psi->SaveAsOne("psi_test");
         domain_parameters.pse->SaveAsOne("pse_test");
         state.phC_gf->SaveAsOne("phiC");
         state.phE_gf->SaveAsOne("phiE");
-        std::cout << "Global errors: " << globalerror_P << " " << globalerror_E << std::endl;
+        //std::cout << "Global errors: " << globalerror_P << " " << globalerror_E << std::endl;
         }
 /*
         // double VCell = 0.0;

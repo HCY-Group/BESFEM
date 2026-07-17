@@ -11,10 +11,11 @@ electrode = cathode
 # ============================================================
 
 mesh_file = ../inputs/mesh/test_cathode.tif
+# mesh_file = ../inputs/mesh/test_anode.tif
 
 combine_particles = true
 
-amr_levels = 1
+amr_levels = 0
 
 # ============================================================
 # NUMERICAL PARAMETERS
