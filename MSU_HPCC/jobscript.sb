@@ -1,6 +1,6 @@
 #!/bin/bash --login
 # Job name: 
-#SBATCH --job-name=slurm_besfem-GC-TEST-e-16-12hrs
+#SBATCH --job-name=slurm_besfem-AMR-GC-TEST-e-16-12hrs
 
 # Number of nodes
 #SBATCH --nodes=2
