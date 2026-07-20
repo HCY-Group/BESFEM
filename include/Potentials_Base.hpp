@@ -116,6 +116,8 @@ public:
      */
     virtual void AddBoundaryVoltage(double dV) = 0;
 
+    virtual mfem::ParGridFunction GetConductivity() = 0;
+
     int nE = 0; ///< Number of mesh elements.
     int nC = 0; ///< Number of nodes per element.
     int nV = 0; ///< Number of vertices.

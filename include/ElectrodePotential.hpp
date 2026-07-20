@@ -100,6 +100,9 @@ public:
     /// Increment the applied boundary voltage.
     void AddBoundaryVoltage(double dV){Bv += dV;}
 
+    /// Return the GridFunction for conductivity
+    mfem::ParGridFunction GetConductivity() override {return kap;}
+
 private:
 
     Initialize_Geometry &geometry;          ///< Geometry and finite-element infrastructure.

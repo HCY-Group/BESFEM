@@ -127,6 +127,29 @@ int main(int argc, char *argv[]) {
         std::cout << "Faraday: " << Constants::Frd << std::endl;
         //TODO: figure out how to return kappa values from electrode and electrolyte 
         //std::cout << "Global errors: " << globalerror_P << " " << globalerror_E << std::endl;
+
+        // ANALYTICAL SOLUTION
+        Rxn_p.FESpace()->GetMesh()->EnsureNodes();
+        mfem::GridFunction *nodes = Rxn_p.FESpace()->GetMesh()->GetNodes();
+        //std::cout << "node 0: " << *nodes[0] << std::endl; 
+        //std::cout << "node 1: " << *nodes[1] << std::endl;
+        mfem::GridFunction x;
+        mfem::GridFunction y;
+        x.MakeRef(*nodes, /*offset=*/0,                                   /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
+        y.MakeRef(*nodes, /*offset=*/Rxn_p.FESpace()->GetMesh()->GetNV(), /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
+        //std::cout << "x min and max: " << x.Min() << " " << x.Max() << std::endl; 
+        //std::cout << "y min and max: " << y.Min() << " " << y.Max() << std::endl; 
+        
+        mfem::ParGridFunction phA_an(*state.phA_gf);
+        std::cout << "kappa: " << state.anode_potential->GetConductivity().Min() << " " << 
+                                  state.anode_potential->GetConductivity().Max() << std::endl;
+        std::cout << "F/kap: " << Constants::Frd/state.anode_potential->GetConductivity().Max() << std::endl;
+
+        /*for (i = 0; i < phA_an.Size(); i++) 
+        {
+            phA_an(i) = y(i)*
+        }*/
+
         } 
         
         else
@@ -167,6 +190,29 @@ int main(int argc, char *argv[]) {
         state.phC_gf->SaveAsOne("phiC");
         state.phE_gf->SaveAsOne("phiE");
         //std::cout << "Global errors: " << globalerror_P << " " << globalerror_E << std::endl;
+
+        // ANALYTICAL SOLUTION
+        Rxn_p.FESpace()->GetMesh()->EnsureNodes();
+        mfem::GridFunction *nodes = Rxn_p.FESpace()->GetMesh()->GetNodes();
+        //std::cout << "node 0: " << *nodes[0] << std::endl; 
+        //std::cout << "node 1: " << *nodes[1] << std::endl;
+        mfem::GridFunction x;
+        mfem::GridFunction y;
+        x.MakeRef(*nodes, /*offset=*/0,                                   /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
+        y.MakeRef(*nodes, /*offset=*/Rxn_p.FESpace()->GetMesh()->GetNV(), /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
+        //std::cout << "x min and max: " << x.Min() << " " << x.Max() << std::endl; 
+        //std::cout << "y min and max: " << y.Min() << " " << y.Max() << std::endl; 
+        
+        mfem::ParGridFunction phC_an(*state.phC_gf);
+        std::cout << "kappa: " << state.cathode_potential->GetConductivity().Min() << " " << 
+                                  state.cathode_potential->GetConductivity().Max() << std::endl;
+
+
+
+
+
+
+
         }
 /*
         // double VCell = 0.0;
