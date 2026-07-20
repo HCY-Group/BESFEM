@@ -113,7 +113,8 @@ void Utils::SaveSimulationSnapshot(int t, const std::string &outdir, Initialize_
     if (t == 0)
     {
         geometry.parallelMesh->SaveAsOne((outdir + "/pmesh").c_str());
-        domain_parameters.psi->SaveAsOne((outdir + "/psi").c_str());
+        domain_parameters.psiA->SaveAsOne((outdir + "/psiA").c_str());
+        domain_parameters.psiC->SaveAsOne((outdir + "/psiC").c_str());
         domain_parameters.pse->SaveAsOne((outdir + "/pse").c_str());
     }
 
@@ -125,10 +126,10 @@ void Utils::SaveSimulationSnapshot(int t, const std::string &outdir, Initialize_
     CnC.SaveAsOne((outdir + "/CnC_raw" + suff).c_str());
     CnE.SaveAsOne((outdir + "/CnE_raw" + suff).c_str());
 
-    CnApsi = CnA; CnApsi *= *domain_parameters.psA;
+    CnApsi = CnA; CnApsi *= *domain_parameters.psiA;
     CnApsi.SaveAsOne((outdir + "/CnA" + suff).c_str());
 
-    CnCpsi = CnC; CnCpsi *= *domain_parameters.psC;
+    CnCpsi = CnC; CnCpsi *= *domain_parameters.psiC;
     CnCpsi.SaveAsOne((outdir + "/CnC" + suff).c_str());
 
     CnEpsi = CnE; CnEpsi *= *domain_parameters.pse;

@@ -6,7 +6,7 @@
 
 ElectrodeCahnHilliard::ElectrodeCahnHilliard(Initialize_Geometry &geo, Domain_Parameters &para, sim::MaterialType mat, const SimulationConfig &cfg)
      : ConcentrationBase(geo, para, mat, cfg), cfg(cfg), pmesh(geo.parallelMesh.get()), combine_particle_groups(geo.combine_particle_groups),
-      Mub(fespace.get()), Mob(fespace.get()), RxA(fespace.get()), gtPsi(para.gtPsi), gtPsA(para.gtPsA),
+      Mub(fespace.get()), Mob(fespace.get()), RxA(fespace.get()),
       Lp1(fespace.get()), Lp2(fespace.get()), MuV(fespace.get()),
       PsVc(fespace.get()), CpV0(fespace.get()), RHCp(fespace.get()), CpVn(fespace.get()),
       Fct(fespace.get()), Fcb(fespace.get()), cDp(&Mob), cAp(&RxA), MCH_solver(MPI_COMM_WORLD)

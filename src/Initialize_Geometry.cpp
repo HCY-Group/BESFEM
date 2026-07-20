@@ -3,11 +3,20 @@
 #include "../include/readtiff.h"
 #include "../include/SimTypes.hpp"
 #include "../include/dist_solver.hpp"
+
 #include "mfem.hpp"
-#include <tiffio.h>
+
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <queue>
+#include <set>
+#include <sstream>
 #include <stdexcept>
+#include <tuple>
 #include <vector>
 
 using namespace std;
@@ -23,9 +32,6 @@ Initialize_Geometry::Initialize_Geometry(const SimulationConfig& cfg)
 // Destructor
 Initialize_Geometry::~Initialize_Geometry() {}
 
-
-#include <queue>
-#include <cstdint>
 
 static void KeepOnlyConnectedToBoundary_2D(std::vector<uint8_t> &solid, int nx, int ny, bool eight_conn,
                                           bool seed_all_boundaries = true, int seed_side = -1)
@@ -158,7 +164,7 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
     InitializeGlobalMesh(meshFile);
 
     // Initialize the parallel mesh
-    InitializeParallelMesh(MPI_COMM_WORLD);
+    InitializeParallelMesh(comm);
 
     // Set up the finite element space
     SetupFiniteElementSpace(order);
@@ -167,16 +173,16 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
     SetupParFiniteElementSpace(order);
 
     // Assign the global values
-    AssignGlobalValues(meshFile);
+    AssignGlobalValues();
 
     // Map the global values to the local
-    MapGlobalToLocal(meshFile);
+    MapGlobalToLocal();
     
-    std::string meshFileStr(meshFile);
+    // std::string meshFileStr(meshFile);
 
 
-    if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif")
-    {
+    // if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif")
+    // {
         distMask       = std::make_unique<mfem::ParGridFunction>(parfespace.get());
         distMaskSigned = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
@@ -184,8 +190,8 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
         MaskFilterPse = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // electrolyte
 
         // Keep your old total-solid and electrolyte filters
-        ComputePDEFilter(*distMask, *MaskFilter,    /*mode=*/0);
-        ComputePDEFilter(*distMask, *MaskFilterPse, /*mode=*/1);
+        ComputePDEFilter(*distMask, *MaskFilter,    /*mode=*/0, sim::CellMode::HALF, cfg.half_electrode);
+        ComputePDEFilter(*distMask, *MaskFilterPse, /*mode=*/1, sim::CellMode::HALF, cfg.half_electrode);
 
         // discover particle labels automatically from TIFF
         particle_labels = GetParticleLabelsFromTiff();
@@ -215,7 +221,7 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
         for (int k = 0; k < (int)particle_labels.size(); ++k)
         {
             MaskFilters[k] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-            ComputePDEFilterLabel(*distMask, *MaskFilters[k], particle_labels[k], false);
+            ComputePDEFilterLabel(*distMask, *MaskFilters[k], particle_labels[k], false, -1, CellMode::HALF, cfg.half_electrode);
 
             std::ostringstream name;
             name << "MaskFilter_label_" << particle_labels[k] << ".gf";
@@ -233,7 +239,7 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
             std::cout << "ComputePDEFilter done.\n";
         }
 
-    }
+    // }
 
     // Print out information relative to the mesh
     PrintMeshInfo();
@@ -242,6 +248,228 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
 
 
 }
+
+std::vector<std::vector<std::vector<int>>> Initialize_Geometry::MergeMeshes(const char *AnodeMeshFile, const char *CathodeMeshFile)
+{
+    auto anodeData = ReadTiffFile(AnodeMeshFile);
+    auto cathodeData = ReadTiffFile(CathodeMeshFile);
+
+    if (anodeData.empty() ||
+        cathodeData.empty() ||
+        anodeData[0].empty() ||
+        cathodeData[0].empty() ||
+        anodeData[0][0].empty() ||
+        cathodeData[0][0].empty())
+    {
+        throw std::runtime_error(
+            "Anode or cathode TIFF data is empty.");
+    }
+
+    const int anodeNz = static_cast<int>(anodeData.size());
+    const int anodeNy = static_cast<int>(anodeData[0].size());
+    const int anodeNx = static_cast<int>(anodeData[0][0].size());
+
+    const int cathodeNz = static_cast<int>(cathodeData.size());
+    const int cathodeNy = static_cast<int>(cathodeData[0].size());
+    const int cathodeNx = static_cast<int>(cathodeData[0][0].size());
+
+    if (anodeNz != cathodeNz)
+    {
+        throw std::runtime_error(
+            "Anode and cathode TIFF files must have "
+            "the same number of depth slices.");
+    }
+
+    if (anodeNy != cathodeNy)
+    {
+        throw std::runtime_error(
+            "Anode and cathode TIFF files must have "
+            "the same number of rows.");
+    }
+
+    /*
+     * This initially joins the two electrode geometries
+     * directly. Set this to a positive integer later if
+     * you want an explicit electrolyte-only separator.
+     */
+    const int separatorColumns = 0;
+    const int mergedNx = anodeNx + separatorColumns + cathodeNx;
+
+    std::vector<std::vector<std::vector<int>>> mergedData( anodeNz,
+        std::vector<std::vector<int>>(
+            anodeNy,
+            std::vector<int>(
+                mergedNx,
+                0)));
+
+    for (int k = 0; k < anodeNz; ++k)
+    {
+        for (int j = 0; j < anodeNy; ++j)
+        {
+            // Copy the anode to the left side.
+            for (int i = 0; i < anodeNx; ++i)
+            {
+                const int label =
+                    anodeData[k][j][i];
+
+                if (label > 0)
+                {
+                    throw std::runtime_error(
+                        "Anode TIFF contains a positive "
+                        "particle label. Expected labels <= 0.");
+                }
+
+                mergedData[k][j][i] =
+                    label;
+            }
+
+            /*
+             * Separator entries remain zero because
+             * mergedData was initialized to zero.
+             */
+
+            const int cathodeStart = anodeNx + separatorColumns;
+
+            // Copy the cathode to the right side.
+            for (int i = 0; i < cathodeNx; ++i)
+            {
+                const int label = cathodeData[k][j][i];
+
+                if (label < 0)
+                {
+                    throw std::runtime_error(
+                        "Cathode TIFF contains a negative "
+                        "particle label. Expected labels >= 0.");
+                }
+
+                mergedData[k][j][cathodeStart + i] =
+                    label;
+            }
+        }
+    }
+
+    if (myid == 0)
+    {
+        std::cout << "[Full Cell] Signed TIFF files merged.\n";
+
+        std::cout << "  Anode columns:    " << anodeNx << "\n";
+        std::cout << "  Separator columns: " << separatorColumns << "\n";
+        std::cout << "  Cathode columns:  " << cathodeNx << "\n";
+        std::cout << "  Total columns:    " << mergedNx << "\n";
+    }
+
+    SaveTiffDataToPGM(mergedData, "full_cell_geometry.pgm");
+
+    return mergedData;
+}
+
+// Full Cell
+void Initialize_Geometry::InitializeMesh(const char* AnodeMeshFile, const char* CathodeMeshFile, MPI_Comm comm, int order) {
+
+    myid = mfem::Mpi::WorldRank();
+
+    tiffData = MergeMeshes(AnodeMeshFile, CathodeMeshFile);
+    
+    // Initialize the global mesh
+    InitializeGlobalMesh(tiffData);
+
+    // Initialize the parallel mesh
+    InitializeParallelMesh(MPI_COMM_WORLD);
+
+    // Set up the finite element space
+    SetupFiniteElementSpace(order);
+
+    // Set up the parallel finite element space
+    SetupParFiniteElementSpace(order);
+
+    // Assign the global values
+    AssignGlobalValues();
+
+    // Map the global values to the local
+    MapGlobalToLocal();
+
+    // General filter workspace.
+    distMask = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    distMaskSigned = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+
+    // Full-cell fields.
+    MaskFilterAnode = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    MaskFilterCathode = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    MaskFilterPse = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+
+    ComputePDEFilter(*distMask, *MaskFilterAnode, 0, CellMode::FULL, Electrode::ANODE);
+    ComputePDEFilter(*distMask, *MaskFilterCathode, 0, CellMode::FULL, Electrode::CATHODE);
+
+    // Zero labels: electrolyte.
+    // Electrode argument is ignored when phase_mode == 1.
+    ComputePDEFilter(*distMask, *MaskFilterPse, 1, CellMode::FULL, Electrode::ANODE);
+
+    // Discover negative and positive labels separately.
+    DiscoverFullCellParticleLabels();
+
+    // -------------------------------------------------
+    // Anode particle masks
+    // -------------------------------------------------
+
+    MaskFiltersAnode.clear();
+    MaskFiltersAnode.resize(anode_particle_labels.size());
+
+    for (int p = 0;
+        p < static_cast<int>(anode_particle_labels.size());
+        ++p)
+    {
+        MaskFiltersAnode[p] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+
+        ComputePDEFilterLabel(*distMask, *MaskFiltersAnode[p], anode_particle_labels[p], false, -1, CellMode::FULL, Electrode::ANODE);
+
+        std::ostringstream name;
+
+        name << "MaskFilter_anode_label_"
+            << std::abs(anode_particle_labels[p])
+            << ".gf";
+    }
+
+    // -------------------------------------------------
+    // Cathode particle masks
+    // -------------------------------------------------
+
+    MaskFiltersCathode.clear();
+    MaskFiltersCathode.resize(cathode_particle_labels.size());
+
+    for (int p = 0;
+        p < static_cast<int>(
+            cathode_particle_labels.size());
+        ++p)
+    {
+        MaskFiltersCathode[p] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+
+        ComputePDEFilterLabel(*distMask, *MaskFiltersCathode[p], cathode_particle_labels[p], false, -1, CellMode::FULL, Electrode::CATHODE);
+
+        std::ostringstream name;
+        name << "MaskFilter_cathode_label_"
+            << cathode_particle_labels[p]
+            << ".gf";
+
+        // MaskFiltersCathode[p]->SaveAsOne(name.str().c_str());
+    }
+
+    MaskFilterAnode->SaveAsOne("MaskFilter_anode.gf");
+    MaskFilterCathode->SaveAsOne("MaskFilter_cathode.gf");
+    MaskFilterPse->SaveAsOne("MaskFilter_pse.gf");
+
+    if (myid == 0)
+    {
+        std::cout << "[Initialize_Geometry] " << "Full-cell PDE filters complete.\n";
+    }
+
+    PrintMeshInfo();
+
+    globalMesh->Save("gmesh");
+    
+
+}
+
+
 
 std::vector<int> Initialize_Geometry::GetParticleLabelsFromTiff() const
 {
@@ -255,6 +483,99 @@ std::vector<int> Initialize_Geometry::GetParticleLabelsFromTiff() const
     }
 
     return std::vector<int>(labels.begin(), labels.end());
+}
+
+void Initialize_Geometry::DiscoverFullCellParticleLabels()
+{
+    std::set<int> anodeLabels;
+    std::set<int> cathodeLabels;
+
+    for (const auto &slice : tiffData)
+    {
+        for (const auto &row : slice)
+        {
+            for (const int label : row)
+            {
+                if (label < 0)
+                {
+                    anodeLabels.insert(label);
+                }
+                else if (label > 0)
+                {
+                    cathodeLabels.insert(label);
+                }
+            }
+        }
+    }
+
+    anode_particle_labels.assign(anodeLabels.begin(), anodeLabels.end());
+    cathode_particle_labels.assign(cathodeLabels.begin(), cathodeLabels.end());
+
+    /*
+     * A regular integer sort gives:
+     *
+     * -3, -2, -1
+     *
+     * Sort by absolute value to get:
+     *
+     * -1, -2, -3
+     */
+    std::sort(
+        anode_particle_labels.begin(),
+        anode_particle_labels.end(),
+        [](const int lhs, const int rhs)
+        {
+            return std::abs(lhs) <
+                   std::abs(rhs);
+        });
+
+    if (cfg.combine_particle_groups)
+    {
+        if (!anode_particle_labels.empty())
+        {
+            anode_particle_labels.clear();
+            anode_particle_labels.push_back(-1);
+        }
+
+        if (!cathode_particle_labels.empty())
+        {
+            cathode_particle_labels.clear();
+            cathode_particle_labels.push_back(1);
+        }
+
+        if (myid == 0)
+        {
+            std::cout
+                << "[Initialize_Geometry] "
+                << "Combining particles separately within "
+                << "each full-cell electrode.\n";
+        }
+    }
+
+    if (myid == 0)
+    {
+        std::cout
+            << "[Initialize_Geometry] "
+            << "Anode particle labels: ";
+
+        for (const int label :
+             anode_particle_labels)
+        {
+            std::cout << label << " ";
+        }
+
+        std::cout
+            << "\n[Initialize_Geometry] "
+            << "Cathode particle labels: ";
+
+        for (const int label :
+             cathode_particle_labels)
+        {
+            std::cout << label << " ";
+        }
+
+        std::cout << "\n";
+    }
 }
 
 // Function to initialize the global mesh using a .tif or .mesh file
@@ -288,6 +609,53 @@ void Initialize_Geometry::InitializeGlobalMesh(const char* meshFile) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
+}
+
+void Initialize_Geometry::InitializeGlobalMesh( const std::vector<std::vector<std::vector<int>>> &voxelData)
+{
+    if (voxelData.empty() ||
+        voxelData[0].empty() ||
+        voxelData[0][0].empty())
+    {
+        throw std::invalid_argument(
+            "InitializeGlobalMesh: voxel data is empty.");
+    }
+
+    if (myid == 0)
+    {
+        std::cout
+            << "Creating global mesh from voxel data "
+            << "already stored in memory.\n";
+    }
+
+    // Copy merged data into the class member.
+    tiffData = voxelData;
+
+    globalMesh = CreateGlobalMeshFromTiffData(tiffData);
+
+    globalMesh->EnsureNCMesh(true);
+
+    if (globalMesh->GetNE() <= 0)
+    {
+        throw std::runtime_error(
+            "InitializeGlobalMesh: generated mesh has no elements.");
+    }
+
+    mfem::Array<int> vertexIds;
+
+    globalMesh->GetElementVertices(0, vertexIds);
+
+    mfem::Vector vertex0(globalMesh->GetVertex(vertexIds[0]), globalMesh->SpaceDimension());
+    mfem::Vector vertex1(globalMesh->GetVertex(vertexIds[1]), globalMesh->SpaceDimension());
+
+    const double elementSize = vertex0.DistanceTo(vertex1);
+
+    if (myid == 0)
+    {
+        std::cout << "Element size dh = " << elementSize << "\n";
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 // Function to initialize the parallel mesh
@@ -324,15 +692,15 @@ void Initialize_Geometry::SetupParFiniteElementSpace(int order) {
     this->pardimfespace_dg = std::make_shared<mfem::ParFiniteElementSpace>(this->parallelMesh.get(), this->pfec_dg.get(), this->parallelMesh->Dimension(), mfem::Ordering::byNODES);
 }
 
-void Initialize_Geometry::AssignGlobalValues(const char* meshFile)
+void Initialize_Geometry::AssignGlobalValues()
 {
-    const std::string meshFileStr(meshFile);
+    // const std::string meshFileStr(meshFile);
 
-    if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) != "tif")
-    {
-        mfem::mfem_error(
-            "AssignGlobalValues only supports TIFF files.");
-    }
+    // if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) != "tif")
+    // {
+    //     mfem::mfem_error(
+    //         "AssignGlobalValues only supports TIFF files.");
+    // }
 
     if (mfem::Mpi::WorldRank() == 0)
     {
@@ -346,8 +714,7 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile)
             "before assigning global values.");
     }
 
-    gVox = std::make_unique<mfem::GridFunction>(
-        globalfespace.get());
+    gVox = std::make_unique<mfem::GridFunction>(globalfespace.get());
 
     const int nz = static_cast<int>(tiffData.size());
     const int ny = static_cast<int>(tiffData[0].size());
@@ -374,8 +741,7 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile)
 
                 const int idx = i + vx * j;
 
-                (*gVox)[idx] =
-                    tiffData[0][jj][ii];
+                (*gVox)[idx] = tiffData[0][jj][ii];
             }
         }
     }
@@ -397,15 +763,14 @@ void Initialize_Geometry::AssignGlobalValues(const char* meshFile)
                     const int idx =
                         i + vx * (j + vy * k);
 
-                    (*gVox)[idx] =
-                        tiffData[kk][jj][ii];
+                    (*gVox)[idx] = tiffData[kk][jj][ii];
                 }
             }
         }
     }
 }
 
-void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
+void Initialize_Geometry::MapGlobalToLocal() {
     
     if (!parallelMesh) {
         throw std::runtime_error("Parallel mesh must be initialized before calculating element volumes.");
@@ -431,8 +796,8 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
     VTX.SetSize(nC);
 
     // Determine file type based on extension
-    std::string meshFileStr(meshFile);  // Convert to std::string
-    if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
+    // std::string meshFileStr(meshFile);  // Convert to std::string
+    // if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif") {
         if (mfem::Mpi::WorldRank() == 0) // only print on rank 0
         {cout << "Reading .tif file for mapping global to local grid function" << endl;}
 
@@ -449,30 +814,30 @@ void Initialize_Geometry::MapGlobalToLocal(const char* meshFile) {
                 (*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);         // used in Vox code
             }   
             
-            if (gDsF) {
-                if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-                for (int vi = 0; vi < nC; ++vi) { (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]); }
-            }
+            // if (gDsF) {
+            //     if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+            //     for (int vi = 0; vi < nC; ++vi) { (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]); }
+            // }
 
-            if (gDsF_A) {
-                if (!dsF_A) dsF_A = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-                for (int vi=0; vi<nC; ++vi) (*dsF_A)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
-            }
-            if (gDsF_C) {
-                if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-                for (int vi=0; vi<nC; ++vi) (*dsF_C)(VTX[vi]) = (*gDsF_C)(gVTX[vi]);
-            }
+            // if (gDsF_A) {
+            //     if (!dsF_A) dsF_A = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+            //     for (int vi=0; vi<nC; ++vi) (*dsF_A)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
+            // }
+            // if (gDsF_C) {
+            //     if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+            //     for (int vi=0; vi<nC; ++vi) (*dsF_C)(VTX[vi]) = (*gDsF_C)(gVTX[vi]);
+            // }
 
-            if (!gDsF_C && gDsF_A) {
-                if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-                for (int vi=0; vi<nC; ++vi) (*dsF)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
-            }
+            // if (!gDsF_C && gDsF_A) {
+            //     if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+            //     for (int vi=0; vi<nC; ++vi) (*dsF)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
+            // }
         }
 
-    } 
-    else {
-        cerr << "Unsupported file type for MapGlobalToLocal" << endl;
-    }
+    // // } 
+    // else {
+    //     cerr << "Unsupported file type for MapGlobalToLocal" << endl;
+    // }
 
 }
 
@@ -491,21 +856,12 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
     args.Column_begin = cfg.column_begin;
     args.Column_end   = cfg.column_end;
 
-	// //TODO: The code works with serial 2d, parallel 2d, and serial 3d, but not parallel 3d
-	// args.Depth_begin = 0;	//only read in one slice for 2D data
-	// args.Depth_end = 1;	//only read in one slice for 2D data
-	// // get a smaller subset so it runs faster
-	// args.Row_begin    = 15;
-	// args.Row_end      = 80;
-	// args.Column_begin = 10;
-	// args.Column_end   = 60;
-
 	TIFFReader reader(meshFile,args);
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffData;
 	tiffData = reader.getImageData();
 
-    SaveTiffDataToPGM(tiffData, "tiff_debug.pgm");
+    // SaveTiffDataToPGM(tiffData, "tiff_debug.pgm");
 
     return tiffData;
 }
@@ -581,10 +937,22 @@ void Initialize_Geometry::SaveTiffDataToPGM(
     const int height = static_cast<int>(img.size());
     const int width  = static_cast<int>(img[0].size());
 
-    int max_label = 0;
-    for (const auto &row : img) {
-        for (int label : row) {
-            max_label = std::max(max_label, label);
+    // int max_label = 0;
+    // for (const auto &row : img) {
+    //     for (int label : row) {
+    //         max_label = std::max(max_label, label);
+    //     }
+    // }
+
+    int minLabel = std::numeric_limits<int>::max();
+    int maxLabel = std::numeric_limits<int>::lowest();
+
+    for (const auto &row : img)
+    {
+        for (const int label : row)
+        {
+            minLabel = std::min(minLabel, label);
+            maxLabel = std::max(maxLabel, label);
         }
     }
 
@@ -601,9 +969,9 @@ void Initialize_Geometry::SaveTiffDataToPGM(
             const int label = img[j][i];
 
             unsigned char val = 0;
-            if (max_label > 0) {
+            if (maxLabel > minLabel) {
                 val = static_cast<unsigned char>(
-                    std::round(255.0 * label / max_label)
+                    std::round(255.0 * (label - minLabel) / (maxLabel - minLabel))
                 );
             }
 
@@ -615,12 +983,12 @@ void Initialize_Geometry::SaveTiffDataToPGM(
 
     if (mfem::Mpi::WorldRank() == 0) {
         std::cout << "Saved PGM to " << filename
-                  << " using labels 0-" << max_label << "\n";
+                  << " using label range " << minLabel << "-" << maxLabel << "\n";
     }
 }
 
 
-void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::ParGridFunction &filt_gf, int mode)
+void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::ParGridFunction &filt_gf, int mode, sim::CellMode cell_mode, sim::Electrode electrode)
 
 {
     MFEM_VERIFY(parallelMesh, "parallelMesh is not initialized.");
@@ -649,52 +1017,118 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
     std::vector<uint8_t> fg(nx*ny*nz, 0);
 
     // Boundary Rules: [0] = west, [1] = east, [2] = south, [3] = north, [4] = bottom, [5] = top
-
     if (rank == 0)
     {
-        // base solid from TIFF: 1 = white/solid
-        std::vector<uint8_t> solid_base(nx*ny*nz, 0);
-        for (int k=0; k<nz; ++k)
-        for (int j=0; j<ny; ++j)
-        for (int i=0; i<nx; ++i)
+        for (int k = 0; k < nz; ++k)
         {
-            const int idx = i + nx*j + nx*ny*k;
-            solid_base[idx] = (tiffData[k][j][i] > 0) ? 1 : 0;
+            for (int j = 0; j < ny; ++j)
+            {
+                for (int i = 0; i < nx; ++i)
+                {
+                    const int idx = i + nx*j + nx*ny*k;
+                    const int label = tiffData[k][j][i];
+
+                    if (mode == 0)
+                    {
+                        // Electrode mask.
+                        if (cell_mode == CellMode::HALF)
+                        {
+                            fg[idx] = (label > 0) ? 1 : 0;
+                        }
+                        else if (
+                            electrode == Electrode::ANODE)
+                        {
+                            fg[idx] = (label < 0) ? 1 : 0;
+                        }
+                        else if (
+                            electrode == Electrode::CATHODE)
+                        {
+                            fg[idx] = (label > 0) ? 1 : 0;
+                        }
+                        else
+                        {
+                            MFEM_ABORT("ComputePDEFilter: full-cell solid "
+                                        "filter requires ANODE or CATHODE.");
+                        }
+                    }
+                    else if (mode == 1)
+                    {
+                        /*
+                        * Electrolyte is explicitly zero.
+                        *
+                        * It must not be computed as the
+                        * inverse of the anode or cathode.
+                        */
+                        fg[idx] = (label == 0) ? 1 : 0;
+                    }
+                    else
+                    {
+                        MFEM_ABORT("ComputePDEFilter: mode must be "
+                            "0 (electrode) or 1 (electrolyte).");
+                    }
+                }
+            }
         }
 
-        if (mode == 0)
+        if (nz == 1)
         {
-            // PSI: solid phase, keep only stuff connected to a boundary
-            fg = solid_base;
-
-            if (nz == 1)
+            if (mode == 0)
             {
-                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 1); // psi boundary
+                const int collectorSide = (electrode == Electrode::ANODE)
+                        ? 0
+                        : 1;
+
+                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, collectorSide);
             }
             else
             {
-                // xmax face in 3D (seed_face=1)
-                KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, false, 1);
-            }
-        }
-        else if (mode == 1)
-        {
-            // PSE: electrolyte = NOT solid
-            for (int idx=0; idx<nx*ny*nz; ++idx) fg[idx] = solid_base[idx] ? 0 : 1;
+                if (cell_mode == CellMode::FULL)
+                {
+                    /*
+                    * Preserve electrolyte connected to any
+                    * outer boundary.
+                    */
+                    KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1);
+                }
+                else
+                {
+                    /*
+                    * Half-cell electrolyte lies opposite
+                    * the current collector.
+                    */
+                    const int electrolyteSide = (electrode == Electrode::ANODE)
+                            ? 1
+                            : 0;
 
-            if (nz == 1)
-            {
-                KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, 0); // pse boundary
-                // KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1); // all boundaries
-            }
-            else
-            {
-                KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, false, 0);
+                    KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, electrolyteSide);
+                }
             }
         }
         else
         {
-            MFEM_ABORT("ComputePDEFilter: mode must be 0 (psi) or 1 (pse).");
+            if (mode == 0)
+            {
+                const int collectorFace = (electrode == Electrode::ANODE)
+                        ? 0
+                        : 1;
+
+                KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, false, collectorFace);
+            }
+            else
+            {
+                if (cell_mode == CellMode::FULL)
+                {
+                    KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, true, -1);
+                }
+                else
+                {
+                    const int electrolyteFace = (electrode == Electrode::ANODE)
+                            ? 1
+                            : 0;
+
+                    KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, false, electrolyteFace);
+                }
+            }
         }
     }
 
@@ -782,7 +1216,9 @@ void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist,
                                                 mfem::ParGridFunction &filt_gf,
                                                 int target_label,
                                                 bool keep_boundary_connected,
-                                                int seed_side_or_face)
+                                                int seed_side_or_face,
+                                                sim::CellMode cell_mode,
+                                                sim::Electrode electrode)
 {
     MFEM_VERIFY(parallelMesh, "parallelMesh is not initialized.");
     MFEM_VERIFY(parfespace, "parfespace is not initialized.");
@@ -814,13 +1250,28 @@ void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist,
         {
             const int idx = i + nx*j + nx*ny*k;
             // fg[idx] = (tiffData[k][j][i] == target_label) ? 1 : 0;
-            if (cfg.combine_particle_groups)
+            const int label = tiffData[k][j][i];
+
+            if (!cfg.combine_particle_groups)
             {
-                fg[idx] = (tiffData[k][j][i] > 0) ? 1 : 0;
+                fg[idx] = (label == target_label) ? 1 : 0;
+            }
+            else if (cell_mode == CellMode::HALF)
+            {
+                fg[idx] = (label > 0) ? 1 : 0;
+            }
+            else if (electrode == Electrode::ANODE)
+            {
+                fg[idx] = (label < 0) ? 1 : 0;
+            }
+            else if (electrode == Electrode::CATHODE)
+            {
+                fg[idx] = (label > 0) ? 1 : 0;
             }
             else
             {
-                fg[idx] = (tiffData[k][j][i] == target_label) ? 1 : 0;
+                MFEM_ABORT(
+                    "ComputePDEFilterLabel: invalid electrode.");
             }
         }
 

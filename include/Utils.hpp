@@ -132,12 +132,9 @@ public:
     /**
      * @brief Build a timestamped output directory path.
      *
-     * @param mesh_file Path to the mesh file.
-     * @param num_steps Number of timesteps.
      * @return Output directory path.
      */
-    static inline std::string BuildRunOutdir(const char* mesh_file,
-                                             int num_steps)
+    static inline std::string BuildRunOutdir()
     {
         namespace fs = std::filesystem;
 
@@ -145,20 +142,17 @@ public:
         std::time_t now_c = std::chrono::system_clock::to_time_t(now);
         std::tm tm{};
 
-    #if defined(_WIN32)
-        localtime_s(&tm, &now_c);
-    #else
-        localtime_r(&now_c, &tm);
-    #endif
+        #if defined(_WIN32)
+            localtime_s(&tm, &now_c);
+        #else
+            localtime_r(&now_c, &tm);
+        #endif
 
         std::ostringstream ts;
         ts << std::put_time(&tm, "%Y%m%d_%H%M%S");
-        std::string mesh_name = fs::path(mesh_file).stem().string();
 
         std::ostringstream od;
         od << "../outputs/Results/" << ts.str();
-        //    << "__nsteps=" << num_steps
-        //    << "__mesh=" << mesh_name;
 
         return od.str();
     }

@@ -19,16 +19,38 @@ TIFFReader::TIFFReader(const char* filePath, const Constraints& constraints) {
     setConstraints(constraints);
     TIFFSetDirectory(tiff, 0);
 
-    uint16 spp=0, bps=0, photo=0, planar=0;
-    TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &spp);
-    TIFFGetField(tiff, TIFFTAG_BITSPERSAMPLE, &bps);
-    TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
-    TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar);
+    uint16 spp = 0;
+    uint16 bps = 0;
+    uint16 photo = 0;
+    uint16 planar = 0;
+    uint16 sample_format = SAMPLEFORMAT_UINT;
 
-    std::cout << "spp=" << spp
+    TIFFGetFieldDefaulted(
+        tiff,
+        TIFFTAG_SAMPLEFORMAT,
+        &sample_format);
+
+    if (mfem::Mpi::WorldRank() == 0)
+    {
+        std::cout
+            << "spp=" << spp
             << " bps=" << bps
+            << " sampleformat=" << sample_format
             << " photometric=" << photo
-            << " planar=" << planar << "\n";
+            << " planar=" << planar
+            << "\n";
+    }
+    
+
+    // TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &spp);
+    // TIFFGetField(tiff, TIFFTAG_BITSPERSAMPLE, &bps);
+    // TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
+    // TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar);
+
+    // std::cout << "spp=" << spp
+    //         << " bps=" << bps
+    //         << " photometric=" << photo
+    //         << " planar=" << planar << "\n";
 
 }
 
@@ -78,56 +100,155 @@ void TIFFReader::readinfo()
             metadata_set = true;
         }
 
-        tdata_t buf = _TIFFmalloc(TIFFScanlineSize(tiff));
+        uint16 bits_per_sample = 8;
+        uint16 sample_format = SAMPLEFORMAT_UINT;
 
-        for (int row = constraints.Row_begin; row < constraints.Row_end; row++) {
-            TIFFReadScanline(tiff, buf, row);
-            uint8* p = static_cast<uint8*>(buf);
+        TIFFGetFieldDefaulted(
+            tiff,
+            TIFFTAG_BITSPERSAMPLE,
+            &bits_per_sample);
 
-            for (int col = constraints.Column_begin; col < constraints.Column_end; col++) {
-                uint8 gray = 0;
+        TIFFGetFieldDefaulted(
+            tiff,
+            TIFFTAG_SAMPLEFORMAT,
+            &sample_format);
 
-                if (spp == 1) {
-                    gray = p[col];
-                } else {
-                    const int idx = static_cast<int>(spp) * col;
-                    const uint8 r = p[idx + 0];
-                    const uint8 g = p[idx + 1];
-                    const uint8 b = p[idx + 2];
+        tdata_t buf =
+            _TIFFmalloc(
+                TIFFScanlineSize(tiff));
 
-                    gray = static_cast<uint8>(0.299*r + 0.587*g + 0.114*b);
-                }
+        if (buf == nullptr)
+        {
+            throw std::runtime_error(
+                "Could not allocate TIFF scanline buffer.");
+        }
 
+        for (int row = constraints.Row_begin;
+            row < constraints.Row_end;
+            ++row)
+        {
+            if (TIFFReadScanline(
+                    tiff,
+                    buf,
+                    row,
+                    0) < 0)
+            {
+                _TIFFfree(buf);
+
+                throw std::runtime_error(
+                    "Failed to read TIFF scanline.");
+            }
+
+            for (int col = constraints.Column_begin;
+                col < constraints.Column_end;
+                ++col)
+            {
                 int value = 0;
 
-                if (spp >= 3)
+                // -------------------------------------------------
+                // Single-channel 8-bit TIFF
+                // -------------------------------------------------
+                if (spp == 1 &&
+                    bits_per_sample == 8)
                 {
-                    const int idx = static_cast<int>(spp) * col;
+                    const uint8_t *pixels =
+                        static_cast<const uint8_t *>(buf);
 
-                    const uint8 r = p[idx + 0];
-                    const uint8 g = p[idx + 1];
-                    const uint8 b = p[idx + 2];
+                    value =
+                        static_cast<int>(
+                            pixels[col]);
+                }
+
+                // -------------------------------------------------
+                // Single-channel signed 16-bit TIFF
+                // -------------------------------------------------
+                else if (
+                    spp == 1 &&
+                    bits_per_sample == 16 &&
+                    sample_format == SAMPLEFORMAT_INT)
+                {
+                    const int16_t *pixels =
+                        static_cast<const int16_t *>(buf);
+
+                    value =
+                        static_cast<int>(
+                            pixels[col]);
+                }
+
+                // -------------------------------------------------
+                // Single-channel unsigned 16-bit TIFF
+                // -------------------------------------------------
+                else if (
+                    spp == 1 &&
+                    bits_per_sample == 16 &&
+                    sample_format == SAMPLEFORMAT_UINT)
+                {
+                    const uint16_t *pixels =
+                        static_cast<const uint16_t *>(buf);
+
+                    value =
+                        static_cast<int>(
+                            pixels[col]);
+                }
+
+                // -------------------------------------------------
+                // RGB 8-bit TIFF
+                // -------------------------------------------------
+                else if (
+                    spp >= 3 &&
+                    bits_per_sample == 8)
+                {
+                    const uint8_t *pixels =
+                        static_cast<const uint8_t *>(buf);
+
+                    const int idx =
+                        static_cast<int>(spp) * col;
+
+                    const uint8_t r =
+                        pixels[idx + 0];
+
+                    const uint8_t g =
+                        pixels[idx + 1];
+
+                    const uint8_t b =
+                        pixels[idx + 2];
 
                     const bool is_white =
                         r > 240 &&
                         g > 240 &&
                         b > 240;
 
-                    // White = electrolyte
-                    value = is_white ? 0 : 1;
+                    value =
+                        is_white ? 0 : 1;
                 }
                 else
                 {
-                    value = static_cast<int>(p[col]);
+                    _TIFFfree(buf);
+
+                    std::stringstream error;
+
+                    error
+                        << "Unsupported TIFF format: "
+                        << "samples per pixel = "
+                        << spp
+                        << ", bits per sample = "
+                        << bits_per_sample
+                        << ", sample format = "
+                        << sample_format
+                        << ".";
+
+                    throw std::runtime_error(
+                        error.str());
                 }
 
-                // int value = static_cast<int>(gray);
+                imageData
+                    [page - constraints.Depth_begin]
+                    [row - constraints.Row_begin]
+                    [col - constraints.Column_begin] =
+                        value;
 
-                imageData[page - constraints.Depth_begin]
-                         [row  - constraints.Row_begin]
-                         [col  - constraints.Column_begin] = value;
-
-                observed_values.insert(value);
+                observed_values.insert(
+                    value);
             }
         }
 
@@ -145,18 +266,27 @@ void TIFFReader::readinfo()
     const bool is_binary_255 =
         observed_values.size() <= 2 &&
         min_value == 0 &&
-        max_value < 255;
+        max_value == 255;
 
     const bool is_grayscale =
         observed_values.size() > 20 &&
         min_value == 0 &&
         max_value <= 255;
 
-    const bool is_label_tiff =
-        !is_binary_01 &&
-        !is_binary_255 &&
-        !is_grayscale &&
+    const bool has_negative_labels =
+        min_value < 0;
+
+    const bool has_positive_labels =
         max_value > 1;
+
+    const bool is_label_tiff =
+        has_negative_labels ||
+        (
+            !is_binary_01 &&
+            !is_binary_255 &&
+            !is_grayscale &&
+            has_positive_labels
+        );
 
     if (is_label_tiff) {
         if (mfem::Mpi::WorldRank() == 0) {

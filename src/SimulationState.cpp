@@ -401,11 +401,11 @@ void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Dom
 
         state.anode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::ANODE, sim::MaterialType::Graphite, cfg);
         state.phA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-        state.anode_potential->SetupField(*state.phA_gf, cfg.init_BvA, *domain_parameters.psA);
+        state.anode_potential->SetupField(*state.phA_gf, cfg.init_BvA, *domain_parameters.psiA);
 
         state.cathode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::CATHODE, sim::MaterialType::NMC, cfg);
         state.phC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-        state.cathode_potential->SetupField(*state.phC_gf, cfg.init_BvC, *domain_parameters.psC);
+        state.cathode_potential->SetupField(*state.phC_gf, cfg.init_BvC, *domain_parameters.psiC);
     }
 
     if (mfem::Mpi::WorldRank() == 0 && (state.anode_particles.size() > 0 || state.cathode_particles.size() > 0))

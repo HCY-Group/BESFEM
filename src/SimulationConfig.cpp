@@ -196,6 +196,24 @@ static void ApplyConfigFile(SimulationConfig& cfg)
             strdup(GetValue(data, "mesh_file").c_str());
     }
 
+    if (HasKey(data, "anode_mesh_file"))
+    {
+        cfg.anode_mesh_file =
+            strdup(
+                GetValue(
+                    data,
+                    "anode_mesh_file").c_str());
+    }
+
+    if (HasKey(data, "cathode_mesh_file"))
+    {
+        cfg.cathode_mesh_file =
+            strdup(
+                GetValue(
+                    data,
+                    "cathode_mesh_file").c_str());
+    }
+
     if (HasKey(data, "num_steps"))
         cfg.num_timesteps = std::stoi(GetValue(data, "num_steps"));
 
@@ -440,18 +458,32 @@ static void CheckParticleStoichiometry(
 
 void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
 {
-    if (cfg.mode != sim::CellMode::HALF)
-    {
-        mfem::mfem_error(
-            "Only HALF-CATHODE mode is currently implemented.");
-    }
     
     const bool cathode = cfg.half_electrode == sim::Electrode::CATHODE;
 
     
+    if (cfg.mode == sim::CellMode::HALF)
+    {
+        if (!cfg.mesh_file)
+        {
+            mfem::mfem_error(
+                "HALF mode requires mesh_file.");
+        }
+    }
+    else if (cfg.mode == sim::CellMode::FULL)
+    {
+        if (!cfg.anode_mesh_file)
+        {
+            mfem::mfem_error(
+                "FULL mode requires anode_mesh_file.");
+        }
 
-    if (!cfg.mesh_file)
-        mfem::mfem_error("mesh_file cannot be empty.");
+        if (!cfg.cathode_mesh_file)
+        {
+            mfem::mfem_error(
+                "FULL mode requires cathode_mesh_file.");
+        }
+    }
 
     if (cfg.stop_mode == sim::StopMode::STEPS)
     {
@@ -597,16 +629,71 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
     if (cfg.mode == sim::CellMode::FULL)
     {
         if (cfg.cathode_materials.empty())
-            mfem::mfem_error("cathode_materials cannot be empty, please list these in your config file.");
+        {
+            mfem::mfem_error("FULL mode requires cathode_materials.");
+        }
 
         if (cfg.anode_materials.empty())
-            mfem::mfem_error("anode_materials cannot be empty, please list these in your config file.");
+        {
+            mfem::mfem_error("FULL mode requires anode_materials.");
+        }
 
         if (cfg.init_cathode_particles.empty())
-            mfem::mfem_error("init_cathode_particles cannot be empty, please list these in your config file.");
+        {
+            mfem::mfem_error("FULL mode requires init_cathode_particles.");
+        }
 
         if (cfg.init_anode_particles.empty())
-            mfem::mfem_error("init_anode_particles cannot be empty, please list these in your config file.");
+        {
+            mfem::mfem_error("FULL mode requires init_anode_particles.");
+        }
+
+        if (cfg.cathode_materials.size() != cfg.init_cathode_particles.size())
+        {
+            mfem::mfem_error("cathode_materials and "
+                "init_cathode_particles must have "
+                "the same number of entries.");
+        }
+
+        if (cfg.anode_materials.size() != cfg.init_anode_particles.size())
+        {
+            mfem::mfem_error("anode_materials and "
+                "init_anode_particles must have "
+                "the same number of entries.");
+        }
+
+        if (cfg.init_BvA == -9999.0)
+        {
+            mfem::mfem_error("FULL mode requires init_BvA.");
+        }
+
+        if (cfg.init_BvC == -9999.0)
+        {
+            mfem::mfem_error("FULL mode requires init_BvC.");
+        }
+
+        for (const auto material : cfg.anode_materials)
+        {
+            if (!IsAnodeMaterial(material))
+            {
+                mfem::mfem_error("Anode materials must be Graphite.");
+            }
+        }
+
+        for (const auto material : cfg.cathode_materials)
+        {
+            if (!IsCathodeMaterial(material))
+            {
+                mfem::mfem_error("Cathode materials must be LFP or NMC.");
+            }
+        }
+
+        CheckParticleStoichiometry(cfg.init_anode_particles, "init_anode_particles");
+
+        CheckParticleStoichiometry(cfg.init_cathode_particles, "init_cathode_particles");
+
+        CheckAnodeInitialBoundaryFromOCV(cfg);
+        CheckCathodeInitialBoundaryFromOCV(cfg);
     }
     else 
     {
