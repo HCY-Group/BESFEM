@@ -196,20 +196,47 @@ int main(int argc, char *argv[]) {
         mfem::GridFunction *nodes = Rxn_p.FESpace()->GetMesh()->GetNodes();
         //std::cout << "node 0: " << *nodes[0] << std::endl; 
         //std::cout << "node 1: " << *nodes[1] << std::endl;
-        mfem::GridFunction x;
-        mfem::GridFunction y;
-        x.MakeRef(*nodes, /*offset=*/0,                                   /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
-        y.MakeRef(*nodes, /*offset=*/Rxn_p.FESpace()->GetMesh()->GetNV(), /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
-        //std::cout << "x min and max: " << x.Min() << " " << x.Max() << std::endl; 
-        //std::cout << "y min and max: " << y.Min() << " " << y.Max() << std::endl; 
-        
+        //mfem::GridFunction x;
+        //mfem::GridFunction y;
+        //x.MakeRef(*nodes, /*offset=*/0,                                   /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
+        //y.MakeRef(*nodes, /*offset=*/Rxn_p.FESpace()->GetMesh()->GetNV(), /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
+
         mfem::ParGridFunction phC_an(*state.phC_gf);
+        mfem::ParGridFunction phE_an(*state.phC_gf);
+        mfem::ParGridFunction x(*state.phC_gf);
+        mfem::ParGridFunction y(*state.phC_gf);
+        for (int i=0; i<phC_an.Size(); i++)
+        {
+            x(i) = (*nodes)(2*i);
+            y(i) = (*nodes)(2*i+1);
+        }
+        
         std::cout << "kappa: " << state.cathode_potential->GetConductivity().Min() << " " << 
                                   state.cathode_potential->GetConductivity().Max() << std::endl;
 
+        std::cout << "F/kap: " << Constants::Frd/state.cathode_potential->GetConductivity().Max() << std::endl;
 
+        double slope_c =  Constants::Frd/state.cathode_potential->GetConductivity().Max(); 
+        double intercept_c = state.cathode_potential->GetBoundaryVoltage();
+        double slope_e =  1.0/state.electrolyte_potential->GetConductivity().Max(); 
+        double intercept_e = state.electrolyte_potential->GetBoundaryVoltage();
+        for (int i=0; i < phC_an.Size(); i++)
+        {
+            phC_an(i) = slope_c*(y.Max()-y(i)) + intercept_c;
+            phE_an(i) = -slope_e*y(i) + intercept_e;
+        }
+        phC_an.SaveAsOne("phiC_an");
 
+        //Multiply by psi to compare
+        phC_an *= *domain_parameters.psi;
+        *state.phC_gf *= *domain_parameters.psi;
+        state.phC_gf->SaveAsOne("phiC");
+        phC_an.SaveAsOne("phiC_an");
 
+        phE_an *= *domain_parameters.pse;
+        *state.phE_gf *= *domain_parameters.pse;
+        state.phE_gf->SaveAsOne("phiE");
+        phE_an.SaveAsOne("phiE_an");
 
 
 
