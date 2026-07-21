@@ -309,30 +309,40 @@ void Domain_Parameters::InitializeFullCellGridFunctions()
 
 void Domain_Parameters::InterpolateDomainParameters() {
 
-    nV = pmesh->GetNV();
+    // nV = pmesh->GetNV();
 
     MFEM_VERIFY(pmesh, "Parallel mesh is not initialized.");
     MFEM_VERIFY(geometry.MaskFilterPse, "Electrolyte mask is not initialized.");
     MFEM_VERIFY(static_cast<int>(geometry.MaskFilters.size()) == static_cast<int>(ps.size()),
                 "Particle mask count does not match particle field count.");
 
+    nV = pmesh->GetNV();
+    nE = pmesh->GetNE();
+    nC = pmesh->GetElement(0)->GetNVertices();
+
     if (cfg.mode == sim::CellMode::HALF){
+        MFEM_VERIFY(geometry.MaskFilters.size() == ps.size(), "Half-cell particle mask count does not match the particle field count.");
         InterpolateHalfCellMasks();
-    }
-    else
-    {
-        InterpolateFullCellMasks();
-    }
-
-    ApplyAMR();
-
-    if (cfg.mode == sim::CellMode::HALF){
         BuildHalfCellInterfaces();
+
     }
     else
     {
+        MFEM_VERIFY(geometry.MaskFiltersAnode.size() == psA.size(), "Full-cell anode particle mask count does not match the anode particle field count.");
+        MFEM_VERIFY(geometry.MaskFiltersCathode.size() == psC.size(), "Full-cell cathode particle mask count does not match the cathode particle field count.");
+        InterpolateFullCellMasks();
         BuildFullCellInterfaces();
     }
+
+    // ApplyAMR();
+
+    // if (cfg.mode == sim::CellMode::HALF){
+    //     BuildHalfCellInterfaces();
+    // }
+    // else
+    // {
+    //     BuildFullCellInterfaces();
+    // }
 }
 
 void Domain_Parameters::InterpolateHalfCellMasks()
@@ -477,281 +487,281 @@ void Domain_Parameters::InterpolateFullCellMasks()
     }
 }
 
-void Domain_Parameters::ApplyAMR()
-{
-    if (cfg.amr_levels <= 0)
-    {
-        return;
-    }
+// void Domain_Parameters::ApplyAMR()
+// {
+//     if (cfg.amr_levels <= 0)
+//     {
+//         return;
+//     }
 
-    MFEM_VERIFY(pmesh, "Parallel mesh is not initialized.");
-    MFEM_VERIFY(fespace, "Finite element space is not initialized.");
-    MFEM_VERIFY(psi, "Total solid phase field is not initialized.");
+//     MFEM_VERIFY(pmesh, "Parallel mesh is not initialized.");
+//     MFEM_VERIFY(fespace, "Finite element space is not initialized.");
+//     MFEM_VERIFY(psi, "Total solid phase field is not initialized.");
 
-    const double outer_half_width = 0.45;
+//     const double outer_half_width = 0.45;
 
-    for (int lev = 0;
-         lev < cfg.amr_levels;
-         ++lev)
-    {
-        mfem::Array<int> refinement_list;
+//     for (int lev = 0;
+//          lev < cfg.amr_levels;
+//          ++lev)
+//     {
+//         mfem::Array<int> refinement_list;
 
-        const double band_fraction = static_cast<double>(cfg.amr_levels - lev) / static_cast<double>(cfg.amr_levels);
-        const double half_width = outer_half_width * band_fraction;
-        const double psi_lower = 0.5 - half_width;
-        const double psi_upper = 0.5 + half_width;
+//         const double band_fraction = static_cast<double>(cfg.amr_levels - lev) / static_cast<double>(cfg.amr_levels);
+//         const double half_width = outer_half_width * band_fraction;
+//         const double psi_lower = 0.5 - half_width;
+//         const double psi_upper = 0.5 + half_width;
 
-        // -------------------------------------------------
-        // Mark elements using the total solid phase field
-        // -------------------------------------------------
+//         // -------------------------------------------------
+//         // Mark elements using the total solid phase field
+//         // -------------------------------------------------
 
-        for (int ei = 0;
-             ei < pmesh->GetNE();
-             ++ei)
-        {
-            mfem::Array<double> psi_values;
+//         for (int ei = 0;
+//              ei < pmesh->GetNE();
+//              ++ei)
+//         {
+//             mfem::Array<double> psi_values;
 
-            psi->GetNodalValues(ei, psi_values);
-            double psi_average = 0.0;
+//             psi->GetNodalValues(ei, psi_values);
+//             double psi_average = 0.0;
 
-            for (int j = 0;
-                 j < psi_values.Size();
-                 ++j)
-            {
-                psi_average += psi_values[j];
-            }
+//             for (int j = 0;
+//                  j < psi_values.Size();
+//                  ++j)
+//             {
+//                 psi_average += psi_values[j];
+//             }
 
-            if (psi_values.Size() > 0)
-            {
-                psi_average /= static_cast<double>(psi_values.Size());
-            }
+//             if (psi_values.Size() > 0)
+//             {
+//                 psi_average /= static_cast<double>(psi_values.Size());
+//             }
 
-            if (psi_average > psi_lower && psi_average < psi_upper)
-            {
-                refinement_list.Append(ei);
-            }
-        }
+//             if (psi_average > psi_lower && psi_average < psi_upper)
+//             {
+//                 refinement_list.Append(ei);
+//             }
+//         }
 
-        // -------------------------------------------------
-        // Global element counts
-        // -------------------------------------------------
+//         // -------------------------------------------------
+//         // Global element counts
+//         // -------------------------------------------------
 
-        const int local_marked = refinement_list.Size();
+//         const int local_marked = refinement_list.Size();
 
-        const int local_elements = pmesh->GetNE();
+//         const int local_elements = pmesh->GetNE();
 
-        int global_marked = 0;
-        int global_elements = 0;
+//         int global_marked = 0;
+//         int global_elements = 0;
 
-        MPI_Allreduce(&local_marked, &global_marked, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-        MPI_Allreduce(&local_elements, &global_elements, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+//         MPI_Allreduce(&local_marked, &global_marked, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+//         MPI_Allreduce(&local_elements, &global_elements, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-        if (mfem::Mpi::WorldRank() == 0)
-        {
-            std::cout << "[AMR] band " << lev + 1
-                << ": psi range = (" << psi_lower << ", " << psi_upper << "), marked "
-                << global_marked << " / " << global_elements << " elements globally"
-                << std::endl;
-        }
+//         if (mfem::Mpi::WorldRank() == 0)
+//         {
+//             std::cout << "[AMR] band " << lev + 1
+//                 << ": psi range = (" << psi_lower << ", " << psi_upper << "), marked "
+//                 << global_marked << " / " << global_elements << " elements globally"
+//                 << std::endl;
+//         }
 
-        if (global_marked == 0)
-        {
-            if (mfem::Mpi::WorldRank() == 0)
-            {
-                std::cout << "[AMR] No elements found in band " << lev + 1
-                    << ". Stopping refinement." << std::endl;
-            }
+//         if (global_marked == 0)
+//         {
+//             if (mfem::Mpi::WorldRank() == 0)
+//             {
+//                 std::cout << "[AMR] No elements found in band " << lev + 1
+//                     << ". Stopping refinement." << std::endl;
+//             }
 
-            break;
-        }
+//             break;
+//         }
 
-        // -------------------------------------------------
-        // Refine mesh and update the finite element space
-        // -------------------------------------------------
+//         // -------------------------------------------------
+//         // Refine mesh and update the finite element space
+//         // -------------------------------------------------
 
-        pmesh->GeneralRefinement(refinement_list, 1);
-        fespace->Update();
+//         pmesh->GeneralRefinement(refinement_list, 1);
+//         fespace->Update();
 
-        // -------------------------------------------------
-        // Update grid functions
-        // -------------------------------------------------
+//         // -------------------------------------------------
+//         // Update grid functions
+//         // -------------------------------------------------
 
-        auto UpdateGridFunction = [](std::unique_ptr<mfem::ParGridFunction> &field)
-        {
-            if (field)
-            {
-                field->Update();
-            }
-        };
+//         auto UpdateGridFunction = [](std::unique_ptr<mfem::ParGridFunction> &field)
+//         {
+//             if (field)
+//             {
+//                 field->Update();
+//             }
+//         };
 
-        auto UpdateGridFunctionVector = [&](std::vector<std::unique_ptr<mfem::ParGridFunction>> &fields)
-        {
-            for (auto &field : fields)
-            {
-                UpdateGridFunction(field);
-            }
-        };
+//         auto UpdateGridFunctionVector = [&](std::vector<std::unique_ptr<mfem::ParGridFunction>> &fields)
+//         {
+//             for (auto &field : fields)
+//             {
+//                 UpdateGridFunction(field);
+//             }
+//         };
 
-        auto UpdateGridFunctionMatrix =[&](std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> &fields)
-        {
-            for (auto &row : fields)
-            {
-                for (auto &field : row)
-                {
-                    UpdateGridFunction(field);
-                }
-            }
-        };
+//         auto UpdateGridFunctionMatrix =[&](std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> &fields)
+//         {
+//             for (auto &row : fields)
+//             {
+//                 for (auto &field : row)
+//                 {
+//                     UpdateGridFunction(field);
+//                 }
+//             }
+//         };
 
-        // Shared fields.
-        UpdateGridFunction(psi);
-        UpdateGridFunction(pse);
+//         // Shared fields.
+//         UpdateGridFunction(psi);
+//         UpdateGridFunction(pse);
 
-        UpdateGridFunction(AvP);
-        UpdateGridFunction(AvB);
-        UpdateGridFunction(AvE);
-        UpdateGridFunction(denom);
+//         UpdateGridFunction(AvP);
+//         UpdateGridFunction(AvB);
+//         UpdateGridFunction(AvE);
+//         UpdateGridFunction(denom);
 
-        // -------------------------------------------------
-        // Half-cell fields
-        // -------------------------------------------------
+//         // -------------------------------------------------
+//         // Half-cell fields
+//         // -------------------------------------------------
 
-        if (cfg.mode == sim::CellMode::HALF)
-        {
-            UpdateGridFunctionVector(ps);
-            UpdateGridFunctionVector(AvPs);
-            UpdateGridFunctionVector(AvEs);
-            UpdateGridFunctionVector(WeightEs);
+//         if (cfg.mode == sim::CellMode::HALF)
+//         {
+//             UpdateGridFunctionVector(ps);
+//             UpdateGridFunctionVector(AvPs);
+//             UpdateGridFunctionVector(AvEs);
+//             UpdateGridFunctionVector(WeightEs);
 
-            UpdateGridFunctionMatrix(AvP_Pairs);
-            UpdateGridFunctionMatrix(psi_Pairs);
-            UpdateGridFunctionMatrix(WeightPairs);
-        }
+//             UpdateGridFunctionMatrix(AvP_Pairs);
+//             UpdateGridFunctionMatrix(psi_Pairs);
+//             UpdateGridFunctionMatrix(WeightPairs);
+//         }
 
-        // -------------------------------------------------
-        // Full-cell fields
-        // -------------------------------------------------
+//         // -------------------------------------------------
+//         // Full-cell fields
+//         // -------------------------------------------------
 
-        else
-        {
-            UpdateGridFunction(psiA);
-            UpdateGridFunction(psiC);
+//         else
+//         {
+//             UpdateGridFunction(psiA);
+//             UpdateGridFunction(psiC);
 
-            UpdateGridFunctionVector(psA);
-            UpdateGridFunctionVector(psC);
+//             UpdateGridFunctionVector(psA);
+//             UpdateGridFunctionVector(psC);
 
-            UpdateGridFunctionVector(AvPsA);
-            UpdateGridFunctionVector(AvPsC);
+//             UpdateGridFunctionVector(AvPsA);
+//             UpdateGridFunctionVector(AvPsC);
 
-            UpdateGridFunctionVector(AvEsA);
-            UpdateGridFunctionVector(AvEsC);
+//             UpdateGridFunctionVector(AvEsA);
+//             UpdateGridFunctionVector(AvEsC);
 
-            UpdateGridFunctionVector(WeightEsA);
-            UpdateGridFunctionVector(WeightEsC);
+//             UpdateGridFunctionVector(WeightEsA);
+//             UpdateGridFunctionVector(WeightEsC);
 
-            UpdateGridFunctionMatrix(AvP_PairsA);
-            UpdateGridFunctionMatrix(AvP_PairsC);
+//             UpdateGridFunctionMatrix(AvP_PairsA);
+//             UpdateGridFunctionMatrix(AvP_PairsC);
 
-            UpdateGridFunctionMatrix(psi_PairsA);
-            UpdateGridFunctionMatrix(psi_PairsC);
+//             UpdateGridFunctionMatrix(psi_PairsA);
+//             UpdateGridFunctionMatrix(psi_PairsC);
 
-            UpdateGridFunctionMatrix(WeightPairsA);
-            UpdateGridFunctionMatrix(WeightPairsC);
+//             UpdateGridFunctionMatrix(WeightPairsA);
+//             UpdateGridFunctionMatrix(WeightPairsC);
 
-            UpdateGridFunction(AvPA);
-            UpdateGridFunction(AvPC);
+//             UpdateGridFunction(AvPA);
+//             UpdateGridFunction(AvPC);
 
-            UpdateGridFunction(denomA);
-            UpdateGridFunction(denomC);
-        }
+//             UpdateGridFunction(denomA);
+//             UpdateGridFunction(denomC);
+//         }
 
-        // -------------------------------------------------
-        // Update geometry masks attached to the same space
-        // -------------------------------------------------
+//         // -------------------------------------------------
+//         // Update geometry masks attached to the same space
+//         // -------------------------------------------------
 
-        UpdateGridFunction(geometry.MaskFilterPse);
+//         UpdateGridFunction(geometry.MaskFilterPse);
 
-        if (cfg.mode == sim::CellMode::HALF)
-        {
-            UpdateGridFunction(geometry.MaskFilter);
+//         if (cfg.mode == sim::CellMode::HALF)
+//         {
+//             UpdateGridFunction(geometry.MaskFilter);
 
-            for (auto &field : geometry.MaskFilters)
-            {
-                UpdateGridFunction(field);
-            }
-        }
-        else
-        {
-            UpdateGridFunction(geometry.MaskFilterAnode);
+//             for (auto &field : geometry.MaskFilters)
+//             {
+//                 UpdateGridFunction(field);
+//             }
+//         }
+//         else
+//         {
+//             UpdateGridFunction(geometry.MaskFilterAnode);
 
-            UpdateGridFunction(geometry.MaskFilterCathode);
+//             UpdateGridFunction(geometry.MaskFilterCathode);
 
-            for (auto &field : geometry.MaskFiltersAnode)
-            {
-                UpdateGridFunction(field);
-            }
+//             for (auto &field : geometry.MaskFiltersAnode)
+//             {
+//                 UpdateGridFunction(field);
+//             }
 
-            for (auto &field : geometry.MaskFiltersCathode)
-            {
-                UpdateGridFunction(field);
-            }
-        }
+//             for (auto &field : geometry.MaskFiltersCathode)
+//             {
+//                 UpdateGridFunction(field);
+//             }
+//         }
 
-        // -------------------------------------------------
-        // Update stored mesh dimensions
-        // -------------------------------------------------
+//         // -------------------------------------------------
+//         // Update stored mesh dimensions
+//         // -------------------------------------------------
 
-        nV = pmesh->GetNV();
-        nE = pmesh->GetNE();
+//         nV = pmesh->GetNV();
+//         nE = pmesh->GetNE();
 
-        if (nE > 0)
-        {
-            nC = pmesh->GetElement(0)->GetNVertices();
-        }
+//         if (nE > 0)
+//         {
+//             nC = pmesh->GetElement(0)->GetNVertices();
+//         }
 
-        geometry.nV = nV;
-        geometry.nE = nE;
-        geometry.nC = nC;
+//         geometry.nV = nV;
+//         geometry.nE = nE;
+//         geometry.nC = nC;
 
-        // -------------------------------------------------
-        // Determine element-size range
-        // -------------------------------------------------
+//         // -------------------------------------------------
+//         // Determine element-size range
+//         // -------------------------------------------------
 
-        double local_hmin = std::numeric_limits<double>::max();
+//         double local_hmin = std::numeric_limits<double>::max();
 
-        double local_hmax = 0.0;
+//         double local_hmax = 0.0;
 
-        for (int ei = 0;
-             ei < pmesh->GetNE();
-             ++ei)
-        {
-            const double element_size = pmesh->GetElementSize(ei);
+//         for (int ei = 0;
+//              ei < pmesh->GetNE();
+//              ++ei)
+//         {
+//             const double element_size = pmesh->GetElementSize(ei);
 
-            local_hmin = std::min(local_hmin, element_size);
+//             local_hmin = std::min(local_hmin, element_size);
 
-            local_hmax = std::max(local_hmax, element_size);
-        }
+//             local_hmax = std::max(local_hmax, element_size);
+//         }
 
-        double global_hmin = 0.0;
-        double global_hmax = 0.0;
+//         double global_hmin = 0.0;
+//         double global_hmax = 0.0;
 
-        MPI_Allreduce(&local_hmin, &global_hmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-        MPI_Allreduce(&local_hmax, &global_hmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//         MPI_Allreduce(&local_hmin, &global_hmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+//         MPI_Allreduce(&local_hmax, &global_hmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
-        const int local_elements_after = pmesh->GetNE();
-        int global_elements_after = 0;
+//         const int local_elements_after = pmesh->GetNE();
+//         int global_elements_after = 0;
 
-        MPI_Allreduce(&local_elements_after, &global_elements_after, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+//         MPI_Allreduce(&local_elements_after, &global_elements_after, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-        if (mfem::Mpi::WorldRank() == 0)
-        {
-            std::cout << "[AMR] band " << lev + 1 << " element-size range after refinement: "
-                << global_hmin << " to " << global_hmax << std::endl;
+//         if (mfem::Mpi::WorldRank() == 0)
+//         {
+//             std::cout << "[AMR] band " << lev + 1 << " element-size range after refinement: "
+//                 << global_hmin << " to " << global_hmax << std::endl;
 
-            std::cout << "[AMR] band " << lev + 1 << " complete: " << global_elements_after << " total elements" << std::endl;
-        }
-    }
-}
+//             std::cout << "[AMR] band " << lev + 1 << " complete: " << global_elements_after << " total elements" << std::endl;
+//         }
+//     }
+// }
 
 void Domain_Parameters::ComputeGradientMagnitude(const mfem::ParGridFunction &phase_in, mfem::ParGridFunction &gradient_out)
 {
@@ -1273,6 +1283,7 @@ void Domain_Parameters::CalculateHalfCellPhasePotentialsAndTargetCurrent()
 
     MFEM_VERIFY(active_materials.size() == ps.size(), "Half-cell material count does not match particle count.");
 
+    gTrgI = 0.0;
     CalculateTotalPhaseField(*psi, tPsi, gtPsi);
 
     for (std::size_t k = 0; k < ps.size(); ++k)
@@ -1289,6 +1300,10 @@ void Domain_Parameters::CalculateFullCellPhasePotentialsAndTargetCurrent()
     MFEM_VERIFY(psiC, "Full-cell cathode phase field is not initialized.");
     MFEM_VERIFY(psA.size() == cfg.anode_materials.size(), "Anode material count does not match anode particle count.");
     MFEM_VERIFY(psC.size() == cfg.cathode_materials.size(), "Cathode material count does not match cathode particle count.");
+
+    gTrgIA = 0.0;
+    gTrgIC = 0.0;
+    gTrgI = 0.0;
 
     CalculateTotalPhaseField(*psiA, tPsiA,gtPsiA);
     CalculateTotalPhaseField(*psiC, tPsiC, gtPsiC);

@@ -37,6 +37,23 @@ private:
     bool tiffDataLoaded = false; ///< Whether TIFF voxel data has been loaded.
     const SimulationConfig& cfg;
 
+    void HalfCellAMR();
+    void FullCellAMR();
+
+    void UpdateSpacesAfterAMR();
+
+    void UpdateMeshData();
+
+    void AllocateHalfCellGeometryFields();
+    void BuildHalfCellGeometryFields();
+
+    void AllocateFullCellGeometryFields();
+    void BuildFullCellGeometryFields();
+
+    void PrintAMRMeshInfo(int level) const;
+
+    void ValidateCoarseningDimensions() const;
+
 protected:
     mfem::Vector elementVolumes;     ///< Per-element volumes (global or parallel).
     mfem::Array<int> boundaryMarkers; ///< Boundary attribute markers.
@@ -98,7 +115,7 @@ public:
 
     void AssignGlobalValues();
     void MapGlobalToLocal();
-    void DiscoverFullCellParticleLabels();
+    void FullCellParticleLabels();
 
 
     /**

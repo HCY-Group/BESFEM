@@ -19,11 +19,11 @@ row_end = 80
 column_begin = 10
 column_end = 60
 
-amr_levels = 0
+amr_levels = 2
 
 # Initial mesh coarsening before AMR
 # Must be 1 when amr_levels = 0
-coarsen_factor = 1
+coarsen_factor = 2
 
 # ============================================================
 # NUMERICAL PARAMETERS

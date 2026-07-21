@@ -183,15 +183,15 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
 
     // if (meshFileStr.substr(meshFileStr.find_last_of(".") + 1) == "tif")
     // {
-        distMask       = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-        distMaskSigned = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        // distMask       = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        // distMaskSigned = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
-        MaskFilter    = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // total solid
-        MaskFilterPse = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // electrolyte
+        // MaskFilter    = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // total solid
+        // MaskFilterPse = std::make_unique<mfem::ParGridFunction>(parfespace.get());   // electrolyte
 
-        // Keep your old total-solid and electrolyte filters
-        ComputePDEFilter(*distMask, *MaskFilter,    /*mode=*/0, sim::CellMode::HALF, cfg.half_electrode);
-        ComputePDEFilter(*distMask, *MaskFilterPse, /*mode=*/1, sim::CellMode::HALF, cfg.half_electrode);
+        // // Keep your old total-solid and electrolyte filters
+        // ComputePDEFilter(*distMask, *MaskFilter,    /*mode=*/0, sim::CellMode::HALF, cfg.half_electrode);
+        // ComputePDEFilter(*distMask, *MaskFilterPse, /*mode=*/1, sim::CellMode::HALF, cfg.half_electrode);
 
         // discover particle labels automatically from TIFF
         particle_labels = GetParticleLabelsFromTiff();
@@ -214,39 +214,215 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
             std::cout << std::endl;
         }
 
-        // allocate one filtered mask per particle label
-        MaskFilters.clear();
-        MaskFilters.resize(particle_labels.size());
+        HalfCellAMR();
 
-        for (int k = 0; k < (int)particle_labels.size(); ++k)
-        {
-            MaskFilters[k] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-            ComputePDEFilterLabel(*distMask, *MaskFilters[k], particle_labels[k], false, -1, CellMode::HALF, cfg.half_electrode);
+        AllocateHalfCellGeometryFields();
 
-            std::ostringstream name;
-            name << "MaskFilter_label_" << particle_labels[k] << ".gf";
-            // MaskFilters[k]->SaveAsOne(name.str().c_str());
-        }
+        BuildHalfCellGeometryFields();
 
-        if (mfem::Mpi::WorldRank() == 0) {
-            std::cout << "ComputePDEFilter done.\n";
-        }
+        UpdateMeshData();
+
+        // // allocate one filtered mask per particle label
+        // MaskFilters.clear();
+        // MaskFilters.resize(particle_labels.size());
+
+        // for (int k = 0; k < (int)particle_labels.size(); ++k)
+        // {
+        //     MaskFilters[k] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        //     ComputePDEFilterLabel(*distMask, *MaskFilters[k], particle_labels[k], false, -1, CellMode::HALF, cfg.half_electrode);
+
+        //     std::ostringstream name;
+        //     name << "MaskFilter_label_" << particle_labels[k] << ".gf";
+        //     // MaskFilters[k]->SaveAsOne(name.str().c_str());
+        // }
+
+        // if (mfem::Mpi::WorldRank() == 0) {
+        //     std::cout << "ComputePDEFilter done.\n";
+        // }
+        
+        PrintMeshInfo();
+
+        parallelMesh->SaveAsOne("pmesh");
 
         MaskFilter->SaveAsOne("MaskFilter.gf");
         MaskFilterPse->SaveAsOne("MaskFilter_pse.gf");
 
-        if (mfem::Mpi::WorldRank() == 0) {
-            std::cout << "ComputePDEFilter done.\n";
-        }
+        // if (mfem::Mpi::WorldRank() == 0) {
+        //     std::cout << "ComputePDEFilter done.\n";
+        // }
 
     // }
 
     // Print out information relative to the mesh
-    PrintMeshInfo();
+    // PrintMeshInfo();
 
-    globalMesh->Save("gmesh");
+    // globalMesh->Save("gmesh");
 
 
+}
+
+void Initialize_Geometry::AllocateHalfCellGeometryFields()
+{
+    MFEM_VERIFY(parfespace, "Parallel H1 finite element space is not initialized.");
+
+    distMask = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    distMaskSigned = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    MaskFilter = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    MaskFilterPse = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+
+    *distMask = 0.0;
+    *distMaskSigned = 0.0;
+    *MaskFilter = 0.0;
+    *MaskFilterPse = 0.0;
+
+    MaskFilters.clear();
+    MaskFilters.resize(particle_labels.size());
+
+    for (std::size_t k = 0; k < particle_labels.size(); ++k)
+    {
+        MaskFilters[k] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        *MaskFilters[k] = 0.0;
+    }
+}
+
+void Initialize_Geometry::BuildHalfCellGeometryFields()
+{
+    MFEM_VERIFY(distMask, "Half-cell filter workspace is not initialized.");
+    MFEM_VERIFY(MaskFilter, "Half-cell total solid mask is not initialized.");
+    MFEM_VERIFY(MaskFilterPse, "Half-cell electrolyte mask is not initialized.");
+
+    ComputePDEFilter(*distMask, *MaskFilter, 0, CellMode::HALF, cfg.half_electrode);
+    ComputePDEFilter(*distMask, *MaskFilterPse, 1, CellMode::HALF, cfg.half_electrode);
+
+    for (std::size_t k = 0; k < particle_labels.size(); ++k)
+    {
+        MFEM_VERIFY(MaskFilters[k], "Half-cell particle mask is not allocated.");
+        ComputePDEFilterLabel(*distMask, *MaskFilters[k], particle_labels[k], false, -1, CellMode::HALF, cfg.half_electrode);
+    }
+
+    if (myid == 0)
+    {
+        std::cout << "[Initialize_Geometry] Half-cell geometry " << "fields rebuilt on final AMR mesh.\n";
+    }
+}
+
+void Initialize_Geometry::HalfCellAMR()
+{
+    if (cfg.amr_levels <= 0)
+    {
+        return;
+    }
+
+    MFEM_VERIFY(parallelMesh, "Parallel mesh is not initialized.");
+    MFEM_VERIFY(parfespace, "Parallel H1 space is not initialized.");
+    MFEM_VERIFY(parfespace_dg, "Parallel DG space is not initialized.");
+
+    // Temporary fields used only for AMR marking.
+    mfem::ParGridFunction temporary_dist(parfespace.get());
+    mfem::ParGridFunction temporary_psi(parfespace.get());
+
+    temporary_dist = 0.0;
+    temporary_psi = 0.0;
+
+    ComputePDEFilter(temporary_dist, temporary_psi, 0, CellMode::HALF, cfg.half_electrode);
+
+    const double outer_half_width = 0.45;
+    const double size_tolerance = 1.0e-10;
+
+    for (int level = 0; level < cfg.amr_levels; ++level)
+    {
+        mfem::Array<int> refinement_list;
+
+        const double band_fraction = static_cast<double>(cfg.amr_levels - level) / static_cast<double>(cfg.amr_levels);
+        const double half_width = outer_half_width * band_fraction;
+        const double psi_lower = 0.5 - half_width;
+        const double psi_upper = 0.5 + half_width;
+
+        for (int ei = 0; ei < parallelMesh->GetNE(); ++ei)
+        {
+            const double element_size = parallelMesh->GetElementSize(ei);
+
+            if (element_size <= cfg.dh * (1.0 + size_tolerance))
+            {
+                continue;
+            }
+
+            mfem::Array<double> values;
+            temporary_psi.GetNodalValues(ei, values);
+
+            if (values.Size() == 0)
+            {
+                continue;
+            }
+
+            double element_min = std::numeric_limits<double>::max();
+            double element_max = -std::numeric_limits<double>::max();
+
+            for (int j = 0; j < values.Size(); ++j)
+            {
+                element_min = std::min(element_min, values[j]);
+                element_max = std::max(element_max, values[j]);
+            }
+
+            const bool intersects_band = element_min < psi_upper && element_max > psi_lower;
+
+            if (intersects_band)
+            {
+                refinement_list.Append(ei);
+            }
+        }
+
+        const int local_marked = refinement_list.Size();
+        const int local_elements = parallelMesh->GetNE();
+
+        int global_marked = 0;
+        int global_elements = 0;
+
+        MPI_Allreduce(&local_marked, &global_marked, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(&local_elements, &global_elements, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+        if (myid == 0)
+        {
+            std::cout << "[AMR] band " << level + 1 << ": psi range = (" << psi_lower << ", " << psi_upper
+                << "), marked " << global_marked << " / "
+                << global_elements << " elements globally\n";
+        }
+
+        if (global_marked == 0)
+        {
+            if (myid == 0)
+            {
+                std::cout << "[AMR] No additional elements " << "require refinement.\n";
+            }
+
+            break;
+        }
+
+        parallelMesh->GeneralRefinement(refinement_list, 1);
+        UpdateSpacesAfterAMR();
+
+        temporary_dist.Update();
+        temporary_psi.Update();
+
+        ComputePDEFilter(temporary_dist, temporary_psi, 0, CellMode::HALF, cfg.half_electrode);
+        PrintAMRMeshInfo(level + 1);
+    }
+}
+
+void Initialize_Geometry::UpdateSpacesAfterAMR()
+{
+    MFEM_VERIFY(parfespace, "Parallel H1 space is not initialized.");
+    MFEM_VERIFY(parfespace_dg, "Parallel DG space is not initialized.");
+    MFEM_VERIFY(pardimfespace_dg, "Parallel vector DG space is not initialized.");
+
+    parfespace->Update();
+    parfespace_dg->Update();
+    pardimfespace_dg->Update();
+
+    if (Vox)
+    {
+        Vox->Update();
+    }
 }
 
 std::vector<std::vector<std::vector<int>>> Initialize_Geometry::MergeMeshes(const char *AnodeMeshFile, const char *CathodeMeshFile)
@@ -374,7 +550,7 @@ void Initialize_Geometry::InitializeMesh(const char* AnodeMeshFile, const char* 
     InitializeGlobalMesh(tiffData);
 
     // Initialize the parallel mesh
-    InitializeParallelMesh(MPI_COMM_WORLD);
+    InitializeParallelMesh(comm);
 
     // Set up the finite element space
     SetupFiniteElementSpace(order);
@@ -388,71 +564,77 @@ void Initialize_Geometry::InitializeMesh(const char* AnodeMeshFile, const char* 
     // Map the global values to the local
     MapGlobalToLocal();
 
-    // General filter workspace.
-    distMask = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-    distMaskSigned = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    // // General filter workspace.
+    // distMask = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    // distMaskSigned = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
-    // Full-cell fields.
-    MaskFilterAnode = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-    MaskFilterCathode = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-    MaskFilterPse = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    // // Full-cell fields.
+    // MaskFilterAnode = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    // MaskFilterCathode = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    // MaskFilterPse = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
-    ComputePDEFilter(*distMask, *MaskFilterAnode, 0, CellMode::FULL, Electrode::ANODE);
-    ComputePDEFilter(*distMask, *MaskFilterCathode, 0, CellMode::FULL, Electrode::CATHODE);
+    // ComputePDEFilter(*distMask, *MaskFilterAnode, 0, CellMode::FULL, Electrode::ANODE);
+    // ComputePDEFilter(*distMask, *MaskFilterCathode, 0, CellMode::FULL, Electrode::CATHODE);
 
-    // Zero labels: electrolyte.
-    // Electrode argument is ignored when phase_mode == 1.
-    ComputePDEFilter(*distMask, *MaskFilterPse, 1, CellMode::FULL, Electrode::ANODE);
+    // // Zero labels: electrolyte.
+    // // Electrode argument is ignored when phase_mode == 1.
+    // ComputePDEFilter(*distMask, *MaskFilterPse, 1, CellMode::FULL, Electrode::ANODE);
 
     // Discover negative and positive labels separately.
-    DiscoverFullCellParticleLabels();
+    FullCellParticleLabels();
 
-    // -------------------------------------------------
-    // Anode particle masks
-    // -------------------------------------------------
+    FullCellAMR();
+    AllocateFullCellGeometryFields();
+    BuildFullCellGeometryFields();
+    UpdateMeshData();
 
-    MaskFiltersAnode.clear();
-    MaskFiltersAnode.resize(anode_particle_labels.size());
+    // // -------------------------------------------------
+    // // Anode particle masks
+    // // -------------------------------------------------
 
-    for (int p = 0;
-        p < static_cast<int>(anode_particle_labels.size());
-        ++p)
-    {
-        MaskFiltersAnode[p] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    // MaskFiltersAnode.clear();
+    // MaskFiltersAnode.resize(anode_particle_labels.size());
 
-        ComputePDEFilterLabel(*distMask, *MaskFiltersAnode[p], anode_particle_labels[p], false, -1, CellMode::FULL, Electrode::ANODE);
+    // for (int p = 0;
+    //     p < static_cast<int>(anode_particle_labels.size());
+    //     ++p)
+    // {
+    //     MaskFiltersAnode[p] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
-        std::ostringstream name;
+    //     ComputePDEFilterLabel(*distMask, *MaskFiltersAnode[p], anode_particle_labels[p], false, -1, CellMode::FULL, Electrode::ANODE);
 
-        name << "MaskFilter_anode_label_"
-            << std::abs(anode_particle_labels[p])
-            << ".gf";
-    }
+    //     std::ostringstream name;
 
-    // -------------------------------------------------
-    // Cathode particle masks
-    // -------------------------------------------------
+    //     name << "MaskFilter_anode_label_"
+    //         << std::abs(anode_particle_labels[p])
+    //         << ".gf";
+    // }
 
-    MaskFiltersCathode.clear();
-    MaskFiltersCathode.resize(cathode_particle_labels.size());
+    // // -------------------------------------------------
+    // // Cathode particle masks
+    // // -------------------------------------------------
 
-    for (int p = 0;
-        p < static_cast<int>(
-            cathode_particle_labels.size());
-        ++p)
-    {
-        MaskFiltersCathode[p] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    // MaskFiltersCathode.clear();
+    // MaskFiltersCathode.resize(cathode_particle_labels.size());
 
-        ComputePDEFilterLabel(*distMask, *MaskFiltersCathode[p], cathode_particle_labels[p], false, -1, CellMode::FULL, Electrode::CATHODE);
+    // for (int p = 0;
+    //     p < static_cast<int>(
+    //         cathode_particle_labels.size());
+    //     ++p)
+    // {
+    //     MaskFiltersCathode[p] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
 
-        std::ostringstream name;
-        name << "MaskFilter_cathode_label_"
-            << cathode_particle_labels[p]
-            << ".gf";
+    //     ComputePDEFilterLabel(*distMask, *MaskFiltersCathode[p], cathode_particle_labels[p], false, -1, CellMode::FULL, Electrode::CATHODE);
 
-        // MaskFiltersCathode[p]->SaveAsOne(name.str().c_str());
-    }
+    //     std::ostringstream name;
+    //     name << "MaskFilter_cathode_label_"
+    //         << cathode_particle_labels[p]
+    //         << ".gf";
 
+    //     // MaskFiltersCathode[p]->SaveAsOne(name.str().c_str());
+    // }
+
+    parallelMesh->SaveAsOne("pmesh");
     MaskFilterAnode->SaveAsOne("MaskFilter_anode.gf");
     MaskFilterCathode->SaveAsOne("MaskFilter_cathode.gf");
     MaskFilterPse->SaveAsOne("MaskFilter_pse.gf");
@@ -462,11 +644,156 @@ void Initialize_Geometry::InitializeMesh(const char* AnodeMeshFile, const char* 
         std::cout << "[Initialize_Geometry] " << "Full-cell PDE filters complete.\n";
     }
 
-    PrintMeshInfo();
+    PrintMeshInfo();    
 
-    globalMesh->Save("gmesh");
-    
+}
 
+void Initialize_Geometry::AllocateFullCellGeometryFields()
+{
+    MFEM_VERIFY(parfespace, "Parallel H1 space is not initialized.");
+
+    distMask = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    distMaskSigned = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    MaskFilterAnode = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    MaskFilterCathode = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+    MaskFilterPse = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+
+    *distMask = 0.0;
+    *distMaskSigned = 0.0;
+    *MaskFilterAnode = 0.0;
+    *MaskFilterCathode = 0.0;
+    *MaskFilterPse = 0.0;
+
+    MaskFiltersAnode.clear();
+    MaskFiltersAnode.resize(anode_particle_labels.size());
+
+    for (std::size_t k = 0; k < anode_particle_labels.size(); ++k)
+    {
+        MaskFiltersAnode[k] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        *MaskFiltersAnode[k] = 0.0;
+    }
+
+    MaskFiltersCathode.clear();
+    MaskFiltersCathode.resize(cathode_particle_labels.size());
+
+    for (std::size_t k = 0; k < cathode_particle_labels.size(); ++k)
+    {
+        MaskFiltersCathode[k] = std::make_unique<mfem::ParGridFunction>(parfespace.get());
+        *MaskFiltersCathode[k] = 0.0;
+    }
+}
+
+void Initialize_Geometry::BuildFullCellGeometryFields()
+{
+    ComputePDEFilter(*distMask, *MaskFilterAnode, 0, CellMode::FULL, Electrode::ANODE);
+    ComputePDEFilter(*distMask, *MaskFilterCathode, 0, CellMode::FULL, Electrode::CATHODE);
+    ComputePDEFilter(*distMask, *MaskFilterPse, 1, CellMode::FULL, Electrode::ANODE);
+
+    for (std::size_t k = 0; k < anode_particle_labels.size(); ++k)
+    {
+        ComputePDEFilterLabel(*distMask, *MaskFiltersAnode[k], anode_particle_labels[k], false, -1, CellMode::FULL, Electrode::ANODE);
+    }
+
+    for (std::size_t k = 0; k < cathode_particle_labels.size(); ++k)
+    {
+        ComputePDEFilterLabel(*distMask, *MaskFiltersCathode[k], cathode_particle_labels[k], false, -1, CellMode::FULL, Electrode::CATHODE);
+    }
+}
+
+void Initialize_Geometry::FullCellAMR()
+{
+    if (cfg.amr_levels <= 0)
+    {
+        return;
+    }
+
+    mfem::ParGridFunction temporary_dist(parfespace.get());
+    mfem::ParGridFunction temporary_anode(parfespace.get());
+    mfem::ParGridFunction temporary_cathode(parfespace.get());
+    mfem::ParGridFunction temporary_total(parfespace.get());
+
+    temporary_dist = 0.0;
+    temporary_anode = 0.0;
+    temporary_cathode = 0.0;
+    temporary_total = 0.0;
+
+    ComputePDEFilter(temporary_dist, temporary_anode, 0, CellMode::FULL, Electrode::ANODE);
+    ComputePDEFilter(temporary_dist, temporary_cathode, 0, CellMode::FULL, Electrode::CATHODE);
+
+    temporary_total = temporary_anode;
+    temporary_total += temporary_cathode;
+
+    const double outer_half_width = 0.45;
+    const double size_tolerance = 1.0e-10;
+
+    for (int level = 0; level < cfg.amr_levels; ++level)
+    {
+        mfem::Array<int> refinement_list;
+        const double band_fraction = static_cast<double>(cfg.amr_levels - level) / static_cast<double>(cfg.amr_levels);
+        const double half_width = outer_half_width * band_fraction;
+        const double psi_lower = 0.5 - half_width;
+        const double psi_upper = 0.5 + half_width;
+
+        for (int ei = 0; ei < parallelMesh->GetNE();++ei)
+        {
+            const double element_size = parallelMesh->GetElementSize(ei);
+
+            if (element_size <= cfg.dh * (1.0 + size_tolerance))
+            {
+                continue;
+            }
+
+            mfem::Array<double> values;
+
+            temporary_total.GetNodalValues(ei, values);
+
+            if (values.Size() == 0)
+            {
+                continue;
+            }
+
+            double element_min = std::numeric_limits<double>::max();
+            double element_max = -std::numeric_limits<double>::max();
+
+            for (int j = 0; j < values.Size(); ++j)
+            {
+                element_min = std::min(element_min, values[j]);
+                element_max = std::max(element_max, values[j]);
+            }
+
+            if (element_min < psi_upper && element_max > psi_lower)
+            {
+                refinement_list.Append(ei);
+            }
+        }
+
+        const int local_marked = refinement_list.Size();
+        int global_marked = 0;
+
+        MPI_Allreduce(&local_marked, &global_marked, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+        if (global_marked == 0)
+        {
+            break;
+        }
+
+        parallelMesh->GeneralRefinement(refinement_list, 1);
+
+        UpdateSpacesAfterAMR();
+
+        temporary_dist.Update();
+        temporary_anode.Update();
+        temporary_cathode.Update();
+        temporary_total.Update();
+
+        ComputePDEFilter(temporary_dist, temporary_anode, 0, CellMode::FULL, Electrode::ANODE);
+        ComputePDEFilter(temporary_dist, temporary_cathode, 0, CellMode::FULL, Electrode::CATHODE);
+
+        temporary_total = temporary_anode;
+        temporary_total += temporary_cathode;
+
+        PrintAMRMeshInfo(level + 1);
+    }
 }
 
 
@@ -485,7 +812,7 @@ std::vector<int> Initialize_Geometry::GetParticleLabelsFromTiff() const
     return std::vector<int>(labels.begin(), labels.end());
 }
 
-void Initialize_Geometry::DiscoverFullCellParticleLabels()
+void Initialize_Geometry::FullCellParticleLabels()
 {
     std::set<int> anodeLabels;
     std::set<int> cathodeLabels;
@@ -993,16 +1320,14 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
 {
     MFEM_VERIFY(parallelMesh, "parallelMesh is not initialized.");
     MFEM_VERIFY(parfespace, "parfespace is not initialized.");
-    MFEM_VERIFY(Vox, "Vox is not initialized (need .tif path + MapGlobalToLocal).");
     MFEM_VERIFY(dist.ParFESpace() == parfespace.get(), "dist must be on parfespace.");
     MFEM_VERIFY(filt_gf.ParFESpace() == parfespace.get(), "filt_gf must be on parfespace.");
     MFEM_VERIFY(parfespace_dg, "parfespace_dg is not initialized.");
 
-    double dx;
-    dx = parallelMesh->GetElementSize(0); // assuming uniform mesh
+    // double dx;
+    // dx = parallelMesh->GetElementSize(0); // assuming uniform mesh
 
-    MFEM_VERIFY(parallelMesh->Dimension() == 2 || parallelMesh->Dimension() == 3,
-            "ComputePDEFilter: mesh must be 2D or 3D.");
+    MFEM_VERIFY(parallelMesh->Dimension() == 2 || parallelMesh->Dimension() == 3, "ComputePDEFilter: mesh must be 2D or 3D.");
 
     // TIFF sizes
     const int nz = (int)tiffData.size();
@@ -1013,7 +1338,6 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
     const bool eight_conn = false;        // 2D: 4/8
     const bool twenty_six = false;        // 3D: 6/26  (set true if desired)
 
-    // IMPORTANT: fg must cover the whole volume for 3D
     std::vector<uint8_t> fg(nx*ny*nz, 0);
 
     // Boundary Rules: [0] = west, [1] = east, [2] = south, [3] = north, [4] = bottom, [5] = top
@@ -1035,36 +1359,26 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
                         {
                             fg[idx] = (label > 0) ? 1 : 0;
                         }
-                        else if (
-                            electrode == Electrode::ANODE)
+                        else if (electrode == Electrode::ANODE)
                         {
                             fg[idx] = (label < 0) ? 1 : 0;
                         }
-                        else if (
-                            electrode == Electrode::CATHODE)
+                        else if (electrode == Electrode::CATHODE)
                         {
                             fg[idx] = (label > 0) ? 1 : 0;
                         }
                         else
                         {
-                            MFEM_ABORT("ComputePDEFilter: full-cell solid "
-                                        "filter requires ANODE or CATHODE.");
+                            MFEM_ABORT("ComputePDEFilter: full-cell solid filter requires ANODE or CATHODE.");
                         }
                     }
                     else if (mode == 1)
                     {
-                        /*
-                        * Electrolyte is explicitly zero.
-                        *
-                        * It must not be computed as the
-                        * inverse of the anode or cathode.
-                        */
                         fg[idx] = (label == 0) ? 1 : 0;
                     }
                     else
                     {
-                        MFEM_ABORT("ComputePDEFilter: mode must be "
-                            "0 (electrode) or 1 (electrolyte).");
+                        MFEM_ABORT("ComputePDEFilter: mode must be 0 (electrode) or 1 (electrolyte).");
                     }
                 }
             }
@@ -1074,32 +1388,18 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
         {
             if (mode == 0)
             {
-                const int collectorSide = (electrode == Electrode::ANODE)
-                        ? 0
-                        : 1;
-
+                const int collectorSide = (electrode == Electrode::ANODE) ? 0 : 1;
                 KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, collectorSide);
             }
             else
             {
                 if (cell_mode == CellMode::FULL)
                 {
-                    /*
-                    * Preserve electrolyte connected to any
-                    * outer boundary.
-                    */
                     KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1);
                 }
                 else
                 {
-                    /*
-                    * Half-cell electrolyte lies opposite
-                    * the current collector.
-                    */
-                    const int electrolyteSide = (electrode == Electrode::ANODE)
-                            ? 1
-                            : 0;
-
+                    const int electrolyteSide = (electrode == Electrode::ANODE) ? 1 : 0;
                     KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, electrolyteSide);
                 }
             }
@@ -1108,10 +1408,7 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
         {
             if (mode == 0)
             {
-                const int collectorFace = (electrode == Electrode::ANODE)
-                        ? 0
-                        : 1;
-
+                const int collectorFace = (electrode == Electrode::ANODE) ? 0 : 1;
                 KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, false, collectorFace);
             }
             else
@@ -1122,10 +1419,7 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
                 }
                 else
                 {
-                    const int electrolyteFace = (electrode == Electrode::ANODE)
-                            ? 1
-                            : 0;
-
+                    const int electrolyteFace = (electrode == Electrode::ANODE) ? 1 : 0;
                     KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, false, electrolyteFace);
                 }
             }
@@ -1195,10 +1489,8 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
     FGCoeffND fgcoef(nx, ny, nz, *parallelMesh, fg);
     ls_coeff_dg.ProjectCoefficient(fgcoef); 
 
-
-
     // ------------------ PDEFilter ------------------
-    const double filter_weight = 3 * dx;
+    const double filter_weight = 3 * cfg.dh;
     mfem::common::PDEFilter filter(*parallelMesh, filter_weight);
     filter.Filter(ls_coeff_dg, filt_dg);
 
@@ -1209,25 +1501,25 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
 
     mfem::GridFunctionCoefficient ls_filt_coeff(&filt_dg);
 
-    filt_gf.ProjectGridFunction(filt_dg);
+    filt_gf.ProjectCoefficient(ls_filt_coeff);
+
+    // Explicitly enforce nonconforming H1 constraints.
+    mfem::Vector true_values;
+    filt_gf.GetTrueDofs(true_values);
+    filt_gf.SetFromTrueDofs(true_values);
 }
 
-void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist,
-                                                mfem::ParGridFunction &filt_gf,
-                                                int target_label,
-                                                bool keep_boundary_connected,
-                                                int seed_side_or_face,
-                                                sim::CellMode cell_mode,
-                                                sim::Electrode electrode)
+void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist, mfem::ParGridFunction &filt_gf, int target_label,
+                                                bool keep_boundary_connected, int seed_side_or_face, sim::CellMode cell_mode, sim::Electrode electrode)
 {
     MFEM_VERIFY(parallelMesh, "parallelMesh is not initialized.");
     MFEM_VERIFY(parfespace, "parfespace is not initialized.");
-    MFEM_VERIFY(Vox, "Vox is not initialized (need .tif path + MapGlobalToLocal).");
+    // MFEM_VERIFY(Vox, "Vox is not initialized (need .tif path + MapGlobalToLocal).");
     MFEM_VERIFY(dist.ParFESpace() == parfespace.get(), "dist must be on parfespace.");
     MFEM_VERIFY(filt_gf.ParFESpace() == parfespace.get(), "filt_gf must be on parfespace.");
     MFEM_VERIFY(parfespace_dg, "parfespace_dg is not initialized.");
 
-    const double dx = parallelMesh->GetElementSize(0);
+    // const double dx = parallelMesh->GetElementSize(0);
 
     MFEM_VERIFY(parallelMesh->Dimension() == 2 || parallelMesh->Dimension() == 3,
                 "ComputePDEFilterLabel: mesh must be 2D or 3D.");
@@ -1317,8 +1609,7 @@ void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist,
               x0(x0_), y0(y0_), z0(z0_),
               dxp(dxp_), dyp(dyp_), dzp(dzp_), fg(fg_) {}
 
-        double Eval(mfem::ElementTransformation &T,
-                    const mfem::IntegrationPoint &ip) override
+        double Eval(mfem::ElementTransformation &T, const mfem::IntegrationPoint &ip) override
         {
             mfem::Vector x;
             T.Transform(ip, x);
@@ -1343,21 +1634,21 @@ void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist,
 
     const double sx = bb_max(0) - bb_min(0);
     const double sy = bb_max(1) - bb_min(1);
-    const double sz = (dim == 3) ? (bb_max(2) - bb_min(2)) : dx;
+    const double sz = (dim == 3) ? (bb_max(2) - bb_min(2)) : cfg.dh;
 
     const double x0 = bb_min(0);
     const double y0 = bb_min(1);
     const double z0 = (dim == 3) ? bb_min(2) : 0.0;
 
-    const double dxp = (nx > 1) ? sx / (nx - 1) : sx;
-    const double dyp = (ny > 1) ? sy / (ny - 1) : sy;
-    const double dzp = (dim == 3 && nz > 1) ? sz / (nz - 1) : dx;
+    const double dxp = (nx > 1) ? sx / (nx - 1) : cfg.dh;
+    const double dyp = (ny > 1) ? sy / (ny - 1) : cfg.dh;
+    const double dzp = (dim == 3 && nz > 1) ? sz / (nz - 1) : cfg.dh;
 
     FGCoeffND fg_coeff(nx, ny, nz, dim, x0, y0, z0, dxp, dyp, dzp, &fg);
     ls_coeff_dg.ProjectCoefficient(fg_coeff);
 
     // ------------------ PDEFilter ------------------
-    const double filter_weight = 3 * dx;
+    const double filter_weight = 3 * cfg.dh;
     mfem::common::PDEFilter filter(*parallelMesh, filter_weight);
     filter.Filter(ls_coeff_dg, filt_dg);
 
@@ -1368,5 +1659,58 @@ void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist,
 
     mfem::GridFunctionCoefficient ls_filt_coeff(&filt_dg);
 
-    filt_gf.ProjectGridFunction(filt_dg);
+    filt_gf.ProjectCoefficient(ls_filt_coeff);
+
+    // Explicitly enforce nonconforming H1 constraints.
+    mfem::Vector true_values;
+    filt_gf.GetTrueDofs(true_values);
+    filt_gf.SetFromTrueDofs(true_values);
+}
+
+void Initialize_Geometry::UpdateMeshData()
+{
+    MFEM_VERIFY(parallelMesh, "Parallel mesh is not initialized.");
+
+    nV = parallelMesh->GetNV();
+    nE = parallelMesh->GetNE();
+
+    if (nE > 0)
+    {
+        nC = parallelMesh->GetElement(0)->GetNVertices();
+    }
+    else
+    {
+        nC = 0;
+    }
+}
+
+void Initialize_Geometry::PrintAMRMeshInfo(int level) const
+{
+    double local_hmin = std::numeric_limits<double>::max();
+    double local_hmax = 0.0;
+
+    for (int ei = 0; ei < parallelMesh->GetNE(); ++ei)
+    {
+        const double h = parallelMesh->GetElementSize(ei);
+        local_hmin = std::min(local_hmin, h);
+        local_hmax = std::max(local_hmax, h);
+    }
+
+    double global_hmin = 0.0;
+    double global_hmax = 0.0;
+
+    MPI_Allreduce(&local_hmin, &global_hmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    MPI_Allreduce(&local_hmax, &global_hmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+    const int local_elements = parallelMesh->GetNE();
+    int global_elements = 0;
+
+    MPI_Allreduce(&local_elements, &global_elements, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+    if (myid == 0)
+    {
+        std::cout << "[AMR] level " << level
+            << " complete: h_min = " << global_hmin << ", h_max = " << global_hmax
+            << ", total elements = " << global_elements << "\n";
+    }
 }

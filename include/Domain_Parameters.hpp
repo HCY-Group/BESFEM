@@ -187,7 +187,7 @@ private:
     void BuildHalfCellInterfaces();
     void BuildFullCellInterfaces();
 
-    void ApplyAMR();
+    // void ApplyAMR();
 
     void ComputeGradientMagnitude(const mfem::ParGridFunction &phase_in, mfem::ParGridFunction &gradient_out);
 
