@@ -326,7 +326,7 @@ void Initialize_Geometry::HalfCellAMR()
 
     ComputePDEFilter(temporary_dist, temporary_psi, 0, CellMode::HALF, cfg.half_electrode);
 
-    const double outer_half_width = 0.45;
+    const double outer_half_width = 0.499;
     const double size_tolerance = 1.0e-10;
 
     for (int level = 0; level < cfg.amr_levels; ++level)
@@ -723,7 +723,7 @@ void Initialize_Geometry::FullCellAMR()
     temporary_total = temporary_anode;
     temporary_total += temporary_cathode;
 
-    const double outer_half_width = 0.45;
+    const double outer_half_width = 0.499;
     const double size_tolerance = 1.0e-10;
 
     for (int level = 0; level < cfg.amr_levels; ++level)
@@ -1521,8 +1521,7 @@ void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist, mfe
 
     // const double dx = parallelMesh->GetElementSize(0);
 
-    MFEM_VERIFY(parallelMesh->Dimension() == 2 || parallelMesh->Dimension() == 3,
-                "ComputePDEFilterLabel: mesh must be 2D or 3D.");
+    MFEM_VERIFY(parallelMesh->Dimension() == 2 || parallelMesh->Dimension() == 3, "ComputePDEFilterLabel: mesh must be 2D or 3D.");
 
     const int nz = (int)tiffData.size();
     const int ny = (int)tiffData[0].size();
@@ -1562,8 +1561,7 @@ void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist, mfe
             }
             else
             {
-                MFEM_ABORT(
-                    "ComputePDEFilterLabel: invalid electrode.");
+                MFEM_ABORT("ComputePDEFilterLabel: invalid electrode.");
             }
         }
 
