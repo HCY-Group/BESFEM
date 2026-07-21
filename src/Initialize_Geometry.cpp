@@ -326,7 +326,7 @@ void Initialize_Geometry::HalfCellAMR()
 
     ComputePDEFilter(temporary_dist, temporary_psi, 0, CellMode::HALF, cfg.half_electrode);
 
-    const double outer_half_width = 0.499;
+    const double outer_half_width = 0.495;
     const double size_tolerance = 1.0e-10;
 
     for (int level = 0; level < cfg.amr_levels; ++level)
@@ -723,7 +723,7 @@ void Initialize_Geometry::FullCellAMR()
     temporary_total = temporary_anode;
     temporary_total += temporary_cathode;
 
-    const double outer_half_width = 0.499;
+    const double outer_half_width = 0.495;
     const double size_tolerance = 1.0e-10;
 
     for (int level = 0; level < cfg.amr_levels; ++level)
