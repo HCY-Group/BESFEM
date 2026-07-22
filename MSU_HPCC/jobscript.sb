@@ -1,6 +1,6 @@
 #!/bin/bash --login
 # Job name: 
-#SBATCH --job-name=slurm_besfem-GC-TEST-e-16-12hrs
+#SBATCH --job-name=slurm_besfem-AMR-LFP-48hours-gc-3.25e-14
 
 # Number of nodes
 #SBATCH --nodes=2
@@ -17,7 +17,7 @@
 # Wall time
 # Format: "minutes", "hours:minutes:seconds", 
 # "days-hours", or "days-hours:minutes"
-#SBATCH --time=12:00:00
+#SBATCH --time=48:00:00
 
 # Mail type
 # e.g., which events trigger email notifications

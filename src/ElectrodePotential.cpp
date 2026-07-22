@@ -30,12 +30,12 @@ ElectrodePotential::ElectrodePotential(Initialize_Geometry &geo, Domain_Paramete
         if (electrode == sim::Electrode::ANODE)
         {
             gtPs = para.gtPsiA;
-            if (gtPs < 1.0e-200) { gtPs = para.gtPsiA; }
+            if (gtPs < 1.0e-200) { gtPs = para.gtPsi; }
         }
         else if (electrode == sim::Electrode::CATHODE)
         {
             gtPs = para.gtPsiC;
-            if (gtPs < 1.0e-200) { gtPs = para.gtPsiC; }
+            if (gtPs < 1.0e-200) { gtPs = para.gtPsi; }
         }
         else
         {

@@ -294,10 +294,33 @@ void Initialize_Geometry::BuildHalfCellGeometryFields()
     ComputePDEFilter(*distMask, *MaskFilter, 0, CellMode::HALF, cfg.half_electrode);
     ComputePDEFilter(*distMask, *MaskFilterPse, 1, CellMode::HALF, cfg.half_electrode);
 
-    for (std::size_t k = 0; k < particle_labels.size(); ++k)
+    if (cfg.combine_particle_groups)
     {
-        MFEM_VERIFY(MaskFilters[k], "Half-cell particle mask is not allocated.");
-        ComputePDEFilterLabel(*distMask, *MaskFilters[k], particle_labels[k], false, -1, CellMode::HALF, cfg.half_electrode);
+        MFEM_VERIFY(MaskFilters.size() == 1, "Expected 1 particle group when combining.");
+        *MaskFilters[0] = *MaskFilter;
+    }
+    // if (cfg.combine_particle_groups)
+    // {
+    //     MFEM_VERIFY(
+    //         MaskFilters.size() == 1,
+    //         "Expected 1 particle group when combining.");
+
+    //     ComputePDEFilterLabel(
+    //         *distMask,
+    //         *MaskFilters[0],
+    //         1,
+    //         false,
+    //         -1,
+    //         CellMode::HALF,
+    //         cfg.half_electrode);
+    // }
+    else
+    {
+        for (std::size_t k = 0; k < particle_labels.size(); ++k)
+        {
+            MFEM_VERIFY(MaskFilters[k], "Half-cell particle mask is not allocated.");
+            ComputePDEFilterLabel(*distMask, *MaskFilters[k], particle_labels[k], false, -1, CellMode::HALF, cfg.half_electrode);
+        }
     }
 
     if (myid == 0)
@@ -932,7 +955,7 @@ void Initialize_Geometry::InitializeGlobalMesh(const char* meshFile) {
 
 
     double dh1 = v0.DistanceTo(v1);
-    if (mfem::Mpi::WorldRank() == 0) { std::cout << "Element size dh = " << dh1 << std::endl;}
+    if (mfem::Mpi::WorldRank() == 0) { std::cout << "Distributed element size dh = " << dh1 << std::endl;}
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -1232,10 +1255,10 @@ std::unique_ptr<mfem::Mesh> Initialize_Geometry::CreateGlobalMeshFromTiffData(co
 
         if (nz > 1)
         {
-            std::cout << "  elements z = " << ez << "\n";
+            std::cout << "  elements z = `" << ez << "\n";
         }
 
-        std::cout << "  initial element size = "
+        std::cout << "  element size after coarsening = "
                   << cfg.dh * coarsen << "\n";
     }
 
@@ -1499,6 +1522,8 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
         filt_dg(i) = 0.5*(filt_dg(i) + 1.0);
     }
 
+    // filt_gf.ProjectGridFunction(filt_dg);
+
     mfem::GridFunctionCoefficient ls_filt_coeff(&filt_dg);
 
     filt_gf.ProjectCoefficient(ls_filt_coeff);
@@ -1654,6 +1679,8 @@ void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist, mfe
     {
         filt_dg(i) = 0.5*(filt_dg(i) + 1.0);
     }
+
+    // filt_gf.ProjectGridFunction(filt_dg);
 
     mfem::GridFunctionCoefficient ls_filt_coeff(&filt_dg);
 

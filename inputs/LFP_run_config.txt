@@ -19,19 +19,19 @@ row_end = 80
 column_begin = 10
 column_end = 60
 
-amr_levels = 0
+amr_levels = 1
 
 # Initial mesh coarsening before AMR
 # Must be 1 when amr_levels = 0
-coarsen_factor = 1
+coarsen_factor = 2
 
 # ============================================================
 # NUMERICAL PARAMETERS
 # ============================================================
 
-dt = 1.2e-06
-dh = 5.0e-08
-gc = 1.4e-16
+dt = 5.0e-06
+dh = 2.33e-07
+gc = 3.25e-14
 
 # ============================================================
 # STOPPING CRITERIA
@@ -39,7 +39,7 @@ gc = 1.4e-16
 
 stop_mode = voltage       
 VCut = 3.2
-num_steps = 20001
+num_steps = 1
 
 # ============================================================
 # CURRENT CONTROL
@@ -58,7 +58,7 @@ cathode_materials = LFP
 # INITIAL PARTICLE STOICHIOMETRIES
 # ============================================================
 
-init_cathode_particles = 0.052
+init_cathode_particles = 0.062
 
 # ============================================================
 # INITIAL ELECTROLYTE
@@ -70,5 +70,5 @@ init_CnE = 0.001
 # INITIAL POTENTIALS
 # ============================================================
 
-init_BvC = 3.30
+init_BvC = 3.28
 init_BvE = -0.1
