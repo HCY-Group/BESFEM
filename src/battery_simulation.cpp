@@ -35,12 +35,10 @@ int main(int argc, char *argv[]) {
         std::filesystem::create_directories(outdir);
     }
     
-    // const char* active_dsF = (cfg.half_electrode == sim::Electrode::CATHODE) ? cfg.dsF_file_C : cfg.dsF_file_A;
-
     MPI_Barrier(MPI_COMM_WORLD);
 
-    bool half_mode     = (cfg.mode == sim::CellMode::HALF);
-    bool half_is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
+    // bool half_mode     = (cfg.mode == sim::CellMode::HALF);
+    // bool half_is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
 
 
         // ============================================================================
@@ -79,9 +77,10 @@ int main(int argc, char *argv[]) {
         if (cfg.mode == sim::CellMode::HALF) {
             bc.SetupBoundaryConditions(sim::CellMode::HALF, cfg.half_electrode);
         } else {
-            // bc.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
-            "Full cell mode is not yet implemented. Please use half-cell mode.";
+            bc.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
+            // std::cout << "Full cell mode is not yet implemented. Please use half-cell mode." << std::endl;
         }
+        bc.SaveBoundaryConditionFields();
 
         // Define Adjuster for Surface Voltage & Current
         Adjust adjust(geometry, domain_parameters, cfg);

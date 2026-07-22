@@ -19,11 +19,11 @@ row_end = 80
 column_begin = 10
 column_end = 60
 
-amr_levels = 1
+amr_levels = 0
 
 # Initial mesh coarsening before AMR
 # Must be 1 when amr_levels = 0
-coarsen_factor = 2
+coarsen_factor = 1
 
 # ============================================================
 # NUMERICAL PARAMETERS
@@ -37,9 +37,9 @@ gc = 1.4e-16
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = voltage       
+stop_mode = steps       
 VCut = 3.2
-num_steps = 20001
+num_steps = 201
 
 # ============================================================
 # CURRENT CONTROL
