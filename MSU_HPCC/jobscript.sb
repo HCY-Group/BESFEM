@@ -1,6 +1,6 @@
 #!/bin/bash --login
 # Job name: 
-#SBATCH --job-name=slurm_besfem-AMR-Large-LFP-18hours-gc-6.38e-12
+#SBATCH --job-name=slurm_besfem-AMR-convergence
 
 # Number of nodes
 #SBATCH --nodes=2
@@ -17,7 +17,7 @@
 # Wall time
 # Format: "minutes", "hours:minutes:seconds", 
 # "days-hours", or "days-hours:minutes"
-#SBATCH --time=18:00:00
+#SBATCH --time=01:00:00
 
 # Mail type
 # e.g., which events trigger email notifications
