@@ -244,6 +244,7 @@ int main(int argc, char *argv[]) {
 
 
         // compute error
+/*
         mfem::GridFunctionCoefficient ansol_c(&phC_an);
         mfem::GridFunctionCoefficient ansol_e(&phE_an);
         mfem::ParGridFunction errweight_c(phC_an);
@@ -256,8 +257,21 @@ int main(int argc, char *argv[]) {
         mfem::GridFunctionCoefficient errweight_e_coef(&errweight_c);
         double error_c = state.phC_gf->ComputeLpError(2.0, ansol_c, &errweight_c_coef);
         double error_e = state.phE_gf->ComputeLpError(2.0, ansol_e, &errweight_e_coef);
-        std::cout << "L2 error cathode:     " << error_c << std::endl;
-        std::cout << "L2 error electrolyte: " << error_e << std::endl;
+*/
+        mfem::ParGridFunction diff_c(*state.phC_gf);
+        diff_c = *state.phC_gf;
+        diff_c -= phC_an;
+        diff_c /= phC_an;  //weight by magnitude of analytical solution
+        diff_c *= *domain_parameters.psi; // only get errors in domain of interest
+        std::cout << "L2 error cathode:     " << diff_c.Norml2() << std::endl;
+
+        mfem::ParGridFunction diff_e(*state.phE_gf);
+        diff_e = *state.phE_gf;
+        diff_e -= phE_an;
+        diff_e /= phE_an;  //weight by magnitude of analytical solution
+        diff_e *= *domain_parameters.pse; // only get errors in domain of interest
+        std::cout << "L2 error electrolyte: " << diff_e.Norml2() << std::endl;
+
 
 
 
