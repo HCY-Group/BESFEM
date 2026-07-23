@@ -1,6 +1,6 @@
 // Unit tests and benchmark tests
 // compile with make test
-// run with: ./unit_tests -cfg ../tests/test_run_config.txt
+// run with: ./unit_tests
 
 // Benchmark tests implemented:
 // -ElectrolytePotential::UpdatePotential
@@ -21,6 +21,7 @@
 #include "mfem.hpp"
 #include "mpi.h"
 #include "../include/BESFEM_All.hpp"
+#include "catch.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -31,8 +32,10 @@
 #include <ctime>
 #include <vector>
 
-int main(int argc, char *argv[]) {
 
+//int main(int argc, char *argv[]) {
+TEST_CASE("Cathode Potential") {
+/*
     // Start measuring the program execution time
     using namespace std::chrono;
     auto program_start = high_resolution_clock::now();
@@ -40,10 +43,10 @@ int main(int argc, char *argv[]) {
     // Initialize MPI for parallel processing and HYPRE for solver setup
     mfem::Mpi::Init(argc, argv);
     mfem::Hypre::Init();
+*/
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     {
 
     //SimulationConfig cfg = ParseSimulationArgs(argc, argv);
@@ -676,7 +679,7 @@ int main(int argc, char *argv[]) {
 
 */
     }
-    
+/*    
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();
 
@@ -684,4 +687,5 @@ int main(int argc, char *argv[]) {
     mfem::Mpi::Finalize();
 
     return 0;
+*/
 }

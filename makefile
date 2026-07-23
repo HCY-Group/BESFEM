@@ -50,7 +50,7 @@ EXEC_SRC_FILES = $(SRC_FILES) src/battery_simulation.cpp
 # ================== Test sources ==================
 TEST_NAME = unit_tests
 TEST_EXEC = $(EXEC_DIR)/$(TEST_NAME)
-TEST_SRC_FILES = $(SRC_FILES) tests/unit_tests.cpp
+TEST_SRC_FILES = $(SRC_FILES) tests/unit_tests.cpp tests/unit_tests_main.cpp
 
 
 # ====================================
@@ -58,7 +58,7 @@ TEST_SRC_FILES = $(SRC_FILES) tests/unit_tests.cpp
 
 
 # Tiff reading
-LDFLAGS = -ltiff
+LDFLAGS = -ltiff #-lCatch2
 
 # Default target
 all: $(EXEC)
