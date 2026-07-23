@@ -253,6 +253,15 @@ static void ApplyConfigFile(SimulationConfig& cfg)
         
 }
 
+SimulationConfig SimConfigFromFileName(const char *filename)
+{
+    SimulationConfig cfg;
+    cfg.config_file = filename;
+    ApplyConfigFile(cfg);
+    return cfg;
+}
+
+
 SimulationConfig ParseSimulationArgs(int argc, char *argv[])
 {
     SimulationConfig cfg;

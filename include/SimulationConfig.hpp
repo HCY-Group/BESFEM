@@ -98,6 +98,17 @@ struct SimulationConfig
 SimulationConfig ParseSimulationArgs(int argc, char *argv[]);
 
 /**
+ * @brief Set up run directly from a config file.
+ *
+ * Takes the filename of a config file and sets up the run.  
+ * Does not accept any additional arguments to override config parameters.
+ *
+ * @param filename Name of the config file to use.
+ * @return Fully populated simulation configuration.
+ */
+SimulationConfig SimConfigFromFileName(const char *filename);
+
+/**
  * @brief Validate the simulation configuration.
  *
  * Performs consistency checks on the supplied configuration and reports
