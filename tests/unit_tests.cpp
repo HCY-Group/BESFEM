@@ -46,8 +46,11 @@ int main(int argc, char *argv[]) {
 
     {
 
-    SimulationConfig cfg = ParseSimulationArgs(argc, argv);
-    ValidateConfig(cfg, argc, argv);
+    //SimulationConfig cfg = ParseSimulationArgs(argc, argv);
+    //ValidateConfig(cfg, argc, argv);
+    const char *config_file = "../tests/test_run_config_cathode.txt";
+    SimulationConfig cfg = SimConfigFromFileName(config_file);
+    ValidateConfig(cfg, 0, nullptr);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -238,6 +241,23 @@ int main(int argc, char *argv[]) {
         *state.phE_gf *= *domain_parameters.pse;
         state.phE_gf->SaveAsOne("phiE");
         phE_an.SaveAsOne("phiE_an");
+
+
+        // compute error
+        mfem::GridFunctionCoefficient ansol_c(&phC_an);
+        mfem::GridFunctionCoefficient ansol_e(&phE_an);
+        mfem::ParGridFunction errweight_c(phC_an);
+        mfem::ParGridFunction errweight_e(phE_an);
+        errweight_c = 1.0;
+        errweight_c /= phC_an;
+        errweight_e = 1.0;
+        errweight_e /= phE_an;
+        mfem::GridFunctionCoefficient errweight_c_coef(&errweight_c);
+        mfem::GridFunctionCoefficient errweight_e_coef(&errweight_c);
+        double error_c = state.phC_gf->ComputeLpError(2.0, ansol_c, &errweight_c_coef);
+        double error_e = state.phE_gf->ComputeLpError(2.0, ansol_e, &errweight_e_coef);
+        std::cout << "L2 error cathode:     " << error_c << std::endl;
+        std::cout << "L2 error electrolyte: " << error_e << std::endl;
 
 
 
