@@ -1,0 +1,8 @@
+{
+    "sweep_name": "test",
+    "parameters": {
+        "Cr": [1.0,2.0],
+        "dt": [1.2e-6]
+    }
+}
+
