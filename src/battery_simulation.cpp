@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
         if (mfem::Mpi::WorldRank() == 0)
         {
             std::cout << "\n===== Simulation Parameters =====\n"
-                    // << "output_dir = " << outdir << "\n"
+                    << "output_dir = " << outdir << "\n"
                     << "dt   = " << cfg.dt   << "\n"
                     << "dh   = " << cfg.dh   << "\n"
                     << "gc   = " << cfg.gc   << "\n"
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
                     const int np = static_cast<int>(state.anode_particles.size());
                     std::vector<double> global_currents(np, 0.0);
 
-                    UpdateAnodePairChemicalPotentials(state, geometry, domain_parameters);
+                    UpdateAnodePairChemicalPotentials(state, geometry, domain_parameters.AvP_Pairs);
 
                     *state.Rxn_gf = 0.0;
                     for (int j = 0; j < np; ++j)
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
                         *state.Rxn_gf += *state.anode_particles[j].Rxn_gf;
 
                         std::vector<ConcentrationBase::PairCoupling> pair_terms;
-                        Pairs(state, geometry, domain_parameters, j, pair_terms, np, t);
+                        Pairs(state.anode_pairs, domain_parameters.WeightPairs, domain_parameters.AvP_Pairs, j, pair_terms, np, t);
 
                         state.anode_particles[j].concentration->UpdateConcentration(*state.anode_particles[j].Rx_src, *state.anode_particles[j].Cn_gf,
                             *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
@@ -290,7 +290,7 @@ int main(int argc, char *argv[]) {
                     const int np = static_cast<int>(state.cathode_particles.size());
                     std::vector<double> global_currents(np, 0.0);
 
-                    UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters);
+                    UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters.AvP_Pairs);
 
                     *state.Rxn_gf = 0.0;
                     for (int j = 0; j < np; ++j)
@@ -299,8 +299,8 @@ int main(int argc, char *argv[]) {
                         *state.Rxn_gf += *state.cathode_particles[j].Rx_src;
                         
                         std::vector<ConcentrationBase::PairCoupling> pair_terms;
-                        Pairs(state, geometry, domain_parameters, j, pair_terms, np, t);
-                        
+                        Pairs(state.cathode_pairs, domain_parameters.WeightPairs, domain_parameters.AvP_Pairs, j, pair_terms, np, t);
+
                         state.cathode_particles[j].concentration->UpdateConcentration(*state.cathode_particles[j].Rx_src, *state.cathode_particles[j].Cn_gf,
                             *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
                     }
@@ -363,43 +363,15 @@ int main(int argc, char *argv[]) {
                                 *state.Rxn_gf += *state.cathode_particles[j].Rxn_gf;
                             }
 
-                            state.Rxn_gf->SaveAsOne("Rxn_TEST.gf");
+                            // state.Rxn_gf->SaveAsOne("Rxn_TEST.gf");
                             // CheckFinite(*state.Rxn_gf, "total Rxn");
 
                             state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, *domain_parameters.psi, globalerror_P);
                             state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
 
-                            // CheckFinite(*state.phC_gf, "cathode potential");
-                            
-                            // if (!std::isfinite(globalerror_P))
-                            // {
-                            //     if (mfem::Mpi::WorldRank() == 0)
-                            //     {
-                            //         std::cerr
-                            //             << "Cathode potential error became non-finite at iteration "
-                            //             << iter << std::endl;
-                            //     }
-
-                            //     MFEM_ABORT("Cathode potential iteration diverged.");
-                            // }
-
                             iter++;
-                                // if (mfem::Mpi::WorldRank() == 0)
-                                // {
-                                //     std::cout
-                                //         << "[Potential iteration " << iter << "] "
-                                //         << "error_P = " << globalerror_P
-                                //         << ", error_E = " << globalerror_E
-                                //         << std::endl;
-                                // }
-
                         }
-                        // std::cout << "Iteration loop finished." << std::endl;
                     }
-
-                        // if (iter == max_iter && mfem::Mpi::WorldRank() == 0) {
-                        //     std::cout << "Warning: Maximum iterations reached at timestep " << t << " with Global Error P = " << globalerror_P << ", Global Error E = " << globalerror_E << std::endl;
-                        // }
                     
                     for (int j = 0; j < np; ++j){
                         state.cathode_particles[j].reaction->TotalReactionCurrent(*state.cathode_particles[j].Rxn_gf, global_currents[j]);
@@ -467,6 +439,15 @@ int main(int argc, char *argv[]) {
 
                         std::cout << ", XfrC_avg = " << XfrC_avg;
                         std::cout << std::endl;
+
+                    }
+
+                    if (t % 10000 == 0)
+                    {
+                        std::ostringstream rxn_path;
+                        rxn_path << outdir << "/Rxn_" << t << ".gf";
+
+                        state.Rxn_gf->SaveAsOne(rxn_path.str().c_str());
                     }
                     
                 }
@@ -501,16 +482,39 @@ int main(int argc, char *argv[]) {
                 t++;
             }
 
-        
-        
-        // else
-        // {
-        //     RunFullCellSimulation(state, geometry, domain_parameters, bc, adjust, outdir, cfg);
-        // }
-        
+        } 
+        else
+        {
+            // ============================================================================
+            // =================  FULL-CELL TIME STEPPING  ================================
+            // ============================================================================
 
+            int t = 0;
 
+            const int npA = state.anode_particles.size();
+            const int npC = state.cathode_particles.size();
+
+            // Perform some operation with npA and npC
+            std::cout << "Number of anode particles: " << npA << std::endl;
+            std::cout << "Number of cathode particles: " << npC << std::endl;
+
+            UpdateAnodePairChemicalPotentials(state, geometry, domain_parameters.AvP_PairsA);
+            UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters.AvP_PairsC);
+
+            for (int j = 0; j < npA; ++j)
+            {
+                std::vector<ConcentrationBase::PairCoupling> pair_terms;
+                Pairs(state.anode_pairs, domain_parameters.WeightPairsA, domain_parameters.AvP_PairsA, j, pair_terms, npA, t);
+            }
+            for (int j = 0; j < npC; ++j)
+            {
+                std::vector<ConcentrationBase::PairCoupling> pair_terms;
+                Pairs(state.cathode_pairs, domain_parameters.WeightPairsC, domain_parameters.AvP_PairsC, j, pair_terms, npC, t);
+            }
+
+            t++;
         }
+
     }
     
     if (mfem::Mpi::WorldRank() == 0) { std::cout << "Simulation complete.\n"; }

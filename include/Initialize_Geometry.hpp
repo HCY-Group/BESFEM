@@ -178,26 +178,6 @@ public:
     void SetupParFiniteElementSpace(int order);
 
     // -------------------------------------------------------------------------
-    // Global → parallel mapping and distance functions
-    // -------------------------------------------------------------------------
-
-    // /**
-    //  * @brief Assign global fields: distance functions, voxel mask, etc.
-    //  *
-    //  * Loads, projects, and assigns global fields onto the global mesh.
-    //  *
-    //  * @param mesh_file Mesh path.
-    //  */
-    // void AssignGlobalValues(const char* mesh_file);
-
-    // /**
-    //  * @brief Transfer global mesh quantities to parallel fields.
-    //  *
-    //  * @param meshFile Mesh file for consistency checking.
-    //  */
-    // void MapGlobalToLocal(const char* meshFile);
-
-    // -------------------------------------------------------------------------
     // Boundary conditions and pinning
     // -------------------------------------------------------------------------
 
@@ -246,26 +226,6 @@ public:
         int mode,
         sim::CellMode cell_mode,
         sim::Electrode electrode);
-
-    // /**
-    //  * @brief Compute a filtered distance field for a specific voxel label.
-    //  *
-    //  * Builds a label-specific mask from the TIFF data, applies the PDE filter,
-    //  * and computes a corresponding distance field. This is used for individual
-    //  * particle or material-region masks in segmented microstructures.
-    //  *
-    //  * @param dist Output unsigned distance field.
-    //  * @param filt_gf Output filtered level-set field.
-    //  * @param target_label Voxel label to isolate.
-    //  * @param keep_boundary_connected Whether to keep only the boundary-connected region.
-    //  * @param seed_side_or_face Optional boundary side/face used as the seed region.
-    //  */
-    // void ComputePDEFilterLabel(mfem::ParGridFunction &dist,
-    //                        mfem::ParGridFunction &filt_gf,
-    //                        int target_label,
-    //                        bool keep_boundary_connected,
-    //                        int seed_side_or_face = -1
-    // );
 
     /**
      * @brief Compute a filtered distance field for a specific voxel label.

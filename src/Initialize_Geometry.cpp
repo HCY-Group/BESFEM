@@ -349,6 +349,18 @@ void Initialize_Geometry::HalfCellAMR()
 
     ComputePDEFilter(temporary_dist, temporary_psi, 0, CellMode::HALF, cfg.half_electrode);
 
+    // {
+    // std::ostringstream name;
+    // name << "psi_amr_level_0.gf";
+    // temporary_psi.SaveAsOne(name.str().c_str());
+    // }
+
+    // {
+    // std::ostringstream meshname;
+    // meshname << "pmesh_before_amr";
+    // parallelMesh->SaveAsOne(meshname.str().c_str());
+    // }
+
     const double outer_half_width = 0.495;
     const double size_tolerance = 1.0e-10;
 
@@ -428,6 +440,18 @@ void Initialize_Geometry::HalfCellAMR()
         temporary_psi.Update();
 
         ComputePDEFilter(temporary_dist, temporary_psi, 0, CellMode::HALF, cfg.half_electrode);
+
+        // {
+        //     std::ostringstream name;
+        //     name << "psi_amr_level_" << (level + 1) << ".gf";
+        //     temporary_psi.SaveAsOne(name.str().c_str());
+        // }
+
+        // {
+        //     std::ostringstream meshname;
+        //     meshname << "pmesh_amr_level_" << (level + 1);
+        //     parallelMesh->SaveAsOne(meshname.str().c_str());
+        // }
         PrintAMRMeshInfo(level + 1);
     }
 }
