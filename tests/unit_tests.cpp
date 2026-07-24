@@ -275,7 +275,8 @@ TEST_CASE("Cathode Potential") {
         diff_e *= *domain_parameters.pse; // only get errors in domain of interest
         std::cout << "L2 error electrolyte: " << diff_e.Norml2() << std::endl;
 
-
+        REQUIRE( diff_c.Norml2() < 0.05 );
+        REQUIRE( diff_e.Norml2() < 0.05 );
 
 
         }

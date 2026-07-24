@@ -58,7 +58,7 @@ TEST_SRC_FILES = $(SRC_FILES) tests/unit_tests.cpp tests/unit_tests_main.cpp
 
 
 # Tiff reading
-LDFLAGS = -ltiff #-lCatch2
+LDFLAGS = -ltiff
 
 # Default target
 all: $(EXEC)
