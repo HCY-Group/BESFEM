@@ -29,12 +29,12 @@ var searchData=
   ['initializeglobalmesh_26',['InitializeGlobalMesh',['../classInitialize__Geometry.html#a8f541c47b52d2b94c1a8fbbe2bc118d0',1,'Initialize_Geometry']]],
   ['initializegridfunctions_27',['InitializeGridFunctions',['../classDomain__Parameters.html#abfa8fd10cc4848d1d7ab422add08326d',1,'Domain_Parameters']]],
   ['initializemassmatrix_28',['InitializeMassMatrix',['../classFEMOperators.html#a3051c04a496f1faa20c2dfcb364b7f1a',1,'FEMOperators']]],
-  ['initializemesh_29',['InitializeMesh',['../classInitialize__Geometry.html#a479dfa7a3e00d72dd04fed304a430537',1,'Initialize_Geometry::InitializeMesh(const char *meshFile, const char *distanceFileA, const char *distanceFileC, const char *mesh_type, MPI_Comm comm, int order)'],['../classInitialize__Geometry.html#ace7808588f888af81e9e61b0c4e0c075',1,'Initialize_Geometry::InitializeMesh(const char *meshFile, const char *distanceFile, const char *mesh_type, MPI_Comm comm, int order)']]],
+  ['initializemesh_29',['InitializeMesh',['../classInitialize__Geometry.html#ad5589502d4d5357675d3a1e636ea0ca7',1,'Initialize_Geometry']]],
   ['initializepairworkspaces_30',['InitializePairWorkspaces',['../SimulationState_8cpp.html#a50df9e21efb2f80409a991ac35ac7053',1,'SimulationState.cpp']]],
   ['initializeparallelmesh_31',['InitializeParallelMesh',['../classInitialize__Geometry.html#afbce7eabe0211f7b04c8c1daffb7afa0',1,'Initialize_Geometry']]],
   ['initializereaction_32',['InitializeReaction',['../classUtils.html#afb688a63c0248e35981e3da728645566',1,'Utils::InitializeReaction(mfem::ParGridFunction &amp;Rx1, mfem::ParGridFunction &amp;Rx2, mfem::ParGridFunction &amp;Rx3, double value)'],['../classUtils.html#a8c8252ba1ec792cc9681b7c8c916c894',1,'Utils::InitializeReaction(mfem::ParGridFunction &amp;Rx1, mfem::ParGridFunction &amp;Rx2, double value)']]],
   ['initializestiffnessmatrix_33',['InitializeStiffnessMatrix',['../classFEMOperators.html#a82b79401eee38d704413b710abfa5391',1,'FEMOperators']]],
-  ['interpolatedomainparameters_34',['InterpolateDomainParameters',['../classDomain__Parameters.html#a12d982f63b431d299658fdee6b5fbf33',1,'Domain_Parameters']]],
+  ['interpolatedomainparameters_34',['InterpolateDomainParameters',['../classDomain__Parameters.html#a9274781d546072f264e56f5d5d059179',1,'Domain_Parameters']]],
   ['isanodematerial_35',['IsAnodeMaterial',['../SimulationConfig_8cpp.html#a06377a6480cbe19ba0446d5c40ab2037',1,'SimulationConfig.cpp']]],
   ['iscathodematerial_36',['IsCathodeMaterial',['../SimulationConfig_8cpp.html#a100580d7443bba7997d11cb506d821b8',1,'SimulationConfig.cpp']]]
 ];

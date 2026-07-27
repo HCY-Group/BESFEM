@@ -151,6 +151,8 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
             ess_tdof_list_w.SetSize(0);
             parfespace.GetEssentialTrueDofs(dbc_w_bdr, ess_tdof_list_w);
 
+            
+
             ess_tdof_list = ess_tdof_list_w;
 
             nbc_bdr.SetSize(parallelMesh.bdr_attributes.Max());

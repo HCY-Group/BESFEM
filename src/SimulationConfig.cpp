@@ -399,14 +399,20 @@ static void CheckCathodeInitialBoundaryFromOCV(const SimulationConfig& cfg)
 
         double expected_ocv = MaterialProperties::OCV(material, x);
 
-        if (std::abs(cfg.init_BvC - expected_ocv) > tolerance)
+        double init_cathode_ocv = cfg.init_BvC - cfg.init_BvE;
+
+        if (std::abs(init_cathode_ocv - expected_ocv) > tolerance)
         {
             std::stringstream ss;
-            ss << "init_BvC = " << cfg.init_BvC
-               << " is far from the OCV curve value for cathode particle "
+            ss << "Initial cathode potential difference is inconsistent with "
+                  "the OCV curve for cathode particle "
                << i << ". For x = " << x
-               << ", suggested init_BvC is about "
-               << expected_ocv << ".";
+               << ", expected init_BvC - init_BvE to be about "
+               << expected_ocv
+               << ", but got "
+               << init_cathode_ocv
+               << ". Suggested init_BvC is about "
+               << cfg.init_BvE + expected_ocv << ".";
 
             mfem::mfem_error(ss.str().c_str());
         }
@@ -423,16 +429,28 @@ static void CheckAnodeInitialBoundaryFromOCV(const SimulationConfig& cfg)
 
         double expected_ocv = MaterialProperties::OCV(material, x);
 
-        if (std::abs(cfg.init_BvA - expected_ocv) > tolerance)
-        {
-            std::stringstream ss;
-            ss << "init_BvA = " << cfg.init_BvA
-               << " is far from the OCV curve value for anode particle "
-               << i << ". For x = " << x
-               << ", suggested init_BvA is about "
-               << expected_ocv << ".";
+        double initial_anode_ocv = cfg.init_BvA - cfg.init_BvE;
 
-            mfem::mfem_error(ss.str().c_str());
+        bool match_pos = std::abs(initial_anode_ocv - expected_ocv) <= tolerance;
+        bool match_neg = std::abs(initial_anode_ocv + expected_ocv) <= tolerance;
+
+        if (!match_pos && !match_neg)
+        {
+            double suggested_pos_BvA = cfg.init_BvE + expected_ocv;
+            double suggested_neg_BvA = cfg.init_BvE - expected_ocv;
+            std::stringstream ss;
+            ss << "Initial anode potential difference is inconsistent with "
+              "the OCV curve for anode particle "
+            << i << ".\n"
+            << "For x = " << x
+            << ", expected init_BvA - init_BvE to be about +"
+            << expected_ocv << " or -" << expected_ocv
+            << ", but got " << initial_anode_ocv << ".\n"
+            << "Suggested init_BvA values are about "
+            << suggested_pos_BvA
+            << " or "
+            << suggested_neg_BvA
+            << ".";
         }
     }
 }

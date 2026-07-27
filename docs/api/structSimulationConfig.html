@@ -97,15 +97,6 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:aba6fea3e46cd34977603da18476bba2b"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#aba6fea3e46cd34977603da18476bba2b">mesh_file</a> = &quot;../inputs/colored_labels_labels.tif&quot;</td></tr>
 <tr class="memdesc:aba6fea3e46cd34977603da18476bba2b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mesh or voxelized geometry file.  <br /></td></tr>
 <tr class="separator:aba6fea3e46cd34977603da18476bba2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ade9c1cebb21a86ecf6411e3ebea0e417"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#ade9c1cebb21a86ecf6411e3ebea0e417">dsF_file_A</a> = &quot;../inputs/dummy.gf&quot;</td></tr>
-<tr class="memdesc:ade9c1cebb21a86ecf6411e3ebea0e417"><td class="mdescLeft">&#160;</td><td class="mdescRight">Anode distance-function file.  <br /></td></tr>
-<tr class="separator:ade9c1cebb21a86ecf6411e3ebea0e417"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abce3e85b6ccb34fa0fdf8a7fa0ea540a"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#abce3e85b6ccb34fa0fdf8a7fa0ea540a">dsF_file_C</a> = &quot;../inputs/dummy.gf&quot;</td></tr>
-<tr class="memdesc:abce3e85b6ccb34fa0fdf8a7fa0ea540a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cathode distance-function file.  <br /></td></tr>
-<tr class="separator:abce3e85b6ccb34fa0fdf8a7fa0ea540a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a54c8321452de6647da437fed6d85ca86"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#a54c8321452de6647da437fed6d85ca86">mesh_type</a> = &quot;v&quot;</td></tr>
-<tr class="memdesc:a54c8321452de6647da437fed6d85ca86"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mesh type ("v" = voxel, "ml" = MATLAB).  <br /></td></tr>
-<tr class="separator:a54c8321452de6647da437fed6d85ca86"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8405787ac64dd9d5b2cf2fd27d9f5cdb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#a8405787ac64dd9d5b2cf2fd27d9f5cdb">order</a> = Constants::order</td></tr>
 <tr class="memdesc:a8405787ac64dd9d5b2cf2fd27d9f5cdb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finite element polynomial order.  <br /></td></tr>
 <tr class="separator:a8405787ac64dd9d5b2cf2fd27d9f5cdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -166,6 +157,30 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a621911a863880ec915fff7a1690fddad"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#a621911a863880ec915fff7a1690fddad">VCut</a> = -1.0</td></tr>
 <tr class="memdesc:a621911a863880ec915fff7a1690fddad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Voltage cutoff for stopping the simulation (V).  <br /></td></tr>
 <tr class="separator:a621911a863880ec915fff7a1690fddad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0d8d94b2538efcf6baac71a8890acd2"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#af0d8d94b2538efcf6baac71a8890acd2">amr_levels</a> = 0</td></tr>
+<tr class="memdesc:af0d8d94b2538efcf6baac71a8890acd2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of AMR levels to apply near phase interfaces.  <br /></td></tr>
+<tr class="separator:af0d8d94b2538efcf6baac71a8890acd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abd7ed0aea9fc33fb73b8749875d0f5bd"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#abd7ed0aea9fc33fb73b8749875d0f5bd">coarsen_factor</a> = 1</td></tr>
+<tr class="memdesc:abd7ed0aea9fc33fb73b8749875d0f5bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initial structured-grid coarsening factor.  <br /></td></tr>
+<tr class="separator:abd7ed0aea9fc33fb73b8749875d0f5bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6dc5c803c910588ef41d8c8cdfcc05d5"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#a6dc5c803c910588ef41d8c8cdfcc05d5">row_begin</a> = -1</td></tr>
+<tr class="memdesc:a6dc5c803c910588ef41d8c8cdfcc05d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Beginning row for geometry cropping.  <br /></td></tr>
+<tr class="separator:a6dc5c803c910588ef41d8c8cdfcc05d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4b63ac3cf8969bb447823ba7c77000f4"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#a4b63ac3cf8969bb447823ba7c77000f4">row_end</a> = -1</td></tr>
+<tr class="memdesc:a4b63ac3cf8969bb447823ba7c77000f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ending row for geometry cropping.  <br /></td></tr>
+<tr class="separator:a4b63ac3cf8969bb447823ba7c77000f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab179b25af78e8c9e2f8009b146f58de1"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#ab179b25af78e8c9e2f8009b146f58de1">column_begin</a> = -1</td></tr>
+<tr class="memdesc:ab179b25af78e8c9e2f8009b146f58de1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Beginning column for geometry cropping.  <br /></td></tr>
+<tr class="separator:ab179b25af78e8c9e2f8009b146f58de1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35b2e057c268ff02214be0de66ede146"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#a35b2e057c268ff02214be0de66ede146">column_end</a> = -1</td></tr>
+<tr class="memdesc:a35b2e057c268ff02214be0de66ede146"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ending column for geometry cropping.  <br /></td></tr>
+<tr class="separator:a35b2e057c268ff02214be0de66ede146"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7de8076a899393b997ac6c484242f0cb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#a7de8076a899393b997ac6c484242f0cb">depth_begin</a> = 0</td></tr>
+<tr class="memdesc:a7de8076a899393b997ac6c484242f0cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Beginning depth for geometry cropping.  <br /></td></tr>
+<tr class="separator:a7de8076a899393b997ac6c484242f0cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77eda7d1b12fa84669d909b5e5494789"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSimulationConfig.html#a77eda7d1b12fa84669d909b5e5494789">depth_end</a> = 1</td></tr>
+<tr class="memdesc:a77eda7d1b12fa84669d909b5e5494789"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ending depth for geometry cropping.  <br /></td></tr>
+<tr class="separator:a77eda7d1b12fa84669d909b5e5494789"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Stores all user-configurable simulation settings. </p>
@@ -174,6 +189,26 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00025">25</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
+<a id="af0d8d94b2538efcf6baac71a8890acd2" name="af0d8d94b2538efcf6baac71a8890acd2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af0d8d94b2538efcf6baac71a8890acd2">&#9670;&#160;</a></span>amr_levels</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">double SimulationConfig::amr_levels = 0</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Number of AMR levels to apply near phase interfaces. </p>
+
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00084">84</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">Domain_Parameters::InterpolateDomainParameters()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
+
+</div>
+</div>
 <a id="a0b3181318e0542469761ba3d40f26096" name="a0b3181318e0542469761ba3d40f26096"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0b3181318e0542469761ba3d40f26096">&#9670;&#160;</a></span>anode_materials</h2>
 
@@ -188,9 +223,9 @@ Public Attributes</h2></td></tr>
 
 <p>Material assigned to each anode particle. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00060">60</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00057">57</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00394">CheckAnodeInitialBoundaryFromOCV()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00397">CheckAnodeInitialBoundaryFromOCV()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -208,9 +243,69 @@ Public Attributes</h2></td></tr>
 
 <p>Material assigned to each cathode particle. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00061">61</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00058">58</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00370">CheckCathodeInitialBoundaryFromOCV()</a>, <a class="el" href="Utils_8cpp_source.html#l00086">Utils::ComputePairFlux()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00373">CheckCathodeInitialBoundaryFromOCV()</a>, <a class="el" href="Utils_8cpp_source.html#l00086">Utils::ComputePairFlux()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
+
+</div>
+</div>
+<a id="abd7ed0aea9fc33fb73b8749875d0f5bd" name="abd7ed0aea9fc33fb73b8749875d0f5bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abd7ed0aea9fc33fb73b8749875d0f5bd">&#9670;&#160;</a></span>coarsen_factor</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int SimulationConfig::coarsen_factor = 1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Initial structured-grid coarsening factor. </p>
+
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00092">92</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00327">Initialize_Geometry::AssignGlobalValues()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00513">Initialize_Geometry::CreateGlobalMeshFromTiffData()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
+
+</div>
+</div>
+<a id="ab179b25af78e8c9e2f8009b146f58de1" name="ab179b25af78e8c9e2f8009b146f58de1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab179b25af78e8c9e2f8009b146f58de1">&#9670;&#160;</a></span>column_begin</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int SimulationConfig::column_begin = -1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Beginning column for geometry cropping. </p>
+
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00096">96</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00480">Initialize_Geometry::ReadTiffFile()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
+
+</div>
+</div>
+<a id="a35b2e057c268ff02214be0de66ede146" name="a35b2e057c268ff02214be0de66ede146"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a35b2e057c268ff02214be0de66ede146">&#9670;&#160;</a></span>column_end</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int SimulationConfig::column_end = -1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Ending column for geometry cropping. </p>
+
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00097">97</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00480">Initialize_Geometry::ReadTiffFile()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -228,9 +323,9 @@ Public Attributes</h2></td></tr>
 
 <p>Solve all particle groups as a combined system. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00051">51</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00048">48</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00271">ParseSimulationArgs()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00781">Initialize_Geometry::ComputePDEFilterLabel()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">Initialize_Geometry::InitializeMesh()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00277">ParseSimulationArgs()</a>.</p>
 
 </div>
 </div>
@@ -250,7 +345,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00038">38</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00271">ParseSimulationArgs()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00277">ParseSimulationArgs()</a>.</p>
 
 </div>
 </div>
@@ -268,9 +363,49 @@ Public Attributes</h2></td></tr>
 
 <p>Applied C-rate. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00082">82</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00079">79</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00613">Domain_Parameters::CalculateTargetCurrent()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00591">Domain_Parameters::CalculateTargetCurrent()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
+
+</div>
+</div>
+<a id="a7de8076a899393b997ac6c484242f0cb" name="a7de8076a899393b997ac6c484242f0cb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7de8076a899393b997ac6c484242f0cb">&#9670;&#160;</a></span>depth_begin</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int SimulationConfig::depth_begin = 0</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Beginning depth for geometry cropping. </p>
+
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00100">100</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00480">Initialize_Geometry::ReadTiffFile()</a>.</p>
+
+</div>
+</div>
+<a id="a77eda7d1b12fa84669d909b5e5494789" name="a77eda7d1b12fa84669d909b5e5494789"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a77eda7d1b12fa84669d909b5e5494789">&#9670;&#160;</a></span>depth_end</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int SimulationConfig::depth_end = 1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Ending depth for geometry cropping. </p>
+
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00101">101</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00480">Initialize_Geometry::ReadTiffFile()</a>.</p>
 
 </div>
 </div>
@@ -288,49 +423,9 @@ Public Attributes</h2></td></tr>
 
 <p>Characteristic mesh spacing (m). </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00079">79</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00076">76</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00296">Initialize_Geometry::AdjustDistanceFile()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Reaction_8cpp_source.html#l00129">Reaction::ButlerVolmer()</a>, <a class="el" href="Reaction_8cpp_source.html#l00143">Reaction::ButlerVolmer()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00653">Initialize_Geometry::CreateGlobalMeshFromTiffData()</a>, <a class="el" href="Reaction_8cpp_source.html#l00068">Reaction::ExchangeCurrentDensity()</a>, <a class="el" href="Reaction_8cpp_source.html#l00087">Reaction::ExchangeCurrentDensity()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">Domain_Parameters::InterpolateDomainParameters()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="ElectrodeCahnHilliard_8cpp_source.html#l00016">ElectrodeCahnHilliard::SetupField()</a>, <a class="el" href="Reaction_8cpp_source.html#l00110">Reaction::TableExchangeCurrentDensity()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
-
-</div>
-</div>
-<a id="ade9c1cebb21a86ecf6411e3ebea0e417" name="ade9c1cebb21a86ecf6411e3ebea0e417"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ade9c1cebb21a86ecf6411e3ebea0e417">&#9670;&#160;</a></span>dsF_file_A</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">const char* SimulationConfig::dsF_file_A = &quot;../inputs/dummy.gf&quot;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Anode distance-function file. </p>
-
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00040">40</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00271">ParseSimulationArgs()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
-
-</div>
-</div>
-<a id="abce3e85b6ccb34fa0fdf8a7fa0ea540a" name="abce3e85b6ccb34fa0fdf8a7fa0ea540a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abce3e85b6ccb34fa0fdf8a7fa0ea540a">&#9670;&#160;</a></span>dsF_file_C</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">const char* SimulationConfig::dsF_file_C = &quot;../inputs/dummy.gf&quot;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Cathode distance-function file. </p>
-
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00041">41</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00271">ParseSimulationArgs()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Reaction_8cpp_source.html#l00134">Reaction::ButlerVolmer()</a>, <a class="el" href="Reaction_8cpp_source.html#l00148">Reaction::ButlerVolmer()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00513">Initialize_Geometry::CreateGlobalMeshFromTiffData()</a>, <a class="el" href="Reaction_8cpp_source.html#l00068">Reaction::ExchangeCurrentDensity()</a>, <a class="el" href="Reaction_8cpp_source.html#l00092">Reaction::ExchangeCurrentDensity()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="ElectrodeCahnHilliard_8cpp_source.html#l00016">ElectrodeCahnHilliard::SetupField()</a>, <a class="el" href="Reaction_8cpp_source.html#l00115">Reaction::TableExchangeCurrentDensity()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -348,9 +443,9 @@ Public Attributes</h2></td></tr>
 
 <p>Simulation timestep. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00081">81</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00078">78</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Adjust_8cpp_source.html#l00013">Adjust::AdjustConstantCurrent()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="ElectrodeCahnHilliard_8cpp_source.html#l00045">ElectrodeCahnHilliard::UpdateConcentration()</a>, <a class="el" href="ElectrodeDiffusion_8cpp_source.html#l00039">ElectrodeDiffusion::UpdateConcentration()</a>, <a class="el" href="ElectrolyteDiffusion_8cpp_source.html#l00073">ElectrolyteDiffusion::UpdateConcentration()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Adjust_8cpp_source.html#l00013">Adjust::AdjustConstantCurrent()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="ElectrodeCahnHilliard_8cpp_source.html#l00046">ElectrodeCahnHilliard::UpdateConcentration()</a>, <a class="el" href="ElectrodeDiffusion_8cpp_source.html#l00039">ElectrodeDiffusion::UpdateConcentration()</a>, <a class="el" href="ElectrolyteDiffusion_8cpp_source.html#l00073">ElectrolyteDiffusion::UpdateConcentration()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -368,9 +463,9 @@ Public Attributes</h2></td></tr>
 
 <p>Cahn&ndash;Hilliard gradient-energy coefficient. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00080">80</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00077">77</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="ElectrodeCahnHilliard_8cpp_source.html#l00016">ElectrodeCahnHilliard::SetupField()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="ElectrodeCahnHilliard_8cpp_source.html#l00016">ElectrodeCahnHilliard::SetupField()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -390,7 +485,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00032">32</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00271">ParseSimulationArgs()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00277">ParseSimulationArgs()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -408,9 +503,9 @@ Public Attributes</h2></td></tr>
 
 <p>Initial lithiation of each anode particle. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00057">57</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00054">54</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00394">CheckAnodeInitialBoundaryFromOCV()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00397">CheckAnodeInitialBoundaryFromOCV()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -428,9 +523,9 @@ Public Attributes</h2></td></tr>
 
 <p>Initial anode boundary potential (V). </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00071">71</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00068">68</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00394">CheckAnodeInitialBoundaryFromOCV()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00397">CheckAnodeInitialBoundaryFromOCV()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -448,9 +543,9 @@ Public Attributes</h2></td></tr>
 
 <p>Initial cathode boundary potential (V). </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00072">72</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00069">69</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00370">CheckCathodeInitialBoundaryFromOCV()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00373">CheckCathodeInitialBoundaryFromOCV()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -468,9 +563,9 @@ Public Attributes</h2></td></tr>
 
 <p>Initial electrolyte potential (V). </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00073">73</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00070">70</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -488,9 +583,9 @@ Public Attributes</h2></td></tr>
 
 <p>Initial lithiation of each cathode particle. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00058">58</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00055">55</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00370">CheckCathodeInitialBoundaryFromOCV()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00373">CheckCathodeInitialBoundaryFromOCV()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -508,7 +603,7 @@ Public Attributes</h2></td></tr>
 
 <p>Initial anode lithium concentration. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00067">67</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00064">64</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>.</p>
 
@@ -528,7 +623,7 @@ Public Attributes</h2></td></tr>
 
 <p>Initial cathode lithium concentration. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00068">68</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00065">65</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>.</p>
 
@@ -548,9 +643,9 @@ Public Attributes</h2></td></tr>
 
 <p>Initial electrolyte concentration. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00069">69</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00066">66</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -570,27 +665,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00039">39</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00271">ParseSimulationArgs()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
-
-</div>
-</div>
-<a id="a54c8321452de6647da437fed6d85ca86" name="a54c8321452de6647da437fed6d85ca86"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a54c8321452de6647da437fed6d85ca86">&#9670;&#160;</a></span>mesh_type</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">const char* SimulationConfig::mesh_type = &quot;v&quot;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Mesh type ("v" = voxel, "ml" = MATLAB). </p>
-
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00042">42</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00271">ParseSimulationArgs()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00277">ParseSimulationArgs()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -610,7 +685,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00031">31</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00271">ParseSimulationArgs()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00277">ParseSimulationArgs()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -628,9 +703,9 @@ Public Attributes</h2></td></tr>
 
 <p>Number of simulation timesteps. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00049">49</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00046">46</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -648,9 +723,49 @@ Public Attributes</h2></td></tr>
 
 <p>Finite element polynomial order. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00048">48</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00045">45</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00271">ParseSimulationArgs()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00277">ParseSimulationArgs()</a>.</p>
+
+</div>
+</div>
+<a id="a6dc5c803c910588ef41d8c8cdfcc05d5" name="a6dc5c803c910588ef41d8c8cdfcc05d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6dc5c803c910588ef41d8c8cdfcc05d5">&#9670;&#160;</a></span>row_begin</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int SimulationConfig::row_begin = -1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Beginning row for geometry cropping. </p>
+
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00094">94</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00480">Initialize_Geometry::ReadTiffFile()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
+
+</div>
+</div>
+<a id="a4b63ac3cf8969bb447823ba7c77000f4" name="a4b63ac3cf8969bb447823ba7c77000f4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4b63ac3cf8969bb447823ba7c77000f4">&#9670;&#160;</a></span>row_end</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int SimulationConfig::row_end = -1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Ending row for geometry cropping. </p>
+
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00095">95</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00480">Initialize_Geometry::ReadTiffFile()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -668,9 +783,9 @@ Public Attributes</h2></td></tr>
 
 <p>Simulation stopping condition (by steps or voltage). </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00085">85</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00082">82</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00271">ParseSimulationArgs()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00277">ParseSimulationArgs()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -688,9 +803,9 @@ Public Attributes</h2></td></tr>
 
 <p>Voltage cutoff for stopping the simulation (V). </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00086">86</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00083">83</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00438">ValidateConfig()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="SimulationConfig_8cpp_source.html#l00441">ValidateConfig()</a>.</p>
 
 </div>
 </div>
@@ -708,7 +823,7 @@ Public Attributes</h2></td></tr>
 
 <p>Voltage-adjustment rate for constant-current control. </p>
 
-<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00083">83</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SimulationConfig_8hpp_source.html#l00080">80</a> of file <a class="el" href="SimulationConfig_8hpp_source.html">SimulationConfig.hpp</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Adjust_8cpp_source.html#l00013">Adjust::AdjustConstantCurrent()</a>, <a class="el" href="SimulationConfig_8cpp_source.html#l00165">ApplyConfigFile()</a>, and <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
 

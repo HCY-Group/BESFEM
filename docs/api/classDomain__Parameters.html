@@ -94,9 +94,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a494e6284c38a12f9a7e9af51f1ea1ed4"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDomain__Parameters.html#a494e6284c38a12f9a7e9af51f1ea1ed4">~Domain_Parameters</a> ()</td></tr>
 <tr class="memdesc:a494e6284c38a12f9a7e9af51f1ea1ed4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <br /></td></tr>
 <tr class="separator:a494e6284c38a12f9a7e9af51f1ea1ed4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6b2ab4e6e130e1903dacb0debdb1b8a4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDomain__Parameters.html#a6b2ab4e6e130e1903dacb0debdb1b8a4">SetupDomainParameters</a> (const char *mesh_type)</td></tr>
-<tr class="memdesc:a6b2ab4e6e130e1903dacb0debdb1b8a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize all domain parameters based on the mesh type.  <br /></td></tr>
-<tr class="separator:a6b2ab4e6e130e1903dacb0debdb1b8a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1614f1bf5ca3ef859da70e86a32ded7d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDomain__Parameters.html#a1614f1bf5ca3ef859da70e86a32ded7d">SetupDomainParameters</a> ()</td></tr>
+<tr class="memdesc:a1614f1bf5ca3ef859da70e86a32ded7d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize all domain parameters based on the mesh type.  <br /></td></tr>
+<tr class="separator:a1614f1bf5ca3ef859da70e86a32ded7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -210,9 +210,9 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:abfa8fd10cc4848d1d7ab422add08326d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDomain__Parameters.html#abfa8fd10cc4848d1d7ab422add08326d">InitializeGridFunctions</a> ()</td></tr>
 <tr class="memdesc:abfa8fd10cc4848d1d7ab422add08326d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocate grid functions (psi, pse, AvP, AvA, AvC, AvB).  <br /></td></tr>
 <tr class="separator:abfa8fd10cc4848d1d7ab422add08326d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a12d982f63b431d299658fdee6b5fbf33"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDomain__Parameters.html#a12d982f63b431d299658fdee6b5fbf33">InterpolateDomainParameters</a> (const char *mesh_type)</td></tr>
-<tr class="memdesc:a12d982f63b431d299658fdee6b5fbf33"><td class="mdescLeft">&#160;</td><td class="mdescRight">Project/interpolate distance-function-based parameters.  <br /></td></tr>
-<tr class="separator:a12d982f63b431d299658fdee6b5fbf33"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9274781d546072f264e56f5d5d059179"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDomain__Parameters.html#a9274781d546072f264e56f5d5d059179">InterpolateDomainParameters</a> ()</td></tr>
+<tr class="memdesc:a9274781d546072f264e56f5d5d059179"><td class="mdescLeft">&#160;</td><td class="mdescRight">Project/interpolate distance-function-based parameters.  <br /></td></tr>
+<tr class="separator:a9274781d546072f264e56f5d5d059179"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0bd19c5d6a4b4719f9f3691b647a2b46"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDomain__Parameters.html#a0bd19c5d6a4b4719f9f3691b647a2b46">CalculateTotals</a> (const mfem::ParGridFunction &amp;grid_function, const mfem::Vector &amp;element_volumes, double &amp;local_total, double &amp;global_total)</td></tr>
 <tr class="memdesc:a0bd19c5d6a4b4719f9f3691b647a2b46"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute the local and global totals of a field.  <br /></td></tr>
 <tr class="separator:a0bd19c5d6a4b4719f9f3691b647a2b46"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -351,7 +351,7 @@ Private Attributes</h2></td></tr>
 
 <p>Destructor. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00046">46</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00043">43</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
 
 </div>
 </div>
@@ -382,11 +382,11 @@ Private Attributes</h2></td></tr>
 <p>Compute phase-field integrals and target currents. </p>
 <p>Computes total phase-field weights for solid, electrolyte, anode, cathode, and per-particle fields, then updates the corresponding target-current values. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">573</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">568</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="SimulationConfig_8hpp_source.html#l00060">SimulationConfig::anode_materials</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00613">CalculateTargetCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00561">CalculateTotalPhaseField()</a>, <a class="el" href="namespacesim.html#a9a5cda33a3beb50f0ee8f4b691ab887aad1f576f379d97be091150db0d837dfe9">sim::CATHODE</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00061">SimulationConfig::cathode_materials</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00121">cfg</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00208">dsF_A</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00209">dsF_C</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00116">gtPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00091">gtPsA</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00092">gtPsC</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00080">gtPse</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00079">gtPsi</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00081">gTrgI</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00117">gTrgPs</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00032">SimulationConfig::half_electrode</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00100">ps</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00064">psA</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00065">psC</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00063">pse</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00062">psi</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00115">tPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00225">tPsA</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00226">tPsC</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00218">tPse</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00217">tPsi</a>.</p>
+<p class="reference">References <a class="el" href="SimulationConfig_8hpp_source.html#l00057">SimulationConfig::anode_materials</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00591">CalculateTargetCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00556">CalculateTotalPhaseField()</a>, <a class="el" href="namespacesim.html#a9a5cda33a3beb50f0ee8f4b691ab887aad1f576f379d97be091150db0d837dfe9">sim::CATHODE</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00058">SimulationConfig::cathode_materials</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00118">cfg</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00113">gtPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00077">gtPse</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00076">gtPsi</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00078">gTrgI</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00114">gTrgPs</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00032">SimulationConfig::half_electrode</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00097">ps</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00060">pse</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00059">psi</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00112">tPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00214">tPse</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00213">tPsi</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">SetupDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00045">SetupDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -440,11 +440,11 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00613">613</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00591">591</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Domain__Parameters_8hpp_source.html#l00121">cfg</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00082">SimulationConfig::Cr</a>, <a class="el" href="MaterialProperties_8cpp_source.html#l00422">MaterialProperties::SiteDensity()</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00219">trgI</a>.</p>
+<p class="reference">References <a class="el" href="Domain__Parameters_8hpp_source.html#l00118">cfg</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00079">SimulationConfig::Cr</a>, <a class="el" href="MaterialProperties_8cpp_source.html#l00424">MaterialProperties::SiteDensity()</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00215">trgI</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>.</p>
 
 </div>
 </div>
@@ -499,11 +499,11 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00561">561</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00556">556</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Domain__Parameters_8cpp_source.html#l00534">CalculateTotals()</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00094">EVol</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00204">nE</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00211">pmesh</a>.</p>
+<p class="reference">References <a class="el" href="Domain__Parameters_8cpp_source.html#l00529">CalculateTotals()</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00091">EVol</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00200">nE</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00207">pmesh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>.</p>
 
 </div>
 </div>
@@ -572,11 +572,11 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00534">534</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00529">529</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Domain__Parameters_8hpp_source.html#l00205">nC</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00204">nE</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00211">pmesh</a>.</p>
+<p class="reference">References <a class="el" href="Domain__Parameters_8hpp_source.html#l00200">nE</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00207">pmesh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00561">CalculateTotalPhaseField()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00556">CalculateTotalPhaseField()</a>.</p>
 
 </div>
 </div>
@@ -605,16 +605,16 @@ Private Attributes</h2></td></tr>
 
 <p>Allocate grid functions (psi, pse, AvP, AvA, AvC, AvB). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">88</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">61</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Domain__Parameters_8hpp_source.html#l00071">AvA</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00073">AvB</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00072">AvC</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00074">AvE</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00106">AvEs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00070">AvP</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00103">AvP_Pairs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00101">AvPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00096">denom</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00208">dsF_A</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00209">dsF_C</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00212">fespace</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00116">gtPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00117">gTrgPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00098">particle_labels</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00100">ps</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00064">psA</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00065">psC</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00063">pse</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00062">psi</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00109">psi_Pairs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00115">tPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00107">WeightEs</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00112">WeightPairs</a>.</p>
+<p class="reference">References <a class="el" href="Domain__Parameters_8hpp_source.html#l00070">AvB</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00071">AvE</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00103">AvEs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00067">AvP</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00100">AvP_Pairs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00098">AvPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00093">denom</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00208">fespace</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00113">gtPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00114">gTrgPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00095">particle_labels</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00097">ps</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00060">pse</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00059">psi</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00106">psi_Pairs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00112">tPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00104">WeightEs</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00109">WeightPairs</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">SetupDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00045">SetupDomainParameters()</a>.</p>
 
 </div>
 </div>
-<a id="a12d982f63b431d299658fdee6b5fbf33" name="a12d982f63b431d299658fdee6b5fbf33"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a12d982f63b431d299658fdee6b5fbf33">&#9670;&#160;</a></span>InterpolateDomainParameters()</h2>
+<a id="a9274781d546072f264e56f5d5d059179" name="a9274781d546072f264e56f5d5d059179"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9274781d546072f264e56f5d5d059179">&#9670;&#160;</a></span>InterpolateDomainParameters()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -625,8 +625,7 @@ Private Attributes</h2></td></tr>
         <tr>
           <td class="memname">void Domain_Parameters::InterpolateDomainParameters </td>
           <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>mesh_type</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -638,19 +637,13 @@ Private Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Project/interpolate distance-function-based parameters. </p>
-<p>Converts dsF / dsF_A / dsF_C into phase indicators ψ, ψₑ and surface-area fields AvP, etc., depending on mesh type. Clamps values to ensure physical consistency.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">mesh_type</td><td>Mesh type specifier ("ml", "v"). </td></tr>
-  </table>
-  </dd>
-</dl>
+<p>Converts dsF / dsF_A / dsF_C into phase indicators ψ, ψₑ and surface-area fields AvP, etc., depending on mesh type. Clamps values to ensure physical consistency. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">178</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">136</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Domain__Parameters_8hpp_source.html#l00071">AvA</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00073">AvB</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00072">AvC</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00074">AvE</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00106">AvEs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00070">AvP</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00103">AvP_Pairs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00101">AvPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00121">cfg</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00096">denom</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00079">SimulationConfig::dh</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00207">dsF</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00208">dsF_A</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00209">dsF_C</a>, <a class="el" href="namespaceConstants.html#a5bddd6093b3cba1b1742e0bc6fe51ce7">Constants::eps</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00212">fespace</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00120">geometry</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00019">GlobalMinMax()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00342">Initialize_Geometry::MaskFilterPse</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00345">Initialize_Geometry::MaskFilters</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00203">nV</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00211">pmesh</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00100">ps</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00064">psA</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00065">psC</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00063">pse</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00062">psi</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00109">psi_Pairs</a>, <a class="el" href="namespaceConstants.html#a1ca7545eb1f70f1568dc1036c880533f">Constants::thres</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00332">Initialize_Geometry::Vox</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00107">WeightEs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00112">WeightPairs</a>, and <a class="el" href="namespaceConstants.html#a6c5080abbeaac983157816ddbdf2838b">Constants::zeta</a>.</p>
+<p class="reference">References <a class="el" href="SimulationConfig_8hpp_source.html#l00084">SimulationConfig::amr_levels</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00070">AvB</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00071">AvE</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00103">AvEs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00067">AvP</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00100">AvP_Pairs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00098">AvPs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00118">cfg</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00093">denom</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00208">fespace</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00117">geometry</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00019">GlobalMinMax()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00319">Initialize_Geometry::MaskFilterPse</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00322">Initialize_Geometry::MaskFilters</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00201">nC</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00259">Initialize_Geometry::nC</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00200">nE</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00258">Initialize_Geometry::nE</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00199">nV</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00257">Initialize_Geometry::nV</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00207">pmesh</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00097">ps</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00060">pse</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00059">psi</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00106">psi_Pairs</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00104">WeightEs</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00109">WeightPairs</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">SetupDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00045">SetupDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -680,16 +673,16 @@ Private Attributes</h2></td></tr>
 <p>Print diagnostic totals (rank 0 only). </p>
 <p>Logs gtPsi, gtPse, gTrgI, and other totals for debugging or inspection. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00625">625</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00603">603</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Domain__Parameters_8hpp_source.html#l00208">dsF_A</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00209">dsF_C</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00091">gtPsA</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00092">gtPsC</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00080">gtPse</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00079">gtPsi</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00081">gTrgI</a>.</p>
+<p class="reference">References <a class="el" href="Domain__Parameters_8hpp_source.html#l00077">gtPse</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00076">gtPsi</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00078">gTrgI</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">SetupDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00045">SetupDomainParameters()</a>.</p>
 
 </div>
 </div>
-<a id="a6b2ab4e6e130e1903dacb0debdb1b8a4" name="a6b2ab4e6e130e1903dacb0debdb1b8a4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6b2ab4e6e130e1903dacb0debdb1b8a4">&#9670;&#160;</a></span>SetupDomainParameters()</h2>
+<a id="a1614f1bf5ca3ef859da70e86a32ded7d" name="a1614f1bf5ca3ef859da70e86a32ded7d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1614f1bf5ca3ef859da70e86a32ded7d">&#9670;&#160;</a></span>SetupDomainParameters()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -697,8 +690,7 @@ Private Attributes</h2></td></tr>
         <tr>
           <td class="memname">void Domain_Parameters::SetupDomainParameters </td>
           <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>mesh_type</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -715,24 +707,12 @@ Private Attributes</h2></td></tr>
 <li>Integrates ψ and ψₑ to compute gtPsi, gtPse <br  />
 </li>
 <li>Computes global target current gTrgI <br  />
-</li>
-</ul>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">mesh_type</td><td>Character flag identifying the mesh geometry:<ul>
-<li><code>"ml"</code> MATLAB mesh <br  />
-</li>
-<li><code>"v"</code> voxel-derived mesh <br  />
  </li>
 </ul>
-</td></tr>
-  </table>
-  </dd>
-</dl>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">48</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8cpp_source.html#l00045">45</a> of file <a class="el" href="Domain__Parameters_8cpp_source.html">Domain_Parameters.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Domain__Parameters_8hpp_source.html#l00073">AvB</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00074">AvE</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00070">AvP</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00098">particle_labels</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00625">PrintInfo()</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00100">ps</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00063">pse</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00062">psi</a>.</p>
+<p class="reference">References <a class="el" href="Domain__Parameters_8hpp_source.html#l00070">AvB</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00071">AvE</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00067">AvP</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00207">pmesh</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00603">PrintInfo()</a>, <a class="el" href="Domain__Parameters_8hpp_source.html#l00060">pse</a>, and <a class="el" href="Domain__Parameters_8hpp_source.html#l00059">psi</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
 
@@ -753,9 +733,7 @@ Private Attributes</h2></td></tr>
 
 <p>Anode surface-area density. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00071">71</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00068">68</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -773,9 +751,9 @@ Private Attributes</h2></td></tr>
 
 <p>Boundary surface-area density. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00073">73</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00070">70</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">SetupDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00045">SetupDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -793,9 +771,7 @@ Private Attributes</h2></td></tr>
 
 <p>Cathode surface-area density. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00072">72</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00069">69</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -813,9 +789,9 @@ Private Attributes</h2></td></tr>
 
 <p>Electrolyte surface-area density. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00074">74</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00071">71</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">SetupDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00045">SetupDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -833,9 +809,9 @@ Private Attributes</h2></td></tr>
 
 <p>Per-particle electrolyte interface area fields. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00106">106</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00103">103</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, and <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, and <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
 
 </div>
 </div>
@@ -853,9 +829,9 @@ Private Attributes</h2></td></tr>
 
 <p>Particle surface-area density. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00070">70</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00067">67</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">SetupDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00045">SetupDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -873,9 +849,9 @@ Private Attributes</h2></td></tr>
 
 <p>Pairwise particle-particle interfacial area fields. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00103">103</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00100">100</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00385">Pairs()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00083">UpdateAnodePairChemicalPotentials()</a>, and <a class="el" href="SimulationState_8cpp_source.html#l00050">UpdateCathodePairChemicalPotentials()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00423">Pairs()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00083">UpdateAnodePairChemicalPotentials()</a>, and <a class="el" href="SimulationState_8cpp_source.html#l00050">UpdateCathodePairChemicalPotentials()</a>.</p>
 
 </div>
 </div>
@@ -893,9 +869,9 @@ Private Attributes</h2></td></tr>
 
 <p>Per-particle surface-area density fields. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00101">101</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00098">98</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -911,9 +887,9 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00121">121</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00118">118</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00613">CalculateTargetCurrent()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00591">CalculateTargetCurrent()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -931,9 +907,9 @@ Private Attributes</h2></td></tr>
 
 <p>Denominator/workspace field used in phase-field normalization. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00096">96</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00093">93</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -959,9 +935,7 @@ Private Attributes</h2></td></tr>
 
 <p>Distance function (whole domain). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00207">207</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00203">203</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -987,9 +961,7 @@ Private Attributes</h2></td></tr>
 
 <p>Distance function (anode). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00208">208</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00625">PrintInfo()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00204">204</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1015,9 +987,7 @@ Private Attributes</h2></td></tr>
 
 <p>Distance function (cathode). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00209">209</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00625">PrintInfo()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00205">205</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1035,9 +1005,9 @@ Private Attributes</h2></td></tr>
 
 <p>Element volumes for FEM integration. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00094">94</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00091">91</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00561">CalculateTotalPhaseField()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00556">CalculateTotalPhaseField()</a>.</p>
 
 </div>
 </div>
@@ -1063,9 +1033,9 @@ Private Attributes</h2></td></tr>
 
 <p>Parallel FE space. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00212">212</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00208">208</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -1083,9 +1053,9 @@ Private Attributes</h2></td></tr>
 
 <p>Reference to geometry handler. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00120">120</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00117">117</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -1103,9 +1073,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global per-particle phase-field totals. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00116">116</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00113">113</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, and <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, and <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
 
 </div>
 </div>
@@ -1123,9 +1093,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global integral of ψ_A (anode region). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00091">91</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00088">88</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="ElectrodePotential_8cpp_source.html#l00007">ElectrodePotential::ElectrodePotential()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00625">PrintInfo()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ElectrodePotential_8cpp_source.html#l00007">ElectrodePotential::ElectrodePotential()</a>.</p>
 
 </div>
 </div>
@@ -1143,9 +1113,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global integral of ψ_C (cathode region). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00092">92</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00089">89</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="ElectrodePotential_8cpp_source.html#l00007">ElectrodePotential::ElectrodePotential()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00625">PrintInfo()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ElectrodePotential_8cpp_source.html#l00007">ElectrodePotential::ElectrodePotential()</a>.</p>
 
 </div>
 </div>
@@ -1163,9 +1133,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global integral of ψₑ (electrolyte). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00080">80</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00077">77</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00625">PrintInfo()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00603">PrintInfo()</a>.</p>
 
 </div>
 </div>
@@ -1183,9 +1153,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global integral of ψ (solid). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00079">79</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00076">76</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="ElectrodePotential_8cpp_source.html#l00007">ElectrodePotential::ElectrodePotential()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00625">PrintInfo()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="ElectrodePotential_8cpp_source.html#l00007">ElectrodePotential::ElectrodePotential()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00603">PrintInfo()</a>.</p>
 
 </div>
 </div>
@@ -1203,7 +1173,7 @@ Private Attributes</h2></td></tr>
 
 <p>Global integral of ψ for phase 1. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00087">87</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00084">84</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1221,7 +1191,7 @@ Private Attributes</h2></td></tr>
 
 <p>Global integral of ψ for phase 2. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00088">88</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00085">85</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1239,7 +1209,7 @@ Private Attributes</h2></td></tr>
 
 <p>Global integral of ψ for phase 3. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00089">89</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00086">86</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1257,7 +1227,7 @@ Private Attributes</h2></td></tr>
 
 <p>Global target current for phase 1. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00083">83</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00080">80</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1275,7 +1245,7 @@ Private Attributes</h2></td></tr>
 
 <p>Global target current for phase 2. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00084">84</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00081">81</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1293,7 +1263,7 @@ Private Attributes</h2></td></tr>
 
 <p>Global target current for phase 3. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00085">85</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00082">82</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1311,9 +1281,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global target current (galvanostatic control). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00081">81</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00078">78</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Adjust_8cpp_source.html#l00013">Adjust::AdjustConstantCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00625">PrintInfo()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Adjust_8cpp_source.html#l00013">Adjust::AdjustConstantCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00603">PrintInfo()</a>.</p>
 
 </div>
 </div>
@@ -1331,9 +1301,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global per-particle target currents. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00117">117</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00114">114</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, and <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, and <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
 
 </div>
 </div>
@@ -1359,9 +1329,9 @@ Private Attributes</h2></td></tr>
 
 <p>Nodes per element (corners). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00205">205</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00201">201</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00534">CalculateTotals()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -1387,9 +1357,9 @@ Private Attributes</h2></td></tr>
 
 <p>Number of elements. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00204">204</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00200">200</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00561">CalculateTotalPhaseField()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00534">CalculateTotals()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00556">CalculateTotalPhaseField()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00529">CalculateTotals()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -1415,9 +1385,9 @@ Private Attributes</h2></td></tr>
 
 <p>Number of vertices. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00203">203</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00199">199</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -1435,9 +1405,9 @@ Private Attributes</h2></td></tr>
 
 <p>Material/particle labels read from the segmented geometry. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00098">98</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00095">95</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">SetupDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>.</p>
 
 </div>
 </div>
@@ -1463,9 +1433,9 @@ Private Attributes</h2></td></tr>
 
 <p>Parallel mesh reference. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00211">211</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00207">207</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00561">CalculateTotalPhaseField()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00534">CalculateTotals()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00556">CalculateTotalPhaseField()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00529">CalculateTotals()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00045">SetupDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -1483,9 +1453,9 @@ Private Attributes</h2></td></tr>
 
 <p>Per-particle phase-field masks. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00100">100</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00097">97</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="Utils_8cpp_source.html#l00179">Utils::SaveSimulationSnapshotMulti()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">SetupDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, and <a class="el" href="Utils_8cpp_source.html#l00179">Utils::SaveSimulationSnapshotMulti()</a>.</p>
 
 </div>
 </div>
@@ -1503,9 +1473,9 @@ Private Attributes</h2></td></tr>
 
 <p>Anode-phase indicator. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00064">64</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00061">61</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, and <a class="el" href="Utils_8cpp_source.html#l00103">Utils::SaveSimulationSnapshot()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, and <a class="el" href="Utils_8cpp_source.html#l00103">Utils::SaveSimulationSnapshot()</a>.</p>
 
 </div>
 </div>
@@ -1523,9 +1493,9 @@ Private Attributes</h2></td></tr>
 
 <p>Cathode-phase indicator. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00065">65</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00062">62</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, and <a class="el" href="Utils_8cpp_source.html#l00103">Utils::SaveSimulationSnapshot()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, and <a class="el" href="Utils_8cpp_source.html#l00103">Utils::SaveSimulationSnapshot()</a>.</p>
 
 </div>
 </div>
@@ -1543,9 +1513,9 @@ Private Attributes</h2></td></tr>
 
 <p>Electrolyte-phase indicator (ψₑ). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00063">63</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00060">60</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="Utils_8cpp_source.html#l00103">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00143">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00179">Utils::SaveSimulationSnapshotMulti()</a>, <a class="el" href="BoundaryConditions_8cpp_source.html#l00306">BoundaryConditions::SelectCenterPin()</a>, <a class="el" href="BoundaryConditions_8cpp_source.html#l00462">BoundaryConditions::SelectFirstPin()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">SetupDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="Utils_8cpp_source.html#l00103">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00143">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00179">Utils::SaveSimulationSnapshotMulti()</a>, <a class="el" href="BoundaryConditions_8cpp_source.html#l00306">BoundaryConditions::SelectCenterPin()</a>, <a class="el" href="BoundaryConditions_8cpp_source.html#l00462">BoundaryConditions::SelectFirstPin()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00045">SetupDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -1563,9 +1533,9 @@ Private Attributes</h2></td></tr>
 
 <p>Solid-phase indicator (ψ). </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00062">62</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00059">59</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="Utils_8cpp_source.html#l00103">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00143">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00179">Utils::SaveSimulationSnapshotMulti()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00048">SetupDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>, <a class="el" href="Utils_8cpp_source.html#l00103">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00143">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00179">Utils::SaveSimulationSnapshotMulti()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00045">SetupDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -1583,9 +1553,9 @@ Private Attributes</h2></td></tr>
 
 <p>Pairwise particle-particle interface phase fields. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00109">109</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00106">106</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -1603,9 +1573,9 @@ Private Attributes</h2></td></tr>
 
 <p>Local per-particle phase-field totals. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00115">115</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00112">112</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>.</p>
 
 </div>
 </div>
@@ -1631,9 +1601,7 @@ Private Attributes</h2></td></tr>
 
 <p>Local ψ_A total before MPI reduction. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00225">225</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00221">221</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1659,9 +1627,7 @@ Private Attributes</h2></td></tr>
 
 <p>Local ψ_C total before MPI reduction. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00226">226</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00222">222</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1687,9 +1653,9 @@ Private Attributes</h2></td></tr>
 
 <p>Local ψₑ total before MPI reduction. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00218">218</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00214">214</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>.</p>
 
 </div>
 </div>
@@ -1715,9 +1681,9 @@ Private Attributes</h2></td></tr>
 
 <p>Local ψ total before MPI reduction. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00217">217</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00213">213</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00573">CalculatePhasePotentialsAndTargetCurrent()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00568">CalculatePhasePotentialsAndTargetCurrent()</a>.</p>
 
 </div>
 </div>
@@ -1743,7 +1709,7 @@ Private Attributes</h2></td></tr>
 
 <p>Local ψ for phase 1 total before MPI reduction. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00221">221</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00217">217</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1769,7 +1735,7 @@ Private Attributes</h2></td></tr>
 
 <p>Local ψ for phase 2 total before MPI reduction. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00222">222</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00218">218</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1795,7 +1761,7 @@ Private Attributes</h2></td></tr>
 
 <p>Local ψ for phase 3 total before MPI reduction. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00223">223</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00219">219</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
 </div>
 </div>
@@ -1821,9 +1787,9 @@ Private Attributes</h2></td></tr>
 
 <p>Local target current before global reduction. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00219">219</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00215">215</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00613">CalculateTargetCurrent()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00591">CalculateTargetCurrent()</a>.</p>
 
 </div>
 </div>
@@ -1841,9 +1807,9 @@ Private Attributes</h2></td></tr>
 
 <p>Per-particle electrolyte coupling weights. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00107">107</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00104">104</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, and <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, and <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
 
 </div>
 </div>
@@ -1861,9 +1827,9 @@ Private Attributes</h2></td></tr>
 
 <p>Pairwise particle-particle coupling weights. </p>
 
-<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00112">112</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Domain__Parameters_8hpp_source.html#l00109">109</a> of file <a class="el" href="Domain__Parameters_8hpp_source.html">Domain_Parameters.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00088">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">InterpolateDomainParameters()</a>, and <a class="el" href="SimulationState_8cpp_source.html#l00385">Pairs()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00061">InitializeGridFunctions()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">InterpolateDomainParameters()</a>, and <a class="el" href="SimulationState_8cpp_source.html#l00423">Pairs()</a>.</p>
 
 </div>
 </div>

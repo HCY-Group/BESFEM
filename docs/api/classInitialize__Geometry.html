@@ -94,15 +94,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a78cc60baa3b6488472d4eab2d70840da"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInitialize__Geometry.html#a78cc60baa3b6488472d4eab2d70840da">~Initialize_Geometry</a> ()</td></tr>
 <tr class="memdesc:a78cc60baa3b6488472d4eab2d70840da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <br /></td></tr>
 <tr class="separator:a78cc60baa3b6488472d4eab2d70840da"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8c9e4c02be15ebd2c49c0cf0c05830bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInitialize__Geometry.html#a8c9e4c02be15ebd2c49c0cf0c05830bc">AdjustDistanceFile</a> (const char *distanceFile, const char *mesh_type)</td></tr>
-<tr class="memdesc:a8c9e4c02be15ebd2c49c0cf0c05830bc"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classAdjust.html" title="Controls applied voltage/current conditions during BESFEM simulations.">Adjust</a> distance function file to account for mesh spacing (dh).  <br /></td></tr>
-<tr class="separator:a8c9e4c02be15ebd2c49c0cf0c05830bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ace7808588f888af81e9e61b0c4e0c075"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInitialize__Geometry.html#ace7808588f888af81e9e61b0c4e0c075">InitializeMesh</a> (const char *meshFile, const char *distanceFile, const char *mesh_type, MPI_Comm comm, int order)</td></tr>
-<tr class="memdesc:ace7808588f888af81e9e61b0c4e0c075"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize mesh and distance fields for a half-cell simulation.  <br /></td></tr>
-<tr class="separator:ace7808588f888af81e9e61b0c4e0c075"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a479dfa7a3e00d72dd04fed304a430537"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInitialize__Geometry.html#a479dfa7a3e00d72dd04fed304a430537">InitializeMesh</a> (const char *meshFile, const char *distanceFileA, const char *distanceFileC, const char *mesh_type, MPI_Comm comm, int order)</td></tr>
-<tr class="memdesc:a479dfa7a3e00d72dd04fed304a430537"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize mesh and distance fields for a full-cell simulation.  <br /></td></tr>
-<tr class="separator:a479dfa7a3e00d72dd04fed304a430537"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5589502d4d5357675d3a1e636ea0ca7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInitialize__Geometry.html#ad5589502d4d5357675d3a1e636ea0ca7">InitializeMesh</a> (const char *meshFile, MPI_Comm comm, int order)</td></tr>
+<tr class="memdesc:ad5589502d4d5357675d3a1e636ea0ca7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize mesh and distance fields for a half-cell simulation.  <br /></td></tr>
+<tr class="separator:ad5589502d4d5357675d3a1e636ea0ca7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8f541c47b52d2b94c1a8fbbe2bc118d0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInitialize__Geometry.html#a8f541c47b52d2b94c1a8fbbe2bc118d0">InitializeGlobalMesh</a> (const char *meshFile)</td></tr>
 <tr class="memdesc:a8f541c47b52d2b94c1a8fbbe2bc118d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load and construct global serial MFEM mesh.  <br /></td></tr>
 <tr class="separator:a8f541c47b52d2b94c1a8fbbe2bc118d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -121,9 +115,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8bec39814ee75b95a5622049da514512"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInitialize__Geometry.html#a8bec39814ee75b95a5622049da514512">SetupParFiniteElementSpace</a> (int order)</td></tr>
 <tr class="memdesc:a8bec39814ee75b95a5622049da514512"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setup parallel FE space.  <br /></td></tr>
 <tr class="separator:a8bec39814ee75b95a5622049da514512"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9bb3c9ea9d89bbb2c9962ecafaa14c51"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInitialize__Geometry.html#a9bb3c9ea9d89bbb2c9962ecafaa14c51">AssignGlobalValues</a> (const char *mesh_file, const char *distanceFile, std::unique_ptr&lt; mfem::GridFunction &gt; &amp;gDsF_out)</td></tr>
-<tr class="memdesc:a9bb3c9ea9d89bbb2c9962ecafaa14c51"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assign global fields: distance functions, voxel mask, etc.  <br /></td></tr>
-<tr class="separator:a9bb3c9ea9d89bbb2c9962ecafaa14c51"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a3242aef54eff83051af5c0db1f3ec2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInitialize__Geometry.html#a7a3242aef54eff83051af5c0db1f3ec2">AssignGlobalValues</a> (const char *mesh_file)</td></tr>
+<tr class="memdesc:a7a3242aef54eff83051af5c0db1f3ec2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assign global fields: distance functions, voxel mask, etc.  <br /></td></tr>
+<tr class="separator:a7a3242aef54eff83051af5c0db1f3ec2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab42ffb23b6190e6d90f532a297e090fd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInitialize__Geometry.html#ab42ffb23b6190e6d90f532a297e090fd">MapGlobalToLocal</a> (const char *meshFile)</td></tr>
 <tr class="memdesc:ab42ffb23b6190e6d90f532a297e090fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transfer global mesh quantities to parallel fields.  <br /></td></tr>
 <tr class="separator:ab42ffb23b6190e6d90f532a297e090fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -408,52 +402,8 @@ Private Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a8c9e4c02be15ebd2c49c0cf0c05830bc" name="a8c9e4c02be15ebd2c49c0cf0c05830bc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8c9e4c02be15ebd2c49c0cf0c05830bc">&#9670;&#160;</a></span>AdjustDistanceFile()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Initialize_Geometry::AdjustDistanceFile </td>
-          <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>distanceFile</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>mesh_type</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p><a class="el" href="classAdjust.html" title="Controls applied voltage/current conditions during BESFEM simulations.">Adjust</a> distance function file to account for mesh spacing (dh). </p>
-<p>Applies smoothing, scaling, or clipping to ensure consistent SBM interface thickness across meshes of different resolutions.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">distanceFile</td><td>Path to the distance function file. </td></tr>
-    <tr><td class="paramname">mesh_type</td><td>Type of mesh ("ml" = MATLAB, "v" = voxel). </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00296">296</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
-
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00038">cfg</a>, and <a class="el" href="SimulationConfig_8hpp_source.html#l00079">SimulationConfig::dh</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">InitializeMesh()</a>.</p>
-
-</div>
-</div>
-<a id="a9bb3c9ea9d89bbb2c9962ecafaa14c51" name="a9bb3c9ea9d89bbb2c9962ecafaa14c51"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9bb3c9ea9d89bbb2c9962ecafaa14c51">&#9670;&#160;</a></span>AssignGlobalValues()</h2>
+<a id="a7a3242aef54eff83051af5c0db1f3ec2" name="a7a3242aef54eff83051af5c0db1f3ec2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a3242aef54eff83051af5c0db1f3ec2">&#9670;&#160;</a></span>AssignGlobalValues()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -462,24 +412,8 @@ Private Attributes</h2></td></tr>
           <td class="memname">void Initialize_Geometry::AssignGlobalValues </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>mesh_file</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"><em>mesh_file</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>distanceFile</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::unique_ptr&lt; mfem::GridFunction &gt; &amp;&#160;</td>
-          <td class="paramname"><em>gDsF_out</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -489,17 +423,15 @@ Private Attributes</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">mesh_file</td><td>Mesh path. </td></tr>
-    <tr><td class="paramname">distanceFile</td><td>Distance field file. </td></tr>
-    <tr><td class="paramname">gDsF_out</td><td>Output global distance function ψ. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00437">437</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00327">327</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00319">globalfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00331">gVox</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00334">tiffData</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00038">cfg</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00092">SimulationConfig::coarsen_factor</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00296">globalfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00308">gVox</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00311">tiffData</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">InitializeMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
 </div>
 </div>
@@ -545,9 +477,9 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00801">801</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00623">623</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8cpp_source.html#l00030">KeepOnlyConnectedToBoundary_2D()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00079">KeepOnlyConnectedToBoundary_3D()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00316">parallelMesh</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00321">parfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00322">parfespace_dg</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00334">tiffData</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00332">Vox</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8cpp_source.html#l00030">KeepOnlyConnectedToBoundary_2D()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00079">KeepOnlyConnectedToBoundary_3D()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00293">parallelMesh</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00298">parfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00299">parfespace_dg</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00311">tiffData</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00309">Vox</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
@@ -610,9 +542,9 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00959">959</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00781">781</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00059">combine_particle_groups</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00030">KeepOnlyConnectedToBoundary_2D()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00079">KeepOnlyConnectedToBoundary_3D()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00316">parallelMesh</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00321">parfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00322">parfespace_dg</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00334">tiffData</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00332">Vox</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00038">cfg</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00048">SimulationConfig::combine_particle_groups</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00030">KeepOnlyConnectedToBoundary_2D()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00079">KeepOnlyConnectedToBoundary_3D()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00293">parallelMesh</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00298">parfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00299">parfespace_dg</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00311">tiffData</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00309">Vox</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
@@ -643,11 +575,11 @@ Private Attributes</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Newly constructed MFEM mesh. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00653">653</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00513">513</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00038">cfg</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00079">SimulationConfig::dh</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00334">tiffData</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00038">cfg</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00092">SimulationConfig::coarsen_factor</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00076">SimulationConfig::dh</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00311">tiffData</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00364">InitializeGlobalMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00261">InitializeGlobalMesh()</a>.</p>
 
 </div>
 </div>
@@ -677,9 +609,9 @@ Private Attributes</h2></td></tr>
 <p>Access distributed mesh. </p>
 <dl class="section return"><dt>Returns</dt><dd>Pointer to parallel mesh. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00268">268</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00245">245</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00316">parallelMesh</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00293">parallelMesh</a>.</p>
 
 </div>
 </div>
@@ -709,9 +641,9 @@ Private Attributes</h2></td></tr>
 <p>Access parallel FE space. </p>
 <dl class="section return"><dt>Returns</dt><dd>Parallel FE space (shared_ptr). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00275">275</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00252">252</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00321">parfespace</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00298">parfespace</a>.</p>
 
 </div>
 </div>
@@ -733,9 +665,9 @@ Private Attributes</h2></td></tr>
 <p>Return the unique particle/material labels found in the TIFF data. </p>
 <dl class="section return"><dt>Returns</dt><dd>Vector of integer labels present in the voxelized geometry. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00282">282</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00246">246</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00334">tiffData</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00311">tiffData</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
@@ -765,16 +697,16 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00364">364</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00261">261</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8cpp_source.html#l00653">CreateGlobalMeshFromTiffData()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00297">globalMesh</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00630">ReadTiffFile()</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00334">tiffData</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8cpp_source.html#l00513">CreateGlobalMeshFromTiffData()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00274">globalMesh</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00480">ReadTiffFile()</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00311">tiffData</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">InitializeMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
 </div>
 </div>
-<a id="ace7808588f888af81e9e61b0c4e0c075" name="ace7808588f888af81e9e61b0c4e0c075"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ace7808588f888af81e9e61b0c4e0c075">&#9670;&#160;</a></span>InitializeMesh() <span class="overload">[1/2]</span></h2>
+<a id="ad5589502d4d5357675d3a1e636ea0ca7" name="ad5589502d4d5357675d3a1e636ea0ca7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad5589502d4d5357675d3a1e636ea0ca7">&#9670;&#160;</a></span>InitializeMesh()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -784,18 +716,6 @@ Private Attributes</h2></td></tr>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>meshFile</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>distanceFile</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>mesh_type</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -822,8 +742,6 @@ Private Attributes</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">meshFile</td><td>Path to mesh file. </td></tr>
-    <tr><td class="paramname">distanceFile</td><td>Distance function file. </td></tr>
-    <tr><td class="paramname">mesh_type</td><td>Type of mesh ("ml" = MATLAB, "v" = voxel). </td></tr>
     <tr><td class="paramname">comm</td><td>MPI communicator. </td></tr>
     <tr><td class="paramname">order</td><td>Polynomial order for FE space. </td></tr>
   </table>
@@ -832,79 +750,9 @@ Private Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">153</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8cpp_source.html#l00296">AdjustDistanceFile()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00437">AssignGlobalValues()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00059">combine_particle_groups</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00801">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00959">ComputePDEFilterLabel()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00339">distMask</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00340">distMaskSigned</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00325">gDsF</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00282">GetParticleLabelsFromTiff()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00297">globalMesh</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00364">InitializeGlobalMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00403">InitializeParallelMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00341">MaskFilter</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00342">MaskFilterPse</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00345">MaskFilters</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00313">myid</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00321">parfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00344">particle_labels</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00703">PrintMeshInfo()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00413">SetupFiniteElementSpace()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00423">SetupParFiniteElementSpace()</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8cpp_source.html#l00327">AssignGlobalValues()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00038">cfg</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00048">SimulationConfig::combine_particle_groups</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00623">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00781">ComputePDEFilterLabel()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00316">distMask</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00317">distMaskSigned</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00246">GetParticleLabelsFromTiff()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00274">globalMesh</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00261">InitializeGlobalMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00294">InitializeParallelMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00318">MaskFilter</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00319">MaskFilterPse</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00322">MaskFilters</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00290">myid</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00298">parfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00321">particle_labels</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00562">PrintMeshInfo()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00304">SetupFiniteElementSpace()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00314">SetupParFiniteElementSpace()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
-
-</div>
-</div>
-<a id="a479dfa7a3e00d72dd04fed304a430537" name="a479dfa7a3e00d72dd04fed304a430537"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a479dfa7a3e00d72dd04fed304a430537">&#9670;&#160;</a></span>InitializeMesh() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Initialize_Geometry::InitializeMesh </td>
-          <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>meshFile</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>distanceFileA</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>distanceFileC</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>mesh_type</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MPI_Comm&#160;</td>
-          <td class="paramname"><em>comm</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>order</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Initialize mesh and distance fields for a full-cell simulation. </p>
-<p>Loads separate anode and cathode distance functions.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">meshFile</td><td>Path to mesh file. </td></tr>
-    <tr><td class="paramname">distanceFileA</td><td>Anode distance function file (ψ_A). </td></tr>
-    <tr><td class="paramname">distanceFileC</td><td>Cathode distance function file (ψ_C). </td></tr>
-    <tr><td class="paramname">mesh_type</td><td>Type of mesh ("ml" = MATLAB, "v" = voxel). </td></tr>
-    <tr><td class="paramname">comm</td><td>MPI communicator. </td></tr>
-    <tr><td class="paramname">order</td><td>Polynomial order for FE space. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">250</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
-
-<p class="reference">References <a class="el" href="Initialize__Geometry_8cpp_source.html#l00296">AdjustDistanceFile()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00437">AssignGlobalValues()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00328">gDsF_A</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00328">gDsF_C</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00364">InitializeGlobalMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00403">InitializeParallelMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00313">myid</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00703">PrintMeshInfo()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00413">SetupFiniteElementSpace()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00423">SetupParFiniteElementSpace()</a>.</p>
 
 </div>
 </div>
@@ -932,11 +780,11 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00403">403</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00294">294</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00297">globalMesh</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00316">parallelMesh</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00274">globalMesh</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00293">parallelMesh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">InitializeMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
 </div>
 </div>
@@ -964,11 +812,11 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">526</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">408</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00326">dsF</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00329">dsF_A</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00329">dsF_C</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00298">E_L2G</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00285">ei</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00325">gDsF</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00328">gDsF_A</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00328">gDsF_C</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00284">gei</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00297">globalMesh</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00331">gVox</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00294">gVTX</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00282">nC</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00281">nE</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00280">nV</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00316">parallelMesh</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00321">parfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00332">Vox</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00295">VTX</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00303">dsF</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00306">dsF_A</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00306">dsF_C</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00275">E_L2G</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00262">ei</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00302">gDsF</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00305">gDsF_A</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00305">gDsF_C</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00261">gei</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00274">globalMesh</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00308">gVox</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00271">gVTX</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00259">nC</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00258">nE</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00257">nV</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00293">parallelMesh</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00298">parfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00309">Vox</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00272">VTX</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">InitializeMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
 </div>
 </div>
@@ -989,11 +837,11 @@ Private Attributes</h2></td></tr>
 
 <p>Print mesh information (elements, vertices, dimensions). </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00703">703</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00562">562</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00316">parallelMesh</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00293">parallelMesh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">InitializeMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
 </div>
 </div>
@@ -1022,11 +870,11 @@ Private Attributes</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>3D voxel array. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00630">630</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00480">480</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Column_begin</a>, <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Column_end</a>, <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Depth_begin</a>, <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Depth_end</a>, <a class="el" href="readtiff_8cpp_source.html#l00273">TIFFReader::getImageData()</a>, <a class="el" href="readtiff_8cpp_source.html#l00035">TIFFReader::readinfo()</a>, <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Row_begin</a>, <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Row_end</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00749">SaveTiffDataToPGM()</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00334">tiffData</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00038">cfg</a>, <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Column_begin</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00096">SimulationConfig::column_begin</a>, <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Column_end</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00097">SimulationConfig::column_end</a>, <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Depth_begin</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00100">SimulationConfig::depth_begin</a>, <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Depth_end</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00101">SimulationConfig::depth_end</a>, <a class="el" href="readtiff_8cpp_source.html#l00270">TIFFReader::getImageData()</a>, <a class="el" href="readtiff_8cpp_source.html#l00035">TIFFReader::readinfo()</a>, <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Row_begin</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00094">SimulationConfig::row_begin</a>, <a class="el" href="readtiff_8h_source.html#l00006">Constraints::Row_end</a>, <a class="el" href="SimulationConfig_8hpp_source.html#l00095">SimulationConfig::row_end</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00571">SaveTiffDataToPGM()</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00311">tiffData</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00364">InitializeGlobalMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00261">InitializeGlobalMesh()</a>.</p>
 
 </div>
 </div>
@@ -1065,11 +913,11 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00749">749</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00571">571</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00043">data</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00630">ReadTiffFile()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00480">ReadTiffFile()</a>.</p>
 
 </div>
 </div>
@@ -1135,11 +983,11 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00413">413</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00304">304</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00336">gfec</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00319">globalfespace</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00297">globalMesh</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00313">gfec</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00296">globalfespace</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00274">globalMesh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">InitializeMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
 </div>
 </div>
@@ -1167,11 +1015,11 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00423">423</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8cpp_source.html#l00314">314</a> of file <a class="el" href="Initialize__Geometry_8cpp_source.html">Initialize_Geometry.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00316">parallelMesh</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00323">pardimfespace_dg</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00321">parfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00322">parfespace_dg</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00336">pfec</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00337">pfec_dg</a>.</p>
+<p class="reference">References <a class="el" href="Initialize__Geometry_8hpp_source.html#l00293">parallelMesh</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00300">pardimfespace_dg</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00298">parfespace</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00299">parfespace_dg</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00313">pfec</a>, and <a class="el" href="Initialize__Geometry_8hpp_source.html#l00314">pfec_dg</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">InitializeMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
 </div>
 </div>
@@ -1216,7 +1064,7 @@ Private Attributes</h2></td></tr>
 
 <p>MPI rank that owns the pinned DOF. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00306">306</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00283">283</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1234,7 +1082,7 @@ Private Attributes</h2></td></tr>
 
 <p>Whether the global anchor has been selected. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00304">304</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00281">281</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1252,7 +1100,7 @@ Private Attributes</h2></td></tr>
 
 <p>Boundary true DOFs. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00310">310</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00287">287</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1304,7 +1152,7 @@ Private Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00038">38</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00296">AdjustDistanceFile()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00653">CreateGlobalMeshFromTiffData()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00327">AssignGlobalValues()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00781">ComputePDEFilterLabel()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00513">CreateGlobalMeshFromTiffData()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00480">ReadTiffFile()</a>.</p>
 
 </div>
 </div>
@@ -1324,7 +1172,7 @@ Private Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00059">59</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00959">ComputePDEFilterLabel()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="battery__simulation_8cpp_source.html#l00014">main()</a>.</p>
 
 </div>
 </div>
@@ -1352,7 +1200,7 @@ Private Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00043">43</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00749">SaveTiffDataToPGM()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00571">SaveTiffDataToPGM()</a>.</p>
 
 </div>
 </div>
@@ -1370,7 +1218,7 @@ Private Attributes</h2></td></tr>
 
 <p>Global Neumann and Dirichlet boundary markers. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00289">289</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00266">266</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1388,7 +1236,7 @@ Private Attributes</h2></td></tr>
 
 <p>Dirichlet markers for west and east boundaries. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00290">290</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00267">267</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1404,7 +1252,7 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00290">290</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00267">267</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1422,7 +1270,7 @@ Private Attributes</h2></td></tr>
 
 <p>Unsigned distance-to-mask field. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00339">339</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00316">316</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
@@ -1442,7 +1290,7 @@ Private Attributes</h2></td></tr>
 
 <p>Optional signed distance-to-mask field. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00340">340</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00317">317</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
@@ -1462,9 +1310,9 @@ Private Attributes</h2></td></tr>
 
 <p>Parallel distance field. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00326">326</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00303">303</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -1480,9 +1328,9 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00329">329</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00306">306</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -1500,9 +1348,9 @@ Private Attributes</h2></td></tr>
 
 <p>Parallel anode/cathode distance fields. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00329">329</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00306">306</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -1520,9 +1368,9 @@ Private Attributes</h2></td></tr>
 
 <p>Local-to-global element mapping. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00298">298</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00275">275</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -1540,9 +1388,9 @@ Private Attributes</h2></td></tr>
 
 <p>Local element index. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00285">285</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00262">262</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -1586,7 +1434,7 @@ Private Attributes</h2></td></tr>
 
 <p>Essential true DOFs on west and east boundaries. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00292">292</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00269">269</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1602,7 +1450,7 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00292">292</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00269">269</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1620,7 +1468,7 @@ Private Attributes</h2></td></tr>
 
 <p>Essential true DOF list for the pinned node. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00309">309</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00286">286</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1638,7 +1486,7 @@ Private Attributes</h2></td></tr>
 
 <p>Marker array identifying essential DOFs. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00311">311</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00288">288</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1656,7 +1504,7 @@ Private Attributes</h2></td></tr>
 
 <p>Essential true DOFs used to anchor the electrolyte potential. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00303">303</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00280">280</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1674,7 +1522,7 @@ Private Attributes</h2></td></tr>
 
 <p>Serial H1 finite element space. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00318">318</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00295">295</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1692,9 +1540,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global serial distance field. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00325">325</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00302">302</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -1710,9 +1558,9 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00328">328</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00305">305</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -1730,9 +1578,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global anode/cathode distance fields. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00328">328</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00305">305</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -1750,9 +1598,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global element index. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00284">284</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00261">261</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -1768,9 +1616,9 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00336">336</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00313">313</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00413">SetupFiniteElementSpace()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00304">SetupFiniteElementSpace()</a>.</p>
 
 </div>
 </div>
@@ -1788,7 +1636,7 @@ Private Attributes</h2></td></tr>
 
 <p>Global ID of the pinned electrolyte potential DOF. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00305">305</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00282">282</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1806,9 +1654,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global serial finite element space. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00319">319</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00296">296</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00437">AssignGlobalValues()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00413">SetupFiniteElementSpace()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00327">AssignGlobalValues()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00304">SetupFiniteElementSpace()</a>.</p>
 
 </div>
 </div>
@@ -1826,9 +1674,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global serial mesh. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00297">297</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00274">274</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00364">InitializeGlobalMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00403">InitializeParallelMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00413">SetupFiniteElementSpace()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00261">InitializeGlobalMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00294">InitializeParallelMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00304">SetupFiniteElementSpace()</a>.</p>
 
 </div>
 </div>
@@ -1846,9 +1694,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global voxel-label field. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00331">331</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00308">308</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00437">AssignGlobalValues()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00327">AssignGlobalValues()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -1866,9 +1714,9 @@ Private Attributes</h2></td></tr>
 
 <p>Global vertex IDs of current element. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00294">294</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00271">271</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -1886,7 +1734,7 @@ Private Attributes</h2></td></tr>
 
 <p>Filtered solid-mask level-set field. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00341">341</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00318">318</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
@@ -1906,9 +1754,9 @@ Private Attributes</h2></td></tr>
 
 <p>Filtered electrolyte-mask level-set field. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00342">342</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00319">319</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">Domain_Parameters::InterpolateDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">Domain_Parameters::InterpolateDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -1926,9 +1774,9 @@ Private Attributes</h2></td></tr>
 
 <p>Per-label filtered mask fields. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00345">345</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00322">322</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">Domain_Parameters::InterpolateDomainParameters()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">Domain_Parameters::InterpolateDomainParameters()</a>.</p>
 
 </div>
 </div>
@@ -1946,9 +1794,9 @@ Private Attributes</h2></td></tr>
 
 <p>MPI rank. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00313">313</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00290">290</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00250">InitializeMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
 </div>
 </div>
@@ -1964,7 +1812,7 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00289">289</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00266">266</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1980,7 +1828,7 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00288">288</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00265">265</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -1998,7 +1846,7 @@ Private Attributes</h2></td></tr>
 
 <p>Neumann boundary markers for west, south, east, and north boundaries. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00288">288</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00265">265</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -2014,7 +1862,7 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00288">288</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00265">265</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -2030,7 +1878,7 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00288">288</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00265">265</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -2048,9 +1896,9 @@ Private Attributes</h2></td></tr>
 
 <p>Corners per element. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00282">282</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00259">259</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>, <a class="el" href="Potentials__Base_8cpp_source.html#l00005">PotentialBase::PotentialBase()</a>, <a class="el" href="Reaction_8cpp_source.html#l00010">Reaction::Reaction()</a>, and <a class="el" href="BoundaryConditions_8cpp_source.html#l00221">BoundaryConditions::SetupPinnedDOF()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">Domain_Parameters::InterpolateDomainParameters()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>, <a class="el" href="Potentials__Base_8cpp_source.html#l00005">PotentialBase::PotentialBase()</a>, <a class="el" href="Reaction_8cpp_source.html#l00010">Reaction::Reaction()</a>, and <a class="el" href="BoundaryConditions_8cpp_source.html#l00221">BoundaryConditions::SetupPinnedDOF()</a>.</p>
 
 </div>
 </div>
@@ -2068,9 +1916,9 @@ Private Attributes</h2></td></tr>
 
 <p>Number of elements. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00281">281</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00258">258</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>, <a class="el" href="Potentials__Base_8cpp_source.html#l00005">PotentialBase::PotentialBase()</a>, <a class="el" href="Reaction_8cpp_source.html#l00010">Reaction::Reaction()</a>, and <a class="el" href="BoundaryConditions_8cpp_source.html#l00221">BoundaryConditions::SetupPinnedDOF()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">Domain_Parameters::InterpolateDomainParameters()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>, <a class="el" href="Potentials__Base_8cpp_source.html#l00005">PotentialBase::PotentialBase()</a>, <a class="el" href="Reaction_8cpp_source.html#l00010">Reaction::Reaction()</a>, and <a class="el" href="BoundaryConditions_8cpp_source.html#l00221">BoundaryConditions::SetupPinnedDOF()</a>.</p>
 
 </div>
 </div>
@@ -2088,9 +1936,9 @@ Private Attributes</h2></td></tr>
 
 <p>Number of vertices. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00280">280</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00257">257</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>, <a class="el" href="Potentials__Base_8cpp_source.html#l00005">PotentialBase::PotentialBase()</a>, <a class="el" href="Reaction_8cpp_source.html#l00010">Reaction::Reaction()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00083">UpdateAnodePairChemicalPotentials()</a>, and <a class="el" href="SimulationState_8cpp_source.html#l00050">UpdateCathodePairChemicalPotentials()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Domain__Parameters_8cpp_source.html#l00136">Domain_Parameters::InterpolateDomainParameters()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>, <a class="el" href="Potentials__Base_8cpp_source.html#l00005">PotentialBase::PotentialBase()</a>, <a class="el" href="Reaction_8cpp_source.html#l00010">Reaction::Reaction()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00083">UpdateAnodePairChemicalPotentials()</a>, and <a class="el" href="SimulationState_8cpp_source.html#l00050">UpdateCathodePairChemicalPotentials()</a>.</p>
 
 </div>
 </div>
@@ -2108,7 +1956,7 @@ Private Attributes</h2></td></tr>
 
 <p>Number of grid function entries. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00300">300</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00277">277</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -2126,9 +1974,9 @@ Private Attributes</h2></td></tr>
 
 <p>Distributed parallel mesh. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00316">316</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00293">293</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00801">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00959">ComputePDEFilterLabel()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00268">GetParallelMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00403">InitializeParallelMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00703">PrintMeshInfo()</a>, <a class="el" href="Utils_8cpp_source.html#l00103">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00143">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00179">Utils::SaveSimulationSnapshotMulti()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00423">SetupParFiniteElementSpace()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00623">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00781">ComputePDEFilterLabel()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00245">GetParallelMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00294">InitializeParallelMesh()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00562">PrintMeshInfo()</a>, <a class="el" href="Utils_8cpp_source.html#l00103">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00143">Utils::SaveSimulationSnapshot()</a>, <a class="el" href="Utils_8cpp_source.html#l00179">Utils::SaveSimulationSnapshotMulti()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00314">SetupParFiniteElementSpace()</a>.</p>
 
 </div>
 </div>
@@ -2146,9 +1994,9 @@ Private Attributes</h2></td></tr>
 
 <p>Vector-valued parallel DG finite element space. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00323">323</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00300">300</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00423">SetupParFiniteElementSpace()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00314">SetupParFiniteElementSpace()</a>.</p>
 
 </div>
 </div>
@@ -2166,9 +2014,9 @@ Private Attributes</h2></td></tr>
 
 <p>Parallel H1 finite element space. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00321">321</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00298">298</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00801">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00959">ComputePDEFilterLabel()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00275">GetParFiniteElementSpace()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00295">InitializeFields()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00016">InitializePairWorkspaces()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>, <a class="el" href="Utils_8cpp_source.html#l00179">Utils::SaveSimulationSnapshotMulti()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00423">SetupParFiniteElementSpace()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00623">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00781">ComputePDEFilterLabel()</a>, <a class="el" href="Initialize__Geometry_8hpp_source.html#l00252">GetParFiniteElementSpace()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00117">InitializeAnodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00201">InitializeCathodeParticles()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00333">InitializeFields()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>, <a class="el" href="SimulationState_8cpp_source.html#l00016">InitializePairWorkspaces()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>, <a class="el" href="Utils_8cpp_source.html#l00179">Utils::SaveSimulationSnapshotMulti()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00314">SetupParFiniteElementSpace()</a>.</p>
 
 </div>
 </div>
@@ -2186,9 +2034,9 @@ Private Attributes</h2></td></tr>
 
 <p>Parallel DG finite element space. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00322">322</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00299">299</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00801">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00959">ComputePDEFilterLabel()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00423">SetupParFiniteElementSpace()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00623">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00781">ComputePDEFilterLabel()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00314">SetupParFiniteElementSpace()</a>.</p>
 
 </div>
 </div>
@@ -2206,7 +2054,7 @@ Private Attributes</h2></td></tr>
 
 <p>Unique particle/material labels from the TIFF geometry. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00344">344</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00321">321</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00153">InitializeMesh()</a>.</p>
 
@@ -2226,9 +2074,9 @@ Private Attributes</h2></td></tr>
 
 <p>Serial/parallel H1 finite element collections. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00336">336</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00313">313</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00423">SetupParFiniteElementSpace()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00314">SetupParFiniteElementSpace()</a>.</p>
 
 </div>
 </div>
@@ -2246,9 +2094,9 @@ Private Attributes</h2></td></tr>
 
 <p>Parallel DG finite element collection. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00337">337</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00314">314</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00423">SetupParFiniteElementSpace()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00314">SetupParFiniteElementSpace()</a>.</p>
 
 </div>
 </div>
@@ -2266,7 +2114,7 @@ Private Attributes</h2></td></tr>
 
 <p>Whether this MPI rank owns the pinned DOF. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00307">307</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00284">284</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -2284,7 +2132,7 @@ Private Attributes</h2></td></tr>
 
 <p>Rank that owns the pinned DOF. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00314">314</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00291">291</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
 </div>
 </div>
@@ -2302,9 +2150,9 @@ Private Attributes</h2></td></tr>
 
 <p>Raw TIFF voxel labels. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00334">334</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00311">311</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00437">AssignGlobalValues()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00801">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00959">ComputePDEFilterLabel()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00653">CreateGlobalMeshFromTiffData()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00282">GetParticleLabelsFromTiff()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00364">InitializeGlobalMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00630">ReadTiffFile()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00327">AssignGlobalValues()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00623">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00781">ComputePDEFilterLabel()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00513">CreateGlobalMeshFromTiffData()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00246">GetParticleLabelsFromTiff()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00261">InitializeGlobalMesh()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00480">ReadTiffFile()</a>.</p>
 
 </div>
 </div>
@@ -2348,9 +2196,9 @@ Private Attributes</h2></td></tr>
 
 <p>Parallel voxel-label field. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00332">332</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00309">309</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00801">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00959">ComputePDEFilterLabel()</a>, <a class="el" href="Domain__Parameters_8cpp_source.html#l00178">Domain_Parameters::InterpolateDomainParameters()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00623">ComputePDEFilter()</a>, <a class="el" href="Initialize__Geometry_8cpp_source.html#l00781">ComputePDEFilterLabel()</a>, and <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
@@ -2368,9 +2216,9 @@ Private Attributes</h2></td></tr>
 
 <p>Local vertex IDs of current element. </p>
 
-<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00295">295</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Initialize__Geometry_8hpp_source.html#l00272">272</a> of file <a class="el" href="Initialize__Geometry_8hpp_source.html">Initialize_Geometry.hpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00526">MapGlobalToLocal()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Initialize__Geometry_8cpp_source.html#l00408">MapGlobalToLocal()</a>.</p>
 
 </div>
 </div>
