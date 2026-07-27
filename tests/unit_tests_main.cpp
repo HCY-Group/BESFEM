@@ -29,7 +29,7 @@ int main( int argc, char* argv[]) {
     //int rank;
     //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    int result = Catch::Session().run();
+    int result = Catch::Session().run(argc, argv);
 
     
     // Finalize HYPRE processing
