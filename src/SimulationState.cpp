@@ -370,7 +370,14 @@ void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Dom
 
     state.reaction = std::make_unique<Reaction>(geometry, domain_parameters, cfg);
     state.Rxn_gf   = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+    state.RxnA_gf  = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+    state.RxnC_gf  = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+    state.RxnE_gf  = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+    
     state.reaction->Initialize(*state.Rxn_gf, Constants::init_Rxn);
+    state.reaction->Initialize(*state.RxnA_gf, Constants::init_Rxn);
+    state.reaction->Initialize(*state.RxnC_gf, Constants::init_Rxn);
+    state.reaction->Initialize(*state.RxnE_gf, Constants::init_Rxn);
 
     if (cfg.mode == sim::CellMode::HALF)
     {

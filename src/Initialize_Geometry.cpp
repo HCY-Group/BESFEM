@@ -153,6 +153,252 @@ static void KeepOnlyConnectedToBoundary_3D(std::vector<uint8_t> &solid,
         if (solid[idx] && !keep[idx]) solid[idx] = 0;
 }
 
+static void KeepOnlyElectrolyteTouchingBothElectrodes_2D(
+    std::vector<uint8_t> &electrolyte,
+    const std::vector<std::vector<std::vector<int>>> &labels,
+    int nx,
+    int ny,
+    bool eight_conn)
+{
+    MFEM_VERIFY(
+        labels.size() == 1,
+        "KeepOnlyElectrolyteTouchingBothElectrodes_2D requires 2D TIFF data.");
+
+    auto id = [nx](int i, int j)
+    {
+        return i + nx * j;
+    };
+
+    std::vector<uint8_t> visited(nx * ny, 0);
+    std::vector<uint8_t> keep(nx * ny, 0);
+
+    const int di4[4] = {1, -1, 0, 0};
+    const int dj4[4] = {0, 0, 1, -1};
+
+    const int di8[8] = {1, -1, 0, 0, 1, 1, -1, -1};
+    const int dj8[8] = {0, 0, 1, -1, 1, -1, 1, -1};
+
+    const int neighbor_count = eight_conn ? 8 : 4;
+    const int *di = eight_conn ? di8 : di4;
+    const int *dj = eight_conn ? dj8 : dj4;
+
+    int kept_components = 0;
+    int removed_components = 0;
+
+    for (int j0 = 0; j0 < ny; ++j0)
+    {
+        for (int i0 = 0; i0 < nx; ++i0)
+        {
+            const int start = id(i0, j0);
+
+            if (!electrolyte[start] || visited[start])
+            {
+                continue;
+            }
+
+            std::queue<std::pair<int, int>> q;
+            std::vector<int> component;
+
+            bool touches_anode = false;
+            bool touches_cathode = false;
+
+            visited[start] = 1;
+            q.push({i0, j0});
+
+            while (!q.empty())
+            {
+                const auto [i, j] = q.front();
+                q.pop();
+
+                component.push_back(id(i, j));
+
+                for (int n = 0; n < neighbor_count; ++n)
+                {
+                    const int ni = i + di[n];
+                    const int nj = j + dj[n];
+
+                    if (ni < 0 || ni >= nx ||
+                        nj < 0 || nj >= ny)
+                    {
+                        continue;
+                    }
+
+                    const int neighbor_label = labels[0][nj][ni];
+                    const int neighbor_id = id(ni, nj);
+
+                    if (neighbor_label < 0)
+                    {
+                        touches_anode = true;
+                    }
+                    else if (neighbor_label > 0)
+                    {
+                        touches_cathode = true;
+                    }
+                    else if (electrolyte[neighbor_id] &&
+                             !visited[neighbor_id])
+                    {
+                        visited[neighbor_id] = 1;
+                        q.push({ni, nj});
+                    }
+                }
+            }
+
+            if (touches_anode && touches_cathode)
+            {
+                for (const int idx : component)
+                {
+                    keep[idx] = 1;
+                }
+
+                ++kept_components;
+            }
+            else
+            {
+                ++removed_components;
+            }
+        }
+    }
+
+    electrolyte.swap(keep);
+
+    std::cout
+        << "[Full Cell Connectivity] Electrolyte components kept: "
+        << kept_components
+        << ", removed: "
+        << removed_components
+        << "\n";
+}
+
+static void KeepOnlyElectrolyteTouchingBothElectrodes_3D(
+    std::vector<uint8_t> &electrolyte,
+    const std::vector<std::vector<std::vector<int>>> &labels,
+    int nx,
+    int ny,
+    int nz,
+    bool twenty_six_conn)
+{
+    auto id = [=](int i, int j, int k)
+    {
+        return i + nx * j + nx * ny * k;
+    };
+
+    std::vector<uint8_t> visited(nx * ny * nz, 0);
+    std::vector<uint8_t> keep(nx * ny * nz, 0);
+
+    int kept_components = 0;
+    int removed_components = 0;
+
+    for (int k0 = 0; k0 < nz; ++k0)
+    {
+        for (int j0 = 0; j0 < ny; ++j0)
+        {
+            for (int i0 = 0; i0 < nx; ++i0)
+            {
+                const int start = id(i0, j0, k0);
+
+                if (!electrolyte[start] || visited[start])
+                {
+                    continue;
+                }
+
+                std::queue<std::tuple<int, int, int>> q;
+                std::vector<int> component;
+
+                bool touches_anode = false;
+                bool touches_cathode = false;
+
+                visited[start] = 1;
+                q.push({i0, j0, k0});
+
+                while (!q.empty())
+                {
+                    const auto [i, j, k] = q.front();
+                    q.pop();
+
+                    component.push_back(id(i, j, k));
+
+                    for (int dk = -1; dk <= 1; ++dk)
+                    {
+                        for (int dj = -1; dj <= 1; ++dj)
+                        {
+                            for (int di = -1; di <= 1; ++di)
+                            {
+                                if (di == 0 && dj == 0 && dk == 0)
+                                {
+                                    continue;
+                                }
+
+                                if (!twenty_six_conn &&
+                                    std::abs(di) +
+                                    std::abs(dj) +
+                                    std::abs(dk) != 1)
+                                {
+                                    continue;
+                                }
+
+                                const int ni = i + di;
+                                const int nj = j + dj;
+                                const int nk = k + dk;
+
+                                if (ni < 0 || ni >= nx ||
+                                    nj < 0 || nj >= ny ||
+                                    nk < 0 || nk >= nz)
+                                {
+                                    continue;
+                                }
+
+                                const int neighbor_label =
+                                    labels[nk][nj][ni];
+
+                                const int neighbor_id =
+                                    id(ni, nj, nk);
+
+                                if (neighbor_label < 0)
+                                {
+                                    touches_anode = true;
+                                }
+                                else if (neighbor_label > 0)
+                                {
+                                    touches_cathode = true;
+                                }
+                                else if (electrolyte[neighbor_id] &&
+                                         !visited[neighbor_id])
+                                {
+                                    visited[neighbor_id] = 1;
+                                    q.push({ni, nj, nk});
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (touches_anode && touches_cathode)
+                {
+                    for (const int idx : component)
+                    {
+                        keep[idx] = 1;
+                    }
+
+                    ++kept_components;
+                }
+                else
+                {
+                    ++removed_components;
+                }
+            }
+        }
+    }
+
+    electrolyte.swap(keep);
+
+    std::cout
+        << "[Full Cell Connectivity] Electrolyte components kept: "
+        << kept_components
+        << ", removed: "
+        << removed_components
+        << "\n";
+}
+
 
 
 // Half Cell
@@ -1442,7 +1688,8 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
             {
                 if (cell_mode == CellMode::FULL)
                 {
-                    KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1);
+                    // KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1);
+                    KeepOnlyElectrolyteTouchingBothElectrodes_2D(fg, tiffData, nx, ny, eight_conn);
                 }
                 else
                 {
@@ -1462,7 +1709,8 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
             {
                 if (cell_mode == CellMode::FULL)
                 {
-                    KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, true, -1);
+                    // KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, true, -1);
+                    KeepOnlyElectrolyteTouchingBothElectrodes_3D(fg, tiffData, nx, ny, nz, twenty_six);
                 }
                 else
                 {

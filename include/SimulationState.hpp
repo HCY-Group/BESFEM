@@ -83,25 +83,31 @@ struct PairWorkspaces
 struct SimulationState
 {
     std::unique_ptr<ConcentrationBase> anode_concentration; ///< Anode concentration solver.
-    std::unique_ptr<PotentialBase> anode_potential; ///< Anode solid-potential solver.
+    // std::unique_ptr<PotentialBase> anode_potential; ///< Anode solid-potential solver.
+    std::unique_ptr<ElectrodePotential> anode_potential; ///< Anode solid-potential solver.
     std::unique_ptr<mfem::ParGridFunction> CnA_gf; ///< Anode concentration field.
     std::unique_ptr<mfem::ParGridFunction> CnA_gf_psi; ///< Masked anode concentration field.
     std::unique_ptr<mfem::ParGridFunction> phA_gf; ///< Anode solid-potential field.
 
     std::unique_ptr<ConcentrationBase> cathode_concentration; ///< Cathode concentration solver.
-    std::unique_ptr<PotentialBase> cathode_potential; ///< Cathode solid-potential solver.
+    // std::unique_ptr<PotentialBase> cathode_potential; ///< Cathode solid-potential solver.
+    std::unique_ptr<ElectrodePotential> cathode_potential; ///< Cathode solid-potential solver.
     std::unique_ptr<mfem::ParGridFunction> CnC_gf; ///< Cathode concentration field.
     std::unique_ptr<mfem::ParGridFunction> CnC_gf_psi; ///< Masked cathode concentration field.
     std::unique_ptr<mfem::ParGridFunction> phC_gf; ///< Cathode solid-potential field.
 
     std::unique_ptr<ConcentrationBase> electrolyte_concentration; ///< Electrolyte concentration solver.
-    std::unique_ptr<PotentialBase> electrolyte_potential; ///< Electrolyte potential solver.
+    // std::unique_ptr<ElectrodePotential> electrolyte_potential; ///< Electrolyte potential solver.
+    std::unique_ptr<ElectrolytePotential> electrolyte_potential; ///< Electrolyte potential solver.
     std::unique_ptr<mfem::ParGridFunction> CnE_gf; ///< Electrolyte concentration field.
     std::unique_ptr<mfem::ParGridFunction> CnE_gf_psi; ///< Masked electrolyte concentration field.
     std::unique_ptr<mfem::ParGridFunction> phE_gf; ///< Electrolyte potential field.
 
     std::unique_ptr<Reaction> reaction; ///< Global reaction model for non-particle-resolved simulations.
     std::unique_ptr<mfem::ParGridFunction> Rxn_gf; ///< Global reaction field.
+    std::unique_ptr<mfem::ParGridFunction> RxnA_gf; ///< Anode reaction field.
+    std::unique_ptr<mfem::ParGridFunction> RxnC_gf; ///< Cathode reaction field.
+    std::unique_ptr<mfem::ParGridFunction> RxnE_gf; ///< Electrolyte reaction field.
 
     std::unique_ptr<mfem::ParGridFunction> CnP_together; ///< Combined particle concentration field.
 

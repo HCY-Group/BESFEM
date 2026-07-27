@@ -462,8 +462,10 @@ int main(int argc, char *argv[]) {
                         anode_cn_fields.push_back(p.Cn_gf.get());
                     }
 
-                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters,
-                        anode_cn_fields, state.anode_out, 10000);
+                    // Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters,
+                    //     anode_cn_fields, state.anode_out, 10000);
+
+                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, anode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.anode_out, "A", 10000);
                 }
                 else
                 {
@@ -475,8 +477,9 @@ int main(int argc, char *argv[]) {
                         cathode_cn_fields.push_back(p.Cn_gf.get());
                     }
 
-                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters,
-                        cathode_cn_fields, state.cathode_out, 10000);
+                    // Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters,
+                    //     cathode_cn_fields, state.cathode_out, 10000);
+                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.cathode_out, "C", 10000);
                 }
 
                 t++;
@@ -486,33 +489,435 @@ int main(int argc, char *argv[]) {
         else
         {
             // ============================================================================
-            // =================  FULL-CELL TIME STEPPING  ================================
+            // ========================  FULL-CELL TIME STEPPING  ==========================
             // ============================================================================
 
             int t = 0;
 
-            const int npA = state.anode_particles.size();
-            const int npC = state.cathode_particles.size();
+            const int npA = static_cast<int>(state.anode_particles.size());
+            const int npC = static_cast<int>(state.cathode_particles.size());
 
-            // Perform some operation with npA and npC
-            std::cout << "Number of anode particles: " << npA << std::endl;
-            std::cout << "Number of cathode particles: " << npC << std::endl;
+            MFEM_VERIFY(npA > 0, "Full-cell simulation contains no anode particles.");
+            MFEM_VERIFY(npC > 0, "Full-cell simulation contains no cathode particles.");
+            MFEM_VERIFY(state.RxnA_gf, "Full-cell anode reaction field RxnA_gf is not initialized.");
+            MFEM_VERIFY(state.RxnC_gf, "Full-cell cathode reaction field RxnC_gf is not initialized.");
 
-            UpdateAnodePairChemicalPotentials(state, geometry, domain_parameters.AvP_PairsA);
-            UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters.AvP_PairsC);
-
-            for (int j = 0; j < npA; ++j)
+            if (mfem::Mpi::WorldRank() == 0)
             {
-                std::vector<ConcentrationBase::PairCoupling> pair_terms;
-                Pairs(state.anode_pairs, domain_parameters.WeightPairsA, domain_parameters.AvP_PairsA, j, pair_terms, npA, t);
-            }
-            for (int j = 0; j < npC; ++j)
-            {
-                std::vector<ConcentrationBase::PairCoupling> pair_terms;
-                Pairs(state.cathode_pairs, domain_parameters.WeightPairsC, domain_parameters.AvP_PairsC, j, pair_terms, npC, t);
+                std::cout
+                    << "Starting full-cell simulation.\n"
+                    << "    Anode particles:   " << npA << "\n"
+                    << "    Cathode particles: " << npC
+                    << std::endl;
             }
 
-            t++;
+            while (true)
+            {
+                // Full-cell voltage:
+                //
+                //     VCell = cathode collector potential
+                //           - anode collector potential
+
+                VCell =
+                    state.cathode_potential->GetBoundaryVoltage() - state.anode_potential->GetBoundaryVoltage();
+
+                // ========================================================================
+                // =========================  STOP CONDITIONS  =============================
+                // ========================================================================
+
+                if (cfg.stop_mode == sim::StopMode::STEPS && t >= cfg.num_timesteps)
+                {
+                    break;
+                }
+
+                if (cfg.stop_mode == sim::StopMode::VOLTAGE && VCell <= cfg.VCut)
+                {
+                    break;
+                }
+
+                // ========================================================================
+                // ==============  UPDATE PARTICLE-PAIR CHEMICAL POTENTIALS  ===============
+                // ========================================================================
+
+                UpdateAnodePairChemicalPotentials(state, geometry, domain_parameters.AvP_PairsA);
+                UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters.AvP_PairsC);
+
+                // ========================================================================
+                // ====================  UPDATE ANODE CONCENTRATIONS  =======================
+                // ========================================================================
+
+                for (int j = 0; j < npA; ++j)
+                {
+                    MFEM_VERIFY(state.anode_particles[j].Rxn_gf, "Anode particle reaction field is null.");
+                    MFEM_VERIFY(state.anode_particles[j].Rx_src, "Anode particle reaction source field is null.");
+                    MFEM_VERIFY(state.anode_particles[j].Cn_gf, "Anode particle concentration field is null.");
+
+                    // Freeze the previous reaction for the concentration solve.
+                    *state.anode_particles[j].Rx_src = *state.anode_particles[j].Rxn_gf;
+
+                    std::vector<ConcentrationBase::PairCoupling> pair_terms;
+
+                    Pairs(state.anode_pairs, domain_parameters.WeightPairsA, domain_parameters.AvP_PairsA,
+                        j, pair_terms, npA, t);
+
+                    state.anode_particles[j].concentration->UpdateConcentration(*state.anode_particles[j].Rx_src,
+                            *state.anode_particles[j].Cn_gf, *domain_parameters.psA[j], domain_parameters.gtPsA[j],
+                            *domain_parameters.WeightEsA[j], pair_terms);
+                }
+
+                // ========================================================================
+                // ===================  UPDATE CATHODE CONCENTRATIONS  ======================
+                // ========================================================================
+
+                for (int j = 0; j < npC; ++j)
+                {
+                    MFEM_VERIFY(state.cathode_particles[j].Rxn_gf, "Cathode particle reaction field is null.");
+                    MFEM_VERIFY(state.cathode_particles[j].Rx_src, "Cathode particle reaction source field is null.");
+                    MFEM_VERIFY(state.cathode_particles[j].Cn_gf, "Cathode particle concentration field is null.");
+
+                    // Freeze the previous reaction for the concentration solve.
+                    *state.cathode_particles[j].Rx_src = *state.cathode_particles[j].Rxn_gf;
+
+                    std::vector<ConcentrationBase::PairCoupling> pair_terms;
+
+                    Pairs(state.cathode_pairs, domain_parameters.WeightPairsC, domain_parameters.AvP_PairsC,
+                        j, pair_terms, npC, t);
+
+                    state.cathode_particles[j].concentration->UpdateConcentration(*state.cathode_particles[j].Rx_src,
+                            *state.cathode_particles[j].Cn_gf, *domain_parameters.psC[j], domain_parameters.gtPsC[j],
+                            *domain_parameters.WeightEsC[j], pair_terms);
+                }
+
+                // ========================================================================
+                // ==============  BUILD ELECTRODE REACTION SOURCE FIELDS  ==================
+                // ========================================================================
+
+                *state.RxnA_gf = 0.0;
+                *state.RxnC_gf = 0.0;
+
+                for (int j = 0; j < npA; ++j)
+                {
+                    *state.RxnA_gf += *state.anode_particles[j].Rx_src;
+                }
+
+                for (int j = 0; j < npC; ++j)
+                {
+                    *state.RxnC_gf += *state.cathode_particles[j].Rx_src;
+                }
+
+                // // Optional combined field for output/debugging.
+                // if (state.Rxn_gf)
+                // {
+                //     *state.Rxn_gf = *state.RxnA_gf;
+                //     *state.Rxn_gf += *state.RxnC_gf;
+                // }
+
+                // ========================================================================
+                // =================  UPDATE ELECTROLYTE CONCENTRATION  =====================
+                // ========================================================================
+
+                *state.RxnE_gf = 0.0;
+                *state.RxnE_gf += *state.RxnA_gf;
+                *state.RxnE_gf += *state.RxnC_gf;
+
+                state.electrolyte_concentration->UpdateConcentration(*state.RxnE_gf, *state.CnE_gf, *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
+
+                if (t > 0 && t % 50 == 0)
+                {
+                    state.electrolyte_concentration->SaltConservation(*state.CnE_gf, *domain_parameters.pse);
+                }
+
+                // ========================================================================
+                // ====================  BUILD ANODE FIELD VECTORS  =========================
+                // ========================================================================
+
+                std::vector<mfem::ParGridFunction*>anode_cn_fields;
+                std::vector<mfem::ParGridFunction*>anode_psi_fields;
+                std::vector<sim::MaterialType>anode_materials;
+
+                anode_cn_fields.reserve(npA);
+                anode_psi_fields.reserve(npA);
+                anode_materials.reserve(npA);
+
+                for (int j = 0; j < npA; ++j)
+                {
+                    anode_cn_fields.push_back(state.anode_particles[j].Cn_gf.get());
+                    anode_psi_fields.push_back(domain_parameters.psA[j].get());
+                    anode_materials.push_back(state.anode_particles[j].material);
+                }
+
+                // ========================================================================
+                // ===================  BUILD CATHODE FIELD VECTORS  ========================
+                // ========================================================================
+
+                std::vector<mfem::ParGridFunction*>cathode_cn_fields;
+                std::vector<mfem::ParGridFunction*>cathode_psi_fields;
+                std::vector<sim::MaterialType>cathode_materials;
+
+                cathode_cn_fields.reserve(npC);
+                cathode_psi_fields.reserve(npC);
+                cathode_materials.reserve(npC);
+
+                for (int j = 0; j < npC; ++j)
+                {
+                    cathode_cn_fields.push_back(state.cathode_particles[j].Cn_gf.get());
+                    cathode_psi_fields.push_back(domain_parameters.psC[j].get());
+                    cathode_materials.push_back(state.cathode_particles[j].material);
+                }
+
+                // ========================================================================
+                // =====================  ASSEMBLE POTENTIAL SYSTEMS  =======================
+                // ========================================================================
+
+                state.anode_potential->AssembleSystem(anode_cn_fields, anode_psi_fields, anode_materials, *state.phA_gf);
+                state.cathode_potential->AssembleSystem(cathode_cn_fields, cathode_psi_fields, cathode_materials, *state.phC_gf);
+                state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
+
+                // ========================================================================
+                // =================  UPDATE EXCHANGE CURRENT DENSITIES  ====================
+                // ========================================================================
+
+                for (int j = 0; j < npA; ++j)
+                {
+                    state.anode_particles[j].reaction->ExchangeCurrentDensity(*state.anode_particles[j].Cn_gf,
+                            *domain_parameters.AvEsA[j], state.anode_particles[j].material);
+                }
+
+                for (int j = 0; j < npC; ++j)
+                {
+                    state.cathode_particles[j].reaction->ExchangeCurrentDensity(*state.cathode_particles[j].Cn_gf,
+                            *domain_parameters.AvEsC[j], state.cathode_particles[j].material);
+                }
+
+                // ========================================================================
+                // ==============  COUPLED REACTION-POTENTIAL ITERATION  ====================
+                // ========================================================================
+
+                double globalerror_A = 1.0;
+                double globalerror_C = 1.0;
+                double globalerror_E = 1.0;
+
+                int iter = 0;
+                const int max_iter = 50;
+
+                while ((globalerror_A > 1.0e-6 || globalerror_C > 1.0e-6 || globalerror_E > 1.0e-6) && iter < max_iter)
+                {
+
+                    *state.RxnA_gf = 0.0;
+                    *state.RxnC_gf = 0.0;
+                    *state.RxnE_gf = 0.0;
+
+                    for (int j = 0; j < npA; ++j)
+                    {
+                        state.anode_particles[j].reaction->ButlerVolmer(*state.anode_particles[j].Rxn_gf,
+                                *state.anode_particles[j].Cn_gf, *state.CnE_gf, *state.phA_gf, *state.phE_gf, *domain_parameters.AvEsA[j]);
+
+                        *state.RxnA_gf += *state.anode_particles[j].Rxn_gf;
+                    }
+
+                    // --------------------------------------------------------------------
+                    // Cathode Butler-Volmer reactions
+                    // --------------------------------------------------------------------
+
+                    for (int j = 0; j < npC; ++j)
+                    {
+                        state.cathode_particles[j].reaction->ButlerVolmer(*state.cathode_particles[j].Rxn_gf,
+                                *state.cathode_particles[j].Cn_gf, *state.CnE_gf, *state.phC_gf, *state.phE_gf, *domain_parameters.AvEsC[j]);
+
+                        *state.RxnC_gf += *state.cathode_particles[j].Rxn_gf;
+                    }
+
+                    // // Optional combined reaction for debugging/output.
+                    // if (state.Rxn_gf)
+                    // {
+                    //     *state.Rxn_gf = *state.RxnA_gf;
+                    //     *state.Rxn_gf += *state.RxnC_gf;
+                    // }
+
+                    *state.RxnE_gf = *state.RxnA_gf;
+                    *state.RxnE_gf += *state.RxnC_gf;
+
+                    // --------------------------------------------------------------------
+                    // Update each solid potential using only its own reaction field.
+                    // --------------------------------------------------------------------
+
+                    state.anode_potential->UpdatePotential(*state.RxnA_gf, *state.phA_gf, *domain_parameters.psiA, globalerror_A);
+                    state.cathode_potential->UpdatePotential(*state.RxnC_gf, *state.phC_gf, *domain_parameters.psiC, globalerror_C);
+                    state.electrolyte_potential->UpdatePotential(*state.RxnE_gf, *state.phE_gf, *domain_parameters.pse,  globalerror_E);
+
+                    ++iter;
+                }
+
+                if (iter == max_iter && mfem::Mpi::WorldRank() == 0)
+                {
+                    std::cout << "Warning: full-cell potential iteration reached " << max_iter << " iterations at timestep " << t
+                        << ". Error_A = " << globalerror_A << ", Error_C = " << globalerror_C << ", Error_E = " << globalerror_E
+                        << std::endl;
+                }
+
+                // ========================================================================
+                // ======================  CALCULATE TOTAL CURRENTS  ========================
+                // ========================================================================
+
+                std::vector<double> anode_currents(npA, 0.0);
+                std::vector<double> cathode_currents(npC, 0.0);
+
+                for (int j = 0; j < npA; ++j)
+                {
+                    state.anode_particles[j].reaction->TotalReactionCurrent(*state.anode_particles[j].Rxn_gf, anode_currents[j]);
+                }
+
+                for (int j = 0; j < npC; ++j)
+                {
+                    state.cathode_particles[j].reaction->TotalReactionCurrent(*state.cathode_particles[j].Rxn_gf, cathode_currents[j]);
+                }
+
+                double global_current_A = 0.0;
+                double global_current_C = 0.0;
+
+                double total_target_A = 0.0;
+                double total_target_C = 0.0;
+
+                for (int j = 0; j < npA; ++j)
+                {
+                    global_current_A += anode_currents[j];
+                    total_target_A += domain_parameters.gTrgPsA[j];
+                }
+
+                for (int j = 0; j < npC; ++j)
+                {
+                    global_current_C += cathode_currents[j];
+                    total_target_C += domain_parameters.gTrgPsC[j];
+                }
+
+                // ========================================================================
+                // ====================  ADJUST FULL-CELL CURRENT  ==========================
+                // ========================================================================
+
+                VCell = state.cathode_potential->GetBoundaryVoltage() - state.anode_potential->GetBoundaryVoltage();
+                adjust.AdjustConstantCurrent(global_current_A, global_current_C, *state.anode_potential, *state.cathode_potential, *state.phA_gf, *state.phC_gf, VCell);
+                VCell = state.cathode_potential->GetBoundaryVoltage() - state.anode_potential->GetBoundaryVoltage();
+
+                // ========================================================================
+                // =====================  CALCULATE LITHIATION  =============================
+                // ========================================================================
+
+                double XfrA_avg = 0.0;
+                double XfrC_avg = 0.0;
+
+                double total_anode_weight = 0.0;
+                double total_cathode_weight = 0.0;
+
+                for (int j = 0; j < npA; ++j)
+                {
+                    const double Xfr_j = state.anode_particles[j].concentration->GetLithiation();
+                    const double weight_j = domain_parameters.gtPsA[j];
+                    XfrA_avg += weight_j * Xfr_j;
+                    total_anode_weight += weight_j;
+                }
+
+                for (int j = 0; j < npC; ++j)
+                {
+                    const double Xfr_j = state.cathode_particles[j].concentration->GetLithiation();
+                    const double weight_j = domain_parameters.gtPsC[j];
+                    XfrC_avg += weight_j * Xfr_j;
+                    total_cathode_weight += weight_j;
+                }
+
+                if (total_anode_weight > 0.0)
+                {
+                    XfrA_avg /= total_anode_weight;
+                }
+
+                if (total_cathode_weight > 0.0)
+                {
+                    XfrC_avg /= total_cathode_weight;
+                }
+
+                // ========================================================================
+                // ===========================  PRINT OUTPUT  ===============================
+                // ========================================================================
+
+                if (t % 1000 == 0 &&
+                    mfem::Mpi::WorldRank() == 0)
+                {
+                    std::cout << "timestep: " << t
+                        << " [FULL-CELL]"
+                        << ", XfrA_avg = " << XfrA_avg
+                        << ", XfrC_avg = " << XfrC_avg
+                        << ", Anode current = " << global_current_A
+                        << ", Cathode current = " << global_current_C
+                        << ", Anode target = " << total_target_A
+                        << ", Cathode target = " << total_target_C
+                        << ", VCell = " << VCell
+                        << ", BvA = " << state.anode_potential->GetBoundaryVoltage()
+                        << ", BvC = " << state.cathode_potential->GetBoundaryVoltage()
+                        << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage()
+                        << ", Ce_min = " << state.CnE_gf->Min()
+                        << ", Ce_max = " << state.CnE_gf->Max()
+                        << std::endl;
+
+                    for (int j = 0; j < npA; ++j)
+                    {
+                        std::cout << "    Anode particle " << j
+                            << ": current = " << anode_currents[j]
+                            << ", target = " << domain_parameters.gTrgPsA[j]
+                            << ", Xfr = " << state.anode_particles[j].concentration->GetLithiation()
+                            << ", Cmin = " << state.anode_particles[j].Cn_gf->Min()
+                            << ", Cmax = " << state.anode_particles[j].Cn_gf->Max()
+                            << std::endl;
+                    }
+
+                    for (int j = 0; j < npC; ++j)
+                    {
+                        std::cout << "    Cathode particle " << j
+                            << ": current = " << cathode_currents[j]
+                            << ", target = " << domain_parameters.gTrgPsC[j]
+                            << ", Xfr = " << state.cathode_particles[j].concentration->GetLithiation()
+                            << ", Cmin = " << state.cathode_particles[j].Cn_gf->Min()
+                            << ", Cmax = " << state.cathode_particles[j].Cn_gf->Max()
+                            << std::endl;
+                    }
+                }
+
+                // ========================================================================
+                // =============================  SAVE OUTPUT  ==============================
+                // ========================================================================
+
+                std::vector<mfem::ParGridFunction*>anode_cn_output;
+                anode_cn_output.reserve(npA);
+
+                for (auto& particle : state.anode_particles)
+                {
+                    anode_cn_output.push_back(particle.Cn_gf.get());
+                }
+
+                Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, anode_cn_output, domain_parameters.psA, *domain_parameters.psiA, state.anode_out, "A", 1000);
+
+                std::vector<mfem::ParGridFunction*>cathode_cn_output;
+                cathode_cn_output.reserve(npC);
+
+                for (auto& particle : state.cathode_particles)
+                {
+                    cathode_cn_output.push_back(particle.Cn_gf.get());
+                }
+
+                Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_output, domain_parameters.psC, *domain_parameters.psiC, state.cathode_out, "C", 1000);
+                Utils::SaveCombinedElectrodeSnapshot(t, outdir, geometry, anode_cn_output, domain_parameters.psA, cathode_cn_output, domain_parameters.psC, 1000);
+
+                if (t % 1000 == 0)
+                {
+                    std::ostringstream rxnA_path;
+                    rxnA_path << outdir << "/RxnA_"  << t << ".gf";
+                    state.RxnA_gf->SaveAsOne(rxnA_path.str().c_str());
+
+                    std::ostringstream rxnC_path;
+                    rxnC_path << outdir << "/RxnC_" << t << ".gf"; 
+                    state.RxnC_gf->SaveAsOne(rxnC_path.str().c_str());
+                }
+
+                ++t;
+            }
         }
 
     }

@@ -205,25 +205,43 @@ public:
         mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi,
         int save_interval = 500);
 
+
     /**
-     * @brief Save particle-resolved concentration snapshots.
-     *
+     * @brief Save multi-particle simulation snapshots.
+     * 
      * @param t Timestep index.
      * @param outdir Output directory.
      * @param geometry Geometry handler.
      * @param domain_parameters Domain-parameter object.
      * @param particle_cn Particle concentration fields to save.
+     * @param particle_ps Particle phase fields.
+     * @param electrode_psi Electrode phase field.
      * @param particle_out Output workspaces for masked/saved fields.
+     * @param electrode_name Name of the electrode.
      * @param save_interval Number of timesteps between saved snapshots.
      */
     static void SaveSimulationSnapshotMulti(
         int t,
-        const std::string &outdir,
-        Initialize_Geometry &geometry,
-        Domain_Parameters &domain_parameters,
-        const std::vector<mfem::ParGridFunction*> &particle_cn,
-        std::vector<std::unique_ptr<mfem::ParGridFunction>> &particle_out,
-        int save_interval = 1000);
+        const std::string& outdir,
+        Initialize_Geometry& geometry,
+        Domain_Parameters& domain_parameters,
+        const std::vector<mfem::ParGridFunction*>& particle_cn,
+        const std::vector<std::unique_ptr<mfem::ParGridFunction>>& particle_ps,
+        mfem::ParGridFunction& electrode_psi,
+        std::vector<std::unique_ptr<mfem::ParGridFunction>>& particle_out,
+        const std::string& electrode_name,
+        int save_interval);
+
+    static void SaveCombinedElectrodeSnapshot(
+        int t,
+        const std::string& outdir,
+        Initialize_Geometry& geometry,
+        const std::vector<mfem::ParGridFunction*>& anode_cn,
+        const std::vector<std::unique_ptr<mfem::ParGridFunction>>& anode_ps,
+        const std::vector<mfem::ParGridFunction*>& cathode_cn,
+        const std::vector<std::unique_ptr<mfem::ParGridFunction>>& cathode_ps,
+        int save_interval
+    );
 
 private:
     Initialize_Geometry &geometry_; ///< Geometry handler.
