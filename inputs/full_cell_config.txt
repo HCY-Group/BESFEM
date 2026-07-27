@@ -2,14 +2,14 @@
 # SIMULATION MODE
 # ============================================================
 
-mode = half
-electrode = cathode
+mode = full
 
 # ============================================================
 # GEOMETRY
 # ============================================================
 
-mesh_file = ../inputs/mesh/colored_labels_labels.tif
+anode_mesh_file = ../inputs/mesh/anode_labels.tif
+cathode_mesh_file = ../inputs/mesh/cathode_labels.tif
 
 combine_particles = true
 
@@ -19,27 +19,26 @@ row_end = 80
 column_begin = 10
 column_end = 60
 
-amr_levels = 1
+amr_levels = 0
 
 # Initial mesh coarsening before AMR
 # Must be 1 when amr_levels = 0
-coarsen_factor = 2
+coarsen_factor = 1
 
 # ============================================================
 # NUMERICAL PARAMETERS
 # ============================================================
 
-dt = 0.00012
-dh = 8e-07
-gc = 6.38e-12
+dt = 0.0105624
+dh = 2.074e-05
 
 # ============================================================
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = voltage       
+stop_mode = steps       
 VCut = 3.2
-num_steps = 20001
+num_steps = 6
 
 # ============================================================
 # CURRENT CONTROL
@@ -52,13 +51,15 @@ Vsr0 = 0.09466
 # MATERIALS
 # ============================================================
 
-cathode_materials = LFP
+anode_materials = Graphite
+cathode_materials = NMC
 
 # ============================================================
 # INITIAL PARTICLE STOICHIOMETRIES
 # ============================================================
 
-init_cathode_particles = 0.043
+init_anode_particles = 0.95
+init_cathode_particles = 0.30
 
 # ============================================================
 # INITIAL ELECTROLYTE
@@ -70,5 +71,6 @@ init_CnE = 0.001
 # INITIAL POTENTIALS
 # ============================================================
 
-init_BvC = 3.359
+init_BvA = -0.01
+init_BvC = 3.96
 init_BvE = -0.1

@@ -13,43 +13,64 @@ static double GetInitialValue(
     return fallback;
 }
 
-static void InitializePairWorkspaces(SimulationState& state, Initialize_Geometry& geometry, int np)
+static void InitializePairWorkspaces(
+    PairWorkspaces& workspace,
+    Initialize_Geometry& geometry,
+    int np,
+    const char* electrode_name)
 {
-    state.mu_pair_a.clear();
-    state.mu_pair_b.clear();
-    state.sum_pairs.clear();
+    workspace.mu_pair_a.clear();
+    workspace.mu_pair_b.clear();
+    workspace.sum_pairs.clear();
 
-    state.mu_pair_a.resize(np);
-    state.mu_pair_b.resize(np);
-    state.sum_pairs.resize(np);
+    workspace.mu_pair_a.resize(np);
+    workspace.mu_pair_b.resize(np);
+    workspace.sum_pairs.resize(np);
 
     for (int j = 0; j < np; ++j)
     {
-        state.mu_pair_a[j].resize(np);
-        state.mu_pair_b[j].resize(np);
-        state.sum_pairs[j].resize(np);
+        workspace.mu_pair_a[j].resize(np);
+        workspace.mu_pair_b[j].resize(np);
+        workspace.sum_pairs[j].resize(np);
 
-        for (int k = 0; k < np; ++k)
+        for (int k = j + 1; k < np; ++k)
         {
-            if (j < k)
-            {
-                state.mu_pair_a[j][k] = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-                state.mu_pair_b[j][k] = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-                state.sum_pairs[j][k] = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-            }
+            workspace.mu_pair_a[j][k] =
+                std::make_unique<mfem::ParGridFunction>(
+                    geometry.parfespace.get());
+
+            workspace.mu_pair_b[j][k] =
+                std::make_unique<mfem::ParGridFunction>(
+                    geometry.parfespace.get());
+
+            workspace.sum_pairs[j][k] =
+                std::make_unique<mfem::ParGridFunction>(
+                    geometry.parfespace.get());
+
+            *workspace.mu_pair_a[j][k] = 0.0;
+            *workspace.mu_pair_b[j][k] = 0.0;
+            *workspace.sum_pairs[j][k] = 0.0;
         }
     }
 
     if (mfem::Mpi::WorldRank() == 0)
     {
-        std::cout << "[DEBUG] Initialized pair workspaces for np = "
-                  << np << std::endl;
+        const int number_of_pairs = np * (np - 1) / 2;
+
+        std::cout
+            << "[DEBUG] Initialized "
+            << electrode_name
+            << " pair workspaces for np = "
+            << np
+            << " (" << number_of_pairs << " pairs)"
+            << std::endl;
     }
 }
 
-void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters)
+void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs)
 {
     const int np = static_cast<int>(state.cathode_particles.size());
+    // InitializePairWorkspaces(state.cathode_pairs, geometry, static_cast<int>(state.cathode_particles.size()), "cathode");
 
     for (int j = 0; j < np; ++j)
     {
@@ -61,9 +82,9 @@ void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geom
             const auto mat_j = state.cathode_particles[j].material;
             const auto mat_k = state.cathode_particles[k].material;
 
-            auto& mu_j = *state.mu_pair_a[j][k];
-            auto& mu_k = *state.mu_pair_b[j][k];
-            auto& AvP_pair = *domain_parameters.AvP_Pairs[j][k];
+            auto& mu_j = *state.cathode_pairs.mu_pair_a[j][k];
+            auto& mu_k = *state.cathode_pairs.mu_pair_b[j][k];
+            auto& AvP_pair = *avp_pairs[j][k];
 
             mu_j = 0.0;
             mu_k = 0.0;
@@ -80,9 +101,10 @@ void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geom
     }
 }
 
-void UpdateAnodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters)
+void UpdateAnodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs)
 {
     const int np = static_cast<int>(state.anode_particles.size());
+    // InitializePairWorkspaces(state.anode_pairs, geometry, static_cast<int>(state.anode_particles.size()), "anode");
 
     for (int j = 0; j < np; ++j)
     {
@@ -94,9 +116,9 @@ void UpdateAnodePairChemicalPotentials(SimulationState& state, Initialize_Geomet
             const auto mat_j = state.anode_particles[j].material;
             const auto mat_k = state.anode_particles[k].material;
 
-            auto& mu_j = *state.mu_pair_a[j][k];
-            auto& mu_k = *state.mu_pair_b[j][k];
-            auto& AvP_pair = *domain_parameters.AvP_Pairs[j][k];
+            auto& mu_j = *state.anode_pairs.mu_pair_a[j][k];
+            auto& mu_k = *state.anode_pairs.mu_pair_b[j][k];
+            auto& AvP_pair = *avp_pairs[j][k];
 
             mu_j = 0.0;
             mu_k = 0.0;
@@ -115,13 +137,14 @@ void UpdateAnodePairChemicalPotentials(SimulationState& state, Initialize_Geomet
 
 
 static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters,
-    const SimulationConfig& cfg, BoundaryConditions& bc)
+    const SimulationConfig& cfg, BoundaryConditions& bc, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& particle_fields,
+    const std::vector<double>& particle_totals, const std::vector<int>& particle_labels)
 {
-    const int np = static_cast<int>(domain_parameters.ps.size());
+    const int np = static_cast<int>(particle_fields.size());
     state.anode_particles.clear();
     state.anode_particles.resize(np);
 
-    const std::vector<double>& init_values = cfg.init_anode_particles;
+    // const std::vector<double>& init_values = cfg.init_anode_particles;
 
     if (np == 0)
     {
@@ -137,12 +160,12 @@ static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry
         if (mfem::Mpi::WorldRank() == 0)
         {
             std::cout << "[DEBUG] Creating Anode Particle " << k
-                    << " (label = " << domain_parameters.particle_labels[k] << ")"
+                    << " (label = " << particle_labels[k] << ")"
                     << std::endl;
         }
 
         auto& p = state.anode_particles[k];
-        p.label = domain_parameters.particle_labels[k];
+        p.label = particle_labels[k];
         p.material = cfg.anode_materials[k];
 
         if (mfem::Mpi::WorldRank() == 0)
@@ -187,21 +210,22 @@ static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry
         
         p.reaction->Initialize(*p.Rxn_gf, Constants::init_Rxn);
 
-        const double init_cn = GetInitialValue(init_values, k, cfg.init_CnA);
+        const double init_cn = GetInitialValue(cfg.init_anode_particles, k, cfg.init_CnA);
 
         if (mfem::Mpi::WorldRank() == 0)
         {
             std::cout << "[DEBUG]   Initial concentration = " << init_cn << std::endl;
         }
 
-        p.concentration->SetupField(*p.Cn_gf, init_cn, *domain_parameters.ps[k], domain_parameters.gtPs[k]);
+        p.concentration->SetupField(*p.Cn_gf, init_cn, *particle_fields[k], particle_totals[k]);
     }
 }
 
 static void InitializeCathodeParticles(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters,
-    const SimulationConfig& cfg, BoundaryConditions& bc)
+    const SimulationConfig& cfg, BoundaryConditions& bc, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& particle_fields,
+    const std::vector<double>& particle_totals, const std::vector<int>& particle_labels)
 {
-    const int np = static_cast<int>(domain_parameters.ps.size());
+    const int np = static_cast<int>(particle_fields.size());
     state.cathode_particles.clear();
 
     if (np == 0)
@@ -243,7 +267,7 @@ static void InitializeCathodeParticles(SimulationState& state, Initialize_Geomet
 
     state.cathode_particles.resize(np);
 
-    const std::vector<double>& init_values = cfg.init_cathode_particles;
+    // const std::vector<double>& init_values = cfg.init_cathode_particles;
 
     if (np == 0)
     {
@@ -259,12 +283,12 @@ static void InitializeCathodeParticles(SimulationState& state, Initialize_Geomet
         if (mfem::Mpi::WorldRank() == 0)
         {
             std::cout << "[DEBUG] Creating Cathode Particle " << k
-                    << " (label = " << domain_parameters.particle_labels[k] << ")"
+                    << " (label = " << particle_labels[k] << ")"
                     << std::endl;
         }
 
         auto& p = state.cathode_particles[k];
-        p.label = domain_parameters.particle_labels[k];
+        p.label = particle_labels[k];
         p.material = cfg.cathode_materials[k];
 
         if (mfem::Mpi::WorldRank() == 0)
@@ -319,14 +343,14 @@ static void InitializeCathodeParticles(SimulationState& state, Initialize_Geomet
 
         p.reaction->Initialize(*p.Rxn_gf, Constants::init_Rxn);
 
-        const double init_cn = GetInitialValue(init_values, k, cfg.init_CnC);
+        const double init_cn = GetInitialValue(cfg.init_cathode_particles, k, cfg.init_CnC);
 
         if (mfem::Mpi::WorldRank() == 0)
         {
             std::cout << "[DEBUG]   Initial concentration = " << init_cn << std::endl;
         }
 
-        p.concentration->SetupField(*p.Cn_gf, init_cn, *domain_parameters.ps[k], domain_parameters.gtPs[k]);
+        p.concentration->SetupField(*p.Cn_gf, init_cn, *particle_fields[k], particle_totals[k]);
     }
 }
 
@@ -346,7 +370,14 @@ void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Dom
 
     state.reaction = std::make_unique<Reaction>(geometry, domain_parameters, cfg);
     state.Rxn_gf   = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+    state.RxnA_gf  = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+    state.RxnC_gf  = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+    state.RxnE_gf  = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+    
     state.reaction->Initialize(*state.Rxn_gf, Constants::init_Rxn);
+    state.reaction->Initialize(*state.RxnA_gf, Constants::init_Rxn);
+    state.reaction->Initialize(*state.RxnC_gf, Constants::init_Rxn);
+    state.reaction->Initialize(*state.RxnE_gf, Constants::init_Rxn);
 
     if (cfg.mode == sim::CellMode::HALF)
     {
@@ -360,8 +391,9 @@ void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Dom
             state.phA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
             state.anode_potential->SetupField(*state.phA_gf, cfg.init_BvA, *domain_parameters.psi);
 
-            InitializeAnodeParticles(state, geometry, domain_parameters, cfg, bc);
-            InitializePairWorkspaces(state, geometry, static_cast<int>(state.anode_particles.size()));
+            InitializeAnodeParticles(state, geometry, domain_parameters, cfg, bc, domain_parameters.ps, domain_parameters.gtPs, domain_parameters.particle_labels);
+            // InitializePairWorkspaces(state, geometry, static_cast<int>(state.anode_particles.size()));
+            InitializePairWorkspaces(state.anode_pairs, geometry, static_cast<int>(state.anode_particles.size()),"anode");
 
             state.anode_out.clear();
             state.anode_out.resize(np);
@@ -382,8 +414,9 @@ void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Dom
             state.phC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
             state.cathode_potential->SetupField(*state.phC_gf, cfg.init_BvC, *domain_parameters.psi);
 
-            InitializeCathodeParticles(state, geometry, domain_parameters, cfg, bc);
-            InitializePairWorkspaces(state, geometry,static_cast<int>(state.cathode_particles.size()));
+            InitializeCathodeParticles(state, geometry, domain_parameters, cfg, bc, domain_parameters.ps, domain_parameters.gtPs, domain_parameters.particle_labels);
+            // InitializePairWorkspaces(state, geometry,static_cast<int>(state.cathode_particles.size()));
+            InitializePairWorkspaces(state.cathode_pairs, geometry, static_cast<int>(state.cathode_particles.size()),"cathode");
 
             state.cathode_out.clear();
             state.cathode_out.resize(np);
@@ -401,11 +434,41 @@ void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Dom
 
         state.anode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::ANODE, sim::MaterialType::Graphite, cfg);
         state.phA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-        state.anode_potential->SetupField(*state.phA_gf, cfg.init_BvA, *domain_parameters.psA);
+        state.anode_potential->SetupField(*state.phA_gf, cfg.init_BvA, *domain_parameters.psiA);
 
         state.cathode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::CATHODE, sim::MaterialType::NMC, cfg);
         state.phC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
-        state.cathode_potential->SetupField(*state.phC_gf, cfg.init_BvC, *domain_parameters.psC);
+        state.cathode_potential->SetupField(*state.phC_gf, cfg.init_BvC, *domain_parameters.psiC);
+
+        InitializeAnodeParticles(state, geometry, domain_parameters, cfg, bc, domain_parameters.psA, domain_parameters.gtPsA, domain_parameters.anode_particle_labels);
+        InitializeCathodeParticles(state, geometry, domain_parameters, cfg, bc, domain_parameters.psC, domain_parameters.gtPsC, domain_parameters.cathode_particle_labels);
+
+        // InitializePairWorkspaces(state, geometry, static_cast<int>(state.anode_particles.size()));
+        // InitializePairWorkspaces(state, geometry, static_cast<int>(state.cathode_particles.size()));
+
+        const int npA = static_cast<int>(state.anode_particles.size());
+        const int npC = static_cast<int>(state.cathode_particles.size());
+
+        InitializePairWorkspaces(state.anode_pairs, geometry, npA, "anode");
+        InitializePairWorkspaces(state.cathode_pairs, geometry, npC, "cathode");
+
+        // Anode outputs
+        state.anode_out.clear();
+        state.anode_out.resize(npA);
+
+        for (int k = 0; k < npA; ++k)
+        {
+            state.anode_out[k] = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+        }
+
+        // Cathode outputs
+        state.cathode_out.clear();
+        state.cathode_out.resize(npC);
+
+        for (int k = 0; k < npC; ++k)
+        {
+            state.cathode_out[k] = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
+        }
     }
 
     if (mfem::Mpi::WorldRank() == 0 && (state.anode_particles.size() > 0 || state.cathode_particles.size() > 0))
@@ -420,38 +483,45 @@ void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Dom
     }
 }
 
-void Pairs(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters, int j, std::vector<ConcentrationBase::PairCoupling>& pair_terms, int np, int t)
-{                        
+void Pairs(PairWorkspaces& workspace, const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& weight_pairs,
+    const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs, int j,
+    std::vector<ConcentrationBase::PairCoupling>& pair_terms, int np, int t)
+{
+    pair_terms.clear();
+
     for (int k = 0; k < np; ++k)
     {
-        if (j == k) { continue; }
+        if (j == k)
+        {
+            continue;
+        }
 
         const int a = std::min(j, k);
         const int b = std::max(j, k);
 
+        MFEM_VERIFY(workspace.sum_pairs[a][b], "Pair sum workspace is null.");
+        MFEM_VERIFY(workspace.mu_pair_a[a][b], "Pair chemical-potential workspace A is null.");
+        MFEM_VERIFY(workspace.mu_pair_b[a][b], "Pair chemical-potential workspace B is null.");
+        MFEM_VERIFY(weight_pairs[a][b], "Pair weight field is null.");
+        MFEM_VERIFY(avp_pairs[a][b], "Pair interface field is null.");
+
         ConcentrationBase::PairCoupling pair;
-        pair.sum_part = state.sum_pairs[a][b].get();
-        pair.weight   = domain_parameters.WeightPairs[a][b].get();
-        pair.grad_psi = domain_parameters.AvP_Pairs[a][b].get();
+
+        pair.sum_part = workspace.sum_pairs[a][b].get();
+        pair.weight = weight_pairs[a][b].get();
+        pair.grad_psi = avp_pairs[a][b].get();
 
         if (j < k)
         {
-            pair.mu_self = state.mu_pair_a[a][b].get();
-            pair.mu_nbr  = state.mu_pair_b[a][b].get();
+            pair.mu_self = workspace.mu_pair_a[a][b].get();
+            pair.mu_nbr = workspace.mu_pair_b[a][b].get();
         }
         else
         {
-            pair.mu_self = state.mu_pair_b[a][b].get();
-            pair.mu_nbr  = state.mu_pair_a[a][b].get();
+            pair.mu_self = workspace.mu_pair_b[a][b].get();
+            pair.mu_nbr = workspace.mu_pair_a[a][b].get();
         }
 
         pair_terms.push_back(pair);
-
-        // if (mfem::Mpi::WorldRank() == 0 && t == 1)
-        // {
-        //     std::cout << "[DEBUG] Pair (j,k) = (" << j << "," << k << ")"; 
-        //     std::cout << std::endl;
-        // }
-
     }
 }

@@ -157,6 +157,7 @@ init_BvE = -0.1
 * `mode`
 
   * `half`
+  * `full`
 
 * `electrode`
 
@@ -262,7 +263,7 @@ init_BvE = -0.10
 
 ---
 
-# Output
+### Output
 
 Simulation results are written to the `outputs/` directory and include quantities such as
 
@@ -275,6 +276,44 @@ Simulation results are written to the `outputs/` directory and include quantitie
 * Simulation logs
 
 These outputs may be visualized using **PyGLVis** or other MFEM-compatible visualization tools.
+
+---
+### Boundary Conditions
+
+BESFEM uses a fixed orientation convention for the external boundaries of the computational domain. Boundary attribute indicators are assigned as follows:
+
+| Boundary | Indicator |
+| -------- | --------: |
+| South    |       `0` |
+| East     |       `1` |
+| North    |       `2` |
+| West     |       `3` |
+
+The geometry is oriented so that the **anode current collector is located on the west side** of the domain and the **cathode current collector is located on the east side**. The boundary conditions are assigned in `src/BoundaryConditions.cpp`. 
+
+For a full-cell simulation, the electrode arrangement is therefore
+
+```text
+West                                                    East
+Anode current collector → Anode → Electrolyte → Cathode → Cathode current collector
+```
+
+The solid-phase electrical-potential boundary conditions are applied at the corresponding current collectors:
+
+* The anode solid potential is constrained on the west boundary, with boundary indicator `3`.
+* The cathode solid potential is constrained on the east boundary, with boundary indicator `1`.
+
+The north and south boundaries, with indicators `2` and `0`, respectively, represent the transverse edges of the geometry. Unless otherwise specified by a particular model, these boundaries use no-flux or electrically insulating boundary conditions.
+
+For half-cell simulations, the current collector remains on the electrode-specific side:
+
+* Anode half-cell: current collector on the west boundary.
+* Cathode half-cell: current collector on the east boundary.
+
+The electrolyte-facing boundary is located on the side opposite the current collector. Internal active-material/electrolyte interfaces are represented through the SBM phase fields and are not assigned external mesh-boundary indicators. Electrochemical reaction terms are evaluated along these diffuse internal interfaces.
+
+In full-cell geometries, the electrolyte phase is retained only when it forms a connected pathway that contacts both the anode and cathode phases. Isolated electrolyte regions that do not connect both electrodes are removed from the electrolyte connectivity mask.
+
 
 ---
 

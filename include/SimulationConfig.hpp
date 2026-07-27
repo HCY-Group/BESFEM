@@ -36,7 +36,13 @@ struct SimulationConfig
     // -------------------------------------------------------------------------
 
     const char *config_file = "../inputs/run_config.txt"; ///< Simulation configuration file.
-    const char *mesh_file   = "../inputs/colored_labels_labels.tif"; ///< Mesh or voxelized geometry file.
+
+    // Half-cell geometry.
+    const char *mesh_file = nullptr;
+
+    // Full-cell geometries.
+    const char *anode_mesh_file = nullptr;
+    const char *cathode_mesh_file = nullptr;
     
     // -------------------------------------------------------------------------
     // Discretization

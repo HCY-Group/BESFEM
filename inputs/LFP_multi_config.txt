@@ -11,7 +11,7 @@ electrode = cathode
 
 mesh_file = ../inputs/mesh/colored_labels_labels.tif
 
-combine_particles = true
+combine_particles = false
 
 # TIFF crop bounds
 row_begin = 15
@@ -29,17 +29,17 @@ coarsen_factor = 2
 # NUMERICAL PARAMETERS
 # ============================================================
 
-dt = 0.00012
-dh = 8e-07
+dt = 8.0e-05
+dh = 8.0e-07
 gc = 6.38e-12
 
 # ============================================================
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = voltage       
+stop_mode = steps       
 VCut = 3.2
-num_steps = 20001
+num_steps = 201
 
 # ============================================================
 # CURRENT CONTROL
@@ -52,13 +52,13 @@ Vsr0 = 0.09466
 # MATERIALS
 # ============================================================
 
-cathode_materials = LFP
+cathode_materials = LFP, LFP
 
 # ============================================================
 # INITIAL PARTICLE STOICHIOMETRIES
 # ============================================================
 
-init_cathode_particles = 0.043
+init_cathode_particles = 0.062, 0.062
 
 # ============================================================
 # INITIAL ELECTROLYTE
@@ -70,5 +70,5 @@ init_CnE = 0.001
 # INITIAL POTENTIALS
 # ============================================================
 
-init_BvC = 3.359
+init_BvC = 3.28
 init_BvE = -0.1
