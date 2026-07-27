@@ -52,8 +52,10 @@ TEST_CASE("Cathode Potential") {
     //SimulationConfig cfg = ParseSimulationArgs(argc, argv);
     //ValidateConfig(cfg, argc, argv);
     
-    const char *config_file = "../tests/test_run_config_cathode.txt";
+    //const char *config_file = "../tests/test_run_config_cathode.txt";
     //const char *config_file = "../tests/test_run_config_anode.txt";
+    auto config_file = GENERATE("../tests/test_run_config_cathode.txt",
+                                "../tests/test_run_config_anode.txt");
     SimulationConfig cfg = SimConfigFromFileName(config_file);
     ValidateConfig(cfg, 0, nullptr);
 
@@ -151,43 +153,67 @@ TEST_CASE("Cathode Potential") {
             state.phC_gf->SaveAsOne("phiC");
         }
         state.phE_gf->SaveAsOne("phiE");
-        std::cout << "Faraday: " << Constants::Frd << std::endl;
+        //std::cout << "Faraday: " << Constants::Frd << std::endl;
 
         // ANALYTICAL SOLUTION
         Rxn_p.FESpace()->GetMesh()->EnsureNodes();
         mfem::GridFunction *nodes = Rxn_p.FESpace()->GetMesh()->GetNodes();
 
-        mfem::ParGridFunction phC_an(*state.phC_gf);
-        mfem::ParGridFunction phE_an(*state.phC_gf);
-        mfem::ParGridFunction x(*state.phC_gf);
-        mfem::ParGridFunction y(*state.phC_gf);
-        for (int i=0; i<phC_an.Size(); i++)
+        mfem::ParGridFunction phP_an(Rxn_p);
+        mfem::ParGridFunction phE_an(Rxn_p);
+        mfem::ParGridFunction x(Rxn_p);
+        mfem::ParGridFunction y(Rxn_p);
+        for (int i=0; i<phP_an.Size(); i++)
         {
             x(i) = (*nodes)(2*i);
             y(i) = (*nodes)(2*i+1);
         }
         
-        std::cout << "kappa: " << state.cathode_potential->GetConductivity().Min() << " " << 
-                                  state.cathode_potential->GetConductivity().Max() << std::endl;
-
-        std::cout << "F/kap: " << Constants::Frd/state.cathode_potential->GetConductivity().Max() << std::endl;
-
-        double slope_c =  Constants::Frd/state.cathode_potential->GetConductivity().Max(); 
-        double intercept_c = state.cathode_potential->GetBoundaryVoltage();
-        double slope_e =  1.0/state.electrolyte_potential->GetConductivity().Max(); 
-        double intercept_e = state.electrolyte_potential->GetBoundaryVoltage();
-        for (int i=0; i < phC_an.Size(); i++)
-        {
-            phC_an(i) = slope_c*(y.Max()-y(i)) + intercept_c;
-            phE_an(i) = -slope_e*y(i) + intercept_e;
+        if (cfg.half_electrode == sim::Electrode::ANODE){
+            std::cout << "kappa: " << state.anode_potential->GetConductivity().Min() << " " << 
+                                      state.anode_potential->GetConductivity().Max() << std::endl;
+            std::cout << "F/kap: " << Constants::Frd/state.anode_potential->GetConductivity().Max() << std::endl;
+        } else {
+            std::cout << "kappa: " << state.cathode_potential->GetConductivity().Min() << " " << 
+                                      state.cathode_potential->GetConductivity().Max() << std::endl;
+            std::cout << "F/kap: " << Constants::Frd/state.cathode_potential->GetConductivity().Max() << std::endl;
         }
-        phC_an.SaveAsOne("phiC_an");
+
+
+        double slope_e = 1.0/state.electrolyte_potential->GetConductivity().Max(); 
+        double intercept_e = state.electrolyte_potential->GetBoundaryVoltage();
+        double slope_p;
+        double intercept_p;
+        if (cfg.half_electrode == sim::Electrode::ANODE){
+            slope_p = Constants::Frd/state.anode_potential->GetConductivity().Max(); 
+            intercept_p = state.anode_potential->GetBoundaryVoltage();
+        } else {
+            slope_p = Constants::Frd/state.cathode_potential->GetConductivity().Max(); 
+            intercept_p = state.cathode_potential->GetBoundaryVoltage();
+        }
+        std::cout << "particle slope and intercept: " << slope_p << " " << intercept_p << std::endl;
+        for (int i=0; i < phP_an.Size(); i++)
+        {
+          if (cfg.half_electrode == sim::Electrode::ANODE){
+            phP_an(i) = slope_p*y(i) + intercept_p;
+            phE_an(i) = -slope_e*(y.Max()-y(i)) + intercept_e;
+          } else {
+            phP_an(i) = slope_p*(y.Max()-y(i)) + intercept_p;
+            phE_an(i) = -slope_e*y(i) + intercept_e;
+          }
+        }
+        phP_an.SaveAsOne("phiP_an");
 
         //Multiply by psi to compare
-        phC_an *= *domain_parameters.psi;
-        *state.phC_gf *= *domain_parameters.psi;
-        state.phC_gf->SaveAsOne("phiC");
-        phC_an.SaveAsOne("phiC_an");
+        phP_an *= *domain_parameters.psi;
+        if (cfg.half_electrode == sim::Electrode::ANODE){
+            *state.phA_gf *= *domain_parameters.psi;
+            state.phA_gf->SaveAsOne("phiA");
+        } else {
+            *state.phC_gf *= *domain_parameters.psi;
+            state.phC_gf->SaveAsOne("phiC");
+        }
+        phP_an.SaveAsOne("phiP_an");
 
         phE_an *= *domain_parameters.pse;
         *state.phE_gf *= *domain_parameters.pse;
@@ -210,10 +236,14 @@ TEST_CASE("Cathode Potential") {
         double error_c = state.phC_gf->ComputeLpError(2.0, ansol_c, &errweight_c_coef);
         double error_e = state.phE_gf->ComputeLpError(2.0, ansol_e, &errweight_e_coef);
 */
-        mfem::ParGridFunction diff_c(*state.phC_gf);
-        diff_c = *state.phC_gf;
-        diff_c -= phC_an;
-        diff_c /= phC_an;  //weight by magnitude of analytical solution
+        mfem::ParGridFunction diff_c(phE_an);
+        if (cfg.half_electrode == sim::Electrode::ANODE){
+            diff_c = *state.phA_gf;
+        } else {
+            diff_c = *state.phC_gf;
+        }
+        diff_c -= phP_an;
+        diff_c /= phP_an;  //weight by magnitude of analytical solution
         diff_c *= *domain_parameters.psi; // only get errors in domain of interest
         std::cout << "L2 error cathode:     " << diff_c.Norml2() << std::endl;
 
