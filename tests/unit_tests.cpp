@@ -51,7 +51,9 @@ TEST_CASE("Cathode Potential") {
 
     //SimulationConfig cfg = ParseSimulationArgs(argc, argv);
     //ValidateConfig(cfg, argc, argv);
+    
     const char *config_file = "../tests/test_run_config_cathode.txt";
+    //const char *config_file = "../tests/test_run_config_anode.txt";
     SimulationConfig cfg = SimConfigFromFileName(config_file);
     ValidateConfig(cfg, 0, nullptr);
 
@@ -93,90 +95,39 @@ TEST_CASE("Cathode Potential") {
         // =====================
         // poisson equation
         // =====================
-        if (cfg.half_electrode == sim::Electrode::ANODE)
+        //if (cfg.half_electrode == sim::Electrode::ANODE)
         {
-        std::vector<mfem::ParGridFunction*> anode_cn_fields; // vector of pointers to cathode concentration fields
-        std::vector<mfem::ParGridFunction*> anode_psi_fields; // vector of pointers to cathode potential fields
-        std::vector<sim::MaterialType> anode_materials; // vector of cathode material types
+        std::vector<mfem::ParGridFunction*> cn_fields; // vector of pointers to cathode concentration fields
+        std::vector<mfem::ParGridFunction*> psi_fields; // vector of pointers to cathode potential fields
+        std::vector<sim::MaterialType> materials; // vector of cathode material types
                     
-        const int np = static_cast<int>(state.anode_particles.size());
+        int np;
+        if (cfg.half_electrode == sim::Electrode::ANODE){
+            np = static_cast<int>(state.anode_particles.size());
+        } else {
+            np = static_cast<int>(state.cathode_particles.size());
+        }
  
-        anode_cn_fields.reserve(np); // pre-allocate memory
-        anode_psi_fields.reserve(np); // pre-allocate memory
-        anode_materials.reserve(np); // pre-allocate memory
+        cn_fields.reserve(np); // pre-allocate memory
+        psi_fields.reserve(np); // pre-allocate memory
+        materials.reserve(np); // pre-allocate memory
 
         for (int j = 0; j < np; ++j)
         {
-            anode_cn_fields.push_back(state.anode_particles[j].Cn_gf.get()); 
-            anode_psi_fields.push_back(domain_parameters.ps[j].get());
-            anode_materials.push_back(state.anode_particles[j].material);
+            psi_fields.push_back(domain_parameters.ps[j].get());
+            if (cfg.half_electrode == sim::Electrode::ANODE){
+                cn_fields.push_back(state.anode_particles[j].Cn_gf.get()); 
+                materials.push_back(state.anode_particles[j].material);
+            } else {
+                cn_fields.push_back(state.cathode_particles[j].Cn_gf.get()); 
+                materials.push_back(state.cathode_particles[j].material);
+            }
         }
-        state.anode_potential->AssembleSystem(anode_cn_fields, anode_psi_fields, anode_materials, *state.phA_gf);
-        state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
-
-        double globalerror_P = 1.0; // Error for particle potential
-        double globalerror_E = 1.0; // Error for electrolyte potential
-
-        mfem::ParGridFunction Rxn_p(*domain_parameters.AvEs[0]);
-        mfem::ParGridFunction Rxn_e(*domain_parameters.AvEs[0]);
-
-        //state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, *domain_parameters.psi, globalerror_P);
-        //state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
-        state.anode_potential->UpdatePotential(Rxn_p, *state.phA_gf, *domain_parameters.psi, globalerror_P);
-        state.electrolyte_potential->UpdatePotential(Rxn_e, *state.phE_gf, *domain_parameters.psi, globalerror_E);
-        
-        state.Rxn_gf->SaveAsOne("rxn_test");
-        domain_parameters.psi->SaveAsOne("psi_test");
-        domain_parameters.pse->SaveAsOne("pse_test");
-        state.phA_gf->SaveAsOne("phiA");
-        state.phE_gf->SaveAsOne("phiE");
-        std::cout << "Faraday: " << Constants::Frd << std::endl;
-        //TODO: figure out how to return kappa values from electrode and electrolyte 
-        //std::cout << "Global errors: " << globalerror_P << " " << globalerror_E << std::endl;
-
-        // ANALYTICAL SOLUTION
-        Rxn_p.FESpace()->GetMesh()->EnsureNodes();
-        mfem::GridFunction *nodes = Rxn_p.FESpace()->GetMesh()->GetNodes();
-        //std::cout << "node 0: " << *nodes[0] << std::endl; 
-        //std::cout << "node 1: " << *nodes[1] << std::endl;
-        mfem::GridFunction x;
-        mfem::GridFunction y;
-        x.MakeRef(*nodes, /*offset=*/0,                                   /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
-        y.MakeRef(*nodes, /*offset=*/Rxn_p.FESpace()->GetMesh()->GetNV(), /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
-        //std::cout << "x min and max: " << x.Min() << " " << x.Max() << std::endl; 
-        //std::cout << "y min and max: " << y.Min() << " " << y.Max() << std::endl; 
-        
-        mfem::ParGridFunction phA_an(*state.phA_gf);
-        std::cout << "kappa: " << state.anode_potential->GetConductivity().Min() << " " << 
-                                  state.anode_potential->GetConductivity().Max() << std::endl;
-        std::cout << "F/kap: " << Constants::Frd/state.anode_potential->GetConductivity().Max() << std::endl;
-
-        /*for (i = 0; i < phA_an.Size(); i++) 
-        {
-            phA_an(i) = y(i)*
-        }*/
-
-        } 
-        
-        else
-        {
-        std::vector<mfem::ParGridFunction*> cathode_cn_fields; // vector of pointers to cathode concentration fields
-        std::vector<mfem::ParGridFunction*> cathode_psi_fields; // vector of pointers to cathode potential fields
-        std::vector<sim::MaterialType> cathode_materials; // vector of cathode material types
-                    
-        const int np = static_cast<int>(state.cathode_particles.size());
- 
-        cathode_cn_fields.reserve(np); // pre-allocate memory
-        cathode_psi_fields.reserve(np); // pre-allocate memory
-        cathode_materials.reserve(np); // pre-allocate memory
-
-        for (int j = 0; j < np; ++j)
-        {
-            cathode_cn_fields.push_back(state.cathode_particles[j].Cn_gf.get()); 
-            cathode_psi_fields.push_back(domain_parameters.ps[j].get());
-            cathode_materials.push_back(state.cathode_particles[j].material);
+        if (cfg.half_electrode == sim::Electrode::ANODE){
+            state.anode_potential->AssembleSystem(cn_fields, psi_fields, materials, *state.phA_gf);
+        } else {
+            state.cathode_potential->AssembleSystem(cn_fields, psi_fields, materials, *state.phC_gf);
         }
-        state.cathode_potential->AssembleSystem(cathode_cn_fields, cathode_psi_fields, cathode_materials, *state.phC_gf);
         state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
 
         double globalerror_P = 1.0; // Error for particle potential
@@ -185,28 +136,26 @@ TEST_CASE("Cathode Potential") {
         mfem::ParGridFunction Rxn_p(*domain_parameters.AvP);
         mfem::ParGridFunction Rxn_e(*domain_parameters.AvE);
 
-        //state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, *domain_parameters.psi, globalerror_P);
-        //state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
-        state.cathode_potential->UpdatePotential(Rxn_p, *state.phC_gf, *domain_parameters.psi, globalerror_P);
-        state.electrolyte_potential->UpdatePotential(Rxn_e, *state.phE_gf, *domain_parameters.psi, globalerror_E);
+        if (cfg.half_electrode == sim::Electrode::ANODE){
+            state.anode_potential->UpdatePotential(Rxn_p, *state.phA_gf, *domain_parameters.psi, globalerror_P);
+        } else {
+            state.cathode_potential->UpdatePotential(Rxn_p, *state.phC_gf, *domain_parameters.psi, globalerror_P);
+        }
+        state.electrolyte_potential->UpdatePotential(Rxn_e, *state.phE_gf, *domain_parameters.pse, globalerror_E);
         
-        //state.Rxn_gf->SaveAsOne("rxn_test");
-        domain_parameters.AvEs[0]->SaveAsOne("rxn_test");
         domain_parameters.psi->SaveAsOne("psi_test");
         domain_parameters.pse->SaveAsOne("pse_test");
-        state.phC_gf->SaveAsOne("phiC");
+        if (cfg.half_electrode == sim::Electrode::ANODE){
+            state.phA_gf->SaveAsOne("phiA");
+        } else {
+            state.phC_gf->SaveAsOne("phiC");
+        }
         state.phE_gf->SaveAsOne("phiE");
-        //std::cout << "Global errors: " << globalerror_P << " " << globalerror_E << std::endl;
+        std::cout << "Faraday: " << Constants::Frd << std::endl;
 
         // ANALYTICAL SOLUTION
         Rxn_p.FESpace()->GetMesh()->EnsureNodes();
         mfem::GridFunction *nodes = Rxn_p.FESpace()->GetMesh()->GetNodes();
-        //std::cout << "node 0: " << *nodes[0] << std::endl; 
-        //std::cout << "node 1: " << *nodes[1] << std::endl;
-        //mfem::GridFunction x;
-        //mfem::GridFunction y;
-        //x.MakeRef(*nodes, /*offset=*/0,                                   /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
-        //y.MakeRef(*nodes, /*offset=*/Rxn_p.FESpace()->GetMesh()->GetNV(), /*size=*/Rxn_p.FESpace()->GetMesh()->GetNV());
 
         mfem::ParGridFunction phC_an(*state.phC_gf);
         mfem::ParGridFunction phE_an(*state.phC_gf);
@@ -280,6 +229,7 @@ TEST_CASE("Cathode Potential") {
 
 
         }
+
 /*
         // double VCell = 0.0;
 
