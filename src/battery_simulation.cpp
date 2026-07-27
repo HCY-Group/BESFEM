@@ -37,10 +37,6 @@ int main(int argc, char *argv[]) {
     
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // bool half_mode     = (cfg.mode == sim::CellMode::HALF);
-    // bool half_is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
-
-
         // ============================================================================
         // ===============================  START SIMULATION  =========================
         // ============================================================================
@@ -513,13 +509,8 @@ int main(int argc, char *argv[]) {
 
             while (true)
             {
-                // Full-cell voltage:
-                //
-                //     VCell = cathode collector potential
-                //           - anode collector potential
 
-                VCell =
-                    state.cathode_potential->GetBoundaryVoltage() - state.anode_potential->GetBoundaryVoltage();
+                VCell = state.cathode_potential->GetBoundaryVoltage() - state.anode_potential->GetBoundaryVoltage();
 
                 // ========================================================================
                 // =========================  STOP CONDITIONS  =============================
