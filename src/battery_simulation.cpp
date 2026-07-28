@@ -438,13 +438,13 @@ int main(int argc, char *argv[]) {
 
                     }
 
-                    if (t % 10000 == 0)
-                    {
-                        std::ostringstream rxn_path;
-                        rxn_path << outdir << "/Rxn_" << t << ".gf";
+                    // if (t % 10000 == 0)
+                    // {
+                    //     std::ostringstream rxn_path;
+                    //     rxn_path << outdir << "/Rxn_" << t << ".gf";
 
-                        state.Rxn_gf->SaveAsOne(rxn_path.str().c_str());
-                    }
+                    //     state.Rxn_gf->SaveAsOne(rxn_path.str().c_str());
+                    // }
                     
                 }
 
@@ -896,16 +896,16 @@ int main(int argc, char *argv[]) {
                 Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_output, domain_parameters.psC, *domain_parameters.psiC, state.cathode_out, "C", 1000);
                 Utils::SaveCombinedElectrodeSnapshot(t, outdir, geometry, anode_cn_output, domain_parameters.psA, cathode_cn_output, domain_parameters.psC, 1000);
 
-                if (t % 1000 == 0)
-                {
-                    std::ostringstream rxnA_path;
-                    rxnA_path << outdir << "/RxnA_"  << t << ".gf";
-                    state.RxnA_gf->SaveAsOne(rxnA_path.str().c_str());
+                // if (t % 1000 == 0)
+                // {
+                //     std::ostringstream rxnA_path;
+                //     rxnA_path << outdir << "/RxnA_"  << t << ".gf";
+                //     state.RxnA_gf->SaveAsOne(rxnA_path.str().c_str());
 
-                    std::ostringstream rxnC_path;
-                    rxnC_path << outdir << "/RxnC_" << t << ".gf"; 
-                    state.RxnC_gf->SaveAsOne(rxnC_path.str().c_str());
-                }
+                //     std::ostringstream rxnC_path;
+                //     rxnC_path << outdir << "/RxnC_" << t << ".gf"; 
+                //     state.RxnC_gf->SaveAsOne(rxnC_path.str().c_str());
+                // }
 
                 ++t;
             }
