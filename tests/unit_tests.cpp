@@ -2,6 +2,8 @@
 // compile with make test
 // run with: ./unit_tests
 
+// Uses Catch2 (version 2.13.10)
+
 // Benchmark tests implemented:
 // -ElectrolytePotential::UpdatePotential
 // -ElectrodePotential::UpdatePotential
@@ -18,7 +20,7 @@
 // -do the domain parameters and interfaces make sense
 // -should do some 3d input files
 // -should check if tests work in parallel with multiple cpus or gpus
-
+// -should check if AMR works
 
 #include "mfem.hpp"
 #include "mpi.h"
@@ -35,13 +37,13 @@
 #include <vector>
 
 
-TEST_CASE("Domain Parameters and Interfaces") {
+TEST_CASE("Domain Parameters and Interfaces", "[psi]") {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    {
 
     auto config_file = GENERATE("../tests/test_run_config_cathode.txt",
-                                "../tests/test_run_config_anode.txt");
+                                "../tests/test_run_config_anode.txt",
+                                "../tests/test_run_config_cathode_multipart.txt");
     SimulationConfig cfg = SimConfigFromFileName(config_file);
     ValidateConfig(cfg, 0, nullptr);
 
@@ -62,21 +64,54 @@ TEST_CASE("Domain Parameters and Interfaces") {
     Domain_Parameters domain_parameters(geometry, cfg);
     domain_parameters.SetupDomainParameters();
 
-    int np;
-    if (cfg.half_electrode == sim::Electrode::ANODE){
-        np = static_cast<int>(state.anode_particles.size());
-    } else {
-        np = static_cast<int>(state.cathode_particles.size());
-    }
+    int np = domain_parameters.ps.size();
 
     mfem::ParGridFunction diff(*domain_parameters.psi);
    
-    // sum of particles should be psi
-        // sum(ps[k]) = psi
-    // sum of electrolyte-particle interfaces should be AvE: 
-        // sum(AvEs[k]) = AvE?
+    // sum of particle order parameters should be solid phase
+    // sum(ps[k]) = psi
+    diff = 0.0;
+    for (int k=0; k<np; k++) {
+        diff += *domain_parameters.ps[k];
+        std::cout << "max diff: " << diff.Max() << std::endl;
+    }
+    diff -= *domain_parameters.psi;
+    diff.SaveAsOne("psi_diff");
+    CHECK( diff.Norml2() < 1.0e-3 );
+
     // difference of particle interfaces and particle-particle interfaces should be bulk solid interface:
         // AvPs[k]-AvP_Pairs[i][k] = AvP?
+    diff = 0.0;
+    domain_parameters.AvP->SaveAsOne("AvP");
+    for (int k=0; k<np; k++) {
+        string AvEs_name = "AvEs" + std::to_string(k);
+        string AvPs_name = "AvPs" + std::to_string(k);
+        domain_parameters.AvEs[k]->SaveAsOne(AvEs_name.c_str());
+        domain_parameters.AvPs[k]->SaveAsOne(AvPs_name.c_str());
+        diff += *domain_parameters.AvPs[k];
+        std::cout << "max diff: " << diff.Max() << std::endl;
+    }
+    diff.SaveAsOne("avps_sum");
+    diff -= *domain_parameters.AvP;
+    diff.SaveAsOne("avp_diff");
+    CHECK( diff.Norml2() < 1.0e-3 );
+ 
+    // sum of electrolyte-particle interfaces should be AvE: 
+        // sum(AvEs[k]) = AvE
+    diff = 0.0;
+    domain_parameters.AvE->SaveAsOne("AvE");
+    for (int k=0; k<np; k++) {
+        string AvEs_name = "AvEs" + std::to_string(k);
+        string AvPs_name = "AvPs" + std::to_string(k);
+        domain_parameters.AvEs[k]->SaveAsOne(AvEs_name.c_str());
+        domain_parameters.AvPs[k]->SaveAsOne(AvPs_name.c_str());
+        diff += *domain_parameters.AvEs[k];
+        std::cout << "max diff: " << diff.Max() << std::endl;
+    }
+    diff.SaveAsOne("aves_sum");
+    diff -= *domain_parameters.AvE;
+    diff.SaveAsOne("ave_diff");
+    CHECK( diff.Norml2() < 1.0e-3 );
 }
 
 
@@ -84,7 +119,7 @@ TEST_CASE("Domain Parameters and Interfaces") {
 
 
 
-TEST_CASE("UpdatePotential") {
+TEST_CASE("UpdatePotential", "[phi]") {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     {
