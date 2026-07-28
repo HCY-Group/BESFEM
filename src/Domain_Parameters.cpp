@@ -354,11 +354,14 @@ void Domain_Parameters::InterpolateDomainParameters() {
     };
 
     auto BuildElectrolyteInterface = [&](mfem::ParGridFunction &out,
-                                const mfem::ParGridFunction &pse_in,
+                                const mfem::ParGridFunction &AvE_in,
                                 const mfem::ParGridFunction &AvPk)
     {
-        out = pse_in;
+        out = AvE_in;
         out *= AvPk;
+        for (int i=0; i<out.Size(); i++){
+            out(i) = std::sqrt( out(i) );
+        }
     };
 
     
@@ -429,7 +432,7 @@ void Domain_Parameters::InterpolateDomainParameters() {
     // Building AvEs 
     for (int k = 0; k < (int)ps.size(); ++k)
     {
-        BuildElectrolyteInterface(*AvEs[k], *pse, *AvPs[k]);
+        BuildElectrolyteInterface(*AvEs[k], *AvE, *AvPs[k]);
     }
 
     // Building denominator for weights
