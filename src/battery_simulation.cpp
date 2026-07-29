@@ -838,35 +838,35 @@ int main(int argc, char *argv[]) {
                         << ", XfrC_avg = " << XfrC_avg
                         << ", Anode current = " << global_current_A
                         << ", Cathode current = " << global_current_C
-                        << ", Anode target = " << total_target_A
-                        << ", Cathode target = " << total_target_C
+                        << ", Anode target = " << domain_parameters.gTrgI
+                        << ", Cathode target = " << domain_parameters.gTrgI
                         << ", VCell = " << VCell
                         << ", BvA = " << state.anode_potential->GetBoundaryVoltage()
                         << ", BvC = " << state.cathode_potential->GetBoundaryVoltage()
                         << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage()
-                        << ", Ce_min = " << state.CnE_gf->Min()
-                        << ", Ce_max = " << state.CnE_gf->Max()
+                        // << ", Ce_min = " << state.CnE_gf->Min()
+                        // << ", Ce_max = " << state.CnE_gf->Max()
                         << std::endl;
 
                     for (int j = 0; j < npA; ++j)
                     {
                         std::cout << "    Anode particle " << j
-                            << ": current = " << anode_currents[j]
-                            << ", target = " << domain_parameters.gTrgPsA[j]
+                            // << ": current = " << anode_currents[j]
+                            // << ", target = " << domain_parameters.gTrgPsA[j]
                             << ", Xfr = " << state.anode_particles[j].concentration->GetLithiation()
-                            << ", Cmin = " << state.anode_particles[j].Cn_gf->Min()
-                            << ", Cmax = " << state.anode_particles[j].Cn_gf->Max()
+                            // << ", Cmin = " << state.anode_particles[j].Cn_gf->Min()
+                            // << ", Cmax = " << state.anode_particles[j].Cn_gf->Max()
                             << std::endl;
                     }
 
                     for (int j = 0; j < npC; ++j)
                     {
                         std::cout << "    Cathode particle " << j
-                            << ": current = " << cathode_currents[j]
-                            << ", target = " << domain_parameters.gTrgPsC[j]
+                            // << ": current = " << cathode_currents[j]
+                            // << ", target = " << domain_parameters.gTrgPsC[j]
                             << ", Xfr = " << state.cathode_particles[j].concentration->GetLithiation()
-                            << ", Cmin = " << state.cathode_particles[j].Cn_gf->Min()
-                            << ", Cmax = " << state.cathode_particles[j].Cn_gf->Max()
+                            // << ", Cmin = " << state.cathode_particles[j].Cn_gf->Min()
+                            // << ", Cmax = " << state.cathode_particles[j].Cn_gf->Max()
                             << std::endl;
                     }
                 }
