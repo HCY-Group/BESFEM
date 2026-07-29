@@ -36,7 +36,13 @@ struct SimulationConfig
     // -------------------------------------------------------------------------
 
     const char *config_file = "../inputs/run_config.txt"; ///< Simulation configuration file.
-    const char *mesh_file   = "../inputs/colored_labels_labels.tif"; ///< Mesh or voxelized geometry file.
+
+    // Half-cell geometry.
+    const char *mesh_file = nullptr;
+
+    // Full-cell geometries.
+    const char *anode_mesh_file = nullptr;
+    const char *cathode_mesh_file = nullptr;
     
     // -------------------------------------------------------------------------
     // Discretization
@@ -82,6 +88,23 @@ struct SimulationConfig
     sim::StopMode stop_mode = sim::StopMode::STEPS; ///< Simulation stopping condition (by steps or voltage).
     double VCut = -1.0; ///< Voltage cutoff for stopping the simulation (V).
     double amr_levels = 0; ///< Number of AMR levels to apply near phase interfaces.
+
+    // -------------------------------------------------------------------------
+    // AMR parameters & geometry cropping
+    // -------------------------------------------------------------------------
+
+    // Initial structured-grid coarsening factor.
+    // 1 means no coarsening, 2 keeps every second TIFF node, etc.
+    int coarsen_factor = 1; ///< Initial structured-grid coarsening factor.
+
+    int row_begin = -1; ///< Beginning row for geometry cropping.
+    int row_end = -1;   ///< Ending row for geometry cropping.
+    int column_begin = -1; ///< Beginning column for geometry cropping.
+    int column_end = -1;   ///< Ending column for geometry cropping.
+
+    // Optional for future 3D use.
+    int depth_begin = 0; ///< Beginning depth for geometry cropping.
+    int depth_end = 1;   ///< Ending depth for geometry cropping.
 
 };
 

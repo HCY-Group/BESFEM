@@ -1,0 +1,5 @@
+<map id="ElectrodeDiffusion" name="ElectrodeDiffusion">
+<area shape="rect" id="Node000001" title="Solves solid&#45;state lithium diffusion within electrode particles." alt="" coords="7,81,148,109"/>
+<area shape="rect" id="Node000002" href="$classConcentrationBase.html" title="Abstract base class for BESFEM concentration solvers." alt="" coords="5,5,150,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="80,48,80,81,75,81,75,48"/>
+</map>

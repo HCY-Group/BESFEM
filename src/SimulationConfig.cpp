@@ -196,6 +196,24 @@ static void ApplyConfigFile(SimulationConfig& cfg)
             strdup(GetValue(data, "mesh_file").c_str());
     }
 
+    if (HasKey(data, "anode_mesh_file"))
+    {
+        cfg.anode_mesh_file =
+            strdup(
+                GetValue(
+                    data,
+                    "anode_mesh_file").c_str());
+    }
+
+    if (HasKey(data, "cathode_mesh_file"))
+    {
+        cfg.cathode_mesh_file =
+            strdup(
+                GetValue(
+                    data,
+                    "cathode_mesh_file").c_str());
+    }
+
     if (HasKey(data, "num_steps"))
         cfg.num_timesteps = std::stoi(GetValue(data, "num_steps"));
 
@@ -249,6 +267,27 @@ static void ApplyConfigFile(SimulationConfig& cfg)
 
     if (HasKey(data, "amr_levels"))
         cfg.amr_levels = std::stoi(GetValue(data, "amr_levels"));
+
+    if (HasKey(data, "coarsen_factor"))
+        cfg.coarsen_factor = std::stoi(GetValue(data, "coarsen_factor"));
+
+    cfg.row_begin =
+        std::stoi(GetValue(data, "row_begin"));
+
+    cfg.row_end =
+        std::stoi(GetValue(data, "row_end"));
+
+    cfg.column_begin =
+        std::stoi(GetValue(data, "column_begin"));
+
+    cfg.column_end =
+        std::stoi(GetValue(data, "column_end"));
+
+    if (HasKey(data, "depth_begin"))
+        cfg.depth_begin = std::stoi(GetValue(data, "depth_begin"));
+
+    if (HasKey(data, "depth_end"))
+        cfg.depth_end = std::stoi(GetValue(data, "depth_end"));
 
         
 }
@@ -360,14 +399,20 @@ static void CheckCathodeInitialBoundaryFromOCV(const SimulationConfig& cfg)
 
         double expected_ocv = MaterialProperties::OCV(material, x);
 
-        if (std::abs(cfg.init_BvC - expected_ocv) > tolerance)
+        double init_cathode_ocv = cfg.init_BvC - cfg.init_BvE;
+
+        if (std::abs(init_cathode_ocv - expected_ocv) > tolerance)
         {
             std::stringstream ss;
-            ss << "init_BvC = " << cfg.init_BvC
-               << " is far from the OCV curve value for cathode particle "
+            ss << "Initial cathode potential difference is inconsistent with "
+                  "the OCV curve for cathode particle "
                << i << ". For x = " << x
-               << ", suggested init_BvC is about "
-               << expected_ocv << ".";
+               << ", expected init_BvC - init_BvE to be about "
+               << expected_ocv
+               << ", but got "
+               << init_cathode_ocv
+               << ". Suggested init_BvC is about "
+               << cfg.init_BvE + expected_ocv << ".";
 
             mfem::mfem_error(ss.str().c_str());
         }
@@ -384,16 +429,28 @@ static void CheckAnodeInitialBoundaryFromOCV(const SimulationConfig& cfg)
 
         double expected_ocv = MaterialProperties::OCV(material, x);
 
-        if (std::abs(cfg.init_BvA - expected_ocv) > tolerance)
-        {
-            std::stringstream ss;
-            ss << "init_BvA = " << cfg.init_BvA
-               << " is far from the OCV curve value for anode particle "
-               << i << ". For x = " << x
-               << ", suggested init_BvA is about "
-               << expected_ocv << ".";
+        double initial_anode_ocv = cfg.init_BvA - cfg.init_BvE;
 
-            mfem::mfem_error(ss.str().c_str());
+        bool match_pos = std::abs(initial_anode_ocv - expected_ocv) <= tolerance;
+        bool match_neg = std::abs(initial_anode_ocv + expected_ocv) <= tolerance;
+
+        if (!match_pos && !match_neg)
+        {
+            double suggested_pos_BvA = cfg.init_BvE + expected_ocv;
+            double suggested_neg_BvA = cfg.init_BvE - expected_ocv;
+            std::stringstream ss;
+            ss << "Initial anode potential difference is inconsistent with "
+              "the OCV curve for anode particle "
+            << i << ".\n"
+            << "For x = " << x
+            << ", expected init_BvA - init_BvE to be about +"
+            << expected_ocv << " or -" << expected_ocv
+            << ", but got " << initial_anode_ocv << ".\n"
+            << "Suggested init_BvA values are about "
+            << suggested_pos_BvA
+            << " or "
+            << suggested_neg_BvA
+            << ".";
         }
     }
 }
@@ -419,18 +476,32 @@ static void CheckParticleStoichiometry(
 
 void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
 {
-    if (cfg.mode != sim::CellMode::HALF)
-    {
-        mfem::mfem_error(
-            "Only HALF-CATHODE mode is currently implemented.");
-    }
     
     const bool cathode = cfg.half_electrode == sim::Electrode::CATHODE;
 
     
+    if (cfg.mode == sim::CellMode::HALF)
+    {
+        if (!cfg.mesh_file)
+        {
+            mfem::mfem_error(
+                "HALF mode requires mesh_file.");
+        }
+    }
+    else if (cfg.mode == sim::CellMode::FULL)
+    {
+        if (!cfg.anode_mesh_file)
+        {
+            mfem::mfem_error(
+                "FULL mode requires anode_mesh_file.");
+        }
 
-    if (!cfg.mesh_file)
-        mfem::mfem_error("mesh_file cannot be empty.");
+        if (!cfg.cathode_mesh_file)
+        {
+            mfem::mfem_error(
+                "FULL mode requires cathode_mesh_file.");
+        }
+    }
 
     if (cfg.stop_mode == sim::StopMode::STEPS)
     {
@@ -447,6 +518,92 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
             mfem::mfem_error(
                 "stop_mode=voltage requires VCut > 0.");
         }
+    }
+
+    if (cfg.amr_levels < 0)
+    {
+        mfem::mfem_error(
+            "amr_levels must be greater than or equal to 0.");
+    }
+
+    if (cfg.coarsen_factor < 1)
+    {
+        mfem::mfem_error(
+            "coarsen_factor must be an integer greater than or equal to 1.");
+    }
+
+    // Coarsening is only permitted when AMR is enabled.
+    if (cfg.amr_levels == 0 && cfg.coarsen_factor != 1)
+    {
+        mfem::mfem_error(
+            "coarsen_factor must equal 1 when amr_levels = 0. "
+            "Initial mesh coarsening is only allowed when AMR is enabled.");
+    }
+
+    // ------------------------------------------------------------
+    // TIFF cropping
+    //
+    // For each direction:
+    //   -1, -1  = use the entire TIFF extent
+    //   >=0     = use the specified [begin, end) crop
+    // ------------------------------------------------------------
+
+    const bool use_all_rows =
+        cfg.row_begin == -1 &&
+        cfg.row_end == -1;
+
+    const bool crop_rows =
+        cfg.row_begin >= 0 &&
+        cfg.row_end >= 0;
+
+    const bool use_all_columns =
+        cfg.column_begin == -1 &&
+        cfg.column_end == -1;
+
+    const bool crop_columns =
+        cfg.column_begin >= 0 &&
+        cfg.column_end >= 0;
+
+    // Rows must either both be -1 or both be nonnegative.
+    if (!use_all_rows && !crop_rows)
+    {
+        mfem::mfem_error(
+            "row_begin and row_end must either both be -1 "
+            "to use all rows, or both be nonnegative crop bounds.");
+    }
+
+    // Columns must either both be -1 or both be nonnegative.
+    if (!use_all_columns && !crop_columns)
+    {
+        mfem::mfem_error(
+            "column_begin and column_end must either both be -1 "
+            "to use all columns, or both be nonnegative crop bounds.");
+    }
+
+    // Check ordering only when an actual crop was requested.
+    if (crop_rows && cfg.row_end <= cfg.row_begin)
+    {
+        mfem::mfem_error(
+            "Invalid row crop: row_end must be greater than row_begin.");
+    }
+
+    if (crop_columns && cfg.column_end <= cfg.column_begin)
+    {
+        mfem::mfem_error(
+            "Invalid column crop: column_end must be greater than column_begin.");
+    }
+
+    // Require at least two selected points in a cropped direction.
+    if (crop_rows && cfg.row_end - cfg.row_begin < 2)
+    {
+        mfem::mfem_error(
+            "The row crop must contain at least two TIFF points.");
+    }
+
+    if (crop_columns && cfg.column_end - cfg.column_begin < 2)
+    {
+        mfem::mfem_error(
+            "The column crop must contain at least two TIFF points.");
     }
 
     if (cfg.init_BvE == -9999.0)
@@ -490,16 +647,71 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
     if (cfg.mode == sim::CellMode::FULL)
     {
         if (cfg.cathode_materials.empty())
-            mfem::mfem_error("cathode_materials cannot be empty, please list these in your config file.");
+        {
+            mfem::mfem_error("FULL mode requires cathode_materials.");
+        }
 
         if (cfg.anode_materials.empty())
-            mfem::mfem_error("anode_materials cannot be empty, please list these in your config file.");
+        {
+            mfem::mfem_error("FULL mode requires anode_materials.");
+        }
 
         if (cfg.init_cathode_particles.empty())
-            mfem::mfem_error("init_cathode_particles cannot be empty, please list these in your config file.");
+        {
+            mfem::mfem_error("FULL mode requires init_cathode_particles.");
+        }
 
         if (cfg.init_anode_particles.empty())
-            mfem::mfem_error("init_anode_particles cannot be empty, please list these in your config file.");
+        {
+            mfem::mfem_error("FULL mode requires init_anode_particles.");
+        }
+
+        if (cfg.cathode_materials.size() != cfg.init_cathode_particles.size())
+        {
+            mfem::mfem_error("cathode_materials and "
+                "init_cathode_particles must have "
+                "the same number of entries.");
+        }
+
+        if (cfg.anode_materials.size() != cfg.init_anode_particles.size())
+        {
+            mfem::mfem_error("anode_materials and "
+                "init_anode_particles must have "
+                "the same number of entries.");
+        }
+
+        if (cfg.init_BvA == -9999.0)
+        {
+            mfem::mfem_error("FULL mode requires init_BvA.");
+        }
+
+        if (cfg.init_BvC == -9999.0)
+        {
+            mfem::mfem_error("FULL mode requires init_BvC.");
+        }
+
+        for (const auto material : cfg.anode_materials)
+        {
+            if (!IsAnodeMaterial(material))
+            {
+                mfem::mfem_error("Anode materials must be Graphite.");
+            }
+        }
+
+        for (const auto material : cfg.cathode_materials)
+        {
+            if (!IsCathodeMaterial(material))
+            {
+                mfem::mfem_error("Cathode materials must be LFP or NMC.");
+            }
+        }
+
+        CheckParticleStoichiometry(cfg.init_anode_particles, "init_anode_particles");
+
+        CheckParticleStoichiometry(cfg.init_cathode_particles, "init_cathode_particles");
+
+        CheckAnodeInitialBoundaryFromOCV(cfg);
+        CheckCathodeInitialBoundaryFromOCV(cfg);
     }
     else 
     {

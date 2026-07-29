@@ -1,6 +1,6 @@
 #!/bin/bash --login
 # Job name: 
-#SBATCH --job-name=slurm_besfem-config-tiff-1.0-2M
+#SBATCH --job-name=slurm_besfem-AMR-convergence
 
 # Number of nodes
 #SBATCH --nodes=2
@@ -17,7 +17,7 @@
 # Wall time
 # Format: "minutes", "hours:minutes:seconds", 
 # "days-hours", or "days-hours:minutes"
-#SBATCH --time=03:00:00
+#SBATCH --time=01:00:00
 
 # Mail type
 # e.g., which events trigger email notifications
@@ -38,7 +38,7 @@ module load MFEM
 echo "Hosts:"; scontrol show hostnames
 echo "Ranks/node: $SLURM_NTASKS_PER_NODE  Mem-per-rank: $SLURM_MEM_PER_CPU MB"
 
-CONFIG=../inputs/run_config.txt
+CONFIG=../inputs/LFP_run_config.txt
 
 srun --mpi=pmix \
      --cpu-bind=cores \

@@ -1,0 +1,19 @@
+var searchData=
+[
+  ['l_5fw_0',['L_w',['../classElectrolyteDiffusion.html#a9e6aa9becedb82c500678e0a16403260',1,'ElectrolyteDiffusion']]],
+  ['label_1',['label',['../structAnodeParticleState.html#a1d73b9abe65b9848f4034d0b2ab7e086',1,'AnodeParticleState::label'],['../structCathodeParticleState.html#a3fde2b442f9b2fa3edcf8151d3c848ad',1,'CathodeParticleState::label']]],
+  ['lfp_2',['LFP',['../namespacesim.html#a2d34bdd68cc4739cb0152bd5411e227ea56170ff302c213a8572eef158d2a34c3',1,'sim']]],
+  ['lfp_5fchpvalue_3',['LFP_ChpValue',['../namespaceMaterialProperties.html#ac6b12da1a81f5f54fe85e47b00b50a0b',1,'MaterialProperties']]],
+  ['lfp_5fdiff_4',['LFP_diff',['../namespaceMaterialProperties.html#a8eeb0bad8ae26dcb8a56e8b41b667276',1,'MaterialProperties']]],
+  ['lfp_5fdmu_5fdc_5',['LFP_dmu_dc',['../namespaceMaterialProperties.html#a258f593d48fa7d5aa9ca74cebce29536',1,'MaterialProperties']]],
+  ['lfp_5fi0_6',['LFP_i0',['../namespaceMaterialProperties.html#a5a9e9b341989cf8927248a13297c5f51',1,'MaterialProperties']]],
+  ['lfp_5fmob_7',['LFP_Mob',['../namespaceMaterialProperties.html#a99789fc315f9202570a6f4b9a6e6be7d',1,'MaterialProperties']]],
+  ['lfp_5fmu_8',['LFP_mu',['../namespaceMaterialProperties.html#a0c44e44f7a641d282bc1b3a3dc5d05c3',1,'MaterialProperties']]],
+  ['lfp_5focv_9',['LFP_OCV',['../namespaceMaterialProperties.html#aea697a1fbdd943eb55e28b6c77253e3a',1,'MaterialProperties']]],
+  ['lfpconductivity_10',['LFPConductivity',['../namespaceMaterialProperties.html#acc9e95810cd71c123128b060016c5de5',1,'MaterialProperties']]],
+  ['local_5fcurrent_11',['local_current',['../classReaction.html#adc7cc7ccc2c7c7c28104a25025f9a9fb',1,'Reaction']]],
+  ['local_5ffespace_12',['local_fespace',['../classFEMOperators.html#a1facd95c734b6087b6164b79c017416a',1,'FEMOperators']]],
+  ['lp1_13',['Lp1',['../classElectrodeCahnHilliard.html#a4d0f60c3ad930c4c7b89b6a6064cc2e6',1,'ElectrodeCahnHilliard']]],
+  ['lp2_14',['Lp2',['../classElectrodeCahnHilliard.html#a04eb9f0cd18e912b92164c838fb8460a',1,'ElectrodeCahnHilliard']]],
+  ['lpce_15',['LpCe',['../classElectrolytePotential.html#aa35ea270ba8d2978a86cc5cb4a582009',1,'ElectrolytePotential']]]
+];

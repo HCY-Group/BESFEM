@@ -37,6 +37,23 @@ private:
     bool tiffDataLoaded = false; ///< Whether TIFF voxel data has been loaded.
     const SimulationConfig& cfg;
 
+    void HalfCellAMR();
+    void FullCellAMR();
+
+    void UpdateSpacesAfterAMR();
+
+    void UpdateMeshData();
+
+    void AllocateHalfCellGeometryFields();
+    void BuildHalfCellGeometryFields();
+
+    void AllocateFullCellGeometryFields();
+    void BuildFullCellGeometryFields();
+
+    void PrintAMRMeshInfo(int level) const;
+
+    void ValidateCoarseningDimensions() const;
+
 protected:
     mfem::Vector elementVolumes;     ///< Per-element volumes (global or parallel).
     mfem::Array<int> boundaryMarkers; ///< Boundary attribute markers.
@@ -75,16 +92,38 @@ public:
      */
     void InitializeMesh(const char* meshFile, MPI_Comm comm, int order);
 
-    // /**
-    //  * @brief Initialize mesh and distance fields for a full-cell simulation.
-    //  *
-    //  * Loads separate anode and cathode distance functions.
-    //  *
-    //  * @param meshFile Path to mesh file.
-    //  * @param comm MPI communicator.
-    //  * @param order Polynomial order for FE space.
-    //  */
-    // void InitializeMesh(const char* meshFile, MPI_Comm comm, int order);
+
+    /**
+     * @brief Initialize mesh and distance fields for a full-cell simulation.
+     *
+     * Loads separate anode and cathode distance functions.
+     *
+     * @param AnodeMeshFile Path to anode mesh file.
+     * @param CathodeMeshFile Path to cathode mesh file.
+     * @param comm MPI communicator.
+     * @param order Polynomial order for FEspace.
+     */
+    void InitializeMesh(const char* AnodeMeshFile, const char* CathodeMeshFile, MPI_Comm comm, int order);
+
+    /*
+     * @brief Merge anode and cathode meshes.
+     *
+     * @param anode_mesh_file Path to anode mesh file.
+     * @param cathode_mesh_file Path to cathode mesh file.
+     * @return Merged mesh.
+     */
+    std::vector<std::vector<std::vector<int>>> MergeMeshes(const char *AnodeMeshFile, const char *CathodeMeshFile);
+
+    void AssignGlobalValues();
+    void MapGlobalToLocal();
+    void FullCellParticleLabels();
+
+
+    /**
+     * @brief Initialize the global mesh from voxel data.
+     * @param voxelData vector of voxel data.
+     */
+    void InitializeGlobalMesh(const std::vector<std::vector<std::vector<int>>> &voxelData);
 
     /**
      * @brief Load and construct global serial MFEM mesh.
@@ -140,26 +179,6 @@ public:
     void SetupParFiniteElementSpace(int order);
 
     // -------------------------------------------------------------------------
-    // Global → parallel mapping and distance functions
-    // -------------------------------------------------------------------------
-
-    /**
-     * @brief Assign global fields: distance functions, voxel mask, etc.
-     *
-     * Loads, projects, and assigns global fields onto the global mesh.
-     *
-     * @param mesh_file Mesh path.
-     */
-    void AssignGlobalValues(const char* mesh_file);
-
-    /**
-     * @brief Transfer global mesh quantities to parallel fields.
-     *
-     * @param meshFile Mesh file for consistency checking.
-     */
-    void MapGlobalToLocal(const char* meshFile);
-
-    // -------------------------------------------------------------------------
     // Boundary conditions and pinning
     // -------------------------------------------------------------------------
 
@@ -184,8 +203,6 @@ public:
      * @param fespace FE space in which to anchor a single true DOF.
      */
     void SetupPinnedDOF(mfem::ParFiniteElementSpace& fespace);
-
-    
     
     /**
      * @brief Save TIFF voxel data to a series of PGM files.
@@ -201,12 +218,15 @@ public:
      * @param dist Output unsigned distance function.
      * @param filt_gf Output filtered level set function.
      * @param mode 0 = psi (keep 1s to right), 1 = pse (keep 0s to any boundary)
+     * @param cell_mode Cell mode (HALF or FULL).
+     * @param electrode Electrode type (ANODE, CATHODE, BOTH).
      */
     void ComputePDEFilter(
-        mfem::ParGridFunction &dist,            // output unsigned distance
-        mfem::ParGridFunction &filt_gf,        // output filtered level set
-        int mode                           // 0 = psi (keep 1s to right), 1 = pse (keep 0s to any boundary)
-    );
+        mfem::ParGridFunction &dist,
+        mfem::ParGridFunction &filt_gf,
+        int mode,
+        sim::CellMode cell_mode,
+        sim::Electrode electrode);
 
     /**
      * @brief Compute a filtered distance field for a specific voxel label.
@@ -220,13 +240,16 @@ public:
      * @param target_label Voxel label to isolate.
      * @param keep_boundary_connected Whether to keep only the boundary-connected region.
      * @param seed_side_or_face Optional boundary side/face used as the seed region.
+     * @param cell_mode The mode of the cell (e.g., 2D or 3D).
+     * @param electrode The electrode configuration.
      */
     void ComputePDEFilterLabel(mfem::ParGridFunction &dist,
-                           mfem::ParGridFunction &filt_gf,
-                           int target_label,
-                           bool keep_boundary_connected,
-                           int seed_side_or_face = -1
-    );
+            mfem::ParGridFunction &filt_gf,
+            int target_label,
+            bool keep_boundary_connected,
+            int seed_side_or_face,
+            sim::CellMode cell_mode,
+            sim::Electrode electrode);
 
     /**
      * @brief Return the unique particle/material labels found in the TIFF data.
@@ -318,6 +341,15 @@ public:
     std::unique_ptr<mfem::ParGridFunction> distMaskSigned; ///< Optional signed distance-to-mask field.
     std::unique_ptr<mfem::ParGridFunction> MaskFilter; ///< Filtered solid-mask level-set field.
     std::unique_ptr<mfem::ParGridFunction> MaskFilterPse; ///< Filtered electrolyte-mask level-set field.
+
+    std::unique_ptr<mfem::ParGridFunction> MaskFilterAnode; ///< Filtered anode mask field.
+    std::unique_ptr<mfem::ParGridFunction> MaskFilterCathode; ///< Filtered cathode mask field.
+
+    std::vector<int> anode_particle_labels; ///< Unique anode particle labels.
+    std::vector<int> cathode_particle_labels; ///< Unique cathode particle labels.
+
+    std::vector<std::unique_ptr<mfem::ParGridFunction>>MaskFiltersAnode; ///< Per-label filtered anode mask fields.
+    std::vector<std::unique_ptr<mfem::ParGridFunction>>MaskFiltersCathode; ///< Per-label filtered cathode mask fields.
 
     std::vector<int> particle_labels; ///< Unique particle/material labels from the TIFF geometry.
     std::vector<std::unique_ptr<mfem::ParGridFunction>> MaskFilters; ///< Per-label filtered mask fields.

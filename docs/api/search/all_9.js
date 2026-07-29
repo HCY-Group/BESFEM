@@ -1,0 +1,24 @@
+var searchData=
+[
+  ['k_0',['K',['../classFEMOperators.html#ac770adbe76677804113796c3afe8fe3d',1,'FEMOperators']]],
+  ['kap_1',['kap',['../classElectrodePotential.html#adb2f4efb373eebc8faeaaa116d38ea0e',1,'ElectrodePotential']]],
+  ['kba_2',['KbA',['../classReaction.html#a878bd5f7e9a7e8c97ccdbba137829dec',1,'Reaction']]],
+  ['kbc_3',['KbC',['../classReaction.html#a3f7aec45aa44eedc6c45c8380032b320',1,'Reaction']]],
+  ['kbw_4',['Kbw',['../classReaction.html#a1109fec2c0d474d9b2fc6c88540f03d7',1,'Reaction']]],
+  ['kc2_5',['Kc2',['../classElectrodeDiffusion.html#ad64ddb8f76cdf46c3eb93ec05414d885',1,'ElectrodeDiffusion']]],
+  ['kdm_6',['Kdm',['../classElectrolytePotential.html#ab7a482b51aaee9ba913b0293a0cd2a7a',1,'ElectrolytePotential']]],
+  ['ke2_7',['Ke2',['../classElectrolyteDiffusion.html#a40cc3339e388f916682672d65c4927e3',1,'ElectrolyteDiffusion']]],
+  ['keeponlyconnectedtoboundary_5f2d_8',['KeepOnlyConnectedToBoundary_2D',['../Initialize__Geometry_8cpp.html#acc203b7a1d300ef69ceae5d20f0aacff',1,'Initialize_Geometry.cpp']]],
+  ['keeponlyconnectedtoboundary_5f3d_9',['KeepOnlyConnectedToBoundary_3D',['../Initialize__Geometry_8cpp.html#a8626305623c25e2692534b76786a433d',1,'Initialize_Geometry.cpp']]],
+  ['kfa_10',['KfA',['../classReaction.html#a638a43f2755f708500bec49a07c0ca9c',1,'Reaction']]],
+  ['kfc_11',['KfC',['../classReaction.html#afc1e39edb4dd8bea2639619437de7111',1,'Reaction']]],
+  ['kfw_12',['Kfw',['../classReaction.html#a54d54230a9b94eb014b5c2e800305bfb',1,'Reaction']]],
+  ['kl1_13',['Kl1',['../classElectrolytePotential.html#a24ce19e8fa969cb22262b1d2341e90bb',1,'ElectrolytePotential']]],
+  ['kl2_14',['Kl2',['../classElectrolytePotential.html#acad84d62b56da1ba684a8133eb2516e3',1,'ElectrolytePotential']]],
+  ['kmate_15',['Kmate',['../classElectrolyteDiffusion.html#a2eecaaa0f3c2366bca54eae89d41d821',1,'ElectrolyteDiffusion']]],
+  ['kmatp_16',['Kmatp',['../classElectrodeDiffusion.html#afe8158f681ec4e829cc9274d11a5e51e',1,'ElectrodeDiffusion']]],
+  ['kml_17',['Kml',['../classElectrolytePotential.html#a255c0a35265bc8fea7c758a892533cbd',1,'ElectrolytePotential']]],
+  ['kmp_18',['KmP',['../classElectrodePotential.html#a2f555f7e887e153625fe21680bf5c2e5',1,'ElectrodePotential']]],
+  ['kp2_19',['Kp2',['../classElectrodePotential.html#ab744c70253cb709904884327906af95c',1,'ElectrodePotential']]],
+  ['kpl_20',['kpl',['../classElectrolytePotential.html#a535b88fa5af16024f239f4662410409a',1,'ElectrolytePotential']]]
+];

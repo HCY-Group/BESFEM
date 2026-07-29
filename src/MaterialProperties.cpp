@@ -137,27 +137,29 @@ namespace MaterialProperties
 
     static double LFP_Mob(double c)
     {
-        c = std::min(1.0 - 1.0e-8, std::max(1.0e-8, c));
+        // c = std::min(1.0 - 1.0e-8, std::max(1.0e-8, c));
 
-        const double Mmin = 8.5e-13;
-        const double B    = 5.0e-14;
+        // const double Mmin = 8.5e-13;
+        // const double B    = 5.0e-14;
 
-        const double A1 = 4.5e-12;
-        const double A2 = 4.0e-12;
+        // const double A1 = 4.5e-12;
+        // const double A2 = 4.0e-12;
 
-        const double c1 = 0.07;
-        const double c2 = 0.86;
+        // const double c1 = 0.07;
+        // const double c2 = 0.86;
 
-        const double w1 = 0.04;
-        const double w2 = 0.04;
+        // const double w1 = 0.04;
+        // const double w2 = 0.04;
 
-        const double x1 = (c - c1) / w1;
-        const double x2 = (c - c2) / w2;
+        // const double x1 = (c - c1) / w1;
+        // const double x2 = (c - c2) / w2;
 
-        return Mmin
-            + B * (c - 0.5) * (c - 0.5)
-            + A1 / (1.0 + x1 * x1)
-            + A2 / (1.0 + x2 * x2);
+        // return Mmin
+        //     + B * (c - 0.5) * (c - 0.5)
+        //     + A1 / (1.0 + x1 * x1)
+        //     + A2 / (1.0 + x2 * x2);
+
+        return 1e-13;
     }
 
     double LFP_ChpValue(double c)
