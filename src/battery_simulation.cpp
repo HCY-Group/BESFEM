@@ -87,15 +87,19 @@ int main(int argc, char *argv[]) {
 
         double VCell = 0.0;
         
+        // pointer to base class
+        // initiate before the if/else statement
+        // otherwise it won't survive when the if/else statement is done because of variable scope
         std::shared_ptr<PotentialBase> particle_potential;
         if (cfg.half_electrode == sim::Electrode::ANODE)
         {
-            particle_potential = state.anode_potential;
+            particle_potential = state.anode_potential; // set base class pointer equal to pointer for anode
         }
         else
         {
-            particle_potential = state.cathode_potential;
+            particle_potential = state.cathode_potential;  // set base class pointer equal to pointer for cathode
         }
+        // use base class pointer regardless of anode or cathode
         VCell = particle_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
         
         std::cout << "VCell: " << VCell << std::endl;
