@@ -2,7 +2,7 @@
 // compile with make test
 // run with: ./unit_tests
 
-// Uses Catch2 (version 2.13.10)
+// Uses Catch2 (version 2.13)
 
 // Benchmark tests implemented:
 // -ElectrolytePotential::UpdatePotential
@@ -78,6 +78,49 @@ TEST_CASE("Domain Parameters and Interfaces", "[psi]") {
     diff -= *domain_parameters.psi;
     diff.SaveAsOne("psi_diff");
     CHECK( diff.Norml2() < 1.0e-3 );
+
+    // range of values for psi and ps[k] and pse should be 1e-6 and 1.0
+    CHECK( abs(domain_parameters.psi->Max() - 1.0) < 1.0e-3 );
+    CHECK( abs(domain_parameters.pse->Max() - 1.0) < 1.0e-3 );
+    for (int k=0; k<np; k++) {
+        CHECK( abs(domain_parameters.ps[k]->Max() - 1.0) < 1.0e-3 );
+    }
+    CHECK( domain_parameters.psi->Min() > 0.0 );
+    CHECK( domain_parameters.pse->Min() > 0.0 );
+    for (int k=0; k<np; k++) {
+        CHECK( domain_parameters.psi->Min() > 0.0 );
+    }
+    CHECK( domain_parameters.psi->Min() < 1.0e-3 );
+    CHECK( domain_parameters.pse->Min() < 1.0e-3 );
+    for (int k=0; k<np; k++) {
+        CHECK( domain_parameters.psi->Min() < 1.0e-3 );
+    }
+
+    // magnitude of AvE and AvP and AvEs[k] and AvPs[k] should be approximately the same
+    double diff_flt;
+    diff_flt = domain_parameters.AvP->Max() - domain_parameters.AvE->Max();
+    diff_flt /= domain_parameters.AvP->Max(); //normalize by max(grad(psi))
+    CHECK( diff_flt < 0.05 );
+    for (int k=0; k<np; k++) {
+        diff_flt = domain_parameters.AvP->Max() - domain_parameters.AvPs[k]->Max();
+        diff_flt /= domain_parameters.AvP->Max(); //normalize by max(grad(psi))
+        CHECK( diff_flt < 0.05 );
+        diff_flt = domain_parameters.AvP->Max() - domain_parameters.AvEs[k]->Max();
+        diff_flt /= domain_parameters.AvP->Max(); //normalize by max(grad(psi))
+        CHECK( diff_flt < 0.05 );
+    }
+
+
+    for (int j=0; j<np; j++) {
+        for (int k=j+1; k<np; k++) {
+            string AvP_Pairs_name = "AvP_Pairs" + std::to_string(j) + std::to_string(k);
+            domain_parameters.AvP_Pairs[j][k]->SaveAsOne(AvP_Pairs_name.c_str());
+        }
+    }
+            
+
+
+
 
     // difference of particle interfaces and particle-particle interfaces should be bulk solid interface:
         // AvPs[k]-AvP_Pairs[i][k] = AvP?
