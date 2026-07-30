@@ -344,6 +344,7 @@ void Domain_Parameters::InterpolateDomainParameters() {
         out *= overlap;
         out *= 4.0;
 
+        /*
         for (int vi = 0; vi < out.Size(); ++vi)
         {
             if (out(vi) > 9000.0)
@@ -351,6 +352,7 @@ void Domain_Parameters::InterpolateDomainParameters() {
                 out(vi) = 1.4e4;
             }
         }
+        */
     };
 
     auto BuildElectrolyteInterface = [&](mfem::ParGridFunction &out,
