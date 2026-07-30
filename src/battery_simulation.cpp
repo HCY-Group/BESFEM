@@ -86,11 +86,28 @@ int main(int argc, char *argv[]) {
         InitializeFields(state, geometry, domain_parameters, bc, cfg);
 
         double VCell = 0.0;
+        
+        std::shared_ptr<PotentialBase> particle_potential;
+        if (cfg.half_electrode == sim::Electrode::ANODE)
+        {
+            particle_potential = state.anode_potential;
+        }
+        else
+        {
+            particle_potential = state.cathode_potential;
+        }
+        VCell = particle_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
+        
+        std::cout << "VCell: " << VCell << std::endl;
+
+
+
 
         // ============================================================================
         // ===============================  TIME STEP LOOP  ===========================
         // ============================================================================
 
+/*
         if (cfg.mode == sim::CellMode::HALF)
         {
             
@@ -120,7 +137,6 @@ int main(int argc, char *argv[]) {
                 {
                     break;
                 }
-
             // for (int t = 0; t < cfg.num_timesteps; ++t) {
 
                 if (cfg.half_electrode == sim::Electrode::ANODE)
@@ -480,7 +496,6 @@ int main(int argc, char *argv[]) {
 
                 t++;
             }
-
         } 
         else
         {
@@ -909,7 +924,7 @@ int main(int argc, char *argv[]) {
 
                 ++t;
             }
-        }
+        }*/
 
     }
     
