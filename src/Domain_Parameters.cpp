@@ -329,6 +329,13 @@ void Domain_Parameters::InterpolateDomainParameters() {
                         const mfem::ParGridFunction &AvPa,
                         const mfem::ParGridFunction &AvPb)
     {
+
+        out = AvPa;
+        out *= AvPb;
+        for (int i=0; i<out.Size(); i++){
+            out(i) = std::sqrt( out(i) );
+        } 
+        /*
         out = psa;      // psa
         out *= AvPb;    // psa * AvPb
 
@@ -343,6 +350,7 @@ void Domain_Parameters::InterpolateDomainParameters() {
 
         out *= overlap;
         out *= 4.0;
+        */
 
         /*
         for (int vi = 0; vi < out.Size(); ++vi)
