@@ -16,11 +16,13 @@
 // Other Tests we should do, need to plan how to do them:
 // -TiffReader
 // -Test if "islands" are still in geometry
-// -probably at least one for each source file...
-// -do the domain parameters and interfaces make sense
+// -probably at least one test for each source file...
+// -do the domain parameters and interfaces make sense?
+    // AvP_Pairs? Weights?
 // -should do some 3d input files
 // -should check if tests work in parallel with multiple cpus or gpus
 // -should check if AMR works
+// -maybe do some more simple multi-particle tests?
 
 #include "mfem.hpp"
 #include "mpi.h"
@@ -112,9 +114,13 @@ TEST_CASE("Domain Parameters and Interfaces", "[psi]") {
 
 
     for (int j=0; j<np; j++) {
+        string weight_e_name = "Weight_Es" + std::to_string(j);
+        domain_parameters.WeightEs[j]->SaveAsOne(weight_e_name.c_str());
         for (int k=j+1; k<np; k++) {
             string AvP_Pairs_name = "AvP_Pairs" + std::to_string(j) + std::to_string(k);
             domain_parameters.AvP_Pairs[j][k]->SaveAsOne(AvP_Pairs_name.c_str());
+            string weight_pairs_name = "Weight_Pairs" + std::to_string(j) + std::to_string(k);
+            domain_parameters.WeightPairs[j][k]->SaveAsOne(weight_pairs_name.c_str());
         }
     }
             
