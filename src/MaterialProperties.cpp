@@ -44,6 +44,12 @@ namespace MaterialProperties
         return val;
     }
 
+    static double Silicon_diff(double c)
+    {
+        double val = 1.0e-10;
+        return val;
+    }
+
     // static double LFP_i0(double c)
     // {
     //     double val = 1.2e-5 * std::pow(c, 0.35) * std::pow(1.0 - c, 2.5);
@@ -212,6 +218,19 @@ namespace MaterialProperties
         return GetTableValues(c, Ticks, OCV);
     }
 
+    double Silicon_OCV(double c)
+    {
+        // return (1.095 * c * c) - (8.234e-7 * std::exp(14.31 * c)) + (4.692 * std::exp(-0.5389 * c));
+        // carbon_ocv = (1.12165244 * (1.0 - carbon_x)**1.28022415 * np.exp(-1.76785792 * carbon_x))
+        return 1.12165244 * std::pow(1.0 - c, 1.28022415) * std::exp(-1.76785792 * c);
+    }
+
+    static double Silicon_mu(double c)
+    {
+        double val = -Silicon_OCV(c);
+        return val;
+    }
+
     double OCV(sim::MaterialType material, double c)
     {
         switch (material)
@@ -224,6 +243,9 @@ namespace MaterialProperties
 
             case sim::MaterialType::Graphite:
                 return Graphite_OCV(c);
+
+            case sim::MaterialType::Silicon:
+                return Silicon_OCV(c);
 
             default:
                 mfem::mfem_error("Unknown material in OCV.");
@@ -270,6 +292,9 @@ namespace MaterialProperties
             case sim::MaterialType::Graphite:
                 return Graphite_i0(c);
 
+            case sim::MaterialType::Silicon:
+                return Graphite_i0(c);
+
             default:
                 mfem::mfem_error("Unknown material in ExchangeCurrentDensity.");
                 return 0.0;
@@ -293,6 +318,9 @@ namespace MaterialProperties
 
             case sim::MaterialType::LFP:
                 return LFP_diff(c); // placeholder, constant diffusivity for LFP
+
+            case sim::MaterialType::Silicon:
+                return Silicon_diff(c);
 
             default:
                 mfem::mfem_error("Material does not have a defined diffusivity.");
@@ -380,6 +408,10 @@ namespace MaterialProperties
 
             case sim::MaterialType::LFP:
                 return LFP_mu(c);
+
+            case sim::MaterialType::Silicon:
+                return Silicon_mu(c);
+
             default:
                 mfem::mfem_error("Unknown material in Chemical Potential.");
                 return 0.0;
@@ -389,6 +421,11 @@ namespace MaterialProperties
     static double GraphiteConductivity(double c)
     {
         return 3.3; 
+    }
+
+    static double SiliconConductivity(double c)
+    {
+        return 1.0;
     }
 
     static double NMCConductivity(double c)
@@ -415,6 +452,9 @@ namespace MaterialProperties
             case sim::MaterialType::LFP:
                 return LFPConductivity(c);
 
+            case sim::MaterialType::Silicon:
+                return SiliconConductivity(c);
+
             default:
                 mfem::mfem_error("Unknown material in Conductivity.");
                 return 0.0;
@@ -436,6 +476,10 @@ namespace MaterialProperties
             case sim::MaterialType::LFP:
                 // std::cout << "using LFP density" << std::endl;
                 return 0.02273544498;
+
+            case sim::MaterialType::Silicon:
+            // std::cout << "using Silicon density" << std::endl;
+                return 0.0227;
 
             default:
                 mfem::mfem_error("Unknown material in SiteDensity.");

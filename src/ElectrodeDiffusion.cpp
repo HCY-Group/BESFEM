@@ -47,7 +47,7 @@ void ElectrodeDiffusion::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::Pa
         Rxn *= weight_elec;
         for (const auto &pair : pair_terms)
         {
-            utils.ComputePairFlux(*pair.sum_part, *pair.weight, *pair.grad_psi, *pair.mu_self, *pair.mu_nbr);
+            utils.ComputePairFlux(*pair.sum_part, *pair.weight, *pair.grad_psi, *pair.mu_self, *pair.mu_nbr, rho);
             Rxn += *pair.sum_part;
         }
     }

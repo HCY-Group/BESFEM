@@ -1694,7 +1694,9 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
                 else
                 {
                     const int electrolyteSide = (electrode == Electrode::ANODE) ? 1 : 0;
-                    KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, electrolyteSide);
+                    // KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, electrolyteSide);
+                    KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1);
+
                 }
             }
         }

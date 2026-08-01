@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
                     // ===============================  PRINT STATEMENTS  =========================
                     // ============================================================================
 
-                    if (t % 10000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
                     {
                         std::cout << "timestep: " << t << ", VCell = " << VCell << ", TotalCurrent = " << total_current << ", TotalTarget = " << total_target;
 
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
                         std::cout << std::endl;
                     }
 
-                    if (t % 10000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
                     {
                         double XfrC_avg = 0.0;
                         double total_weight = 0.0;
@@ -391,7 +391,7 @@ int main(int argc, char *argv[]) {
                     *state.phE_gf += dV;
 
 
-                    if (t % 10000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
                     {
                         std::cout << "timestep: " << t << ", VCell = " << VCell << ", TotalCurrent = " << total_current << ", TotalTarget = " << total_target;
 
@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
                         std::cout << std::endl;
                     }
 
-                    if (t % 10000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
                     {
                         double XfrC_avg = 0.0;
                         double total_weight = 0.0;
@@ -461,7 +461,7 @@ int main(int argc, char *argv[]) {
                     // Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters,
                     //     anode_cn_fields, state.anode_out, 10000);
 
-                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, anode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.anode_out, "A", 10000);
+                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, anode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.anode_out, "A", 5000);
                 }
                 else
                 {
@@ -475,7 +475,7 @@ int main(int argc, char *argv[]) {
 
                     // Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters,
                     //     cathode_cn_fields, state.cathode_out, 10000);
-                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.cathode_out, "C", 10000);
+                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.cathode_out, "C", 5000);
                 }
 
                 t++;

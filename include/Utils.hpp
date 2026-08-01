@@ -100,12 +100,13 @@ public:
      * @param grad_psi Pairwise interface/gradient field.
      * @param mu_self Chemical potential of the current particle.
      * @param mu_nbr Chemical potential of the neighboring particle.
+     * @param rho Site density.
      */
     void ComputePairFlux(mfem::ParGridFunction &sum_part,
                          mfem::ParGridFunction &weight,
                          mfem::ParGridFunction &grad_psi,
                          mfem::ParGridFunction &mu_self,
-                         mfem::ParGridFunction &mu_nbr);
+                         mfem::ParGridFunction &mu_nbr, double rho);
 
     /**
      * @brief Compute the global error between two potential fields.

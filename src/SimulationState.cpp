@@ -177,10 +177,14 @@ static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry
                 case sim::MaterialType::Graphite:
                     std::cout << "Graphite";
                     break;
+
+                case sim::MaterialType::Silicon:
+                    std::cout << "Silicon";
+                    break;
                 
                 default:
                 {
-                    mfem::mfem_error("Unsupported anode material chosen. Anode materials supported at this time: graphite.");
+                    mfem::mfem_error("Unsupported anode material chosen. Anode materials supported at this time: graphite, silicon.");
                 }
             }
 
@@ -192,6 +196,12 @@ static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry
             case sim::MaterialType::Graphite:
             {
                 p.concentration = std::make_unique<ElectrodeCahnHilliard>(geometry, domain_parameters, p.material, cfg);
+                break;
+            }
+
+            case sim::MaterialType::Silicon:
+            {
+                p.concentration = std::make_unique<ElectrodeDiffusion>(geometry, domain_parameters, p.material, cfg);
                 break;
             }
 
@@ -218,6 +228,7 @@ static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry
         }
 
         p.concentration->SetupField(*p.Cn_gf, init_cn, *particle_fields[k], particle_totals[k]);
+    
     }
 }
 
@@ -387,7 +398,11 @@ void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Dom
 
             state.CnA_gf_psi = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
 
-            state.anode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::ANODE, sim::MaterialType::Graphite, cfg);
+            // state.anode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::ANODE, sim::MaterialType::Graphite, cfg);
+            MFEM_VERIFY(!cfg.anode_materials.empty(), "An anode material must be specified before initializing anode potential.");
+            const sim::MaterialType anode_material = cfg.anode_materials.front();
+            state.anode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc,sim::Electrode::ANODE, anode_material, cfg);
+
             state.phA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
             state.anode_potential->SetupField(*state.phA_gf, cfg.init_BvA, *domain_parameters.psi);
 
@@ -410,7 +425,10 @@ void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Dom
 
             state.CnC_gf_psi = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
 
-            state.cathode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::CATHODE, sim::MaterialType::NMC, cfg);
+            // state.cathode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::CATHODE, sim::MaterialType::NMC, cfg);
+            MFEM_VERIFY(!cfg.cathode_materials.empty(), "A cathode material must be specified before initializing cathode potential.");
+            const sim::MaterialType cathode_material = cfg.cathode_materials.front();
+            state.cathode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::CATHODE, cathode_material, cfg);
             state.phC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
             state.cathode_potential->SetupField(*state.phC_gf, cfg.init_BvC, *domain_parameters.psi);
 
@@ -432,11 +450,16 @@ void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Dom
         state.CnA_gf_psi = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         state.CnC_gf_psi = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
 
-        state.anode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::ANODE, sim::MaterialType::Graphite, cfg);
+        MFEM_VERIFY(!cfg.anode_materials.empty(), "An anode material must be specified before initializing anode potential.");
+        const sim::MaterialType anode_material = cfg.anode_materials.front();
+        MFEM_VERIFY(!cfg.cathode_materials.empty(), "A cathode material must be specified before initializing cathode potential.");
+        const sim::MaterialType cathode_material = cfg.cathode_materials.front();
+
+        state.anode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::ANODE, anode_material, cfg);
         state.phA_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         state.anode_potential->SetupField(*state.phA_gf, cfg.init_BvA, *domain_parameters.psiA);
 
-        state.cathode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::CATHODE, sim::MaterialType::NMC, cfg);
+        state.cathode_potential = std::make_unique<ElectrodePotential>(geometry, domain_parameters, bc, sim::Electrode::CATHODE, cathode_material, cfg);
         state.phC_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
         state.cathode_potential->SetupField(*state.phC_gf, cfg.init_BvC, *domain_parameters.psiC);
 

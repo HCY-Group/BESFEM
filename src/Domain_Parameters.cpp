@@ -923,6 +923,11 @@ void Domain_Parameters::BuildHalfCellInterfaces()
 
             BuildPairInterface(*AvP_Pairs[j][k], *ps[j], *ps[k], *AvPs[j], *AvPs[k]);
             BuildPairPhaseMask(*psi_Pairs[j][k], *ps[j], *ps[k]);
+
+            std::ostringstream filename;
+            filename << "AvP_Pair_" << j << "_" << k;
+            AvP_Pairs[j][k]->SaveAsOne(filename.str().c_str());
+            
         }
     }
 
@@ -987,6 +992,9 @@ void Domain_Parameters::BuildHalfCellInterfaces()
         {
             MFEM_VERIFY(WeightPairs[j][k], "Half-cell particle-pair weight field is missing.");
             ComputeInterfaceWeight(*WeightPairs[j][k], *AvP_Pairs[j][k], *denom, psi_Pairs[j][k].get());
+            // std::ostringstream filename;
+            // filename << "WeightPair_" << j << "_" << k;
+            // WeightPairs[j][k]->SaveAsOne(filename.str().c_str());
         }
     }
 }
