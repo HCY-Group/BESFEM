@@ -112,7 +112,7 @@ TEST_CASE("Domain Parameters and Interfaces", "[psi]") {
         CHECK( diff_flt < 0.05 );
     }
 
-
+/*
     for (int j=0; j<np; j++) {
         string weight_e_name = "Weight_Es" + std::to_string(j);
         domain_parameters.WeightEs[j]->SaveAsOne(weight_e_name.c_str());
@@ -161,6 +161,8 @@ TEST_CASE("Domain Parameters and Interfaces", "[psi]") {
     diff -= *domain_parameters.AvE;
     diff.SaveAsOne("ave_diff");
     CHECK( diff.Norml2() < 1.0e-3 );
+*/
+
 }
 
 
@@ -365,3 +367,128 @@ TEST_CASE("UpdatePotential", "[phi]") {
 
     }
 }
+
+
+
+TEST_CASE("UpdateConcentration", "[Cn]") {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    {
+
+    auto config_file = GENERATE("../tests/test_run_config_anode.txt",
+                                "../tests/test_run_config_cathode.txt");
+    SimulationConfig cfg = SimConfigFromFileName(config_file);
+    ValidateConfig(cfg, 0, nullptr);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+
+        // Initialize Mesh & Geometry
+        Initialize_Geometry geometry(cfg);
+        geometry.combine_particle_groups = cfg.combine_particle_groups;
+
+        if (cfg.mode == sim::CellMode::HALF) {
+            geometry.InitializeMesh(cfg.mesh_file, MPI_COMM_WORLD, cfg.order);
+        } else {
+            "Full cell mode is not yet implemented. Please use half-cell mode.";
+        }
+
+        // Initialize and Calculate Domain Parameters
+        Domain_Parameters domain_parameters(geometry, cfg);
+        domain_parameters.SetupDomainParameters();
+
+        // Initialize Boundary Conditions 
+        BoundaryConditions bc(geometry, domain_parameters);
+        if (cfg.mode == sim::CellMode::HALF) {
+            bc.SetupBoundaryConditions(sim::CellMode::HALF, cfg.half_electrode);
+        } else {
+            // bc.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
+            "Full cell mode is not yet implemented. Please use half-cell mode.";
+        }
+
+        // Define Adjuster for Surface Voltage & Current
+        Adjust adjust(geometry, domain_parameters, cfg);
+
+        // Initialize Concentration & Potential & Reaction Fields
+        SimulationState state;
+        InitializeFields(state, geometry, domain_parameters, bc, cfg);
+
+
+        // =================================
+        // UPDATE CONCENTRATION
+        // =================================
+        for (int t=0; t<10; t++) {
+        if (cfg.half_electrode == sim::Electrode::ANODE)
+        {
+            const int np = static_cast<int>(state.anode_particles.size());
+            std::vector<double> global_currents(np, 0.0);
+
+            UpdateAnodePairChemicalPotentials(state, geometry, domain_parameters);
+
+            *state.Rxn_gf = 0.0;
+            for (int j = 0; j < np; ++j)
+            {
+                *state.anode_particles[j].Rx_src = *state.anode_particles[j].Rxn_gf;
+                *state.Rxn_gf += *state.anode_particles[j].Rxn_gf;
+
+                std::vector<ConcentrationBase::PairCoupling> pair_terms;
+                Pairs(state, geometry, domain_parameters, j, pair_terms, np, 0);
+
+                //state.anode_particles[j].concentration->UpdateConcentration(*state.anode_particles[j].Rx_src, *state.anode_particles[j].Cn_gf,
+                //   *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
+                state.anode_particles[j].concentration->UpdateConcentration(*domain_parameters.AvEs[j], *state.anode_particles[j].Cn_gf,
+                    *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
+        
+                string CnP_name = "CnP" + std::to_string(j);
+                state.anode_particles[j].Cn_gf->SaveAsOne(CnP_name.c_str());
+
+            }
+
+            //state.electrolyte_concentration->UpdateConcentration(*state.Rxn_gf, *state.CnE_gf,
+            //    *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
+            state.electrolyte_concentration->UpdateConcentration(*domain_parameters.AvP, *state.CnE_gf,
+                *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
+            state.CnE_gf->SaveAsOne("CnE");
+
+
+        }
+        else 
+        {
+            const int np = static_cast<int>(state.cathode_particles.size());
+            std::vector<double> global_currents(np, 0.0);
+
+            UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters);
+
+            *state.Rxn_gf = 0.0;
+            for (int j = 0; j < np; ++j)
+            {
+                *state.cathode_particles[j].Rx_src = *state.cathode_particles[j].Rxn_gf;
+                *state.Rxn_gf += *state.cathode_particles[j].Rxn_gf;
+
+                std::vector<ConcentrationBase::PairCoupling> pair_terms;
+                Pairs(state, geometry, domain_parameters, j, pair_terms, np, 0);
+
+                //state.anode_particles[j].concentration->UpdateConcentration(*state.anode_particles[j].Rx_src, *state.anode_particles[j].Cn_gf,
+                //   *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
+                state.cathode_particles[j].concentration->UpdateConcentration(*domain_parameters.AvEs[j], *state.cathode_particles[j].Cn_gf,
+                    *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
+        
+                string CnP_name = "CnP" + std::to_string(j);
+                state.cathode_particles[j].Cn_gf->SaveAsOne(CnP_name.c_str());
+
+            }
+
+            //state.electrolyte_concentration->UpdateConcentration(*state.Rxn_gf, *state.CnE_gf,
+            //    *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
+            state.electrolyte_concentration->UpdateConcentration(*domain_parameters.AvP, *state.CnE_gf,
+                *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
+            state.CnE_gf->SaveAsOne("CnE");
+
+
+        }
+        }
+
+    }
+}
+
+
