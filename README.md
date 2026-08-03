@@ -234,7 +234,7 @@ Currently supported materials include
 **Anodes**
 
 * Graphite
-* Silicon
+* Carbon
 
 ---
 

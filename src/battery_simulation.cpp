@@ -144,6 +144,67 @@ int main(int argc, char *argv[]) {
 
                     }
 
+                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    {
+                        double electrode_signed_total = 0.0;
+                        double electrode_absolute_total = 0.0;
+
+                        std::cout << "\n===== PARTICLE-PARTICLE EXCHANGE =====\n";
+
+                        for (int j = 0; j < np; ++j)
+                        {
+                            const double net_source =
+                                state.anode_particles[j]
+                                    .concentration
+                                    ->GetNetPairSource();
+
+                            const double absolute_source =
+                                state.anode_particles[j]
+                                    .concentration
+                                    ->GetAbsolutePairSource();
+
+                            electrode_signed_total += net_source;
+                            electrode_absolute_total += absolute_source;
+
+                            const char *status = "NO NET EXCHANGE";
+
+                            if (net_source > 1.0e-20)
+                            {
+                                status = "RECEIVING LITHIUM";
+                            }
+                            else if (net_source < -1.0e-20)
+                            {
+                                status = "GIVING UP LITHIUM";
+                            }
+
+                            std::cout
+                                << "Particle group " << j
+                                << " | net PP source = " << net_source
+                                << " | absolute PP source = " << absolute_source
+                                << " | " << status
+                                << "\n";
+                        }
+
+                        const double imbalance =
+                            electrode_absolute_total > 0.0
+                            ? std::abs(electrode_signed_total) /
+                            electrode_absolute_total
+                            : 0.0;
+
+                        std::cout
+                            << "Electrode signed PP total = "
+                            << electrode_signed_total
+                            << "\n"
+                            << "Electrode absolute PP total = "
+                            << electrode_absolute_total
+                            << "\n"
+                            << "Relative imbalance = "
+                            << imbalance
+                            << "\n"
+                            << "======================================\n"
+                            << std::endl;
+                    }
+
                     state.electrolyte_concentration->UpdateConcentration(*state.Rxn_gf, *state.CnE_gf,
                         *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
 

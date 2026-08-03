@@ -119,10 +119,10 @@ static sim::MaterialType ParseMaterial(const std::string& name)
     if (name == "LFP" || name == "lfp")
         return sim::MaterialType::LFP;
 
-    if (name == "Silicon" || name == "silicon")
-        return sim::MaterialType::Silicon;
+    if (name == "Carbon" || name == "carbon")
+        return sim::MaterialType::Carbon;
 
-    mfem::mfem_error(("Invalid material: " + name + ". Use Graphite, NMC, LFP, or Silicon.").c_str());
+    mfem::mfem_error(("Invalid material: " + name + ". Use Graphite, NMC, LFP, or Carbon.").c_str());
 
     return sim::MaterialType::Electrolyte;
 }
@@ -389,7 +389,7 @@ static bool IsCathodeMaterial(sim::MaterialType m)
 
 static bool IsAnodeMaterial(sim::MaterialType m)
 {
-    return m == sim::MaterialType::Graphite || m == sim::MaterialType::Silicon;
+    return m == sim::MaterialType::Graphite || m == sim::MaterialType::Carbon;
 }
 static void CheckCathodeInitialBoundaryFromOCV(const SimulationConfig& cfg)
 {
@@ -697,7 +697,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
         {
             if (!IsAnodeMaterial(material))
             {
-                mfem::mfem_error("Anode materials must be Graphite or Silicon.");
+                mfem::mfem_error("Anode materials must be Graphite or Carbon.");
             }
         }
 
@@ -744,7 +744,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
                 {
                     mfem::mfem_error(
                         "Invalid cathode_materials: cathode can only use NMC or LFP. "
-                        "Graphite or Silicon is an anode material.");
+                        "Graphite or Carbon is an anode material.");
                 }
             }
             CheckCathodeInitialBoundaryFromOCV(cfg);
@@ -794,7 +794,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
                 if (!IsAnodeMaterial(m))
                 {
                     mfem::mfem_error(
-                        "Invalid anode_materials: anode can only use graphite or silicon.");
+                        "Invalid anode_materials: anode can only use graphite or carbon.");
                 }
             }
             CheckAnodeInitialBoundaryFromOCV(cfg);
@@ -824,7 +824,7 @@ void PrintAvailableSimulationOptions()
 
     std::cout << "  Materials:\n";
     std::cout << "    cathode_materials: NMC, LFP\n";
-    std::cout << "    anode_materials:   Graphite, Silicon\n\n";
+    std::cout << "    anode_materials:   Graphite, Carbon\n\n";
 
     std::cout << "  Mixed cathode example:\n";
     std::cout << "    cathode_materials = LFP,LFP,NMC\n\n";

@@ -30,6 +30,9 @@ protected:
     /// Material type associated with this concentration solver.
     sim::MaterialType material;
 
+    double net_pair_source = 0.0;
+    double absolute_pair_source = 0.0;
+
 public:
     /**
      * @brief Construct the base concentration solver.
@@ -131,6 +134,18 @@ public:
      * @return Global lithiation or concentration fraction.
      */
     double GetLithiation() const { return Xfr; }
+
+    
+    
+    double GetNetPairSource() const
+    {
+        return net_pair_source;
+    }
+
+    double GetAbsolutePairSource() const
+    {
+        return absolute_pair_source;
+    }
 
 
     // -------------------------------------------------------------------------

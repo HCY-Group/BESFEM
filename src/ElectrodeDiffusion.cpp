@@ -43,13 +43,59 @@ void ElectrodeDiffusion::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::Pa
     const double rho = MaterialProperties::SiteDensity(material);
     utils.InitializeReaction(Rx, Rxn, (1.0/rho));
 
-    if (!combine_particle_groups){
+    net_pair_source = 0.0;
+    absolute_pair_source = 0.0;
+
+    if (!combine_particle_groups)
+    {
+        mfem::ParGridFunction total_pp_source(fespace.get());
+        total_pp_source = 0.0;
+
         Rxn *= weight_elec;
+
         for (const auto &pair : pair_terms)
         {
-            utils.ComputePairFlux(*pair.sum_part, *pair.weight, *pair.grad_psi, *pair.mu_self, *pair.mu_nbr, rho);
+            utils.ComputePairFlux(
+                *pair.sum_part,
+                *pair.weight,
+                *pair.grad_psi,
+                *pair.mu_self,
+                *pair.mu_nbr,
+                rho
+            );
+
+            total_pp_source += *pair.sum_part;
             Rxn += *pair.sum_part;
         }
+
+        double local_signed_sum = 0.0;
+        double local_absolute_sum = 0.0;
+
+        for (int i = 0; i < total_pp_source.Size(); ++i)
+        {
+            const double value = total_pp_source(i);
+
+            local_signed_sum += value;
+            local_absolute_sum += std::abs(value);
+        }
+
+        MPI_Allreduce(
+            &local_signed_sum,
+            &net_pair_source,
+            1,
+            MPI_DOUBLE,
+            MPI_SUM,
+            MPI_COMM_WORLD
+        );
+
+        MPI_Allreduce(
+            &local_absolute_sum,
+            &absolute_pair_source,
+            1,
+            MPI_DOUBLE,
+            MPI_SUM,
+            MPI_COMM_WORLD
+        );
     }
 
     cAp.SetGridFunction(&Rxn);
