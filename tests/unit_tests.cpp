@@ -459,31 +459,39 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
 
             UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters);
 
+
+
             *state.Rxn_gf = 0.0;
             for (int j = 0; j < np; ++j)
             {
+                // constant reaction (no Butler Volmer)
+                *state.cathode_particles[j].Rxn_gf = *domain_parameters.AvEs[j];
+                *state.cathode_particles[j].Rxn_gf *= 1.0e-7;
+
                 *state.cathode_particles[j].Rx_src = *state.cathode_particles[j].Rxn_gf;
                 *state.Rxn_gf += *state.cathode_particles[j].Rxn_gf;
 
                 std::vector<ConcentrationBase::PairCoupling> pair_terms;
                 Pairs(state, geometry, domain_parameters, j, pair_terms, np, 0);
 
-                //state.anode_particles[j].concentration->UpdateConcentration(*state.anode_particles[j].Rx_src, *state.anode_particles[j].Cn_gf,
-                //   *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
-                state.cathode_particles[j].concentration->UpdateConcentration(*domain_parameters.AvEs[j], *state.cathode_particles[j].Cn_gf,
-                    *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
+                state.cathode_particles[j].concentration->UpdateConcentration(*state.cathode_particles[j].Rx_src, *state.cathode_particles[j].Cn_gf,
+                   *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
+                //state.cathode_particles[j].concentration->UpdateConcentration(*domain_parameters.AvEs[j], *state.cathode_particles[j].Cn_gf,
+                //    *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
         
                 string CnP_name = "CnP" + std::to_string(j);
                 state.cathode_particles[j].Cn_gf->SaveAsOne(CnP_name.c_str());
 
             }
+            state.Rxn_gf->SaveAsOne("Rxn_test");
 
-            //state.electrolyte_concentration->UpdateConcentration(*state.Rxn_gf, *state.CnE_gf,
-            //    *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
-            state.electrolyte_concentration->UpdateConcentration(*domain_parameters.AvP, *state.CnE_gf,
+            state.electrolyte_concentration->UpdateConcentration(*state.Rxn_gf, *state.CnE_gf,
                 *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
+            //state.electrolyte_concentration->UpdateConcentration(*domain_parameters.AvP, *state.CnE_gf,
+            //    *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
             state.CnE_gf->SaveAsOne("CnE");
 
+            //state.electrolyte_concentration->SaltConservation(*state.CnE_gf, *domain_parameters.pse);
 
         }
         }
