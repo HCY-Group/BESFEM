@@ -78,6 +78,9 @@ public:
      */
     void SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) override;
 
+    /// Return the GridFunction for diffusivity
+    mfem::ParGridFunction GetDiffusivity() override {return De;}
+
     BoundaryConditions &boundary_conditions; ///< Boundary-condition manager.
     sim::CellMode mode_;                     ///< Cell mode for this electrolyte solve.
     const SimulationConfig &cfg;             ///< Simulation configuration settings.
