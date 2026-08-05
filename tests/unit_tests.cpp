@@ -491,7 +491,15 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
             //    *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
             state.CnE_gf->SaveAsOne("CnE");
 
-            //state.electrolyte_concentration->SaltConservation(*state.CnE_gf, *domain_parameters.pse);
+
+            // ====================================
+            // ANALYTICAL SOLUTION
+            // semi-infinite solid, with constant heat flux at boundary
+            // 
+            // T(x,t) = T0 + q/k[ sqrt(4at/pi)exp(-x^2/4at) - x erfc(x/2sqrt(at)) ]
+            // ====================================
+            
+
 
         }
         }
