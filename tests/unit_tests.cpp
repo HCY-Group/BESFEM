@@ -376,7 +376,7 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
     {
 
     auto config_file = GENERATE("../tests/test_run_config_anode.txt",
-                                "../tests/test_run_config_cathode.txt");
+                                "../tests/test_run_config_cathode_NMC.txt");
     SimulationConfig cfg = SimConfigFromFileName(config_file);
     ValidateConfig(cfg, 0, nullptr);
 
@@ -462,11 +462,12 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
 
 
             *state.Rxn_gf = 0.0;
+            double Rxn_const = 1e-7;
             for (int j = 0; j < np; ++j)
             {
                 // constant reaction (no Butler Volmer)
                 *state.cathode_particles[j].Rxn_gf = *domain_parameters.AvEs[j];
-                *state.cathode_particles[j].Rxn_gf *= 1.0e-7;
+                *state.cathode_particles[j].Rxn_gf *= Rxn_const;
 
                 *state.cathode_particles[j].Rx_src = *state.cathode_particles[j].Rxn_gf;
                 *state.Rxn_gf += *state.cathode_particles[j].Rxn_gf;
@@ -495,6 +496,7 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
             // ====================================
             // ANALYTICAL SOLUTION
             // semi-infinite solid, with constant heat flux at boundary
+            // a d^2T/dx^2 = dT/dt
             //
             // Wiśniewski, T.S. (2014). Transient Heat Conduction in Semi-infinite Solid with Specified Surface Heat Flux. 
             // In: Hetnarski, R.B. (eds) Encyclopedia of Thermal Stresses. Springer, Dordrecht. 
@@ -505,8 +507,47 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
             // https://doi.org/10.1016/B978-0-12-802296-2.00004-4.
             // 
             // T(x,t) = T0 + q/k[ sqrt(4at/pi)exp(-x^2/4at) - x erfc(x/2sqrt(at)) ]
+            // q = heat flux
+            // k = thermal conductivity
+            // q/k = dT/dx at boundary (fourier's law) - this is our imposed boundary condition
+            // a = thermal diffusivity = k/(rho*c)
+            // T0 = initial temp
+            // t = time
+            // x = depth
             // ====================================
+
+        state.CnE_gf->FESpace()->GetMesh()->EnsureNodes();
+        mfem::GridFunction *nodes = state.CnE_gf->FESpace()->GetMesh()->GetNodes();
+
+        mfem::ParGridFunction x(*state.CnE_gf);
+        mfem::ParGridFunction y(*state.CnE_gf);
+        for (int i=0; i<state.CnE_gf->Size(); i++)
+        {
+            x(i) = (*nodes)(2*i);
+            y(i) = (*nodes)(2*i+1);
+        }
             
+            mfem::ParGridFunction CnE_an(*state.CnE_gf);
+            double diff_e = state.electrolyte_concentration->GetDiffusivity().Max(); 
+
+            CnE_an = cfg.init_CnE;
+            double time_elapsed = (t+1)*cfg.dt;
+            // boundary condition (=q/k)
+            double B_n = -Rxn_const*Constants::t_minus;                
+            const double pi = std::acos(-1.0);
+            for (int i=0; i<CnE_an.Size(); i++) {
+                double a = std::sqrt( 4*diff_e*time_elapsed/pi );
+                double b = std::exp( -x(i)*x(i)/4/diff_e/time_elapsed );
+                double c = x(i)*( 1.0-std::erf( x(i)/2.0/std::sqrt(diff_e*time_elapsed)  )  );
+
+                
+                CnE_an(i) += B_n * (a*b - c);
+                //std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
+                std::cout << CnE_an(i) << std::endl;
+            }
+            std::cout << "diffusivity: " << diff_e << std::endl;
+            std::cout << "Boundary: " << B_n << std::endl;
+            CnE_an.SaveAsOne("CnE_an");
 
 
         }
@@ -514,5 +555,20 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
 
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
