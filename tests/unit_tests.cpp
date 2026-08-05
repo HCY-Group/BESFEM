@@ -495,6 +495,14 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
             // ====================================
             // ANALYTICAL SOLUTION
             // semi-infinite solid, with constant heat flux at boundary
+            //
+            // Wiśniewski, T.S. (2014). Transient Heat Conduction in Semi-infinite Solid with Specified Surface Heat Flux. 
+            // In: Hetnarski, R.B. (eds) Encyclopedia of Thermal Stresses. Springer, Dordrecht. 
+            // https://doi.org/10.1007/978-94-007-2739-7_413
+            //
+            // Charles H. Forsberg, Chapter 4 - Unsteady conduction,
+            // Heat Transfer Principles and Applications, Academic Press, 2021, Pages 121-162,
+            // https://doi.org/10.1016/B978-0-12-802296-2.00004-4.
             // 
             // T(x,t) = T0 + q/k[ sqrt(4at/pi)exp(-x^2/4at) - x erfc(x/2sqrt(at)) ]
             // ====================================
