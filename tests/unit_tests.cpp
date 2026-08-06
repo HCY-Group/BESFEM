@@ -462,7 +462,7 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
 
 
             *state.Rxn_gf = 0.0;
-            double Rxn_const = 1e-7;
+            double Rxn_const = 1e-6;
             for (int j = 0; j < np; ++j)
             {
                 // constant reaction (no Butler Volmer)
@@ -526,15 +526,19 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
             x(i) = (*nodes)(2*i);
             y(i) = (*nodes)(2*i+1);
         }
-            
+
+            // ELECTROLYTE
             mfem::ParGridFunction CnE_an(*state.CnE_gf);
             double diff_e = state.electrolyte_concentration->GetDiffusivity().Max(); 
+            //std::cout << "diffusivity min: " << state.electrolyte_concentration->GetDiffusivity().Min();
+            //std::cout << "diffusivity max: " << state.electrolyte_concentration->GetDiffusivity().Max();
 
             CnE_an = cfg.init_CnE;
             double time_elapsed = (t+1)*cfg.dt;
             // boundary condition (=q/k)
             double B_n = -Rxn_const*Constants::t_minus;                
             const double pi = std::acos(-1.0);
+            mfem::ParGridFunction modify(*state.CnE_gf);
             for (int i=0; i<CnE_an.Size(); i++) {
                 double a = std::sqrt( 4*diff_e*time_elapsed/pi );
                 double b = std::exp( -x(i)*x(i)/4/diff_e/time_elapsed );
@@ -543,12 +547,40 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
                 
                 CnE_an(i) += B_n * (a*b - c);
                 //std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
-                std::cout << CnE_an(i) << std::endl;
+                //std::cout << CnE_an(i) << std::endl;
+                //std::cout << B_n * (a*b -c) << std::endl;
+                modify(i) = B_n * (a*b -c);
             }
             std::cout << "diffusivity: " << diff_e << std::endl;
             std::cout << "Boundary: " << B_n << std::endl;
             CnE_an.SaveAsOne("CnE_an");
+            modify.SaveAsOne("mod_e");
 
+            // PARTICLE
+            for (int j = 0; j < np; ++j)
+            {
+              mfem::ParGridFunction CnP_an(*state.CnE_gf);
+              double diff_p = state.cathode_particles[j].concentration->GetDiffusivity().Max();
+              CnP_an = cfg.init_cathode_particles[j];
+              double B_n = -Rxn_const/MaterialProperties::SiteDensity(state.cathode_particles[j].material);
+              for (int i=0; i<CnE_an.Size(); i++) {
+                  double a = std::sqrt( 4*diff_p*time_elapsed/pi );
+                  double b = std::exp( -x(i)*x(i)/4/diff_p/time_elapsed );
+                  double c = x(i)*( 1.0-std::erf( x(i)/2.0/std::sqrt(diff_p*time_elapsed)  )  );
+
+                
+                  CnE_an(i) += B_n * (a*b - c);
+                  //std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
+                  //std::cout << CnE_an(i) << std::endl;
+                  //std::cout << B_n * (a*b -c) << std::endl;
+                  modify(i) = B_n * (a*b -c);
+              }
+              std::cout << "diffusivity: " << diff_p << std::endl;
+              std::cout << "Boundary: " << B_n << std::endl;
+              CnP_an.SaveAsOne("CnP_an");
+              modify.SaveAsOne("mod_p");
+                
+            } 
 
         }
         }
