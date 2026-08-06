@@ -55,6 +55,14 @@ void Domain_Parameters::SetupDomainParameters(){
     AvB->SaveAsOne("AvB");
     pmesh->SaveAsOne("pmesh");
 
+    // AvEs[0]->SaveAsOne("AvE_carbon");
+    // AvEs[1]->SaveAsOne("AvE_graphite_1");
+    // AvEs[2]->SaveAsOne("AvE_graphite_2");
+
+    // WeightEs[0]->SaveAsOne("WeightE_carbon");
+    // WeightEs[1]->SaveAsOne("WeightE_graphite_1");
+    // WeightEs[2]->SaveAsOne("WeightE_graphite_2");
+
     if (cfg.mode == sim::CellMode::FULL)
     {
         psiA->SaveAsOne("psiA");

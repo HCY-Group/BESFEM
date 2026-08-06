@@ -137,17 +137,17 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
             nbc_e_bdr.SetSize(parallelMesh.bdr_attributes.Max());
             nbc_e_bdr = 0;
             nbc_e_bdr[1] = 1;
-            nbc_e_bdr[2] = 1;
-            nbc_e_bdr[3] = 1;
-            nbc_e_bdr[0] = 1;
+            // nbc_e_bdr[2] = 1;
+            // nbc_e_bdr[3] = 1;
+            // nbc_e_bdr[0] = 1;
 
             // East Dirichlet Boundary Condition
             dbc_e_bdr.SetSize(parallelMesh.bdr_attributes.Max());
             dbc_e_bdr = 0;
             dbc_e_bdr[1] = 1;
-            dbc_e_bdr[2] = 1;
-            dbc_e_bdr[3] = 1;
-            dbc_e_bdr[0] = 1;
+            // dbc_e_bdr[2] = 1;
+            // dbc_e_bdr[3] = 1;
+            // dbc_e_bdr[0] = 1;
 
             // West Dirichlet Boundary Condition
             dbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());

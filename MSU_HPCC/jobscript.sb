@@ -1,6 +1,6 @@
 #!/bin/bash --login
 # Job name: 
-#SBATCH --job-name=CarbonGraphite-Blend-No-AMR
+#SBATCH --job-name=NMC-half-3D-altered
 
 # Number of nodes
 #SBATCH --nodes=8
@@ -17,7 +17,7 @@
 # Wall time
 # Format: "minutes", "hours:minutes:seconds", 
 # "days-hours", or "days-hours:minutes"
-#SBATCH --time=24:00:00
+#SBATCH --time=48:00:00
 
 # Mail type
 # e.g., which events trigger email notifications
@@ -38,7 +38,7 @@ module load MFEM
 echo "Hosts:"; scontrol show hostnames
 echo "Ranks/node: $SLURM_NTASKS_PER_NODE  Mem-per-rank: $SLURM_MEM_PER_CPU MB"
 
-CONFIG=../inputs/Carbon_Graphite_config.txt
+CONFIG=../inputs/NMC_half_config_3D.txt
 
 srun --mpi=pmix \
      --cpu-bind=cores \

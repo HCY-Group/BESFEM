@@ -86,6 +86,9 @@ public:
         mfem::ParGridFunction *grad_psi = nullptr; ///< Interface/gradient field between particles.
         mfem::ParGridFunction *mu_self  = nullptr; ///< Chemical potential of the current particle.
         mfem::ParGridFunction *mu_nbr   = nullptr; ///< Chemical potential of the neighboring particle.
+
+        int self_index = -1;
+        int neighbor_index = -1;
     };
 
     /**
