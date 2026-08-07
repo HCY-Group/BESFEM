@@ -536,13 +536,22 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
             CnE_an = cfg.init_CnE;
             double time_elapsed = (t+1)*cfg.dt;
             // boundary condition (=q/k)
-            double B_n = -Rxn_const*Constants::t_minus;                
+            double B_n = -Rxn_const*Constants::t_minus; 
+            B_n /= diff_e;  // scale by diffusivity               
             const double pi = std::acos(-1.0);
             mfem::ParGridFunction modify(*state.CnE_gf);
+            double offset; // coordinate for solid-electrolyte boundary
             for (int i=0; i<CnE_an.Size(); i++) {
+                if ( (*domain_parameters.AvE)(i) == domain_parameters.AvE->Max() ){
+                    offset = y(i);
+                    break;
+                }
+            }
+            for (int i=0; i<CnE_an.Size(); i++) {
+                double yprime = offset-y(i);
                 double a = std::sqrt( 4*diff_e*time_elapsed/pi );
-                double b = std::exp( -x(i)*x(i)/4/diff_e/time_elapsed );
-                double c = x(i)*( 1.0-std::erf( x(i)/2.0/std::sqrt(diff_e*time_elapsed)  )  );
+                double b = std::exp( -yprime*yprime/4/diff_e/time_elapsed );
+                double c = yprime*( 1.0-std::erf( yprime/2.0/std::sqrt(diff_e*time_elapsed)  )  );
 
                 
                 CnE_an(i) += B_n * (a*b - c);
@@ -556,6 +565,18 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
             CnE_an.SaveAsOne("CnE_an");
             modify.SaveAsOne("mod_e");
 
+            //check
+            mfem::ParGridFunction diff(*state.CnE_gf);
+            diff = *state.CnE_gf;
+            diff -= CnE_an;
+            diff /= CnE_an;  //weight by magnitude of analytical solution
+            diff *= *domain_parameters.pse;  // only get errors in domain of interest
+            std::cout << "L2 error electrolyte: " << diff.Norml2() << std::endl;
+            CHECK( diff.Norml2() < 0.05 );
+
+
+
+
             // PARTICLE
             for (int j = 0; j < np; ++j)
             {
@@ -563,6 +584,7 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
               double diff_p = state.cathode_particles[j].concentration->GetDiffusivity().Max();
               CnP_an = cfg.init_cathode_particles[j];
               double B_n = -Rxn_const/MaterialProperties::SiteDensity(state.cathode_particles[j].material);
+              B_n /= diff_p;  // scale by diffusivity
               for (int i=0; i<CnE_an.Size(); i++) {
                   double a = std::sqrt( 4*diff_p*time_elapsed/pi );
                   double b = std::exp( -x(i)*x(i)/4/diff_p/time_elapsed );
