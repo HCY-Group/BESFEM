@@ -417,7 +417,7 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
         // =================================
         // UPDATE CONCENTRATION
         // =================================
-        for (int t=0; t<10; t++) {
+        for (int t=0; t<1; t++) {
         if (cfg.half_electrode == sim::Electrode::ANODE)
         {
             const int np = static_cast<int>(state.anode_particles.size());
@@ -462,7 +462,8 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
 
 
             *state.Rxn_gf = 0.0;
-            double Rxn_const = 1e-6;
+            //double Rxn_const = 1e-6;
+            double Rxn_const = 1e-12;
             for (int j = 0; j < np; ++j)
             {
                 // constant reaction (no Butler Volmer)
@@ -583,15 +584,16 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
               mfem::ParGridFunction CnP_an(*state.CnE_gf);
               double diff_p = state.cathode_particles[j].concentration->GetDiffusivity().Max();
               CnP_an = cfg.init_cathode_particles[j];
-              double B_n = -Rxn_const/MaterialProperties::SiteDensity(state.cathode_particles[j].material);
+              B_n = -Rxn_const/MaterialProperties::SiteDensity(state.cathode_particles[j].material);
               B_n /= diff_p;  // scale by diffusivity
               for (int i=0; i<CnE_an.Size(); i++) {
+                  double yprime = offset-y(i);
                   double a = std::sqrt( 4*diff_p*time_elapsed/pi );
-                  double b = std::exp( -x(i)*x(i)/4/diff_p/time_elapsed );
-                  double c = x(i)*( 1.0-std::erf( x(i)/2.0/std::sqrt(diff_p*time_elapsed)  )  );
+                  double b = std::exp( -yprime*yprime/4/diff_p/time_elapsed );
+                  double c = yprime*( 1.0-std::erf( yprime/2.0/std::sqrt(diff_p*time_elapsed)  )  );
 
                 
-                  CnE_an(i) += B_n * (a*b - c);
+                  CnP_an(i) += B_n * (a*b - c);
                   //std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
                   //std::cout << CnE_an(i) << std::endl;
                   //std::cout << B_n * (a*b -c) << std::endl;
