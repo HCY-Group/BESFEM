@@ -462,8 +462,8 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
 
 
             *state.Rxn_gf = 0.0;
-            //double Rxn_const = 1e-6;
-            double Rxn_const = 1e-12;
+            double Rxn_const = 1e-6;
+            //double Rxn_const = 1e-12;
             for (int j = 0; j < np; ++j)
             {
                 // constant reaction (no Butler Volmer)
@@ -584,10 +584,10 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
               mfem::ParGridFunction CnP_an(*state.CnE_gf);
               double diff_p = state.cathode_particles[j].concentration->GetDiffusivity().Max();
               CnP_an = cfg.init_cathode_particles[j];
-              B_n = -Rxn_const/MaterialProperties::SiteDensity(state.cathode_particles[j].material);
+              B_n = Rxn_const/MaterialProperties::SiteDensity(state.cathode_particles[j].material);
               B_n /= diff_p;  // scale by diffusivity
               for (int i=0; i<CnE_an.Size(); i++) {
-                  double yprime = offset-y(i);
+                  double yprime = y(i)-offset;
                   double a = std::sqrt( 4*diff_p*time_elapsed/pi );
                   double b = std::exp( -yprime*yprime/4/diff_p/time_elapsed );
                   double c = yprime*( 1.0-std::erf( yprime/2.0/std::sqrt(diff_p*time_elapsed)  )  );
@@ -603,7 +603,16 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
               std::cout << "Boundary: " << B_n << std::endl;
               CnP_an.SaveAsOne("CnP_an");
               modify.SaveAsOne("mod_p");
-                
+              
+              //check
+              mfem::ParGridFunction diff(*state.CnE_gf);
+              diff = *state.cathode_particles[j].Cn_gf;
+              diff -= CnP_an;
+              diff /= CnP_an;  //weight by magnitude of analytical solution
+              diff *= *domain_parameters.psi;  // only get errors in domain of interest
+              std::cout << "L2 error electrode: " << diff.Norml2() << std::endl;
+              CHECK( diff.Norml2() < 0.05 );
+               
             } 
 
         }
