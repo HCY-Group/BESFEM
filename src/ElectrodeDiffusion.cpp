@@ -92,6 +92,6 @@ void ElectrodeDiffusion::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::Pa
     utils.CalculateLithiation(Cn, psx, gtPsx);
     Xfr = utils.GetLithiation();
 
-    Rx = Rxn;
+    //Rx = Rxn;
 
 }
