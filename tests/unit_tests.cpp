@@ -414,6 +414,95 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
         InitializeFields(state, geometry, domain_parameters, bc, cfg);
 
 
+
+        // =================================
+        // Initial conditions
+        // Note: we can do this with the simple geometries here, 
+        // to make sure that the embedded boundary conditions are met at the start.
+        // However, we don't do it in actual BESFEM simulation code.
+        // =================================
+std::cout << "BEFORE INITIAL CONDITION" << std::endl;
+        state.CnE_gf->FESpace()->GetMesh()->EnsureNodes();
+        mfem::GridFunction *nodes = state.CnE_gf->FESpace()->GetMesh()->GetNodes();
+
+        mfem::ParGridFunction x(*state.CnE_gf);
+        mfem::ParGridFunction y(*state.CnE_gf);
+        for (int i=0; i<state.CnE_gf->Size(); i++)
+        {
+            x(i) = (*nodes)(2*i);
+            y(i) = (*nodes)(2*i+1);
+        }
+            
+
+            double offset; // coordinate for solid-electrolyte boundary
+            for (int i=0; i<domain_parameters.AvE->Size(); i++) {
+                if ( (*domain_parameters.AvE)(i) == domain_parameters.AvE->Max() ){
+                    offset = y(i);
+                    break;
+                }
+            }
+            //double diff_e = state.electrolyte_concentration->GetDiffusivity().Max();
+            double diff_e = MaterialProperties::Diffusivity(sim::MaterialType::Electrolyte, cfg.init_CnE);
+            double time_elapsed = cfg.dt; 
+            const double pi = std::acos(-1.0);
+            double Rxn_const = 1e-6;
+            //double Rxn_const = 1e-10;
+            double B_n;
+            B_n = -Rxn_const*Constants::t_minus; 
+            B_n /= diff_e;  // scale by diffusivity               
+            std::cout << "B_n: " << B_n << std::endl;
+            std::cout << "diff_e" << diff_e << std::endl;
+            mfem::ParGridFunction modify(*state.CnE_gf);
+             for (int i=0; i<state.CnE_gf->Size(); i++) {
+                double yprime = offset-y(i);
+                double a = std::sqrt( 4*diff_e*time_elapsed/pi );
+                double b = std::exp( -yprime*yprime/4/diff_e/time_elapsed );
+                double c = yprime*( 1.0-std::erf( yprime/2.0/std::sqrt(diff_e*time_elapsed)  )  );
+
+                
+                (*state.CnE_gf)(i) += B_n * (a*b - c);
+                //std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
+                //std::cout << CnE_an(i) << std::endl;
+                //std::cout << B_n * (a*b -c) << std::endl;
+                modify(i) = B_n * (a*b -c);
+            }
+            modify.SaveAsOne("mod_e_init");
+
+            if (cfg.half_electrode == sim::Electrode::CATHODE){
+            const int np = static_cast<int>(state.cathode_particles.size());
+            for (int j = 0; j < np; ++j)
+            {
+              //mfem::ParGridFunction CnP_an(*state.CnE_gf);
+              double diff_p = MaterialProperties::Diffusivity(state.cathode_particles[j].material, cfg.init_cathode_particles[j]);
+              //CnP_an = cfg.init_cathode_particles[j];
+              B_n = Rxn_const/MaterialProperties::SiteDensity(state.cathode_particles[j].material);
+              B_n /= diff_p;  // scale by diffusivity
+            std::cout << "B_n: " << B_n << std::endl;
+            std::cout << "diff_p" << diff_p << std::endl;
+              for (int i=0; i<state.cathode_particles[j].Cn_gf->Size(); i++) {
+                  double yprime = y(i)-offset;
+                  double a = std::sqrt( 4*diff_p*time_elapsed/pi );
+                  double b = std::exp( -yprime*yprime/4/diff_p/time_elapsed );
+                  double c = yprime*( 1.0-std::erf( yprime/2.0/std::sqrt(diff_p*time_elapsed)  )  );
+
+                
+                    (*state.cathode_particles[j].Cn_gf)(i) += B_n * (a*b - c);
+                  
+                  //std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
+                  //std::cout << CnE_an(i) << std::endl;
+                  //std::cout << B_n * (a*b -c) << std::endl;
+                  modify(i) = B_n * (a*b -c);
+              }
+             state.cathode_particles[j].Cn_gf->SaveAsOne("CnC_init");
+             modify.SaveAsOne("mod_p_init");
+             }
+             }
+            state.CnE_gf->SaveAsOne("CnE_init");
+
+
+  
+std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
+
         // =================================
         // UPDATE CONCENTRATION
         // =================================
@@ -462,8 +551,6 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
 
 
             *state.Rxn_gf = 0.0;
-            double Rxn_const = 1e-6;
-            //double Rxn_const = 1e-12;
             for (int j = 0; j < np; ++j)
             {
                 // constant reaction (no Butler Volmer)
@@ -517,38 +604,18 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
             // x = depth
             // ====================================
 
-        state.CnE_gf->FESpace()->GetMesh()->EnsureNodes();
-        mfem::GridFunction *nodes = state.CnE_gf->FESpace()->GetMesh()->GetNodes();
-
-        mfem::ParGridFunction x(*state.CnE_gf);
-        mfem::ParGridFunction y(*state.CnE_gf);
-        for (int i=0; i<state.CnE_gf->Size(); i++)
-        {
-            x(i) = (*nodes)(2*i);
-            y(i) = (*nodes)(2*i+1);
-        }
-
-            // ELECTROLYTE
+                    // ELECTROLYTE
             mfem::ParGridFunction CnE_an(*state.CnE_gf);
-            double diff_e = state.electrolyte_concentration->GetDiffusivity().Max(); 
             //std::cout << "diffusivity min: " << state.electrolyte_concentration->GetDiffusivity().Min();
             //std::cout << "diffusivity max: " << state.electrolyte_concentration->GetDiffusivity().Max();
 
             CnE_an = cfg.init_CnE;
-            double time_elapsed = (t+1)*cfg.dt;
+            double time_elapsed = (t+1)*cfg.dt; //total time since start of simulation
+            time_elapsed += cfg.dt; //add initial time
             // boundary condition (=q/k)
-            double B_n = -Rxn_const*Constants::t_minus; 
+            B_n = -Rxn_const*Constants::t_minus; 
             B_n /= diff_e;  // scale by diffusivity               
-            const double pi = std::acos(-1.0);
-            mfem::ParGridFunction modify(*state.CnE_gf);
-            double offset; // coordinate for solid-electrolyte boundary
-            for (int i=0; i<CnE_an.Size(); i++) {
-                if ( (*domain_parameters.AvE)(i) == domain_parameters.AvE->Max() ){
-                    offset = y(i);
-                    break;
-                }
-            }
-            for (int i=0; i<CnE_an.Size(); i++) {
+           for (int i=0; i<CnE_an.Size(); i++) {
                 double yprime = offset-y(i);
                 double a = std::sqrt( 4*diff_e*time_elapsed/pi );
                 double b = std::exp( -yprime*yprime/4/diff_e/time_elapsed );
