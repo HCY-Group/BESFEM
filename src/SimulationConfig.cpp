@@ -628,8 +628,9 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
     if (cfg.gc <= 0.0)
         mfem::mfem_error("gc must be positive.");
     
-    if (cfg.Cr <= 0.0)
-        mfem::mfem_error("Cr must be positive.");
+    // if (cfg.Cr <= 0.0)
+    //     mfem::mfem_error("Cr must be positive.");
+    
     if (cfg.stop_mode == sim::StopMode::STEPS)
     {
         if (cfg.num_timesteps <= 0)
