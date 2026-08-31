@@ -87,8 +87,8 @@ public:
         mfem::ParGridFunction *mu_self  = nullptr; ///< Chemical potential of the current particle.
         mfem::ParGridFunction *mu_nbr   = nullptr; ///< Chemical potential of the neighboring particle.
 
-        int self_index = -1;
-        int neighbor_index = -1;
+        // int self_index = -1;
+        // int neighbor_index = -1;
     };
 
     /**
@@ -140,15 +140,15 @@ public:
 
     
     
-    double GetNetPairSource() const
-    {
-        return net_pair_source;
-    }
+    // double GetNetPairSource() const
+    // {
+    //     return net_pair_source;
+    // }
 
-    double GetAbsolutePairSource() const
-    {
-        return absolute_pair_source;
-    }
+    // double GetAbsolutePairSource() const
+    // {
+    //     return absolute_pair_source;
+    // }
 
 
     // -------------------------------------------------------------------------

@@ -24,11 +24,10 @@ void ElectrodeCahnHilliard::SetupField(mfem::ParGridFunction &Cn, double initial
     fem.InitializeMassMatrix(coef, M_init); 
     fem.FormSystemMatrix(M_init, boundary_dofs, MmatCH); 
     
-    // MCH_solver.iterative_mode = false; 
     MCH_prec.SetType(mfem::HypreSmoother::Jacobi); 
     fem.SolverConditions(MmatCH, MCH_solver, MCH_prec); 
 
-    // MCH_solver.iterative_mode = true;
+    MCH_solver.iterative_mode = true;
     fem.InitializeStiffnessMatrix(cDp, Grad_MForm); 
 
     mfem::ConstantCoefficient varE(cfg.gc/pow(cfg.dh, pmesh->Dimension())); 
@@ -58,20 +57,13 @@ void ElectrodeCahnHilliard::UpdateConcentration(mfem::ParGridFunction &Rx, mfem:
         mfem::ParGridFunction total_pp_source(fespace.get());
         total_pp_source = 0.0;
 
-        // RxA *= weight_elec;
+        RxA *= weight_elec;
 
         int pair_counter = 0;
 
         for (const auto &pair : pair_terms)
         {
-            utils.ComputePairFlux(
-                *pair.sum_part,
-                *pair.weight,
-                *pair.grad_psi,
-                *pair.mu_self,
-                *pair.mu_nbr,
-                rho
-            );
+            utils.ComputePairFlux(*pair.sum_part, *pair.weight, *pair.grad_psi, *pair.mu_self, *pair.mu_nbr, rho);
 
             // --------------------------------------------------------
             // Integrate this directed pair source
@@ -100,24 +92,7 @@ void ElectrodeCahnHilliard::UpdateConcentration(mfem::ParGridFunction &Rx, mfem:
 
             double global_pair_source = 0.0;
 
-            MPI_Allreduce(
-                &local_pair_source,
-                &global_pair_source,
-                1,
-                MPI_DOUBLE,
-                MPI_SUM,
-                MPI_COMM_WORLD
-            );
-
-            // if (mfem::Mpi::WorldRank() == 0)
-            // {
-            //     std::cout
-            //         << "Directed pair source "
-            //         << pair_counter
-            //         << " = "
-            //         << global_pair_source
-            //         << std::endl;
-            // }
+            MPI_Allreduce(&local_pair_source, &global_pair_source, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
             total_pp_source += *pair.sum_part;
             RxA += *pair.sum_part;

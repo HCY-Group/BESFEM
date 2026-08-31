@@ -1342,9 +1342,7 @@ void Domain_Parameters::CalculateFullCellPhasePotentialsAndTargetCurrent()
         gTrgIC += gTrgPsC[k];
     }
 
-    // gTrgIA = gTrgIC;
-    // gTrgI = std::min(std::abs(gTrgIA), std::abs(gTrgIC));
-    gTrgI = gTrgIC; // use cathode target current
+    gTrgI = gTrgIC; // use cathode target current in the full cell
 }
 
 void Domain_Parameters::CalculateTargetCurrent(double local_phase_volume, double &global_target_current, sim::MaterialType material)

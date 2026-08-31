@@ -1439,31 +1439,7 @@ void Initialize_Geometry::MapGlobalToLocal() {
                 (*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);         // used in Vox code
             }   
             
-            // if (gDsF) {
-            //     if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-            //     for (int vi = 0; vi < nC; ++vi) { (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]); }
-            // }
-
-            // if (gDsF_A) {
-            //     if (!dsF_A) dsF_A = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-            //     for (int vi=0; vi<nC; ++vi) (*dsF_A)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
-            // }
-            // if (gDsF_C) {
-            //     if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-            //     for (int vi=0; vi<nC; ++vi) (*dsF_C)(VTX[vi]) = (*gDsF_C)(gVTX[vi]);
-            // }
-
-            // if (!gDsF_C && gDsF_A) {
-            //     if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-            //     for (int vi=0; vi<nC; ++vi) (*dsF)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
-            // }
         }
-
-    // // } 
-    // else {
-    //     cerr << "Unsupported file type for MapGlobalToLocal" << endl;
-    // }
-
 }
 
 // Reading .tif file and returning voxel data

@@ -25,9 +25,11 @@ void Adjust::AdjustConstantCurrent(double current_A, double current_C, Electrode
         VsrC = 1.0 * cfg.Vsr0;
 
     double VsrA;
+    double dCrntA = domain_parameters.gTrgI + current_A;
+    
     // double dCrntA = std::abs(current_A - domain_parameters.gTrgI);
     // double dCrntA = std::abs(std::abs(current_A) - std::abs(domain_parameters.gTrgI));
-    double dCrntA = domain_parameters.gTrgI + current_A;
+
     // std::cout << "dCrntA: " << dCrntA << std::endl;
     // std::cout << "5% threshold: " << std::abs(domain_parameters.gTrgI) * 0.05 << std::endl;
     // std::cout << "10% threshold: " << std::abs(domain_parameters.gTrgI) * 0.10 << std::endl;
