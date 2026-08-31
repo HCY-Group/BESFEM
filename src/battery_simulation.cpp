@@ -139,45 +139,20 @@ int main(int argc, char *argv[]) {
 
                     UpdateAnodePairChemicalPotentials(state, geometry, domain_parameters.AvP_Pairs);
 
-                    *state.Rxn_gf = 0.0;
                     for (int j = 0; j < np; ++j)
                     {
-                        *state.anode_particles[j].Rx_src = *state.anode_particles[j].Rxn_gf;
-                        *state.Rxn_gf += *state.anode_particles[j].Rxn_gf;
-
                         std::vector<ConcentrationBase::PairCoupling> pair_terms;
                         Pairs(state.anode_pairs, domain_parameters.WeightPairs, domain_parameters.AvP_Pairs, j, pair_terms, np, t);
 
-                        state.anode_particles[j].concentration->UpdateConcentration(*state.anode_particles[j].Rx_src, *state.anode_particles[j].Cn_gf,
+                        state.anode_particles[j].concentration->UpdateConcentration(*state.anode_particles[j].Rxn_gf, *state.anode_particles[j].Cn_gf,
                             *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
-                        
 
-                        // ============================================================
-                        // SAVE DIRECTED PARTICLE-PARTICLE REACTION FIELDS
-                        // ============================================================
+                    }
 
-                        if (t % 5000 == 0)
-                        {
-                            int pair_counter = 0;
-
-                            for (int neighbor = 0; neighbor < np; ++neighbor)
-                            {
-                                if (neighbor == j)
-                                {
-                                    continue;
-                                }
-
-                                MFEM_VERIFY(pair_counter < static_cast<int>(pair_terms.size()), "Pair-term indexing error.");
-                                MFEM_VERIFY(pair_terms[pair_counter].sum_part != nullptr, "Null directed pair-reaction field.");
-
-                                std::ostringstream filename;
-
-                                filename << outdir << "/Rxn_" << j << "_" << neighbor << "_" << std::setw(7) << std::setfill('0') << t;
-                                pair_terms[pair_counter].sum_part->SaveAsOne(filename.str().c_str());
-                                ++pair_counter;
-                            }
-                        }
-
+                    *state.Rxn_gf = 0.0;
+                    for (int j = 0; j < np; ++j)
+                    {
+                        *state.Rxn_gf += *state.anode_particles[j].Rxn_gf;
                     }
 
                     state.electrolyte_concentration->UpdateConcentration(*state.Rxn_gf, *state.CnE_gf, *domain_parameters.pse, domain_parameters.gtPse, 
@@ -186,6 +161,9 @@ int main(int argc, char *argv[]) {
                     if (t > 0 && t % 50 == 0) {
                         state.electrolyte_concentration->SaltConservation(*state.CnE_gf, *domain_parameters.pse);
                     }
+
+                    if (t % 5 == 0)
+                    {
 
                     std::vector<mfem::ParGridFunction*> anode_cn_fields;
                     std::vector<mfem::ParGridFunction*> anode_ps_fields;
@@ -216,9 +194,9 @@ int main(int argc, char *argv[]) {
                     int iter = 0;
                     const int max_iter = 50;
 
-                    double anode_time = 0.0;
+                    // double anode_time = 0.0;
 
-                    while ((globalerror_P > 1e-6 || globalerror_E > 1e-6) && iter < max_iter) {
+                    while ((globalerror_P > 1e-5 || globalerror_E > 1e-5) && iter < max_iter) {
                         *state.Rxn_gf = 0.0;
 
                         for (int j = 0; j < np; ++j)
@@ -226,9 +204,11 @@ int main(int argc, char *argv[]) {
                             state.anode_particles[j].reaction->ButlerVolmer(*state.anode_particles[j].Rxn_gf, *state.anode_particles[j].Cn_gf,*state.CnE_gf,
                                 *state.phA_gf, *state.phE_gf, *domain_parameters.AvEs[j]);
 
-                            *state.anode_particles[j].Rx_src = *state.anode_particles[j].Rxn_gf;
-                            *state.anode_particles[j].Rx_src *= *domain_parameters.WeightEs[j];
-                            *state.Rxn_gf += *state.anode_particles[j].Rx_src;
+                            mfem::ParGridFunction weighted_rxn(state.anode_particles[j].Rxn_gf->ParFESpace());
+
+                            weighted_rxn = *state.anode_particles[j].Rxn_gf;
+                            weighted_rxn *= *domain_parameters.WeightEs[j];
+                            *state.Rxn_gf += weighted_rxn;
                         }
 
                         state.anode_potential->UpdatePotential(*state.Rxn_gf, *state.phA_gf, *domain_parameters.psi, globalerror_P);
@@ -236,14 +216,15 @@ int main(int argc, char *argv[]) {
 
                         iter++;
                     }
+                }
 
-                    if (iter == max_iter && mfem::Mpi::WorldRank() == 0) {
-                        std::cout << "Warning: Maximum iterations reached at timestep " << t << " with Global Error P = " << globalerror_P << ", Global Error E = " << globalerror_E << std::endl;
-                    }
+                    // if (iter == max_iter && mfem::Mpi::WorldRank() == 0) {
+                    //     std::cout << "Warning: Maximum iterations reached at timestep " << t << " with Global Error P = " << globalerror_P << ", Global Error E = " << globalerror_E << std::endl;
+                    // }
 
                     for (int j = 0; j < np; ++j)
                     {
-                        state.anode_particles[j].reaction->TotalReactionCurrent(*state.anode_particles[j].Rx_src, global_currents[j]);
+                        state.anode_particles[j].reaction->TotalReactionCurrent(*state.anode_particles[j].Rxn_gf, global_currents[j]);
                     }
 
                     double total_current = 0.0;
@@ -332,43 +313,6 @@ int main(int argc, char *argv[]) {
                         std::cout << ", XfrE_avg = " << XfrE_avg << std::endl;
 
                     }
-
-                    // if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
-                    // {
-                    //     std::cout << "timestep: " << t << ", VCell = " << VCell << ", TotalCurrent = " << total_current << ", TotalTarget = " << total_target;
-
-                    //     for (int j = 0; j < np; ++j)
-                    //     {
-                    //         std::cout << ", Current_" << j << " = " << global_currents[j] << ", Target_" << j << " = " << domain_parameters.gTrgPs[j];
-                    //     }
-
-                    //     std::cout << std::endl;
-                    // }
-
-                    // if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
-                    // {
-                    //     double volume_weighted_sum = 0.0;
-                    //     double total_solid_volume  = 0.0;
-
-                    //     double lithium_inventory   = 0.0;
-                    //     double maximum_inventory   = 0.0;
-
-                    //     std::cout << "timestep: " << t << " [ANODE HALF-CELL]" << ", VCell = " << VCell
-                    //         << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage() 
-                    //         << ", Cp_min = "  << state.anode_particles[0].Cn_gf->Min()  << ", Cp_max = " << state.anode_particles[0].Cn_gf->Max()
-                    //         << ", Ce_min = " << state.CnE_gf->Min() << ", Ce_max = " << state.CnE_gf->Max();
-
-                    //     for (int j = 0; j < np; ++j)
-                    //     {
-                    //         const double Xfr_j = state.anode_particles[j].concentration->GetLithiation();
-                    //         const double volume_j = domain_parameters.gtPs[j];
-
-                    //         const sim::MaterialType material_j = state.anode_particles[j].material;
-                    //         const double rho_j = MaterialProperties::SiteDensity(material_j);
-
-                    //         std::cout << ", Xfr_" << j << " = " << Xfr_j;
-                    //     }
-                    // }
                 }
                 // ============================================================
                 // CATHODE HALF CELL SIMULATION
