@@ -7,4 +7,4 @@ This will produce the folder benchmark_runs containing config files.
 
 A slurm job can be submitted which will show the terminal outputs in the log folder and the subsequent config file used for a particular job will be at results folder.
 
-    
+To run the slurm job, use the following command within the parameter_sweep_tool folder:     `sbatch parameter_sweep.sb benchmark_runs/FOLDER`

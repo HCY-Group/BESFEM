@@ -80,7 +80,7 @@ struct SimulationConfig
     // -------------------------------------------------------------------------
 
     double dh = 5.0e-06; ///< Characteristic mesh spacing (m).
-    double gc = 3.3800e-10 * 3.0; ///< Cahn--Hilliard gradient-energy coefficient.
+    double gc = 3.38e-10 * 3.0; ///< Cahn--Hilliard gradient-energy coefficient.
     double dt = 0.001; ///< Simulation timestep.
     double Cr = 1.0; ///< Applied C-rate.
     double Vsr0 = 2.0; ///< Voltage-adjustment rate for constant-current control.

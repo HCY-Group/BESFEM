@@ -562,10 +562,15 @@ void Initialize_Geometry::BuildHalfCellGeometryFields()
     // }
     else
     {
+        const int collector_side = (cfg.half_electrode == Electrode::ANODE) ? 0 : 1;
+
         for (std::size_t k = 0; k < particle_labels.size(); ++k)
         {
             MFEM_VERIFY(MaskFilters[k], "Half-cell particle mask is not allocated.");
-            ComputePDEFilterLabel(*distMask, *MaskFilters[k], particle_labels[k], false, -1, CellMode::HALF, cfg.half_electrode);
+            // const int collector_side = (cfg.half_electrode == Electrode::ANODE) ? 0 : 1;
+
+            ComputePDEFilterLabel(*distMask, *MaskFilters[k], particle_labels[k], true, collector_side, CellMode::HALF, cfg.half_electrode);
+            // ComputePDEFilterLabel(*distMask, *MaskFilters[k], particle_labels[k], false, -1, CellMode::HALF, cfg.half_electrode);
         }
     }
 
@@ -1434,31 +1439,7 @@ void Initialize_Geometry::MapGlobalToLocal() {
                 (*this->Vox)(VTX[vi]) = (*this->gVox)(gVTX[vi]);         // used in Vox code
             }   
             
-            // if (gDsF) {
-            //     if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-            //     for (int vi = 0; vi < nC; ++vi) { (*dsF)(VTX[vi]) = (*gDsF)(gVTX[vi]); }
-            // }
-
-            // if (gDsF_A) {
-            //     if (!dsF_A) dsF_A = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-            //     for (int vi=0; vi<nC; ++vi) (*dsF_A)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
-            // }
-            // if (gDsF_C) {
-            //     if (!dsF_C) dsF_C = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-            //     for (int vi=0; vi<nC; ++vi) (*dsF_C)(VTX[vi]) = (*gDsF_C)(gVTX[vi]);
-            // }
-
-            // if (!gDsF_C && gDsF_A) {
-            //     if (!dsF) dsF = std::make_unique<mfem::ParGridFunction>(parfespace.get());
-            //     for (int vi=0; vi<nC; ++vi) (*dsF)(VTX[vi]) = (*gDsF_A)(gVTX[vi]);
-            // }
         }
-
-    // // } 
-    // else {
-    //     cerr << "Unsupported file type for MapGlobalToLocal" << endl;
-    // }
-
 }
 
 // Reading .tif file and returning voxel data
@@ -1695,6 +1676,8 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &dist, mfem::Pa
                 {
                     const int electrolyteSide = (electrode == Electrode::ANODE) ? 1 : 0;
                     KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, electrolyteSide);
+                    // KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1);
+
                 }
             }
         }
@@ -1832,54 +1815,150 @@ void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &dist, mfe
 
     if (rank == 0)
     {
-        for (int k = 0; k < nz; ++k)
-        for (int j = 0; j < ny; ++j)
-        for (int i = 0; i < nx; ++i)
-        {
-            const int idx = i + nx*j + nx*ny*k;
-            // fg[idx] = (tiffData[k][j][i] == target_label) ? 1 : 0;
-            const int label = tiffData[k][j][i];
+        // Mask containing every solid particle, regardless of label.
+        std::vector<uint8_t> connected_solid(nx * ny * nz, 0);
 
-            if (!cfg.combine_particle_groups)
+        for (int k = 0; k < nz; ++k)
+        {
+            for (int j = 0; j < ny; ++j)
             {
-                fg[idx] = (label == target_label) ? 1 : 0;
-            }
-            else if (cell_mode == CellMode::HALF)
-            {
-                fg[idx] = (label > 0) ? 1 : 0;
-            }
-            else if (electrode == Electrode::ANODE)
-            {
-                fg[idx] = (label < 0) ? 1 : 0;
-            }
-            else if (electrode == Electrode::CATHODE)
-            {
-                fg[idx] = (label > 0) ? 1 : 0;
-            }
-            else
-            {
-                MFEM_ABORT("ComputePDEFilterLabel: invalid electrode.");
+                for (int i = 0; i < nx; ++i)
+                {
+                    const int idx = i + nx*j + nx*ny*k;
+                    const int label = tiffData[k][j][i];
+
+                    // Half-cell: any nonzero/positive particle label is solid.
+                    if (cell_mode == CellMode::HALF)
+                    {
+                        connected_solid[idx] = (label > 0) ? 1 : 0;
+                    }
+                    else if (electrode == Electrode::ANODE)
+                    {
+                        connected_solid[idx] = (label < 0) ? 1 : 0;
+                    }
+                    else if (electrode == Electrode::CATHODE)
+                    {
+                        connected_solid[idx] = (label > 0) ? 1 : 0;
+                    }
+                }
             }
         }
 
+        // Find the entire particle network connected to the collector.
         if (keep_boundary_connected)
         {
             if (nz == 1)
             {
-                if (seed_side_or_face < 0)
-                    KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1);
-                else
-                    KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, seed_side_or_face);
+                KeepOnlyConnectedToBoundary_2D(
+                    connected_solid,
+                    nx,
+                    ny,
+                    eight_conn,
+                    false,
+                    seed_side_or_face
+                );
             }
             else
             {
-                if (seed_side_or_face < 0)
-                    KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, true, -1);
-                else
-                    KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, false, seed_side_or_face);
+                KeepOnlyConnectedToBoundary_3D(
+                    connected_solid,
+                    nx,
+                    ny,
+                    nz,
+                    twenty_six,
+                    false,
+                    seed_side_or_face
+                );
+            }
+        }
+
+        // Build this particle-group mask, but only inside the
+        // collector-connected solid network.
+        for (int k = 0; k < nz; ++k)
+        {
+            for (int j = 0; j < ny; ++j)
+            {
+                for (int i = 0; i < nx; ++i)
+                {
+                    const int idx = i + nx*j + nx*ny*k;
+                    const int label = tiffData[k][j][i];
+
+                    bool belongs_to_group = false;
+
+                    if (!cfg.combine_particle_groups)
+                    {
+                        belongs_to_group = (label == target_label);
+                    }
+                    else if (cell_mode == CellMode::HALF)
+                    {
+                        belongs_to_group = (label > 0);
+                    }
+                    else if (electrode == Electrode::ANODE)
+                    {
+                        belongs_to_group = (label < 0);
+                    }
+                    else if (electrode == Electrode::CATHODE)
+                    {
+                        belongs_to_group = (label > 0);
+                    }
+
+                    fg[idx] =
+                        (belongs_to_group && connected_solid[idx]) ? 1 : 0;
+                }
             }
         }
     }
+
+    // if (rank == 0)
+    // {
+    //     for (int k = 0; k < nz; ++k)
+    //     for (int j = 0; j < ny; ++j)
+    //     for (int i = 0; i < nx; ++i)
+    //     {
+    //         const int idx = i + nx*j + nx*ny*k;
+    //         // fg[idx] = (tiffData[k][j][i] == target_label) ? 1 : 0;
+    //         const int label = tiffData[k][j][i];
+
+    //         if (!cfg.combine_particle_groups)
+    //         {
+    //             fg[idx] = (label == target_label) ? 1 : 0;
+    //         }
+    //         else if (cell_mode == CellMode::HALF)
+    //         {
+    //             fg[idx] = (label > 0) ? 1 : 0;
+    //         }
+    //         else if (electrode == Electrode::ANODE)
+    //         {
+    //             fg[idx] = (label < 0) ? 1 : 0;
+    //         }
+    //         else if (electrode == Electrode::CATHODE)
+    //         {
+    //             fg[idx] = (label > 0) ? 1 : 0;
+    //         }
+    //         else
+    //         {
+    //             MFEM_ABORT("ComputePDEFilterLabel: invalid electrode.");
+    //         }
+    //     }
+
+    //     if (keep_boundary_connected)
+    //     {
+    //         if (nz == 1)
+    //         {
+    //             if (seed_side_or_face < 0)
+    //                 KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, true, -1);
+    //             else
+    //                 KeepOnlyConnectedToBoundary_2D(fg, nx, ny, eight_conn, false, seed_side_or_face);
+    //         }
+    //         else
+    //         {
+    //             if (seed_side_or_face < 0)
+    //                 KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, true, -1);
+    //             else
+    //                 KeepOnlyConnectedToBoundary_3D(fg, nx, ny, nz, twenty_six, false, seed_side_or_face);
+    //         }
+    //     }
+    // }
 
     MPI_Bcast(fg.data(), (int)fg.size(), MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 

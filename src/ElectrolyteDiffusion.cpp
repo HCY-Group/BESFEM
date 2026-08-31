@@ -78,7 +78,7 @@ void ElectrolyteDiffusion::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::
 
     utils.InitializeReaction(Rx, Rxe, (-1.0 * Constants::t_minus));
     cAe.SetGridFunction(&Rxe);
-    utils.CalculateReactionInfx(Rxe, eCrnt);
+    utils.CalculateReactionInfx(Rxe, infx);
 
     nbcCoef.constant = infx;
     mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);

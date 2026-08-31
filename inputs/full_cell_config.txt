@@ -16,7 +16,7 @@ combine_particles = true
 # TIFF crop bounds
 row_begin = 15
 row_end = 80
-column_begin = 10
+column_begin = 20
 column_end = 60
 
 amr_levels = 0
@@ -31,21 +31,22 @@ coarsen_factor = 1
 
 dt = 0.0105624
 dh = 2.074e-05
+gc = 6.38e-10
 
 # ============================================================
 # STOPPING CRITERIA
 # ============================================================
 
 stop_mode = steps       
-VCut = 3.2
-num_steps = 6
+VCut = 2.8
+num_steps = 60001
 
 # ============================================================
 # CURRENT CONTROL
 # ============================================================
 
 Cr = 1.0
-Vsr0 = 0.09466
+Vsr0 = 0.009466
 
 # ============================================================
 # MATERIALS

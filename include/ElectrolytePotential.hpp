@@ -22,7 +22,7 @@
 // extern double BvE;
 
 /**
- * @class PotE
+ * @class ElectrolytePotential
  * @brief Electrolyte-phase potential solver.
  *
  * Responsibilities:

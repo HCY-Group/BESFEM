@@ -9,15 +9,17 @@ electrode = cathode
 # GEOMETRY
 # ============================================================
 
-mesh_file = ../inputs/mesh/colored_labels_labels.tif
+mesh_file = ../inputs/mesh/II_1_bin.tif
 
 combine_particles = true
 
 # TIFF crop bounds
-row_begin = 15
-row_end = 80
-column_begin = 10
-column_end = 60
+row_begin = 20
+row_end = 100
+column_begin = 120
+column_end = 200
+depth_begin = 95
+depth_end = 115
 
 amr_levels = 0
 
@@ -39,14 +41,14 @@ gc = 5e-15
 
 stop_mode = voltage       
 VCut = 3.2
-num_steps = 3000001
+num_steps = 15001
 
 # ============================================================
 # CURRENT CONTROL
 # ============================================================
 
 Cr = 1.0
-Vsr0 = 0.009466
+Vsr0 = 0.09466
 
 # ============================================================
 # MATERIALS

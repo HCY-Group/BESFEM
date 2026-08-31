@@ -55,6 +55,14 @@ void Domain_Parameters::SetupDomainParameters(){
     AvB->SaveAsOne("AvB");
     pmesh->SaveAsOne("pmesh");
 
+    // AvEs[0]->SaveAsOne("AvE_carbon");
+    // AvEs[1]->SaveAsOne("AvE_graphite_1");
+    // AvEs[2]->SaveAsOne("AvE_graphite_2");
+
+    // WeightEs[0]->SaveAsOne("WeightE_carbon");
+    // WeightEs[1]->SaveAsOne("WeightE_graphite_1");
+    // WeightEs[2]->SaveAsOne("WeightE_graphite_2");
+
     if (cfg.mode == sim::CellMode::FULL)
     {
         psiA->SaveAsOne("psiA");
@@ -923,6 +931,11 @@ void Domain_Parameters::BuildHalfCellInterfaces()
 
             BuildPairInterface(*AvP_Pairs[j][k], *ps[j], *ps[k], *AvPs[j], *AvPs[k]);
             BuildPairPhaseMask(*psi_Pairs[j][k], *ps[j], *ps[k]);
+
+            std::ostringstream filename;
+            filename << "AvP_Pair_" << j << "_" << k;
+            AvP_Pairs[j][k]->SaveAsOne(filename.str().c_str());
+            
         }
     }
 
@@ -987,6 +1000,9 @@ void Domain_Parameters::BuildHalfCellInterfaces()
         {
             MFEM_VERIFY(WeightPairs[j][k], "Half-cell particle-pair weight field is missing.");
             ComputeInterfaceWeight(*WeightPairs[j][k], *AvP_Pairs[j][k], *denom, psi_Pairs[j][k].get());
+            // std::ostringstream filename;
+            // filename << "WeightPair_" << j << "_" << k;
+            // WeightPairs[j][k]->SaveAsOne(filename.str().c_str());
         }
     }
 }
@@ -1326,7 +1342,7 @@ void Domain_Parameters::CalculateFullCellPhasePotentialsAndTargetCurrent()
         gTrgIC += gTrgPsC[k];
     }
 
-    gTrgI = std::min(std::abs(gTrgIA), std::abs(gTrgIC));
+    gTrgI = gTrgIC; // use cathode target current in the full cell
 }
 
 void Domain_Parameters::CalculateTargetCurrent(double local_phase_volume, double &global_target_current, sim::MaterialType material)

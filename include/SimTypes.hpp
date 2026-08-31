@@ -53,6 +53,7 @@ enum class MaterialType {
     Graphite, ///< Anode material
     NMC,       ///< Cathode material: Nickel Manganese Cobalt Oxide
     LFP,        ///< Cathode material: Lithium Iron Phosphate
+    Carbon,   ///< Anode material: Carbon
     Electrolyte   ///< Electrolyte material
 };
 

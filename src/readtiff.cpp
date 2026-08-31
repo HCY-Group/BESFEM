@@ -318,7 +318,7 @@ void TIFFReader::readinfo()
                         v = (v < 127) ? 1 : 0;
                     }
                     else {
-                        v = (v < 127) ? 1 : 0;
+                        v = (v < 127) ? 0 : 1;
                     }
                 }
             }

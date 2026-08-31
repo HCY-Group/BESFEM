@@ -139,10 +139,125 @@ int main(int argc, char *argv[]) {
                         std::vector<ConcentrationBase::PairCoupling> pair_terms;
                         Pairs(state.anode_pairs, domain_parameters.WeightPairs, domain_parameters.AvP_Pairs, j, pair_terms, np, t);
 
+                        // if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
+                        // {
+                        //     std::cout
+                        //         << "\nParticle group "
+                        //         << j
+                        //         << " directed pair reactions:\n";
+                        // }
+
                         state.anode_particles[j].concentration->UpdateConcentration(*state.anode_particles[j].Rx_src, *state.anode_particles[j].Cn_gf,
                             *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
 
+                        // ============================================================
+                        // SAVE DIRECTED PARTICLE-PARTICLE REACTION FIELDS
+                        // ============================================================
+
+                        if (t % 5000 == 0)
+                        {
+                            int pair_counter = 0;
+
+                            for (int neighbor = 0; neighbor < np; ++neighbor)
+                            {
+                                if (neighbor == j)
+                                {
+                                    continue;
+                                }
+
+                                MFEM_VERIFY(
+                                    pair_counter < static_cast<int>(pair_terms.size()),
+                                    "Pair-term indexing error."
+                                );
+
+                                MFEM_VERIFY(
+                                    pair_terms[pair_counter].sum_part != nullptr,
+                                    "Null directed pair-reaction field."
+                                );
+
+                                std::ostringstream filename;
+
+                                filename
+                                    << outdir
+                                    << "/Rxn_"
+                                    << j
+                                    << "_"
+                                    << neighbor
+                                    << "_"
+                                    << std::setw(7)
+                                    << std::setfill('0')
+                                    << t;
+
+                                pair_terms[pair_counter].sum_part->SaveAsOne(
+                                    filename.str().c_str()
+                                );
+
+                                ++pair_counter;
+                            }
+                        }
+
                     }
+
+                    // if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    // {
+                    //     double electrode_signed_total = 0.0;
+                    //     double electrode_absolute_total = 0.0;
+
+                    //     std::cout << "\n===== PARTICLE-PARTICLE EXCHANGE =====\n";
+
+                    //     for (int j = 0; j < np; ++j)
+                    //     {
+                    //         const double net_source =
+                    //             state.anode_particles[j]
+                    //                 .concentration
+                    //                 ->GetNetPairSource();
+
+                    //         const double absolute_source =
+                    //             state.anode_particles[j]
+                    //                 .concentration
+                    //                 ->GetAbsolutePairSource();
+
+                    //         electrode_signed_total += net_source;
+                    //         electrode_absolute_total += absolute_source;
+
+                    //         const char *status = "NO NET EXCHANGE";
+
+                    //         if (net_source > 1.0e-20)
+                    //         {
+                    //             status = "RECEIVING LITHIUM";
+                    //         }
+                    //         else if (net_source < -1.0e-20)
+                    //         {
+                    //             status = "GIVING UP LITHIUM";
+                    //         }
+
+                    //         std::cout
+                    //             << "Particle group " << j
+                    //             << " | net PP source = " << net_source
+                    //             << " | absolute PP source = " << absolute_source
+                    //             << " | " << status
+                    //             << "\n";
+                    //     }
+
+                    //     const double imbalance =
+                    //         electrode_absolute_total > 0.0
+                    //         ? std::abs(electrode_signed_total) /
+                    //         electrode_absolute_total
+                    //         : 0.0;
+
+                    //     std::cout
+                    //         << "Electrode signed PP total = "
+                    //         << electrode_signed_total
+                    //         << "\n"
+                    //         << "Electrode absolute PP total = "
+                    //         << electrode_absolute_total
+                    //         << "\n"
+                    //         << "Relative imbalance = "
+                    //         << imbalance
+                    //         << "\n"
+                    //         << "======================================\n"
+                    //         << std::endl;
+                    // }
 
                     state.electrolyte_concentration->UpdateConcentration(*state.Rxn_gf, *state.CnE_gf,
                         *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
@@ -189,7 +304,10 @@ int main(int argc, char *argv[]) {
                         {
                             state.anode_particles[j].reaction->ButlerVolmer(*state.anode_particles[j].Rxn_gf, *state.anode_particles[j].Cn_gf,*state.CnE_gf,
                                 *state.phA_gf, *state.phE_gf, *domain_parameters.AvEs[j]);
-                            *state.Rxn_gf += *state.anode_particles[j].Rxn_gf;
+
+                            *state.anode_particles[j].Rx_src = *state.anode_particles[j].Rxn_gf;
+                            *state.anode_particles[j].Rx_src *= *domain_parameters.WeightEs[j];
+                            *state.Rxn_gf += *state.anode_particles[j].Rx_src;
                         }
 
                         state.anode_potential->UpdatePotential(*state.Rxn_gf, *state.phA_gf, *domain_parameters.psi, globalerror_P);
@@ -204,7 +322,7 @@ int main(int argc, char *argv[]) {
 
                     for (int j = 0; j < np; ++j)
                     {
-                        state.anode_particles[j].reaction->TotalReactionCurrent(*state.anode_particles[j].Rxn_gf, global_currents[j]);
+                        state.anode_particles[j].reaction->TotalReactionCurrent(*state.anode_particles[j].Rx_src, global_currents[j]);
                     }
 
                     double total_current = 0.0;
@@ -229,7 +347,7 @@ int main(int argc, char *argv[]) {
                     // ===============================  PRINT STATEMENTS  =========================
                     // ============================================================================
 
-                    if (t % 10000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
                     {
                         std::cout << "timestep: " << t << ", VCell = " << VCell << ", TotalCurrent = " << total_current << ", TotalTarget = " << total_target;
 
@@ -241,39 +359,125 @@ int main(int argc, char *argv[]) {
                         std::cout << std::endl;
                     }
 
-                    if (t % 10000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
                     {
-                        double XfrC_avg = 0.0;
-                        double total_weight = 0.0;
+                        double volume_weighted_sum = 0.0;
+                        double total_solid_volume  = 0.0;
 
-                        std::cout << "timestep: " << t << " [ANODE HALF-CELL]" << ", VCell = " << VCell << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage();
+                        double lithium_inventory   = 0.0;
+                        double maximum_inventory   = 0.0;
 
                         std::cout
-                        << "Cp_min = " << state.anode_particles[0].Cn_gf->Min()
-                        << ", Cp_max = " << state.anode_particles[0].Cn_gf->Max()
-                        << ", Ce_min = " << state.CnE_gf->Min()
-                        << ", Ce_max = " << state.CnE_gf->Max()
-                        << std::endl;
+                            << "timestep: " << t
+                            << " [ANODE HALF-CELL]"
+                            << ", VCell = " << VCell
+                            << ", BvE = "
+                            << state.electrolyte_potential->GetBoundaryVoltage()
+                            << ", Cp_min = "
+                            << state.anode_particles[0].Cn_gf->Min()
+                            << ", Cp_max = "
+                            << state.anode_particles[0].Cn_gf->Max()
+                            << ", Ce_min = "
+                            << state.CnE_gf->Min()
+                            << ", Ce_max = "
+                            << state.CnE_gf->Max();
 
                         for (int j = 0; j < np; ++j)
                         {
-                            const double Xfr_j = state.anode_particles[j].concentration->GetLithiation();
-                            const double weight_j = domain_parameters.gtPs[j];
+                            const double Xfr_j =
+                                state.anode_particles[j]
+                                    .concentration
+                                    ->GetLithiation();
 
-                            XfrC_avg += weight_j * Xfr_j;
-                            total_weight += weight_j;
+                            const double volume_j =
+                                domain_parameters.gtPs[j];
 
-                            std::cout << ", Xfr_" << j << " = " << Xfr_j;
+                            const sim::MaterialType material_j =
+                                state.anode_particles[j].material;
+
+                            const double rho_j =
+                                MaterialProperties::SiteDensity(material_j);
+
+                            // Match this to the concentration limit used by each solver.
+                            double Xmax_j = 1.0;
+
+                            if (material_j == sim::MaterialType::Graphite)
+                            {
+                                Xmax_j = 0.96;
+                            }
+                            else if (material_j == sim::MaterialType::Carbon)
+                            {
+                                Xmax_j = 1.0;
+                            }
+
+                            volume_weighted_sum +=
+                                volume_j * Xfr_j;
+
+                            total_solid_volume +=
+                                volume_j;
+
+                            lithium_inventory +=
+                                rho_j * volume_j * Xfr_j;
+
+                            maximum_inventory +=
+                                rho_j * volume_j * Xmax_j;
+
+                            std::cout
+                                << ", Xfr_" << j
+                                << " = " << Xfr_j;
                         }
 
-                        if (total_weight > 0.0)
-                        {
-                            XfrC_avg /= total_weight;
-                        }
+                        const double Xfr_volume_avg =
+                            total_solid_volume > 0.0
+                            ? volume_weighted_sum / total_solid_volume
+                            : 0.0;
 
-                        std::cout << ", XfrC_avg = " << XfrC_avg;
-                        std::cout  << std::endl;
+                        const double electrode_DoD =
+                            maximum_inventory > 0.0
+                            ? lithium_inventory / maximum_inventory
+                            : 0.0;
+
+                        std::cout
+                            << ", Xfr_volume_avg = "
+                            << Xfr_volume_avg
+                            << ", Electrode_DoD = "
+                            << electrode_DoD
+                            << std::endl;
                     }
+
+                    // if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    // {
+                    //     double XfrC_avg = 0.0;
+                    //     double total_weight = 0.0;
+
+                    //     std::cout << "timestep: " << t << " [ANODE HALF-CELL]" << ", VCell = " << VCell << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage();
+
+                    //     std::cout
+                    //     << "Cp_min = " << state.anode_particles[0].Cn_gf->Min()
+                    //     << ", Cp_max = " << state.anode_particles[0].Cn_gf->Max()
+                    //     << ", Ce_min = " << state.CnE_gf->Min()
+                    //     << ", Ce_max = " << state.CnE_gf->Max()
+                    //     << std::endl;
+
+                    //     for (int j = 0; j < np; ++j)
+                    //     {
+                    //         const double Xfr_j = state.anode_particles[j].concentration->GetLithiation();
+                    //         const double weight_j = domain_parameters.gtPs[j];
+
+                    //         XfrC_avg += weight_j * Xfr_j;
+                    //         total_weight += weight_j;
+
+                    //         std::cout << ", Xfr_" << j << " = " << Xfr_j;
+                    //     }
+
+                    //     if (total_weight > 0.0)
+                    //     {
+                    //         XfrC_avg /= total_weight;
+                    //     }
+
+                    //     std::cout << ", XfrC_avg = " << XfrC_avg;
+                    //     std::cout  << std::endl;
+                    // }
                     
                 }
                     // ============================================================================
@@ -391,7 +595,7 @@ int main(int argc, char *argv[]) {
                     *state.phE_gf += dV;
 
 
-                    if (t % 10000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
                     {
                         std::cout << "timestep: " << t << ", VCell = " << VCell << ", TotalCurrent = " << total_current << ", TotalTarget = " << total_target;
 
@@ -403,7 +607,7 @@ int main(int argc, char *argv[]) {
                         std::cout << std::endl;
                     }
 
-                    if (t % 10000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
                     {
                         double XfrC_avg = 0.0;
                         double total_weight = 0.0;
@@ -438,13 +642,28 @@ int main(int argc, char *argv[]) {
 
                     }
 
-                    if (t % 10000 == 0)
-                    {
-                        std::ostringstream rxn_path;
-                        rxn_path << outdir << "/Rxn_" << t << ".gf";
+                // if (t % 1000 == 0)
+                // {
+                //     std::ostringstream step;
+                //     step << "_" << std::setw(5) << std::setfill('0') << t;
 
-                        state.Rxn_gf->SaveAsOne(rxn_path.str().c_str());
-                    }
+                //     state.phC_gf->SaveAsOne(
+                //         (outdir + "/phC" + step.str()).c_str());
+
+                //     state.phE_gf->SaveAsOne(
+                //         (outdir + "/phE" + step.str()).c_str());
+
+                //     // state.phA_gf->SaveAsOne(
+                //     //     (outdir + "/phA" + step.str()).c_str());
+                // }
+
+                    // if (t % 10000 == 0)
+                    // {
+                    //     std::ostringstream rxn_path;
+                    //     rxn_path << outdir << "/Rxn_" << t << ".gf";
+
+                    //     state.Rxn_gf->SaveAsOne(rxn_path.str().c_str());
+                    // }
                     
                 }
 
@@ -461,7 +680,7 @@ int main(int argc, char *argv[]) {
                     // Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters,
                     //     anode_cn_fields, state.anode_out, 10000);
 
-                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, anode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.anode_out, "A", 10000);
+                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, anode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.anode_out, "A", 5000);
                 }
                 else
                 {
@@ -475,7 +694,7 @@ int main(int argc, char *argv[]) {
 
                     // Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters,
                     //     cathode_cn_fields, state.cathode_out, 10000);
-                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.cathode_out, "C", 10000);
+                    Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.cathode_out, "C", 5000);
                 }
 
                 t++;
@@ -838,35 +1057,35 @@ int main(int argc, char *argv[]) {
                         << ", XfrC_avg = " << XfrC_avg
                         << ", Anode current = " << global_current_A
                         << ", Cathode current = " << global_current_C
-                        << ", Anode target = " << total_target_A
-                        << ", Cathode target = " << total_target_C
+                        << ", Anode target = " << domain_parameters.gTrgI
+                        << ", Cathode target = " << domain_parameters.gTrgI
                         << ", VCell = " << VCell
                         << ", BvA = " << state.anode_potential->GetBoundaryVoltage()
                         << ", BvC = " << state.cathode_potential->GetBoundaryVoltage()
                         << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage()
-                        << ", Ce_min = " << state.CnE_gf->Min()
-                        << ", Ce_max = " << state.CnE_gf->Max()
+                        // << ", Ce_min = " << state.CnE_gf->Min()
+                        // << ", Ce_max = " << state.CnE_gf->Max()
                         << std::endl;
 
                     for (int j = 0; j < npA; ++j)
                     {
                         std::cout << "    Anode particle " << j
-                            << ": current = " << anode_currents[j]
-                            << ", target = " << domain_parameters.gTrgPsA[j]
+                            // << ": current = " << anode_currents[j]
+                            // << ", target = " << domain_parameters.gTrgPsA[j]
                             << ", Xfr = " << state.anode_particles[j].concentration->GetLithiation()
-                            << ", Cmin = " << state.anode_particles[j].Cn_gf->Min()
-                            << ", Cmax = " << state.anode_particles[j].Cn_gf->Max()
+                            // << ", Cmin = " << state.anode_particles[j].Cn_gf->Min()
+                            // << ", Cmax = " << state.anode_particles[j].Cn_gf->Max()
                             << std::endl;
                     }
 
                     for (int j = 0; j < npC; ++j)
                     {
                         std::cout << "    Cathode particle " << j
-                            << ": current = " << cathode_currents[j]
-                            << ", target = " << domain_parameters.gTrgPsC[j]
+                            // << ": current = " << cathode_currents[j]
+                            // << ", target = " << domain_parameters.gTrgPsC[j]
                             << ", Xfr = " << state.cathode_particles[j].concentration->GetLithiation()
-                            << ", Cmin = " << state.cathode_particles[j].Cn_gf->Min()
-                            << ", Cmax = " << state.cathode_particles[j].Cn_gf->Max()
+                            // << ", Cmin = " << state.cathode_particles[j].Cn_gf->Min()
+                            // << ", Cmax = " << state.cathode_particles[j].Cn_gf->Max()
                             << std::endl;
                     }
                 }
@@ -883,7 +1102,7 @@ int main(int argc, char *argv[]) {
                     anode_cn_output.push_back(particle.Cn_gf.get());
                 }
 
-                Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, anode_cn_output, domain_parameters.psA, *domain_parameters.psiA, state.anode_out, "A", 1000);
+                // Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, anode_cn_output, domain_parameters.psA, *domain_parameters.psiA, state.anode_out, "A", 1000);
 
                 std::vector<mfem::ParGridFunction*>cathode_cn_output;
                 cathode_cn_output.reserve(npC);
@@ -893,19 +1112,85 @@ int main(int argc, char *argv[]) {
                     cathode_cn_output.push_back(particle.Cn_gf.get());
                 }
 
-                Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_output, domain_parameters.psC, *domain_parameters.psiC, state.cathode_out, "C", 1000);
-                Utils::SaveCombinedElectrodeSnapshot(t, outdir, geometry, anode_cn_output, domain_parameters.psA, cathode_cn_output, domain_parameters.psC, 1000);
+                std::vector<mfem::ParGridFunction*>electrolyte_cn_output;
+                electrolyte_cn_output.reserve(1);
+                electrolyte_cn_output.push_back(state.CnE_gf.get());
+
+                std::vector<mfem::ParGridFunction*>anode_potential_output;
+                anode_potential_output.reserve(1);
+                anode_potential_output.push_back(state.phA_gf.get());
+
+                std::vector<mfem::ParGridFunction*>cathode_potential_output;
+                cathode_potential_output.reserve(1);
+                cathode_potential_output.push_back(state.phC_gf.get());
+
+                std::vector<mfem::ParGridFunction*>electrolyte_potential_output;
+                electrolyte_potential_output.reserve(1);
+                electrolyte_potential_output.push_back(state.phE_gf.get());
+
+                std::vector<mfem::ParGridFunction*> anode_psi_output;
+                anode_psi_output.push_back(domain_parameters.psiA.get());
+
+                std::vector<mfem::ParGridFunction*> cathode_psi_output;
+                cathode_psi_output.push_back(domain_parameters.psiC.get());
+
+                std::vector<mfem::ParGridFunction*> electrolyte_psi_output;
+                electrolyte_psi_output.push_back(domain_parameters.pse.get());
+
+                std::vector<mfem::ParGridFunction*> anode_ps_output;
+                anode_ps_output.reserve(domain_parameters.psA.size());
+
+                for (auto& ps : domain_parameters.psA)
+                {
+                    anode_ps_output.push_back(ps.get());
+                }
+
+                std::vector<mfem::ParGridFunction*> cathode_ps_output;
+                cathode_ps_output.reserve(domain_parameters.psC.size());
+
+                for (auto& ps : domain_parameters.psC)
+                {
+                    cathode_ps_output.push_back(ps.get());
+                }
 
                 if (t % 1000 == 0)
                 {
-                    std::ostringstream rxnA_path;
-                    rxnA_path << outdir << "/RxnA_"  << t << ".gf";
-                    state.RxnA_gf->SaveAsOne(rxnA_path.str().c_str());
+                    std::ostringstream step;
+                    step << "_" << std::setw(5) << std::setfill('0') << t;
 
-                    std::ostringstream rxnC_path;
-                    rxnC_path << outdir << "/RxnC_" << t << ".gf"; 
-                    state.RxnC_gf->SaveAsOne(rxnC_path.str().c_str());
+                    state.phC_gf->SaveAsOne(
+                        (outdir + "/phC" + step.str()).c_str());
+
+                    state.phE_gf->SaveAsOne(
+                        (outdir + "/phE" + step.str()).c_str());
+
+                    state.phA_gf->SaveAsOne(
+                        (outdir + "/phA" + step.str()).c_str());
+
+                    state.CnE_gf->SaveAsOne(
+                        (outdir + "/CnE" + step.str()).c_str());
                 }
+
+                // Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_output, domain_parameters.psC, *domain_parameters.psiC, state.cathode_out, "C", 1000);
+                // Utils::SaveCombinedElectrodeSnapshot(t, outdir, geometry, anode_cn_output, domain_parameters.psA, cathode_cn_output, domain_parameters.psC, 1000);
+
+                Utils::SaveCombinedSnapshot(t, outdir, geometry, domain_parameters, anode_cn_output, anode_ps_output,
+                    cathode_cn_output, cathode_ps_output, electrolyte_cn_output, electrolyte_psi_output,
+                    "Cn_total", 1000);
+
+                Utils::SaveCombinedSnapshot(t, outdir, geometry, domain_parameters, anode_potential_output, anode_psi_output,
+                    cathode_potential_output, cathode_psi_output, electrolyte_potential_output, electrolyte_psi_output,
+                    "Potential_total", 1000);
+                // if (t % 1000 == 0)
+                // {
+                //     std::ostringstream rxnA_path;
+                //     rxnA_path << outdir << "/RxnA_"  << t << ".gf";
+                //     state.RxnA_gf->SaveAsOne(rxnA_path.str().c_str());
+
+                //     std::ostringstream rxnC_path;
+                //     rxnC_path << outdir << "/RxnC_" << t << ".gf"; 
+                //     state.RxnC_gf->SaveAsOne(rxnC_path.str().c_str());
+                // }
 
                 ++t;
             }
