@@ -45,9 +45,9 @@ void Utils::CalculateLithiation(mfem::ParGridFunction &Cn, mfem::ParGridFunction
     Xfr_ /= gtps;
 }
 
-void Utils::CalculateReactionInfx(mfem::ParGridFunction &Rx, double &xCrnt)
+void Utils::CalculateReactionInfx(mfem::ParGridFunction &Rx, double &infx_)
 {
-    xCrnt = 0.0;
+    double xCrnt = 0.0;
 
     mfem::Vector Rmin, Rmax;
     pmesh_->GetBoundingBox(Rmin, Rmax);
@@ -177,84 +177,6 @@ void Utils::SetInitialValue(mfem::ParGridFunction &Cn, double initial_value)
             Cn(i) = initial_value;
     }
 
-// void Utils::SaveSimulationSnapshotMulti(int t, const std::string &outdir, Initialize_Geometry &geometry,
-//     Domain_Parameters &domain_parameters, const std::vector<mfem::ParGridFunction*> &particle_cn,
-//     std::vector<std::unique_ptr<mfem::ParGridFunction>> &particle_out, int save_interval)
-
-//     {
-//         if (t % save_interval != 0) return;
-
-//         const int np = static_cast<int>(particle_cn.size());
-        
-//         std::ostringstream step;
-//         step << "_" << std::setw(5) << std::setfill('0') << t;
-//         const std::string suff = step.str();
-
-//         if (t == 0)
-//         {
-//             geometry.parallelMesh->SaveAsOne((outdir + "/pmesh").c_str());
-//             domain_parameters.psi->SaveAsOne((outdir + "/psi").c_str());
-//             domain_parameters.pse->SaveAsOne((outdir + "/pse").c_str());
-//         }
-
-//         // Save each particle concentration and masked version
-//         for (int k = 0; k < np; ++k)
-//         {
-//             std::ostringstream raw_name, masked_name;
-//             raw_name << outdir << "/CnC_" << (k + 1) << suff;
-//             masked_name << outdir << "/C" << (k + 1) << "_out" << suff;
-
-//             // particle_cn[k]->SaveAsOne(raw_name.str().c_str());
-
-//             *particle_out[k] = *particle_cn[k];
-//             *particle_out[k] *= *domain_parameters.ps[k];
-//             // particle_out[k]->SaveAsOne(masked_name.str().c_str());
-//         }
-
-//         // Build union mask and denominator
-//         mfem::ParGridFunction psi_union(geometry.parfespace.get());
-//         mfem::ParGridFunction denom(geometry.parfespace.get());
-//         mfem::ParGridFunction CnP_total(geometry.parfespace.get());
-
-//         psi_union = 0.0;
-//         denom = 0.0;
-//         CnP_total = 0.0;
-
-//         for (int k = 0; k < np; ++k)
-//         {
-//             psi_union += *domain_parameters.ps[k];
-//             denom += *domain_parameters.ps[k];
-//         }
-
-//         for (int i = 0; i < psi_union.Size(); ++i)
-//         {
-//             psi_union(i) = std::min(1.0, psi_union(i));
-//         }
-
-//         const double eps = 1e-30;
-
-//         for (int i = 0; i < denom.Size(); ++i)
-//         {
-//             const double d = denom(i);
-
-//             if (d > eps)
-//             {
-//                 double num = 0.0;
-//                 for (int k = 0; k < np; ++k)
-//                 {
-//                     num += (*domain_parameters.ps[k])(i) * (*particle_cn[k])(i);
-//                 }
-//                 CnP_total(i) = num / (d + eps);
-//             }
-//             else
-//             {
-//                 CnP_total(i) = 0.0;
-//             }
-//         }
-
-//         CnP_total *= psi_union;
-//         CnP_total.SaveAsOne((outdir + "/CnP_total" + suff).c_str());
-//     }
 
 void Utils::SaveSimulationSnapshotMulti(int t, const std::string& outdir, Initialize_Geometry& geometry,
     Domain_Parameters& domain_parameters, const std::vector<mfem::ParGridFunction*>& particle_cn,
@@ -370,14 +292,19 @@ void Utils::SaveSimulationSnapshotMulti(int t, const std::string& outdir, Initia
         CnP_total.SaveAsOne((outdir + "/Cn" + electrode_name + "_total" + suff).c_str());
     }
 
-void Utils::SaveCombinedElectrodeSnapshot(
+
+void Utils::SaveCombinedSnapshot(
     int t,
     const std::string& outdir,
     Initialize_Geometry& geometry,
-    const std::vector<mfem::ParGridFunction*>& anode_cn,
-    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& anode_ps,
-    const std::vector<mfem::ParGridFunction*>& cathode_cn,
-    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& cathode_ps,
+    Domain_Parameters& domain_parameters,
+    const std::vector<mfem::ParGridFunction*>& anode_fields,
+    const std::vector<mfem::ParGridFunction*>& anode_ps,
+    const std::vector<mfem::ParGridFunction*>& cathode_fields,
+    const std::vector<mfem::ParGridFunction*>& cathode_ps,
+    const std::vector<mfem::ParGridFunction*>& electrolyte_fields,
+    const std::vector<mfem::ParGridFunction*>& electrolyte_ps,
+    const std::string& filename,
     int save_interval)
 {
     if (t % save_interval != 0)
@@ -385,117 +312,155 @@ void Utils::SaveCombinedElectrodeSnapshot(
         return;
     }
 
-    MFEM_VERIFY(
-        anode_cn.size() == anode_ps.size(),
-        "SaveCombinedElectrodeSnapshot: anode concentration and phase-field counts differ.");
+    if (t == 0)
+    {
+        MFEM_VERIFY(geometry.parallelMesh, "SaveSimulationSnapshotMulti: parallel mesh is null.");
+        MFEM_VERIFY(domain_parameters.pse, "SaveSimulationSnapshotMulti: electrolyte phase field is null.");
+
+        geometry.parallelMesh->SaveAsOne( (outdir + "/pmesh").c_str());
+        domain_parameters.psi->SaveAsOne((outdir + "/psi").c_str());
+        domain_parameters.pse->SaveAsOne((outdir + "/pse").c_str());
+    }
 
     MFEM_VERIFY(
-        cathode_cn.size() == cathode_ps.size(),
-        "SaveCombinedElectrodeSnapshot: cathode concentration and phase-field counts differ.");
+        anode_fields.size() == anode_ps.size(),
+        "SaveCombinedSnapshot: anode field and phase-field counts differ.");
+
+    MFEM_VERIFY(
+        cathode_fields.size() == cathode_ps.size(),
+        "SaveCombinedSnapshot: cathode field and phase-field counts differ.");
+
+    MFEM_VERIFY(
+        electrolyte_fields.size() == electrolyte_ps.size(),
+        "SaveCombinedSnapshot: electrolyte field and phase-field counts differ.");
 
     MFEM_VERIFY(
         geometry.parfespace,
-        "SaveCombinedElectrodeSnapshot: finite-element space is null.");
+        "SaveCombinedSnapshot: finite-element space is null.");
+
+    // ---------------------------------------------------------------------
+    // Time suffix
+    // ---------------------------------------------------------------------
 
     std::ostringstream step;
     step << "_" << std::setw(5) << std::setfill('0') << t;
     const std::string suffix = step.str();
 
-    mfem::ParGridFunction electrode_union(geometry.parfespace.get());
+    // ---------------------------------------------------------------------
+    // Combined quantities
+    // ---------------------------------------------------------------------
+
     mfem::ParGridFunction numerator(geometry.parfespace.get());
     mfem::ParGridFunction denominator(geometry.parfespace.get());
-    mfem::ParGridFunction combined_concentration(geometry.parfespace.get());
+    mfem::ParGridFunction combined_field(geometry.parfespace.get());
 
-    electrode_union = 0.0;
     numerator = 0.0;
     denominator = 0.0;
-    combined_concentration = 0.0;
+    combined_field = 0.0;
 
     // =====================================================================
-    // Add all anode particles
+    // ANODE
     // =====================================================================
 
-    for (std::size_t k = 0; k < anode_cn.size(); ++k)
+    for (std::size_t k = 0; k < anode_fields.size(); ++k)
     {
         MFEM_VERIFY(
-            anode_cn[k] != nullptr,
-            "SaveCombinedElectrodeSnapshot: null anode concentration field.");
+            anode_fields[k] != nullptr,
+            "SaveCombinedSnapshot: null anode field.");
 
         MFEM_VERIFY(
             anode_ps[k] != nullptr,
-            "SaveCombinedElectrodeSnapshot: null anode particle phase field.");
+            "SaveCombinedSnapshot: null anode phase field.");
 
         MFEM_VERIFY(
-            anode_cn[k]->Size() == anode_ps[k]->Size(),
-            "SaveCombinedElectrodeSnapshot: anode concentration and phase-field sizes differ.");
+            anode_fields[k]->Size() == anode_ps[k]->Size(),
+            "SaveCombinedSnapshot: anode field and phase-field sizes differ.");
 
         for (int i = 0; i < numerator.Size(); ++i)
         {
-            const double psi_value = (*anode_ps[k])(i);
+            const double psi = (*anode_ps[k])(i);
 
-            numerator(i) += psi_value * (*anode_cn[k])(i);
-            denominator(i) += psi_value;
+            numerator(i) += psi * (*anode_fields[k])(i);
+            denominator(i) += psi;
         }
     }
 
     // =====================================================================
-    // Add all cathode particles
+    // CATHODE
     // =====================================================================
 
-    for (std::size_t k = 0; k < cathode_cn.size(); ++k)
+    for (std::size_t k = 0; k < cathode_fields.size(); ++k)
     {
         MFEM_VERIFY(
-            cathode_cn[k] != nullptr,
-            "SaveCombinedElectrodeSnapshot: null cathode concentration field.");
+            cathode_fields[k] != nullptr,
+            "SaveCombinedSnapshot: null cathode field.");
 
         MFEM_VERIFY(
             cathode_ps[k] != nullptr,
-            "SaveCombinedElectrodeSnapshot: null cathode particle phase field.");
+            "SaveCombinedSnapshot: null cathode phase field.");
 
         MFEM_VERIFY(
-            cathode_cn[k]->Size() == cathode_ps[k]->Size(),
-            "SaveCombinedElectrodeSnapshot: cathode concentration and phase-field sizes differ.");
+            cathode_fields[k]->Size() == cathode_ps[k]->Size(),
+            "SaveCombinedSnapshot: cathode field and phase-field sizes differ.");
 
         for (int i = 0; i < numerator.Size(); ++i)
         {
-            const double psi_value = (*cathode_ps[k])(i);
+            const double psi = (*cathode_ps[k])(i);
 
-            numerator(i) += psi_value * (*cathode_cn[k])(i);
-            denominator(i) += psi_value;
+            numerator(i) += psi * (*cathode_fields[k])(i);
+            denominator(i) += psi;
         }
     }
 
     // =====================================================================
-    // Construct combined electrode mask and concentration
+    // ELECTROLYTE
+    // =====================================================================
+
+    for (std::size_t k = 0; k < electrolyte_fields.size(); ++k)
+    {
+        MFEM_VERIFY(
+            electrolyte_fields[k] != nullptr,
+            "SaveCombinedSnapshot: null electrolyte field.");
+
+        MFEM_VERIFY(
+            electrolyte_ps[k] != nullptr,
+            "SaveCombinedSnapshot: null electrolyte phase field.");
+
+        MFEM_VERIFY(
+            electrolyte_fields[k]->Size() == electrolyte_ps[k]->Size(),
+            "SaveCombinedSnapshot: electrolyte field and phase-field sizes differ.");
+
+        for (int i = 0; i < numerator.Size(); ++i)
+        {
+            const double psi = (*electrolyte_ps[k])(i);
+
+            numerator(i) += psi * (*electrolyte_fields[k])(i);
+            denominator(i) += psi;
+        }
+    }
+
+    // =====================================================================
+    // Construct final combined field
     // =====================================================================
 
     const double eps = 1.0e-30;
 
-    for (int i = 0; i < combined_concentration.Size(); ++i)
+    for (int i = 0; i < combined_field.Size(); ++i)
     {
-        electrode_union(i) = std::min(1.0, denominator(i));
-
         if (denominator(i) > eps)
         {
-            combined_concentration(i) =
-                numerator(i) / denominator(i);
+            combined_field(i) = numerator(i) / denominator(i);
         }
         else
         {
-            combined_concentration(i) = 0.0;
+            combined_field(i) = 0.0;
         }
     }
 
-    // Make the value exactly zero outside both electrodes.
-    combined_concentration *= electrode_union;
+    // =====================================================================
+    // Save
+    // =====================================================================
 
-    combined_concentration.SaveAsOne(
-        (outdir + "/CnElectrodes_total" + suffix).c_str());
-
-    // The mask only needs to be saved once because it does not vary in time.
-    if (t == 0)
-    {
-        electrode_union.SaveAsOne(
-            (outdir + "/psiElectrodes").c_str());
-    }
+    combined_field.SaveAsOne(
+        (outdir + "/" + filename + suffix).c_str());
 }
