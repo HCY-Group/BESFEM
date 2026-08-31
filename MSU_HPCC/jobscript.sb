@@ -1,6 +1,6 @@
 #!/bin/bash --login
 # Job name: 
-#SBATCH --job-name=NMC-half-3D-altered
+#SBATCH --job-name=NMC-half-TEST
 
 # Number of nodes
 #SBATCH --nodes=8
@@ -12,12 +12,12 @@
 
 # Memory per Node
 # Specify "M" or "G" for MB and GB respectively
-#SBATCH --mem-per-cpu=2G
+#SBATCH --mem-per-cpu=8G
 
 # Wall time
 # Format: "minutes", "hours:minutes:seconds", 
 # "days-hours", or "days-hours:minutes"
-#SBATCH --time=48:00:00
+#SBATCH --time=01:00:00
 
 # Mail type
 # e.g., which events trigger email notifications
