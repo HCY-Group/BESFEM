@@ -642,6 +642,21 @@ int main(int argc, char *argv[]) {
 
                     }
 
+                // if (t % 1000 == 0)
+                // {
+                //     std::ostringstream step;
+                //     step << "_" << std::setw(5) << std::setfill('0') << t;
+
+                //     state.phC_gf->SaveAsOne(
+                //         (outdir + "/phC" + step.str()).c_str());
+
+                //     state.phE_gf->SaveAsOne(
+                //         (outdir + "/phE" + step.str()).c_str());
+
+                //     // state.phA_gf->SaveAsOne(
+                //     //     (outdir + "/phA" + step.str()).c_str());
+                // }
+
                     // if (t % 10000 == 0)
                     // {
                     //     std::ostringstream rxn_path;
@@ -1087,7 +1102,7 @@ int main(int argc, char *argv[]) {
                     anode_cn_output.push_back(particle.Cn_gf.get());
                 }
 
-                Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, anode_cn_output, domain_parameters.psA, *domain_parameters.psiA, state.anode_out, "A", 1000);
+                // Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, anode_cn_output, domain_parameters.psA, *domain_parameters.psiA, state.anode_out, "A", 1000);
 
                 std::vector<mfem::ParGridFunction*>cathode_cn_output;
                 cathode_cn_output.reserve(npC);
@@ -1097,9 +1112,75 @@ int main(int argc, char *argv[]) {
                     cathode_cn_output.push_back(particle.Cn_gf.get());
                 }
 
-                Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_output, domain_parameters.psC, *domain_parameters.psiC, state.cathode_out, "C", 1000);
-                Utils::SaveCombinedElectrodeSnapshot(t, outdir, geometry, anode_cn_output, domain_parameters.psA, cathode_cn_output, domain_parameters.psC, 1000);
+                std::vector<mfem::ParGridFunction*>electrolyte_cn_output;
+                electrolyte_cn_output.reserve(1);
+                electrolyte_cn_output.push_back(state.CnE_gf.get());
 
+                std::vector<mfem::ParGridFunction*>anode_potential_output;
+                anode_potential_output.reserve(1);
+                anode_potential_output.push_back(state.phA_gf.get());
+
+                std::vector<mfem::ParGridFunction*>cathode_potential_output;
+                cathode_potential_output.reserve(1);
+                cathode_potential_output.push_back(state.phC_gf.get());
+
+                std::vector<mfem::ParGridFunction*>electrolyte_potential_output;
+                electrolyte_potential_output.reserve(1);
+                electrolyte_potential_output.push_back(state.phE_gf.get());
+
+                std::vector<mfem::ParGridFunction*> anode_psi_output;
+                anode_psi_output.push_back(domain_parameters.psiA.get());
+
+                std::vector<mfem::ParGridFunction*> cathode_psi_output;
+                cathode_psi_output.push_back(domain_parameters.psiC.get());
+
+                std::vector<mfem::ParGridFunction*> electrolyte_psi_output;
+                electrolyte_psi_output.push_back(domain_parameters.pse.get());
+
+                std::vector<mfem::ParGridFunction*> anode_ps_output;
+                anode_ps_output.reserve(domain_parameters.psA.size());
+
+                for (auto& ps : domain_parameters.psA)
+                {
+                    anode_ps_output.push_back(ps.get());
+                }
+
+                std::vector<mfem::ParGridFunction*> cathode_ps_output;
+                cathode_ps_output.reserve(domain_parameters.psC.size());
+
+                for (auto& ps : domain_parameters.psC)
+                {
+                    cathode_ps_output.push_back(ps.get());
+                }
+
+                if (t % 1000 == 0)
+                {
+                    std::ostringstream step;
+                    step << "_" << std::setw(5) << std::setfill('0') << t;
+
+                    state.phC_gf->SaveAsOne(
+                        (outdir + "/phC" + step.str()).c_str());
+
+                    state.phE_gf->SaveAsOne(
+                        (outdir + "/phE" + step.str()).c_str());
+
+                    state.phA_gf->SaveAsOne(
+                        (outdir + "/phA" + step.str()).c_str());
+
+                    state.CnE_gf->SaveAsOne(
+                        (outdir + "/CnE" + step.str()).c_str());
+                }
+
+                // Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_output, domain_parameters.psC, *domain_parameters.psiC, state.cathode_out, "C", 1000);
+                // Utils::SaveCombinedElectrodeSnapshot(t, outdir, geometry, anode_cn_output, domain_parameters.psA, cathode_cn_output, domain_parameters.psC, 1000);
+
+                Utils::SaveCombinedSnapshot(t, outdir, geometry, domain_parameters, anode_cn_output, anode_ps_output,
+                    cathode_cn_output, cathode_ps_output, electrolyte_cn_output, electrolyte_psi_output,
+                    "Cn_total", 1000);
+
+                Utils::SaveCombinedSnapshot(t, outdir, geometry, domain_parameters, anode_potential_output, anode_psi_output,
+                    cathode_potential_output, cathode_psi_output, electrolyte_potential_output, electrolyte_psi_output,
+                    "Potential_total", 1000);
                 // if (t % 1000 == 0)
                 // {
                 //     std::ostringstream rxnA_path;
