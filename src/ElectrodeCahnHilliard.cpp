@@ -27,7 +27,7 @@ void ElectrodeCahnHilliard::SetupField(mfem::ParGridFunction &Cn, double initial
     MCH_prec.SetType(mfem::HypreSmoother::Jacobi); 
     fem.SolverConditions(MmatCH, MCH_solver, MCH_prec); 
 
-    MCH_solver.iterative_mode = true;
+    // MCH_solver.iterative_mode = true;
     fem.InitializeStiffnessMatrix(cDp, Grad_MForm); 
 
     mfem::ConstantCoefficient varE(cfg.gc/pow(cfg.dh, pmesh->Dimension())); 
