@@ -116,7 +116,14 @@ int main(int argc, char *argv[]) {
                     break;
                 }
 
-                if (cfg.stop_mode == sim::StopMode::VOLTAGE && VCell <= cfg.VCut)
+                // check voltage for discharge conditions
+                if (cfg.stop_mode == sim::StopMode::VOLTAGE && cfg.Cr > 0 &&VCell <= cfg.VCut)
+                {
+                    break;
+                }
+
+                // check voltage for charge conditions
+                if (cfg.stop_mode == sim::StopMode::VOLTAGE && cfg.Cr < 0 && VCell >= cfg.VCut)
                 {
                     break;
                 }
@@ -612,6 +619,9 @@ int main(int argc, char *argv[]) {
                         double XfrC_avg = 0.0;
                         double total_weight = 0.0;
 
+                        double XfrE_avg = 0.0;
+                        double total_weight_E = 0.0;
+
                         std::cout << "timestep: " << t << " [CATHODE HALF-CELL]" << ", VCell = " << VCell << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage();
 
                         std::cout
@@ -637,8 +647,24 @@ int main(int argc, char *argv[]) {
                             XfrC_avg /= total_weight;
                         }
 
-                        std::cout << ", XfrC_avg = " << XfrC_avg;
-                        std::cout << std::endl;
+                        std::cout << ", XfrC_avg = " << XfrC_avg << std::endl;
+
+
+                        const double Xfr_je = state.electrolyte_concentration->GetLithiation();
+                        const double weight_je = domain_parameters.gtPse;
+
+                        std::cout << "XfrE = " << Xfr_je << ", weight_je = " << weight_je;
+
+                        XfrE_avg += weight_je * Xfr_je;
+                        total_weight_E += weight_je;
+                        
+
+                        if (total_weight_E > 0.0)
+                        {
+                            XfrE_avg /= total_weight_E;
+                        }
+
+                        std::cout << ", XfrE_avg = " << XfrE_avg << std::endl;
 
                     }
 
