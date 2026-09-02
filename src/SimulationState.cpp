@@ -67,23 +67,23 @@ static void InitializePairWorkspaces(
     }
 }
 
-void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs)
+void UpdatePairChemicalPotentials(std::vector<ParticleState>& particles, PairWorkspaces& workspace, Initialize_Geometry& geometry,
+    const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs)
 {
-    const int np = static_cast<int>(state.cathode_particles.size());
-    // InitializePairWorkspaces(state.cathode_pairs, geometry, static_cast<int>(state.cathode_particles.size()), "cathode");
+    const int np = static_cast<int>(particles.size());
 
     for (int j = 0; j < np; ++j)
     {
         for (int k = j + 1; k < np; ++k)
         {
-            auto& Cj = *state.cathode_particles[j].Cn_gf;
-            auto& Ck = *state.cathode_particles[k].Cn_gf;
+            auto& Cj = *particles[j].Cn_gf;
+            auto& Ck = *particles[k].Cn_gf;
 
-            const auto mat_j = state.cathode_particles[j].material;
-            const auto mat_k = state.cathode_particles[k].material;
+            const auto mat_j = particles[j].material;
+            const auto mat_k = particles[k].material;
 
-            auto& mu_j = *state.cathode_pairs.mu_pair_a[j][k];
-            auto& mu_k = *state.cathode_pairs.mu_pair_b[j][k];
+            auto& mu_j = *workspace.mu_pair_a[j][k];
+            auto& mu_k = *workspace.mu_pair_b[j][k];
             auto& AvP_pair = *avp_pairs[j][k];
 
             mu_j = 0.0;
@@ -93,47 +93,88 @@ void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geom
             {
                 if (AvP_pair(vi) > 1000.0)
                 {
-                    mu_j(vi) = MaterialProperties::ChemicalPotential(mat_j, Cj(vi));
-                    mu_k(vi) = MaterialProperties::ChemicalPotential(mat_k, Ck(vi));
+                    mu_j(vi) =
+                        MaterialProperties::ChemicalPotential(
+                            mat_j,
+                            Cj(vi));
+
+                    mu_k(vi) =
+                        MaterialProperties::ChemicalPotential(
+                            mat_k,
+                            Ck(vi));
                 }
             }
         }
     }
 }
 
-void UpdateAnodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs)
-{
-    const int np = static_cast<int>(state.anode_particles.size());
-    // InitializePairWorkspaces(state.anode_pairs, geometry, static_cast<int>(state.anode_particles.size()), "anode");
+// void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs)
+// {
+//     const int np = static_cast<int>(state.cathode_particles.size());
+//     // InitializePairWorkspaces(state.cathode_pairs, geometry, static_cast<int>(state.cathode_particles.size()), "cathode");
 
-    for (int j = 0; j < np; ++j)
-    {
-        for (int k = j + 1; k < np; ++k)
-        {
-            auto& Cj = *state.anode_particles[j].Cn_gf;
-            auto& Ck = *state.anode_particles[k].Cn_gf;
+//     for (int j = 0; j < np; ++j)
+//     {
+//         for (int k = j + 1; k < np; ++k)
+//         {
+//             auto& Cj = *state.cathode_particles[j].Cn_gf;
+//             auto& Ck = *state.cathode_particles[k].Cn_gf;
 
-            const auto mat_j = state.anode_particles[j].material;
-            const auto mat_k = state.anode_particles[k].material;
+//             const auto mat_j = state.cathode_particles[j].material;
+//             const auto mat_k = state.cathode_particles[k].material;
 
-            auto& mu_j = *state.anode_pairs.mu_pair_a[j][k];
-            auto& mu_k = *state.anode_pairs.mu_pair_b[j][k];
-            auto& AvP_pair = *avp_pairs[j][k];
+//             auto& mu_j = *state.cathode_pairs.mu_pair_a[j][k];
+//             auto& mu_k = *state.cathode_pairs.mu_pair_b[j][k];
+//             auto& AvP_pair = *avp_pairs[j][k];
 
-            mu_j = 0.0;
-            mu_k = 0.0;
+//             mu_j = 0.0;
+//             mu_k = 0.0;
 
-            for (int vi = 0; vi < geometry.nV; ++vi)
-            {
-                if (AvP_pair(vi) > 1000.0)
-                {
-                    mu_j(vi) = MaterialProperties::ChemicalPotential(mat_j, Cj(vi));
-                    mu_k(vi) = MaterialProperties::ChemicalPotential(mat_k, Ck(vi));
-                }
-            }
-        }
-    }
-}
+//             for (int vi = 0; vi < geometry.nV; ++vi)
+//             {
+//                 if (AvP_pair(vi) > 1000.0)
+//                 {
+//                     mu_j(vi) = MaterialProperties::ChemicalPotential(mat_j, Cj(vi));
+//                     mu_k(vi) = MaterialProperties::ChemicalPotential(mat_k, Ck(vi));
+//                 }
+//             }
+//         }
+//     }
+// }
+
+// void UpdateAnodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs)
+// {
+//     const int np = static_cast<int>(state.anode_particles.size());
+//     // InitializePairWorkspaces(state.anode_pairs, geometry, static_cast<int>(state.anode_particles.size()), "anode");
+
+//     for (int j = 0; j < np; ++j)
+//     {
+//         for (int k = j + 1; k < np; ++k)
+//         {
+//             auto& Cj = *state.anode_particles[j].Cn_gf;
+//             auto& Ck = *state.anode_particles[k].Cn_gf;
+
+//             const auto mat_j = state.anode_particles[j].material;
+//             const auto mat_k = state.anode_particles[k].material;
+
+//             auto& mu_j = *state.anode_pairs.mu_pair_a[j][k];
+//             auto& mu_k = *state.anode_pairs.mu_pair_b[j][k];
+//             auto& AvP_pair = *avp_pairs[j][k];
+
+//             mu_j = 0.0;
+//             mu_k = 0.0;
+
+//             for (int vi = 0; vi < geometry.nV; ++vi)
+//             {
+//                 if (AvP_pair(vi) > 1000.0)
+//                 {
+//                     mu_j(vi) = MaterialProperties::ChemicalPotential(mat_j, Cj(vi));
+//                     mu_k(vi) = MaterialProperties::ChemicalPotential(mat_k, Ck(vi));
+//                 }
+//             }
+//         }
+//     }
+// }
 
 
 static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters,
