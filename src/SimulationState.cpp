@@ -67,23 +67,23 @@ static void InitializePairWorkspaces(
     }
 }
 
-void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs)
+void UpdatePairChemicalPotentials(std::vector<ParticleState>& particles, PairWorkspaces& workspace, Initialize_Geometry& geometry,
+    const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs)
 {
-    const int np = static_cast<int>(state.cathode_particles.size());
-    // InitializePairWorkspaces(state.cathode_pairs, geometry, static_cast<int>(state.cathode_particles.size()), "cathode");
+    const int np = static_cast<int>(particles.size());
 
     for (int j = 0; j < np; ++j)
     {
         for (int k = j + 1; k < np; ++k)
         {
-            auto& Cj = *state.cathode_particles[j].Cn_gf;
-            auto& Ck = *state.cathode_particles[k].Cn_gf;
+            auto& Cj = *particles[j].Cn_gf;
+            auto& Ck = *particles[k].Cn_gf;
 
-            const auto mat_j = state.cathode_particles[j].material;
-            const auto mat_k = state.cathode_particles[k].material;
+            const auto mat_j = particles[j].material;
+            const auto mat_k = particles[k].material;
 
-            auto& mu_j = *state.cathode_pairs.mu_pair_a[j][k];
-            auto& mu_k = *state.cathode_pairs.mu_pair_b[j][k];
+            auto& mu_j = *workspace.mu_pair_a[j][k];
+            auto& mu_k = *workspace.mu_pair_b[j][k];
             auto& AvP_pair = *avp_pairs[j][k];
 
             mu_j = 0.0;
@@ -93,48 +93,20 @@ void UpdateCathodePairChemicalPotentials(SimulationState& state, Initialize_Geom
             {
                 if (AvP_pair(vi) > 1000.0)
                 {
-                    mu_j(vi) = MaterialProperties::ChemicalPotential(mat_j, Cj(vi));
-                    mu_k(vi) = MaterialProperties::ChemicalPotential(mat_k, Ck(vi));
+                    mu_j(vi) =
+                        MaterialProperties::ChemicalPotential(
+                            mat_j,
+                            Cj(vi));
+
+                    mu_k(vi) =
+                        MaterialProperties::ChemicalPotential(
+                            mat_k,
+                            Ck(vi));
                 }
             }
         }
     }
 }
-
-void UpdateAnodePairChemicalPotentials(SimulationState& state, Initialize_Geometry& geometry, const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs)
-{
-    const int np = static_cast<int>(state.anode_particles.size());
-    // InitializePairWorkspaces(state.anode_pairs, geometry, static_cast<int>(state.anode_particles.size()), "anode");
-
-    for (int j = 0; j < np; ++j)
-    {
-        for (int k = j + 1; k < np; ++k)
-        {
-            auto& Cj = *state.anode_particles[j].Cn_gf;
-            auto& Ck = *state.anode_particles[k].Cn_gf;
-
-            const auto mat_j = state.anode_particles[j].material;
-            const auto mat_k = state.anode_particles[k].material;
-
-            auto& mu_j = *state.anode_pairs.mu_pair_a[j][k];
-            auto& mu_k = *state.anode_pairs.mu_pair_b[j][k];
-            auto& AvP_pair = *avp_pairs[j][k];
-
-            mu_j = 0.0;
-            mu_k = 0.0;
-
-            for (int vi = 0; vi < geometry.nV; ++vi)
-            {
-                if (AvP_pair(vi) > 1000.0)
-                {
-                    mu_j(vi) = MaterialProperties::ChemicalPotential(mat_j, Cj(vi));
-                    mu_k(vi) = MaterialProperties::ChemicalPotential(mat_k, Ck(vi));
-                }
-            }
-        }
-    }
-}
-
 
 static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters,
     const SimulationConfig& cfg, BoundaryConditions& bc, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& particle_fields,
@@ -546,5 +518,97 @@ void Pairs(PairWorkspaces& workspace, const std::vector<std::vector<std::unique_
         }
 
         pair_terms.push_back(pair);
+    }
+}
+
+void BuildParticleFields(const std::vector<ParticleState>& particles, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& psi,
+    std::vector<mfem::ParGridFunction*>& cn_fields, std::vector<mfem::ParGridFunction*>& psi_fields, std::vector<sim::MaterialType>& materials)
+{
+    const int np = static_cast<int>(particles.size());
+
+    cn_fields.clear();
+    psi_fields.clear();
+    materials.clear();
+
+    cn_fields.reserve(np);
+    psi_fields.reserve(np);
+    materials.reserve(np);
+
+    for (int j = 0; j < np; ++j)
+    {
+        cn_fields.push_back(particles[j].Cn_gf.get());
+        psi_fields.push_back(psi[j].get());
+        materials.push_back(particles[j].material);
+    }
+}
+
+void UpdateExchangeCurrentDensity(std::vector<ParticleState>& particles, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& AvEs)
+{
+    const int np = static_cast<int>(particles.size());
+
+    for (int j = 0; j < np; ++j)
+    {
+        particles[j].reaction->ExchangeCurrentDensity(*particles[j].Cn_gf, *AvEs[j], particles[j].material);
+    }
+}
+
+double CalculateElectrodeCurrent(std::vector<ParticleState>& particles, std::vector<double>& particle_currents)
+{
+    const int np = static_cast<int>(particles.size());
+
+    particle_currents.assign(np, 0.0);
+
+    double total_current = 0.0;
+
+    for (int j = 0; j < np; ++j)
+    {
+        particles[j].reaction->TotalReactionCurrent(*particles[j].Rxn_gf, particle_currents[j]);
+        total_current += particle_currents[j];
+    }
+
+    return total_current;
+}
+
+void UpdateParticleConcentrations(std::vector<ParticleState>& particles, PairWorkspaces& pairs,
+    const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& weight_pairs,
+    const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs,
+    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& ps, const std::vector<double>& gtPs, 
+    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& weightEs, mfem::ParGridFunction& total_rxn, int t)
+{
+    const int np = static_cast<int>(particles.size());
+
+    total_rxn = 0.0;
+
+    for (int j = 0; j < np; ++j)
+    {
+        // Freeze the reaction from the previous converged timestep.
+        *particles[j].Rx_src = *particles[j].Rxn_gf;
+
+        total_rxn += *particles[j].Rx_src;
+        std::vector<ConcentrationBase::PairCoupling> pair_terms;
+
+        Pairs(pairs, weight_pairs, avp_pairs, j, pair_terms, np, t);
+        particles[j].concentration->UpdateConcentration(*particles[j].Rx_src, *particles[j].Cn_gf, *ps[j], gtPs[j], *weightEs[j], pair_terms);
+    }
+}
+
+void UpdateButlerVolmerReactions(std::vector<ParticleState>& particles, mfem::ParGridFunction& total_rxn,
+    mfem::ParGridFunction& CnE, mfem::ParGridFunction& phS, mfem::ParGridFunction& phE,
+    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& AvEs, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& WeightEs)
+{
+    total_rxn = 0.0;
+
+    const int np = static_cast<int>(particles.size());
+
+    for (int j = 0; j < np; ++j)
+    {
+        particles[j].reaction->ButlerVolmer(*particles[j].Rxn_gf, *particles[j].Cn_gf, CnE, phS, phE, *AvEs[j]);
+
+        mfem::ParGridFunction weighted_rxn(particles[j].Rxn_gf->ParFESpace());
+
+        weighted_rxn = *particles[j].Rxn_gf;
+        weighted_rxn *= *WeightEs[j];
+
+        total_rxn += weighted_rxn;
     }
 }

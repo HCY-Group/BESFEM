@@ -18,6 +18,8 @@
 #include "Initialize_Geometry.hpp"
 #include "Domain_Parameters.hpp"
 
+struct SimulationState;
+
 /**
  * @class Utils
  * @brief Helper class for common BESFEM operations.
@@ -142,86 +144,23 @@ public:
         return od.str();
     }
 
-    /**
-     * @brief Save a full-cell simulation snapshot.
-     *
-     * @param t Timestep index.
-     * @param outdir Output directory.
-     * @param geometry Geometry handler.
-     * @param domain_parameters Domain-parameter object.
-     * @param phA Anode potential field.
-     * @param phC Cathode potential field.
-     * @param phE Electrolyte potential field.
-     * @param CnA Anode concentration field.
-     * @param CnC Cathode concentration field.
-     * @param CnE Electrolyte concentration field.
-     * @param CnApsi Masked anode concentration field.
-     * @param CnCpsi Masked cathode concentration field.
-     * @param CnEpsi Masked electrolyte concentration field.
-     * @param CnP Combined particle concentration field.
-     * @param save_interval Number of timesteps between saved snapshots.
-     */
-    static void SaveSimulationSnapshot(int t, const std::string &outdir,
-        Initialize_Geometry &geometry, Domain_Parameters &domain_parameters,
-        mfem::ParGridFunction &phA, mfem::ParGridFunction &phC, mfem::ParGridFunction &phE,
-        mfem::ParGridFunction &CnA, mfem::ParGridFunction &CnC, mfem::ParGridFunction &CnE,
-        mfem::ParGridFunction &CnApsi, mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi,
-        mfem::ParGridFunction &CnP, int save_interval = 500);
+    static void SaveHalfCellSnapshot(int t, const std::string& outdir, Initialize_Geometry& geometry,
+        Domain_Parameters& domain_parameters, SimulationState& state, sim::Electrode electrode, int save_interval);
 
-    /**
-     * @brief Save a half-cell simulation snapshot.
-     *
-     * @param t Timestep index.
-     * @param outdir Output directory.
-     * @param geometry Geometry handler.
-     * @param domain_parameters Domain-parameter object.
-     * @param phC Electrode potential field.
-     * @param phE Electrolyte potential field.
-     * @param CnC Electrode concentration field.
-     * @param CnE Electrolyte concentration field.
-     * @param CnCpsi Masked electrode concentration field.
-     * @param CnEpsi Masked electrolyte concentration field.
-     * @param save_interval Number of timesteps between saved snapshots.
-     */
-    static void SaveSimulationSnapshot(int t, const std::string &outdir,
-        Initialize_Geometry &geometry, Domain_Parameters &domain_parameters,
-        mfem::ParGridFunction &phC, mfem::ParGridFunction &phE,
-        mfem::ParGridFunction &CnC, mfem::ParGridFunction &CnE,
-        mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi,
-        int save_interval = 500);
+    static void SaveFullCellSnapshot(int t, const std::string& outdir, Initialize_Geometry& geometry,
+        Domain_Parameters& domain_parameters, SimulationState& state, int save_interval);
 
+    static void PrintSimulationParameters(const SimulationConfig &cfg, const std::string &outdir);
 
-    /**
-     * @brief Save multi-particle simulation snapshots.
-     * 
-     * @param t Timestep index.
-     * @param outdir Output directory.
-     * @param geometry Geometry handler.
-     * @param domain_parameters Domain-parameter object.
-     * @param particle_cn Particle concentration fields to save.
-     * @param particle_ps Particle phase fields.
-     * @param electrode_psi Electrode phase field.
-     * @param particle_out Output workspaces for masked/saved fields.
-     * @param electrode_name Name of the electrode.
-     * @param save_interval Number of timesteps between saved snapshots.
-     */
-    static void SaveSimulationSnapshotMulti(int t, const std::string& outdir,
-        Initialize_Geometry& geometry, Domain_Parameters& domain_parameters,
-        const std::vector<mfem::ParGridFunction*>& particle_cn,
-        const std::vector<std::unique_ptr<mfem::ParGridFunction>>& particle_ps,
-        mfem::ParGridFunction& electrode_psi,
-        std::vector<std::unique_ptr<mfem::ParGridFunction>>& particle_out,
-        const std::string& electrode_name, int save_interval);
+    static void PrintHalfCellStatus(int t, double VCell, double total_current, double total_target,
+        const std::vector<double> &particle_currents, const SimulationState &state, const Domain_Parameters &para, sim::Electrode electrode);
 
-    static void SaveCombinedSnapshot(int t, const std::string& outdir,
-        Initialize_Geometry& geometry, Domain_Parameters& domain_parameters,
-        const std::vector<mfem::ParGridFunction*>& anode_fields,
-        const std::vector<mfem::ParGridFunction*>& anode_ps,
-        const std::vector<mfem::ParGridFunction*>& cathode_fields,
-        const std::vector<mfem::ParGridFunction*>& cathode_ps,
-        const std::vector<mfem::ParGridFunction*>& electrolyte_fields,
-        const std::vector<mfem::ParGridFunction*>& electrolyte_ps,
-        const std::string& filename, int save_interval);
+    static void PrintFullCellStatus(int t, double VCell, double anode_current, double cathode_current,
+        const SimulationState &state, const Domain_Parameters &para);
+
+    static void PrintProgramTime(std::chrono::high_resolution_clock::time_point start, std::chrono::high_resolution_clock::time_point end);
+
+    static bool ShouldStopSimulation(const SimulationConfig& cfg, int t, double VCell);
 
 private:
     Initialize_Geometry &geometry_; ///< Geometry handler.

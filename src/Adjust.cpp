@@ -58,3 +58,12 @@ void Adjust::AdjustConstantCurrent(double current_A, double current_C, Electrode
     VCell = cathode_potential.GetBoundaryVoltage() - anode_potential.GetBoundaryVoltage();
 }
 
+
+void Adjust::AdjustHalfCellCurrent(double total_current, double total_target, ElectrolytePotential& electrolyte_potential, mfem::ParGridFunction& phE)
+{
+    const double sgn = std::copysign(1.0, total_target - total_current);
+    const double dV = cfg.dt * cfg.Vsr0 * sgn;
+
+    electrolyte_potential.AddBoundaryVoltage(dV);
+    phE += dV;
+}

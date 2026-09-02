@@ -262,6 +262,14 @@ init_BvC = 3.40
 init_BvE = -0.10
 ```
 
+The battery discharge and charge rate can be declared. 
+A positive rate (+) is a discharge simulation and a negative rate (-) is a charge simulation.
+
+```ini
+Cr = 1.0     # discharge simulation
+Cr = -1.0    # charge simulation
+```
+
 ---
 
 ### Output

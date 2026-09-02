@@ -27,7 +27,7 @@ void ElectrodeCahnHilliard::SetupField(mfem::ParGridFunction &Cn, double initial
     MCH_prec.SetType(mfem::HypreSmoother::Jacobi); 
     fem.SolverConditions(MmatCH, MCH_solver, MCH_prec); 
 
-    MCH_solver.iterative_mode = true;
+    // MCH_solver.iterative_mode = true;
     fem.InitializeStiffnessMatrix(cDp, Grad_MForm); 
 
     mfem::ConstantCoefficient varE(cfg.gc/pow(cfg.dh, pmesh->Dimension())); 
@@ -44,8 +44,7 @@ void ElectrodeCahnHilliard::SetupField(mfem::ParGridFunction &Cn, double initial
 
 void ElectrodeCahnHilliard::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx,
                             double gtPsx, mfem::ParGridFunction &weight_elec, const std::vector<ConcentrationBase::PairCoupling> &pair_terms)
-{  
-    
+{      
     const double rho = MaterialProperties::SiteDensity(material);
     utils.InitializeReaction(Rx, RxA, (1.0/rho)); 
 

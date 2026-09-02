@@ -2,15 +2,61 @@
 #include "../include/Constants.hpp"
 #include "../include/SimulationConfig.hpp"
 #include "../include/MaterialProperties.hpp"
+#include "../include/SimulationState.hpp"
 
 #include <numeric>
+
+namespace
+{
+
+    template <typename ParticleState>
+    void BuildCombinedParticleConcentration(const std::vector<ParticleState>& particles, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& particle_ps, mfem::ParGridFunction& output)
+    {
+        const int np = static_cast<int>(particles.size());
+        output = 0.0;
+        mfem::ParGridFunction denominator(output.ParFESpace());
+        denominator = 0.0;
+
+        for (int k = 0; k < np; ++k)
+        {
+            for (int i = 0; i < output.Size(); ++i)
+            {
+                const double psi = (*particle_ps[k])(i);
+                output(i) += psi * (*particles[k].Cn_gf)(i);
+                denominator(i) += psi;
+            }
+        }
+
+        constexpr double eps = 1.0e-30;
+
+        for (int i = 0; i < output.Size(); ++i)
+        {
+            const double d = denominator(i);
+
+            if (d > eps)
+            {
+                output(i) /= d;
+            }
+            else
+            {
+                output(i) = 0.0;
+            }
+        }
+    }
+
+    std::string MakeTimestepSuffix(int t)
+    {
+        std::ostringstream step;
+        step << "_" << std::setw(7) << std::setfill('0') << t;
+        return step.str();
+    }
+} 
 
 Utils::Utils(Initialize_Geometry &geo, Domain_Parameters &para, const SimulationConfig &cfg)
     : geometry_(geo), domain_(para), cfg(cfg), pmesh_(geo.parallelMesh.get()), fes_(geo.parfespace),
       nE_(geo.nE), nC_(geo.nC), nV_(geo.nV), EVol_(para.EVol), EAvg_(geo.nE), VtxVal_(geo.nC), TmpF_(geo.parfespace.get())
 {
 }
-
 
 void Utils::InitializeReaction(mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, double value)
 {
@@ -99,78 +145,6 @@ void Utils::ComputePairFlux(mfem::ParGridFunction &sum_part, mfem::ParGridFuncti
 
 }
 
-// Full Cell
-void Utils::SaveSimulationSnapshot(int t, const std::string &outdir, Initialize_Geometry &geometry, Domain_Parameters &domain_parameters, mfem::ParGridFunction &phA,
-    mfem::ParGridFunction &phC, mfem::ParGridFunction &phE, mfem::ParGridFunction &CnA, mfem::ParGridFunction &CnC, mfem::ParGridFunction &CnE, mfem::ParGridFunction &CnApsi,
-    mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi, mfem::ParGridFunction &CnP, int save_interval)
-{
-    if (t % save_interval != 0) return;
-
-    std::ostringstream step;
-    step << "_" << std::setw(5) << std::setfill('0') << t;
-    std::string suff = step.str();
-
-    if (t == 0)
-    {
-        geometry.parallelMesh->SaveAsOne((outdir + "/pmesh").c_str());
-        domain_parameters.psiA->SaveAsOne((outdir + "/psiA").c_str());
-        domain_parameters.psiC->SaveAsOne((outdir + "/psiC").c_str());
-        domain_parameters.pse->SaveAsOne((outdir + "/pse").c_str());
-    }
-
-    phA.SaveAsOne((outdir + "/phA" + suff).c_str());
-    phC.SaveAsOne((outdir + "/phC" + suff).c_str());
-    phE.SaveAsOne((outdir + "/phE" + suff).c_str());
-
-    CnA.SaveAsOne((outdir + "/CnA_raw" + suff).c_str());
-    CnC.SaveAsOne((outdir + "/CnC_raw" + suff).c_str());
-    CnE.SaveAsOne((outdir + "/CnE_raw" + suff).c_str());
-
-    CnApsi = CnA; CnApsi *= *domain_parameters.psiA;
-    CnApsi.SaveAsOne((outdir + "/CnA" + suff).c_str());
-
-    CnCpsi = CnC; CnCpsi *= *domain_parameters.psiC;
-    CnCpsi.SaveAsOne((outdir + "/CnC" + suff).c_str());
-
-    CnEpsi = CnE; CnEpsi *= *domain_parameters.pse;
-    CnEpsi.SaveAsOne((outdir + "/CnE" + suff).c_str());
-
-    CnP = CnApsi;
-    CnP += CnCpsi;
-    CnP.SaveAsOne((outdir + "/CnP" + suff).c_str());
-}
-
-// Half Cell
-void Utils::SaveSimulationSnapshot(int t, const std::string &outdir,
-    Initialize_Geometry &geometry, Domain_Parameters &domain_parameters, mfem::ParGridFunction &phC, mfem::ParGridFunction &phE, mfem::ParGridFunction &CnC, mfem::ParGridFunction &CnE,
-    mfem::ParGridFunction &CnCpsi, mfem::ParGridFunction &CnEpsi, int save_interval)
-{
-    if (t % save_interval != 0) return;
-
-    std::ostringstream step;
-    step << "_" << std::setw(5) << std::setfill('0') << t;
-    std::string suff = step.str();
-
-    if (t == 0)
-    {
-        geometry.parallelMesh->SaveAsOne((outdir + "/pmesh").c_str());
-        domain_parameters.psi->SaveAsOne((outdir + "/psi").c_str());
-        domain_parameters.pse->SaveAsOne((outdir + "/pse").c_str());
-    }
-
-    phC.SaveAsOne((outdir + "/phC" + suff).c_str());
-    phE.SaveAsOne((outdir + "/phE" + suff).c_str());
-
-    CnC.SaveAsOne((outdir + "/CnP_raw" + suff).c_str());
-    CnE.SaveAsOne((outdir + "/CnE_raw" + suff).c_str());
-
-    CnCpsi = CnC; CnCpsi *= *domain_parameters.psi;
-    CnCpsi.SaveAsOne((outdir + "/CnP" + suff).c_str());
-
-    CnEpsi = CnE; CnEpsi *= *domain_parameters.pse;
-    CnEpsi.SaveAsOne((outdir + "/CnE" + suff).c_str());
-}
-
 void Utils::SetInitialValue(mfem::ParGridFunction &Cn, double initial_value)
     {
         for (int i = 0; i < Cn.Size(); i++)
@@ -178,289 +152,301 @@ void Utils::SetInitialValue(mfem::ParGridFunction &Cn, double initial_value)
     }
 
 
-void Utils::SaveSimulationSnapshotMulti(int t, const std::string& outdir, Initialize_Geometry& geometry,
-    Domain_Parameters& domain_parameters, const std::vector<mfem::ParGridFunction*>& particle_cn,
-    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& particle_ps, mfem::ParGridFunction& electrode_psi,
-    std::vector<std::unique_ptr<mfem::ParGridFunction>>& particle_out, const std::string& electrode_name, int save_interval)
+void Utils::SaveHalfCellSnapshot(int t, const std::string& outdir, Initialize_Geometry& geometry,
+    Domain_Parameters& domain_parameters, SimulationState& state, sim::Electrode electrode, int save_interval)
+{
+
+    if (t % save_interval != 0)
     {
-        if (t % save_interval != 0)
-        {
-            return;
-        }
-
-        const int np = static_cast<int>(particle_cn.size());
-        MFEM_VERIFY(static_cast<int>(particle_ps.size()) == np, "SaveSimulationSnapshotMulti: particle concentration and phase-field counts differ.");
-        MFEM_VERIFY(static_cast<int>(particle_out.size()) == np, "SaveSimulationSnapshotMulti: particle concentration and output counts differ.");
-
-        std::ostringstream step;
-        step << "_" << std::setw(5) << std::setfill('0') << t;
-        const std::string suff = step.str();
-
-        // =====================================================================
-        // Save mesh and phase fields at timestep zero
-        // =====================================================================
-
-        if (t == 0)
-        {
-            MFEM_VERIFY(geometry.parallelMesh, "SaveSimulationSnapshotMulti: parallel mesh is null.");
-            MFEM_VERIFY(domain_parameters.pse, "SaveSimulationSnapshotMulti: electrolyte phase field is null.");
-
-            geometry.parallelMesh->SaveAsOne( (outdir + "/pmesh").c_str());
-            electrode_psi.SaveAsOne((outdir + "/psi" + electrode_name).c_str());
-            domain_parameters.pse->SaveAsOne((outdir + "/pse").c_str());
-
-            for (int k = 0; k < np; ++k)
-            {
-                MFEM_VERIFY(particle_ps[k], "SaveSimulationSnapshotMulti: null particle phase field.");
-                std::ostringstream psi_name;
-                psi_name << outdir << "/ps" << electrode_name << "_" << (k + 1);
-                particle_ps[k]->SaveAsOne(psi_name.str().c_str());
-            }
-        }
-
-        // =====================================================================
-        // Save each particle concentration and masked concentration
-        // =====================================================================
-
-        for (int k = 0; k < np; ++k)
-        {
-            MFEM_VERIFY(particle_cn[k] != nullptr, "SaveSimulationSnapshotMulti: null particle concentration field.");
-            MFEM_VERIFY(particle_ps[k], "SaveSimulationSnapshotMulti: null particle phase field.");
-            MFEM_VERIFY(particle_out[k], "SaveSimulationSnapshotMulti: null particle output field.");
-            MFEM_VERIFY(particle_cn[k]->Size() == particle_ps[k]->Size(), "SaveSimulationSnapshotMulti: concentration and phase-field sizes differ.");
-            MFEM_VERIFY(particle_out[k]->Size() == particle_cn[k]->Size(), "SaveSimulationSnapshotMulti: output and concentration sizes differ.");
-
-            std::ostringstream raw_name;
-            std::ostringstream masked_name;
-
-            // raw_name << outdir << "/Cn" << electrode_name << "_" << (k + 1) << suff;
-            // masked_name << outdir << "/C" << electrode_name << "_" << (k + 1) << "_out" << suff;
-
-            // particle_cn[k]->SaveAsOne(raw_name.str().c_str());
-            *particle_out[k] = *particle_cn[k];
-            *particle_out[k] *= *particle_ps[k];
-            // particle_out[k]->SaveAsOne(masked_name.str().c_str());
-        }
-
-        // =====================================================================
-        // Build union mask and total particle concentration
-        // =====================================================================
-
-        mfem::ParGridFunction psi_union(geometry.parfespace.get());
-        mfem::ParGridFunction denom(geometry.parfespace.get());
-        mfem::ParGridFunction CnP_total(geometry.parfespace.get());
-
-        psi_union = 0.0;
-        denom = 0.0;
-        CnP_total = 0.0;
-
-        for (int k = 0; k < np; ++k)
-        {
-            psi_union += *particle_ps[k];
-            denom += *particle_ps[k];
-        }
-
-        for (int i = 0; i < psi_union.Size(); ++i)
-        {
-            psi_union(i) = std::min(1.0, psi_union(i));
-        }
-
-        const double eps = 1.0e-30;
-
-        for (int i = 0; i < denom.Size(); ++i)
-        {
-            const double d = denom(i);
-
-            if (d > eps)
-            {
-                double numerator = 0.0;
-
-                for (int k = 0; k < np; ++k)
-                {
-                    numerator += (*particle_ps[k])(i) * (*particle_cn[k])(i);
-                }
-
-                CnP_total(i) = numerator / (d + eps);
-            }
-            else
-            {
-                CnP_total(i) = 0.0;
-            }
-        }
-
-        CnP_total *= psi_union;
-        CnP_total.SaveAsOne((outdir + "/Cn" + electrode_name + "_total" + suff).c_str());
+        return;
     }
 
+    const std::string suffix = MakeTimestepSuffix(t);
 
-void Utils::SaveCombinedSnapshot(
-    int t,
-    const std::string& outdir,
-    Initialize_Geometry& geometry,
-    Domain_Parameters& domain_parameters,
-    const std::vector<mfem::ParGridFunction*>& anode_fields,
-    const std::vector<mfem::ParGridFunction*>& anode_ps,
-    const std::vector<mfem::ParGridFunction*>& cathode_fields,
-    const std::vector<mfem::ParGridFunction*>& cathode_ps,
-    const std::vector<mfem::ParGridFunction*>& electrolyte_fields,
-    const std::vector<mfem::ParGridFunction*>& electrolyte_ps,
-    const std::string& filename,
-    int save_interval)
+    if (t == 0)
+    {
+        geometry.parallelMesh->SaveAsOne((outdir + "/pmesh").c_str());
+        domain_parameters.psi->SaveAsOne((outdir + "/psi").c_str());
+        domain_parameters.pse->SaveAsOne((outdir + "/pse").c_str());
+
+        // Save each individual particle/material phase field.
+        for (int k = 0; k < static_cast<int>(domain_parameters.ps.size()); ++k)
+        {
+            std::ostringstream name;
+            name << outdir << "/ps_" << k;
+            domain_parameters.ps[k]->SaveAsOne(name.str().c_str());
+        }
+    }
+
+    state.CnE_gf->SaveAsOne((outdir + "/CnE" + suffix).c_str());
+    state.phE_gf->SaveAsOne((outdir + "/phE" + suffix).c_str());
+
+    mfem::ParGridFunction CnP(geometry.parfespace.get());
+
+    if (electrode == sim::Electrode::ANODE)
+    {
+        BuildCombinedParticleConcentration(state.anode_particles, domain_parameters.ps, CnP);
+        CnP.SaveAsOne((outdir + "/CnP" + suffix).c_str());
+        state.phA_gf->SaveAsOne((outdir + "/phP" + suffix).c_str());
+    }
+    else
+    {
+        BuildCombinedParticleConcentration(state.cathode_particles, domain_parameters.ps, CnP);
+        CnP.SaveAsOne((outdir + "/CnP" + suffix).c_str());
+        state.phC_gf->SaveAsOne((outdir + "/phP" + suffix).c_str());
+    }
+
+    state.Rxn_gf->SaveAsOne((outdir + "/RxnP" + suffix).c_str());
+}
+
+void Utils::SaveFullCellSnapshot(int t, const std::string& outdir, Initialize_Geometry& geometry,
+    Domain_Parameters& domain_parameters, SimulationState& state, int save_interval)
 {
     if (t % save_interval != 0)
     {
         return;
     }
 
+    const std::string suffix = MakeTimestepSuffix(t);
+
     if (t == 0)
     {
-        MFEM_VERIFY(geometry.parallelMesh, "SaveSimulationSnapshotMulti: parallel mesh is null.");
-        MFEM_VERIFY(domain_parameters.pse, "SaveSimulationSnapshotMulti: electrolyte phase field is null.");
-
-        geometry.parallelMesh->SaveAsOne( (outdir + "/pmesh").c_str());
-        domain_parameters.psi->SaveAsOne((outdir + "/psi").c_str());
+        geometry.parallelMesh->SaveAsOne((outdir + "/pmesh").c_str());
+        domain_parameters.psiA->SaveAsOne((outdir + "/psiA").c_str());
+        domain_parameters.psiC->SaveAsOne((outdir + "/psiC").c_str());
         domain_parameters.pse->SaveAsOne((outdir + "/pse").c_str());
-    }
 
-    MFEM_VERIFY(
-        anode_fields.size() == anode_ps.size(),
-        "SaveCombinedSnapshot: anode field and phase-field counts differ.");
-
-    MFEM_VERIFY(
-        cathode_fields.size() == cathode_ps.size(),
-        "SaveCombinedSnapshot: cathode field and phase-field counts differ.");
-
-    MFEM_VERIFY(
-        electrolyte_fields.size() == electrolyte_ps.size(),
-        "SaveCombinedSnapshot: electrolyte field and phase-field counts differ.");
-
-    MFEM_VERIFY(
-        geometry.parfespace,
-        "SaveCombinedSnapshot: finite-element space is null.");
-
-    // ---------------------------------------------------------------------
-    // Time suffix
-    // ---------------------------------------------------------------------
-
-    std::ostringstream step;
-    step << "_" << std::setw(5) << std::setfill('0') << t;
-    const std::string suffix = step.str();
-
-    // ---------------------------------------------------------------------
-    // Combined quantities
-    // ---------------------------------------------------------------------
-
-    mfem::ParGridFunction numerator(geometry.parfespace.get());
-    mfem::ParGridFunction denominator(geometry.parfespace.get());
-    mfem::ParGridFunction combined_field(geometry.parfespace.get());
-
-    numerator = 0.0;
-    denominator = 0.0;
-    combined_field = 0.0;
-
-    // =====================================================================
-    // ANODE
-    // =====================================================================
-
-    for (std::size_t k = 0; k < anode_fields.size(); ++k)
-    {
-        MFEM_VERIFY(
-            anode_fields[k] != nullptr,
-            "SaveCombinedSnapshot: null anode field.");
-
-        MFEM_VERIFY(
-            anode_ps[k] != nullptr,
-            "SaveCombinedSnapshot: null anode phase field.");
-
-        MFEM_VERIFY(
-            anode_fields[k]->Size() == anode_ps[k]->Size(),
-            "SaveCombinedSnapshot: anode field and phase-field sizes differ.");
-
-        for (int i = 0; i < numerator.Size(); ++i)
+        for (int k = 0; k < static_cast<int>(domain_parameters.psA.size()); ++k)
         {
-            const double psi = (*anode_ps[k])(i);
+            std::ostringstream name;
+            name << outdir << "/psA_" << k;
+            domain_parameters.psA[k]->SaveAsOne(name.str().c_str());
+        }
 
-            numerator(i) += psi * (*anode_fields[k])(i);
-            denominator(i) += psi;
+        for (int k = 0; k < static_cast<int>(domain_parameters.psC.size()); ++k)
+        {
+
+            std::ostringstream name;
+            name << outdir << "/psC_" << k;
+            domain_parameters.psC[k]->SaveAsOne(name.str().c_str());
         }
     }
 
-    // =====================================================================
-    // CATHODE
-    // =====================================================================
+    mfem::ParGridFunction CnA(geometry.parfespace.get());
+    mfem::ParGridFunction CnC(geometry.parfespace.get());
 
-    for (std::size_t k = 0; k < cathode_fields.size(); ++k)
+    BuildCombinedParticleConcentration(state.anode_particles, domain_parameters.psA, CnA);
+    BuildCombinedParticleConcentration(state.cathode_particles, domain_parameters.psC, CnC);
+
+    CnA.SaveAsOne((outdir + "/CnA" + suffix).c_str());
+    CnC.SaveAsOne((outdir + "/CnC" + suffix).c_str());
+    state.CnE_gf->SaveAsOne((outdir + "/CnE" + suffix).c_str());
+
+    state.phA_gf->SaveAsOne((outdir + "/phA" + suffix).c_str());
+    state.phC_gf->SaveAsOne((outdir + "/phC" + suffix).c_str());
+    state.phE_gf->SaveAsOne((outdir + "/phE" + suffix).c_str());
+
+    state.RxnA_gf->SaveAsOne((outdir + "/RxnA" + suffix).c_str());
+    state.RxnC_gf->SaveAsOne((outdir + "/RxnC" + suffix).c_str());
+    state.RxnE_gf->SaveAsOne((outdir + "/RxnE" + suffix).c_str());
+}
+
+void Utils::PrintSimulationParameters(const SimulationConfig &cfg, const std::string &outdir)
+{
+    if (mfem::Mpi::WorldRank() != 0)
     {
-        MFEM_VERIFY(
-            cathode_fields[k] != nullptr,
-            "SaveCombinedSnapshot: null cathode field.");
-
-        MFEM_VERIFY(
-            cathode_ps[k] != nullptr,
-            "SaveCombinedSnapshot: null cathode phase field.");
-
-        MFEM_VERIFY(
-            cathode_fields[k]->Size() == cathode_ps[k]->Size(),
-            "SaveCombinedSnapshot: cathode field and phase-field sizes differ.");
-
-        for (int i = 0; i < numerator.Size(); ++i)
-        {
-            const double psi = (*cathode_ps[k])(i);
-
-            numerator(i) += psi * (*cathode_fields[k])(i);
-            denominator(i) += psi;
-        }
+        return;
     }
 
-    // =====================================================================
-    // ELECTROLYTE
-    // =====================================================================
+    std::cout << "\n===== Simulation Parameters =====\n"
+              << "output_dir = " << outdir << "\n"
+              << "dt   = " << cfg.dt << "\n"
+              << "dh   = " << cfg.dh << "\n"
+              << "gc   = " << cfg.gc << "\n"
+              << "Cr   = " << cfg.Cr << "\n"
+              << "Vsr0 = " << cfg.Vsr0 << "\n"
+              << "=================================\n"
+              << std::endl;
+}
 
-    for (std::size_t k = 0; k < electrolyte_fields.size(); ++k)
+void Utils::PrintHalfCellStatus(int t, double VCell,double total_current, double total_target,
+    const std::vector<double> &particle_currents, const SimulationState &state, const Domain_Parameters &para, sim::Electrode electrode)
+{
+    if (mfem::Mpi::WorldRank() != 0)
     {
-        MFEM_VERIFY(
-            electrolyte_fields[k] != nullptr,
-            "SaveCombinedSnapshot: null electrolyte field.");
-
-        MFEM_VERIFY(
-            electrolyte_ps[k] != nullptr,
-            "SaveCombinedSnapshot: null electrolyte phase field.");
-
-        MFEM_VERIFY(
-            electrolyte_fields[k]->Size() == electrolyte_ps[k]->Size(),
-            "SaveCombinedSnapshot: electrolyte field and phase-field sizes differ.");
-
-        for (int i = 0; i < numerator.Size(); ++i)
-        {
-            const double psi = (*electrolyte_ps[k])(i);
-
-            numerator(i) += psi * (*electrolyte_fields[k])(i);
-            denominator(i) += psi;
-        }
+        return;
     }
 
-    // =====================================================================
-    // Construct final combined field
-    // =====================================================================
+    // const auto &particles = (electrode == sim::Electrode::ANODE) ? state.anode_particles : state.cathode_particles;
+    const bool is_anode = (electrode == sim::Electrode::ANODE);
+    const int np = is_anode ? state.anode_particles.size() : state.cathode_particles.size();
 
-    const double eps = 1.0e-30;
+    std::cout << "timestep: " << t << ", VCell = " << VCell << ", TotalCurrent = " << total_current << ", TotalTarget = " << total_target;
 
-    for (int i = 0; i < combined_field.Size(); ++i)
+    for (int j = 0; j < np; ++j)
     {
-        if (denominator(i) > eps)
+        std::cout << ", Current_" << j << " = " << particle_currents[j] << ", Target_" << j << " = " << para.gTrgPs[j];
+    }
+
+    std::cout << std::endl;
+
+    const char *electrode_name = (electrode == sim::Electrode::ANODE) ? "ANODE" : "CATHODE";
+
+    std::cout << "timestep: " << t << " [" << electrode_name << " HALF-CELL]" << ", VCell = " << VCell << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage();
+
+    if (np > 0)
+    {
+        if (is_anode)
         {
-            combined_field(i) = numerator(i) / denominator(i);
+            std::cout << ", Cp_min = " << state.anode_particles[0].Cn_gf->Min()
+                    << ", Cp_max = " << state.anode_particles[0].Cn_gf->Max();
         }
         else
         {
-            combined_field(i) = 0.0;
+            std::cout << ", Cp_min = " << state.cathode_particles[0].Cn_gf->Min()
+                    << ", Cp_max = " << state.cathode_particles[0].Cn_gf->Max();
         }
     }
 
-    // =====================================================================
-    // Save
-    // =====================================================================
+    std::cout << ", Ce_min = " << state.CnE_gf->Min() << ", Ce_max = " << state.CnE_gf->Max() << std::endl;
 
-    combined_field.SaveAsOne(
-        (outdir + "/" + filename + suffix).c_str());
+    double Xfr_avg = 0.0;
+    double total_weight = 0.0;
+
+    for (int j = 0; j < np; ++j)
+    {
+
+        double Xfr_j;
+        if (is_anode)
+        {
+            Xfr_j = state.anode_particles[j].concentration->GetLithiation();
+        }
+        else
+        {
+            Xfr_j = state.cathode_particles[j].concentration->GetLithiation();
+        }
+        const double weight_j = para.gtPs[j];
+
+        Xfr_avg += weight_j * Xfr_j;
+        total_weight += weight_j;
+
+        std::cout << ", Xfr_" << j << " = " << Xfr_j;
+    }
+
+    if (total_weight > 0.0)
+    {
+        Xfr_avg /= total_weight;
+    }
+
+    std::cout << ", Xfr"  << (electrode == sim::Electrode::ANODE ? "A" : "C") << "_avg = " << Xfr_avg << std::endl;
+
+    const double XfrE = state.electrolyte_concentration->GetLithiation();
+    const double weight_E = para.gtPse;
+    const double XfrE_avg = (weight_E > 0.0) ? XfrE : 0.0;
+
+    std::cout << "XfrE = " << XfrE << ", weight_je = " << weight_E << ", XfrE_avg = " << XfrE_avg << std::endl;
+}
+
+void Utils::PrintFullCellStatus(int t, double VCell, double anode_current, double cathode_current, const SimulationState &state, const Domain_Parameters &para)
+{
+    if (mfem::Mpi::WorldRank() != 0)
+    {
+        return;
+    }
+
+    const int npA = static_cast<int>(state.anode_particles.size());
+    const int npC = static_cast<int>(state.cathode_particles.size());
+
+    double XfrA_avg = 0.0;
+    double total_anode_weight = 0.0;
+
+    for (int j = 0; j < npA; ++j)
+    {
+        const double Xfr_j = state.anode_particles[j].concentration->GetLithiation();
+        const double weight_j = para.gtPsA[j];
+
+        XfrA_avg += weight_j * Xfr_j;
+        total_anode_weight += weight_j;
+    }
+
+    if (total_anode_weight > 0.0)
+    {
+        XfrA_avg /= total_anode_weight;
+    }
+
+    // ------------------------------------------------------------
+    // Calculate average cathode lithiation
+    // ------------------------------------------------------------
+
+    double XfrC_avg = 0.0;
+    double total_cathode_weight = 0.0;
+
+    for (int j = 0; j < npC; ++j)
+    {
+        const double Xfr_j = state.cathode_particles[j].concentration->GetLithiation();
+        const double weight_j = para.gtPsC[j];
+
+        XfrC_avg += weight_j * Xfr_j;
+        total_cathode_weight += weight_j;
+    }
+
+    if (total_cathode_weight > 0.0)
+    {
+        XfrC_avg /= total_cathode_weight;
+    }
+
+    std::cout << "timestep: " << t << " [FULL-CELL]"
+              << ", XfrA_avg = " << XfrA_avg << ", XfrC_avg = " << XfrC_avg
+              << ", Anode current = " << anode_current << ", Cathode current = " << cathode_current
+              << ", Anode target = " << para.gTrgI  << ", Cathode target = " << para.gTrgI
+              << ", VCell = " << VCell << ", BvA = "  << state.anode_potential->GetBoundaryVoltage()
+              << ", BvC = " << state.cathode_potential->GetBoundaryVoltage()
+              << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage() << std::endl;
+
+
+    for (int j = 0; j < npA; ++j)
+    {
+        std::cout << "    Anode particle " << j << ", Xfr = " << state.anode_particles[j].concentration->GetLithiation() << std::endl;
+    }
+
+    for (int j = 0; j < npC; ++j)
+    {
+        std::cout << "    Cathode particle " << j << ", Xfr = " << state.cathode_particles[j].concentration->GetLithiation() << std::endl;
+    }
+}
+
+void Utils::PrintProgramTime(std::chrono::high_resolution_clock::time_point start, std::chrono::high_resolution_clock::time_point end)
+{
+    if (mfem::Mpi::WorldRank() != 0)
+    {
+        return;
+    }
+
+    const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+    std::cout << "Total Program Time: " << elapsed.count() << " seconds" << std::endl;
+}
+
+bool Utils::ShouldStopSimulation(const SimulationConfig& cfg, int t, double VCell)
+{
+    if (cfg.stop_mode == sim::StopMode::STEPS &&
+        t >= cfg.num_timesteps)
+    {
+        return true;
+    }
+
+    if (cfg.stop_mode == sim::StopMode::VOLTAGE &&
+        cfg.Cr > 0 &&
+        VCell <= cfg.VCut)
+    {
+        return true;
+    }
+
+    if (cfg.stop_mode == sim::StopMode::VOLTAGE &&
+        cfg.Cr < 0 &&
+        VCell >= cfg.VCut)
+    {
+        return true;
+    }
+
+    return false;
 }
