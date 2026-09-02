@@ -171,62 +171,13 @@ void InitializeFields(SimulationState& state,
                       BoundaryConditions& bc,
                       const SimulationConfig& cfg);
 
-// /**
-//  * @brief Update pairwise cathode chemical-potential fields.
-//  *
-//  * Computes chemical-potential workspaces used for cathode particle-particle
-//  * coupling terms.
-//  *
-//  * @param state Simulation state containing cathode particle fields.
-//  * @param geometry Geometry and finite-element-space handler.
-//  * @param avp_pairs Pairwise chemical potential fields.
-//  */
-// void UpdateCathodePairChemicalPotentials(SimulationState& state,
-//                                          Initialize_Geometry& geometry,
-//                                          const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs);
 
-// /**
-//  * @brief Update pairwise anode chemical-potential fields.
-//  *
-//  * Computes chemical-potential workspaces used for anode particle-particle
-//  * coupling terms.
-//  *
-//  * @param state Simulation state containing anode particle fields.
-//  * @param geometry Geometry and finite-element-space handler.
-//  * @param avp_pairs Pairwise chemical potential fields.
-//  */
-// void UpdateAnodePairChemicalPotentials(SimulationState& state,
-//                                        Initialize_Geometry& geometry,
-//                                        const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs);
+void UpdatePairChemicalPotentials(std::vector<ParticleState>& particles, PairWorkspaces& workspace,
+    Initialize_Geometry& geometry, const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs);
 
-void UpdatePairChemicalPotentials(
-    std::vector<ParticleState>& particles,
-    PairWorkspaces& workspace,
-    Initialize_Geometry& geometry,
-    const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs);
+void BuildParticleFields(const std::vector<ParticleState>& particles, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& psi,
+    std::vector<mfem::ParGridFunction*>& cn_fields, std::vector<mfem::ParGridFunction*>& psi_fields, std::vector<sim::MaterialType>& materials);
 
-// /**
-//  * @brief Build pairwise coupling terms for one particle.
-//  *
-//  * Populates the pair_terms vector with the interface weights, chemical
-//  * potentials, and accumulated pair fields needed by the concentration solver
-//  * for particle-particle coupling.
-//  *
-//  * @param state Simulation state containing pairwise workspaces.
-//  * @param geometry Geometry and finite-element-space handler.
-//  * @param domain_parameters Domain fields and pairwise coupling masks.
-//  * @param j Particle index for which pair terms are assembled.
-//  * @param pair_terms Output vector of pairwise coupling structures.
-//  * @param np Number of particles in the current electrode group.
-//  * @param t Current timestep index.
-//  */
-// void Pairs(SimulationState& state,
-//            Initialize_Geometry& geometry,
-//            Domain_Parameters& domain_parameters,
-//            int j,
-//            std::vector<ConcentrationBase::PairCoupling>& pair_terms,
-//            int np,
-//            int t);
 
 void Pairs(PairWorkspaces& workspace, const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& weight_pairs,
     const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs,

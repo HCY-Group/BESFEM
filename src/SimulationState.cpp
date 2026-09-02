@@ -520,3 +520,24 @@ void Pairs(PairWorkspaces& workspace, const std::vector<std::vector<std::unique_
         pair_terms.push_back(pair);
     }
 }
+
+void BuildParticleFields(const std::vector<ParticleState>& particles, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& psi,
+    std::vector<mfem::ParGridFunction*>& cn_fields, std::vector<mfem::ParGridFunction*>& psi_fields, std::vector<sim::MaterialType>& materials)
+{
+    const int np = static_cast<int>(particles.size());
+
+    cn_fields.clear();
+    psi_fields.clear();
+    materials.clear();
+
+    cn_fields.reserve(np);
+    psi_fields.reserve(np);
+    materials.reserve(np);
+
+    for (int j = 0; j < np; ++j)
+    {
+        cn_fields.push_back(particles[j].Cn_gf.get());
+        psi_fields.push_back(psi[j].get());
+        materials.push_back(particles[j].material);
+    }
+}

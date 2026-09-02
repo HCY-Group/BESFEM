@@ -129,20 +129,12 @@ int main(int argc, char *argv[]) {
                 // POTENTIALS
                 if (t % 5 == 0)
                 {
+
                     std::vector<mfem::ParGridFunction*> cn_fields;
                     std::vector<mfem::ParGridFunction*> ps_fields;
                     std::vector<sim::MaterialType> materials;
 
-                    cn_fields.reserve(np);
-                    ps_fields.reserve(np);
-                    materials.reserve(np);
-
-                    for (int j = 0; j < np; ++j)
-                    {
-                        cn_fields.push_back(particles[j].Cn_gf.get());
-                        ps_fields.push_back(domain_parameters.ps[j].get());
-                        materials.push_back(particles[j].material);
-                    }
+                    BuildParticleFields(particles, domain_parameters.ps, cn_fields, ps_fields, materials);
 
                     solid_potential->AssembleSystem(cn_fields, ps_fields, materials, *phS_gf);
                     state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
@@ -328,43 +320,16 @@ int main(int argc, char *argv[]) {
                     state.electrolyte_concentration->SaltConservation(*state.CnE_gf, *domain_parameters.pse);
                 }
 
-                // ========================================================================
-                // ====================  BUILD ANODE FIELD VECTORS  =========================
-                // ========================================================================
+                std::vector<mfem::ParGridFunction*> anode_cn_fields;
+                std::vector<mfem::ParGridFunction*> anode_psi_fields;
+                std::vector<sim::MaterialType> anode_materials;
 
-                std::vector<mfem::ParGridFunction*>anode_cn_fields;
-                std::vector<mfem::ParGridFunction*>anode_psi_fields;
-                std::vector<sim::MaterialType>anode_materials;
+                std::vector<mfem::ParGridFunction*> cathode_cn_fields;
+                std::vector<mfem::ParGridFunction*> cathode_psi_fields;
+                std::vector<sim::MaterialType> cathode_materials;
 
-                anode_cn_fields.reserve(npA);
-                anode_psi_fields.reserve(npA);
-                anode_materials.reserve(npA);
-
-                for (int j = 0; j < npA; ++j)
-                {
-                    anode_cn_fields.push_back(state.anode_particles[j].Cn_gf.get());
-                    anode_psi_fields.push_back(domain_parameters.psA[j].get());
-                    anode_materials.push_back(state.anode_particles[j].material);
-                }
-
-                // ========================================================================
-                // ===================  BUILD CATHODE FIELD VECTORS  ========================
-                // ========================================================================
-
-                std::vector<mfem::ParGridFunction*>cathode_cn_fields;
-                std::vector<mfem::ParGridFunction*>cathode_psi_fields;
-                std::vector<sim::MaterialType>cathode_materials;
-
-                cathode_cn_fields.reserve(npC);
-                cathode_psi_fields.reserve(npC);
-                cathode_materials.reserve(npC);
-
-                for (int j = 0; j < npC; ++j)
-                {
-                    cathode_cn_fields.push_back(state.cathode_particles[j].Cn_gf.get());
-                    cathode_psi_fields.push_back(domain_parameters.psC[j].get());
-                    cathode_materials.push_back(state.cathode_particles[j].material);
-                }
+                BuildParticleFields(state.anode_particles, domain_parameters.psA, anode_cn_fields, anode_psi_fields, anode_materials);
+                BuildParticleFields(state.cathode_particles, domain_parameters.psC, cathode_cn_fields, cathode_psi_fields, cathode_materials);
 
                 // ========================================================================
                 // =====================  ASSEMBLE POTENTIAL SYSTEMS  =======================
@@ -511,10 +476,7 @@ int main(int argc, char *argv[]) {
 
     Utils::PrintProgramTime(program_start, program_end);
 
-    // Finalize HYPRE processing
     mfem::Hypre::Finalize();
-
-    // Finalize MPI processing
     mfem::Mpi::Finalize();
 
     return 0;
