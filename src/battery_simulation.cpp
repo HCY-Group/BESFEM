@@ -75,13 +75,12 @@ int main(int argc, char *argv[]) {
 
     double VCell = 0.0;
 
-        // ============================================================================
-        // ===============================  TIME STEP LOOP  ===========================
-        // ============================================================================
+    // ============================================================================
+    // =====================  HALF-CELL TIME STEP LOOP  ===========================
+    // ============================================================================
 
         if (cfg.mode == sim::CellMode::HALF)
         {
-            
             const bool is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
             auto& particles = is_anode ? state.anode_particles : state.cathode_particles;
             auto& pairs = is_anode ? state.anode_pairs : state.cathode_pairs;
@@ -90,33 +89,25 @@ int main(int argc, char *argv[]) {
 
             const int np = static_cast<int>(particles.size());
 
-            int t = 0;
+            double total_target = 0.0;
+            for (int j = 0; j < np; ++j)
+            {
+                total_target += domain_parameters.gTrgPs[j];
+            }
 
+            int t = 0;
+    
             while (true) {
 
-                double VCell = 0.0;
                 VCell = solid_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
 
-                if (cfg.stop_mode == sim::StopMode::STEPS && t >= cfg.num_timesteps){ break; }
-                if (cfg.stop_mode == sim::StopMode::VOLTAGE && cfg.Cr > 0 &&VCell <= cfg.VCut){ break;}
-                if (cfg.stop_mode == sim::StopMode::VOLTAGE && cfg.Cr < 0 && VCell >= cfg.VCut){ break;}
+                if (Utils::ShouldStopSimulation(cfg, t, VCell)){break;}
 
                 // PAIR CHEMICAL POTENTIALS
                 UpdatePairChemicalPotentials(particles, pairs, geometry, domain_parameters.AvP_Pairs);
 
                 // PARTICLE CONCENTRATIONS
-                *state.Rxn_gf = 0.0;
-
-                for (int j = 0; j < np; ++j)
-                {
-                    *particles[j].Rx_src = *particles[j].Rxn_gf;
-                    *state.Rxn_gf += *particles[j].Rx_src;
-
-                    std::vector<ConcentrationBase::PairCoupling> pair_terms;
-                    Pairs(pairs, domain_parameters.WeightPairs, domain_parameters.AvP_Pairs, j, pair_terms, np, t);
-
-                    particles[j].concentration->UpdateConcentration(*particles[j].Rx_src, *particles[j].Cn_gf, *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
-                }
+                UpdateParticleConcentrations(particles, pairs, domain_parameters.WeightPairs, domain_parameters.AvP_Pairs, domain_parameters.ps, domain_parameters.gtPs, domain_parameters.WeightEs, *state.Rxn_gf, t);
 
                 // ELECTROLYTE CONCENTRATION
                 state.electrolyte_concentration->UpdateConcentration(*state.Rxn_gf, *state.CnE_gf, *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
@@ -129,7 +120,6 @@ int main(int argc, char *argv[]) {
                 // POTENTIALS
                 if (t % 5 == 0)
                 {
-
                     std::vector<mfem::ParGridFunction*> cn_fields;
                     std::vector<mfem::ParGridFunction*> ps_fields;
                     std::vector<sim::MaterialType> materials;
@@ -139,10 +129,7 @@ int main(int argc, char *argv[]) {
                     solid_potential->AssembleSystem(cn_fields, ps_fields, materials, *phS_gf);
                     state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
 
-                    for (int j = 0; j < np; ++j)
-                    {
-                        particles[j].reaction->ExchangeCurrentDensity(*particles[j].Cn_gf, *domain_parameters.AvEs[j], particles[j].material);
-                    }
+                    UpdateExchangeCurrentDensity(particles, domain_parameters.AvEs);
 
                     double globalerror_P = 1.0;
                     double globalerror_E = 1.0;
@@ -152,52 +139,27 @@ int main(int argc, char *argv[]) {
 
                     while ((globalerror_P > 1e-5 || globalerror_E > 1e-5) && iter < max_iter)
                     {
-                        *state.Rxn_gf = 0.0;
-
-                        for (int j = 0; j < np; ++j)
-                        {
-                            particles[j].reaction->ButlerVolmer(*particles[j].Rxn_gf, *particles[j].Cn_gf, *state.CnE_gf, *phS_gf, *state.phE_gf, *domain_parameters.AvEs[j]);
-
-                            mfem::ParGridFunction weighted_rxn(particles[j].Rxn_gf->ParFESpace());
-                            weighted_rxn = *particles[j].Rxn_gf;
-                            weighted_rxn *= *domain_parameters.WeightEs[j];
-                            *state.Rxn_gf += weighted_rxn;
-                        }
+                        UpdateButlerVolmerReactions(particles, *state.Rxn_gf, *state.CnE_gf, *phS_gf, *state.phE_gf, domain_parameters.AvEs, domain_parameters.WeightEs);
 
                         solid_potential->UpdatePotential(*state.Rxn_gf, *phS_gf, *domain_parameters.psi, globalerror_P);
                         state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
 
                         ++iter;
                     }
+
+                    if (iter == max_iter && mfem::Mpi::WorldRank() == 0)
+                    { 
+                        std::cout << "Warning: half-cell potential iteration reached " << max_iter << " iterations at timestep " << t << ". Error_P = " << globalerror_P << ", Error_E = " << globalerror_E << std::endl;
+                    }
                 }
 
-                // CURRENT
-                std::vector<double> global_currents(np, 0.0);
-
-                for (int j = 0; j < np; ++j)
-                {
-                    particles[j].reaction->TotalReactionCurrent(*particles[j].Rxn_gf, global_currents[j]);
-                }
-
-                double total_current = 0.0;
-                double total_target = 0.0;
-
-                for (int j = 0; j < np; ++j)
-                {
-                    total_current += global_currents[j];
-                    total_target += domain_parameters.gTrgPs[j];
-                }
+                std::vector<double> global_currents;
+                double total_current = CalculateElectrodeCurrent(particles, global_currents);
 
                 VCell = solid_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
 
-                // CURRENT CONTROL
-                const double sgn = std::copysign(1.0, total_target - total_current);
-                const double dV = cfg.dt * cfg.Vsr0 * sgn;
+                adjust.AdjustHalfCellCurrent(total_current, total_target, *state.electrolyte_potential, *state.phE_gf);
 
-                state.electrolyte_potential->AddBoundaryVoltage(dV);
-                *state.phE_gf += dV;
-
-                // OUTPUT
                 if (t % 5000 == 0)
                 {
                     Utils::PrintHalfCellStatus(t, VCell, total_current, total_target, global_currents, state, domain_parameters, cfg.half_electrode);
@@ -208,12 +170,11 @@ int main(int argc, char *argv[]) {
                 ++t;
             }
         }
+        // ============================================================================
+        // ========================  FULL-CELL TIME STEPPING  =========================
+        // ============================================================================
         else
         {
-            // ============================================================================
-            // ========================  FULL-CELL TIME STEPPING  ==========================
-            // ============================================================================
-
             int t = 0;
 
             const int npA = static_cast<int>(state.anode_particles.size());
@@ -229,90 +190,21 @@ int main(int argc, char *argv[]) {
 
                 VCell = state.cathode_potential->GetBoundaryVoltage() - state.anode_potential->GetBoundaryVoltage();
 
-                // ========================================================================
-                // =========================  STOP CONDITIONS  =============================
-                // ========================================================================
+                if (Utils::ShouldStopSimulation(cfg, t, VCell)){break;}
 
-                if (cfg.stop_mode == sim::StopMode::STEPS && t >= cfg.num_timesteps)
-                {
-                    break;
-                }
-
-                if (cfg.stop_mode == sim::StopMode::VOLTAGE && VCell <= cfg.VCut)
-                {
-                    break;
-                }
-
-                // ========================================================================
-                // ==============  UPDATE PARTICLE-PAIR CHEMICAL POTENTIALS  ===============
-                // ========================================================================
-
+                // PAIR CHEMICAL POTENTIALS
                 UpdatePairChemicalPotentials(state.anode_particles, state.anode_pairs, geometry, domain_parameters.AvP_PairsA);
                 UpdatePairChemicalPotentials(state.cathode_particles, state.cathode_pairs, geometry, domain_parameters.AvP_PairsC);
 
-                // ========================================================================
-                // ====================  UPDATE ANODE CONCENTRATIONS  =======================
-                // ========================================================================
-
-                for (int j = 0; j < npA; ++j)
-                {
-                    // Freeze the previous reaction for the concentration solve.
-                    *state.anode_particles[j].Rx_src = *state.anode_particles[j].Rxn_gf;
-
-                    std::vector<ConcentrationBase::PairCoupling> pair_terms;
-
-                    Pairs(state.anode_pairs, domain_parameters.WeightPairsA, domain_parameters.AvP_PairsA,
-                        j, pair_terms, npA, t);
-
-                    state.anode_particles[j].concentration->UpdateConcentration(*state.anode_particles[j].Rx_src,
-                            *state.anode_particles[j].Cn_gf, *domain_parameters.psA[j], domain_parameters.gtPsA[j],
-                            *domain_parameters.WeightEsA[j], pair_terms);
-                }
-
-                // ========================================================================
-                // ===================  UPDATE CATHODE CONCENTRATIONS  ======================
-                // ========================================================================
-
-                for (int j = 0; j < npC; ++j)
-                {
-                    // Freeze the previous reaction for the concentration solve.
-                    *state.cathode_particles[j].Rx_src = *state.cathode_particles[j].Rxn_gf;
-
-                    std::vector<ConcentrationBase::PairCoupling> pair_terms;
-
-                    Pairs(state.cathode_pairs, domain_parameters.WeightPairsC, domain_parameters.AvP_PairsC,
-                        j, pair_terms, npC, t);
-
-                    state.cathode_particles[j].concentration->UpdateConcentration(*state.cathode_particles[j].Rx_src,
-                            *state.cathode_particles[j].Cn_gf, *domain_parameters.psC[j], domain_parameters.gtPsC[j],
-                            *domain_parameters.WeightEsC[j], pair_terms);
-                }
-
-                // ========================================================================
-                // ==============  BUILD ELECTRODE REACTION SOURCE FIELDS  ==================
-                // ========================================================================
-
-                *state.RxnA_gf = 0.0;
-                *state.RxnC_gf = 0.0;
-
-                for (int j = 0; j < npA; ++j)
-                {
-                    *state.RxnA_gf += *state.anode_particles[j].Rx_src;
-                }
-
-                for (int j = 0; j < npC; ++j)
-                {
-                    *state.RxnC_gf += *state.cathode_particles[j].Rx_src;
-                }
-
-                // ========================================================================
-                // =================  UPDATE ELECTROLYTE CONCENTRATION  =====================
-                // ========================================================================
+                // PARTICLE CONCENTRATIONS
+                UpdateParticleConcentrations(state.anode_particles, state.anode_pairs, domain_parameters.WeightPairsA, domain_parameters.AvP_PairsA, domain_parameters.psA, domain_parameters.gtPsA, domain_parameters.WeightEsA, *state.RxnA_gf, t);
+                UpdateParticleConcentrations(state.cathode_particles, state.cathode_pairs, domain_parameters.WeightPairsC, domain_parameters.AvP_PairsC, domain_parameters.psC, domain_parameters.gtPsC, domain_parameters.WeightEsC, *state.RxnC_gf, t);
 
                 *state.RxnE_gf = 0.0;
                 *state.RxnE_gf += *state.RxnA_gf;
                 *state.RxnE_gf += *state.RxnC_gf;
 
+                // ELECTROLYTE CONCENTRATION
                 state.electrolyte_concentration->UpdateConcentration(*state.RxnE_gf, *state.CnE_gf, *domain_parameters.pse, domain_parameters.gtPse, *domain_parameters.pse, {});
 
                 if (t > 0 && t % 50 == 0)
@@ -331,33 +223,14 @@ int main(int argc, char *argv[]) {
                 BuildParticleFields(state.anode_particles, domain_parameters.psA, anode_cn_fields, anode_psi_fields, anode_materials);
                 BuildParticleFields(state.cathode_particles, domain_parameters.psC, cathode_cn_fields, cathode_psi_fields, cathode_materials);
 
-                // ========================================================================
-                // =====================  ASSEMBLE POTENTIAL SYSTEMS  =======================
-                // ========================================================================
-
+                // ASSEMBLE POTENTIALS
                 state.anode_potential->AssembleSystem(anode_cn_fields, anode_psi_fields, anode_materials, *state.phA_gf);
                 state.cathode_potential->AssembleSystem(cathode_cn_fields, cathode_psi_fields, cathode_materials, *state.phC_gf);
                 state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
 
-                // ========================================================================
-                // =================  UPDATE EXCHANGE CURRENT DENSITIES  ====================
-                // ========================================================================
-
-                for (int j = 0; j < npA; ++j)
-                {
-                    state.anode_particles[j].reaction->ExchangeCurrentDensity(*state.anode_particles[j].Cn_gf,
-                            *domain_parameters.AvEsA[j], state.anode_particles[j].material);
-                }
-
-                for (int j = 0; j < npC; ++j)
-                {
-                    state.cathode_particles[j].reaction->ExchangeCurrentDensity(*state.cathode_particles[j].Cn_gf,
-                            *domain_parameters.AvEsC[j], state.cathode_particles[j].material);
-                }
-
-                // ========================================================================
-                // ==============  COUPLED REACTION-POTENTIAL ITERATION  ====================
-                // ========================================================================
+                // EXCHANGE CURRENT DENSITY 
+                UpdateExchangeCurrentDensity(state.anode_particles, domain_parameters.AvEsA);
+                UpdateExchangeCurrentDensity(state.cathode_particles, domain_parameters.AvEsC);
 
                 double globalerror_A = 1.0;
                 double globalerror_C = 1.0;
@@ -369,36 +242,11 @@ int main(int argc, char *argv[]) {
                 while ((globalerror_A > 1.0e-6 || globalerror_C > 1.0e-6 || globalerror_E > 1.0e-6) && iter < max_iter)
                 {
 
-                    *state.RxnA_gf = 0.0;
-                    *state.RxnC_gf = 0.0;
-                    *state.RxnE_gf = 0.0;
-
-                    for (int j = 0; j < npA; ++j)
-                    {
-                        state.anode_particles[j].reaction->ButlerVolmer(*state.anode_particles[j].Rxn_gf,
-                                *state.anode_particles[j].Cn_gf, *state.CnE_gf, *state.phA_gf, *state.phE_gf, *domain_parameters.AvEsA[j]);
-
-                        *state.RxnA_gf += *state.anode_particles[j].Rxn_gf;
-                    }
-
-                    // --------------------------------------------------------------------
-                    // Cathode Butler-Volmer reactions
-                    // --------------------------------------------------------------------
-
-                    for (int j = 0; j < npC; ++j)
-                    {
-                        state.cathode_particles[j].reaction->ButlerVolmer(*state.cathode_particles[j].Rxn_gf,
-                                *state.cathode_particles[j].Cn_gf, *state.CnE_gf, *state.phC_gf, *state.phE_gf, *domain_parameters.AvEsC[j]);
-
-                        *state.RxnC_gf += *state.cathode_particles[j].Rxn_gf;
-                    }
+                    UpdateButlerVolmerReactions(state.anode_particles, *state.RxnA_gf, *state.CnE_gf, *state.phA_gf, *state.phE_gf, domain_parameters.AvEsA, domain_parameters.WeightEsA);
+                    UpdateButlerVolmerReactions(state.cathode_particles, *state.RxnC_gf, *state.CnE_gf, *state.phC_gf, *state.phE_gf, domain_parameters.AvEsC, domain_parameters.WeightEsC);
 
                     *state.RxnE_gf = *state.RxnA_gf;
                     *state.RxnE_gf += *state.RxnC_gf;
-
-                    // --------------------------------------------------------------------
-                    // Update each solid potential using only its own reaction field.
-                    // --------------------------------------------------------------------
 
                     state.anode_potential->UpdatePotential(*state.RxnA_gf, *state.phA_gf, *domain_parameters.psiA, globalerror_A);
                     state.cathode_potential->UpdatePotential(*state.RxnC_gf, *state.phC_gf, *domain_parameters.psiC, globalerror_C);
@@ -414,45 +262,13 @@ int main(int argc, char *argv[]) {
                         << std::endl;
                 }
 
-                // ========================================================================
-                // ======================  CALCULATE TOTAL CURRENTS  ========================
-                // ========================================================================
+                std::vector<double> anode_currents;
+                std::vector<double> cathode_currents;
 
-                std::vector<double> anode_currents(npA, 0.0);
-                std::vector<double> cathode_currents(npC, 0.0);
+                double global_current_A = CalculateElectrodeCurrent(state.anode_particles, anode_currents);
+                double global_current_C = CalculateElectrodeCurrent(state.cathode_particles, cathode_currents);
 
-                for (int j = 0; j < npA; ++j)
-                {
-                    state.anode_particles[j].reaction->TotalReactionCurrent(*state.anode_particles[j].Rxn_gf, anode_currents[j]);
-                }
-
-                for (int j = 0; j < npC; ++j)
-                {
-                    state.cathode_particles[j].reaction->TotalReactionCurrent(*state.cathode_particles[j].Rxn_gf, cathode_currents[j]);
-                }
-
-                double global_current_A = 0.0;
-                double global_current_C = 0.0;
-
-                double total_target_A = 0.0;
-                double total_target_C = 0.0;
-
-                for (int j = 0; j < npA; ++j)
-                {
-                    global_current_A += anode_currents[j];
-                    total_target_A += domain_parameters.gTrgPsA[j];
-                }
-
-                for (int j = 0; j < npC; ++j)
-                {
-                    global_current_C += cathode_currents[j];
-                    total_target_C += domain_parameters.gTrgPsC[j];
-                }
-
-                // ========================================================================
-                // ====================  ADJUST FULL-CELL CURRENT  ==========================
-                // ========================================================================
-
+                // ADJUST BOUNDARY VOLTAGES TO MAINTAIN GLOBAL CURRENT CONSERVATION
                 VCell = state.cathode_potential->GetBoundaryVoltage() - state.anode_potential->GetBoundaryVoltage();
                 adjust.AdjustConstantCurrent(global_current_A, global_current_C, *state.anode_potential, *state.cathode_potential, *state.phA_gf, *state.phC_gf, VCell);
                 VCell = state.cathode_potential->GetBoundaryVoltage() - state.anode_potential->GetBoundaryVoltage();
@@ -467,7 +283,6 @@ int main(int argc, char *argv[]) {
                 ++t;
             }
         }
-
     }
     
     if (mfem::Mpi::WorldRank() == 0) { std::cout << "Simulation complete.\n"; }

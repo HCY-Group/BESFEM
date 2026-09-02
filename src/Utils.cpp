@@ -425,3 +425,28 @@ void Utils::PrintProgramTime(std::chrono::high_resolution_clock::time_point star
     const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start);
     std::cout << "Total Program Time: " << elapsed.count() << " seconds" << std::endl;
 }
+
+bool Utils::ShouldStopSimulation(const SimulationConfig& cfg, int t, double VCell)
+{
+    if (cfg.stop_mode == sim::StopMode::STEPS &&
+        t >= cfg.num_timesteps)
+    {
+        return true;
+    }
+
+    if (cfg.stop_mode == sim::StopMode::VOLTAGE &&
+        cfg.Cr > 0 &&
+        VCell <= cfg.VCut)
+    {
+        return true;
+    }
+
+    if (cfg.stop_mode == sim::StopMode::VOLTAGE &&
+        cfg.Cr < 0 &&
+        VCell >= cfg.VCut)
+    {
+        return true;
+    }
+
+    return false;
+}

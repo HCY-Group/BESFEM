@@ -183,4 +183,18 @@ void Pairs(PairWorkspaces& workspace, const std::vector<std::vector<std::unique_
     const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs,
     int j, std::vector<ConcentrationBase::PairCoupling>& pair_terms, int np, int t);
 
+void UpdateExchangeCurrentDensity(std::vector<ParticleState>& particles, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& AvEs);
+
+double CalculateElectrodeCurrent(std::vector<ParticleState>& particles, std::vector<double>& particle_currents);
+
+void UpdateParticleConcentrations(std::vector<ParticleState>& particles, PairWorkspaces& pairs,
+    const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& weight_pairs,
+    const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs,
+    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& ps, const std::vector<double>& gtPs,
+    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& weightEs, mfem::ParGridFunction& total_rxn, int t);
+
+void UpdateButlerVolmerReactions(std::vector<ParticleState>& particles, mfem::ParGridFunction& total_rxn,
+    mfem::ParGridFunction& CnE, mfem::ParGridFunction& phS, mfem::ParGridFunction& phE,
+    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& AvEs, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& WeightEs);
+
 #endif // SIMULATION_STATE_HPP

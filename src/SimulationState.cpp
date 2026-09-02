@@ -541,3 +541,74 @@ void BuildParticleFields(const std::vector<ParticleState>& particles, const std:
         materials.push_back(particles[j].material);
     }
 }
+
+void UpdateExchangeCurrentDensity(std::vector<ParticleState>& particles, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& AvEs)
+{
+    const int np = static_cast<int>(particles.size());
+
+    for (int j = 0; j < np; ++j)
+    {
+        particles[j].reaction->ExchangeCurrentDensity(*particles[j].Cn_gf, *AvEs[j], particles[j].material);
+    }
+}
+
+double CalculateElectrodeCurrent(std::vector<ParticleState>& particles, std::vector<double>& particle_currents)
+{
+    const int np = static_cast<int>(particles.size());
+
+    particle_currents.assign(np, 0.0);
+
+    double total_current = 0.0;
+
+    for (int j = 0; j < np; ++j)
+    {
+        particles[j].reaction->TotalReactionCurrent(*particles[j].Rxn_gf, particle_currents[j]);
+        total_current += particle_currents[j];
+    }
+
+    return total_current;
+}
+
+void UpdateParticleConcentrations(std::vector<ParticleState>& particles, PairWorkspaces& pairs,
+    const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& weight_pairs,
+    const std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>>& avp_pairs,
+    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& ps, const std::vector<double>& gtPs, 
+    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& weightEs, mfem::ParGridFunction& total_rxn, int t)
+{
+    const int np = static_cast<int>(particles.size());
+
+    total_rxn = 0.0;
+
+    for (int j = 0; j < np; ++j)
+    {
+        // Freeze the reaction from the previous converged timestep.
+        *particles[j].Rx_src = *particles[j].Rxn_gf;
+
+        total_rxn += *particles[j].Rx_src;
+        std::vector<ConcentrationBase::PairCoupling> pair_terms;
+
+        Pairs(pairs, weight_pairs, avp_pairs, j, pair_terms, np, t);
+        particles[j].concentration->UpdateConcentration(*particles[j].Rx_src, *particles[j].Cn_gf, *ps[j], gtPs[j], *weightEs[j], pair_terms);
+    }
+}
+
+void UpdateButlerVolmerReactions(std::vector<ParticleState>& particles, mfem::ParGridFunction& total_rxn,
+    mfem::ParGridFunction& CnE, mfem::ParGridFunction& phS, mfem::ParGridFunction& phE,
+    const std::vector<std::unique_ptr<mfem::ParGridFunction>>& AvEs, const std::vector<std::unique_ptr<mfem::ParGridFunction>>& WeightEs)
+{
+    total_rxn = 0.0;
+
+    const int np = static_cast<int>(particles.size());
+
+    for (int j = 0; j < np; ++j)
+    {
+        particles[j].reaction->ButlerVolmer(*particles[j].Rxn_gf, *particles[j].Cn_gf, CnE, phS, phE, *AvEs[j]);
+
+        mfem::ParGridFunction weighted_rxn(particles[j].Rxn_gf->ParFESpace());
+
+        weighted_rxn = *particles[j].Rxn_gf;
+        weighted_rxn *= *WeightEs[j];
+
+        total_rxn += weighted_rxn;
+    }
+}

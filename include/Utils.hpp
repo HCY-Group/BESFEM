@@ -160,6 +160,8 @@ public:
 
     static void PrintProgramTime(std::chrono::high_resolution_clock::time_point start, std::chrono::high_resolution_clock::time_point end);
 
+    static bool ShouldStopSimulation(const SimulationConfig& cfg, int t, double VCell);
+
 private:
     Initialize_Geometry &geometry_; ///< Geometry handler.
     Domain_Parameters   &domain_;   ///< Domain-parameter object.
