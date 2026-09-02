@@ -41,18 +41,7 @@ int main(int argc, char *argv[]) {
         // ===============================  START SIMULATION  =========================
         // ============================================================================
 
-        if (mfem::Mpi::WorldRank() == 0)
-        {
-            std::cout << "\n===== Simulation Parameters =====\n"
-                    << "output_dir = " << outdir << "\n"
-                    << "dt   = " << cfg.dt   << "\n"
-                    << "dh   = " << cfg.dh   << "\n"
-                    << "gc   = " << cfg.gc   << "\n"
-                    << "Cr   = " << cfg.Cr   << "\n"
-                    << "Vsr0 = " << cfg.Vsr0 << "\n"
-                    << "=================================\n"
-                    << std::endl;
-        }
+        Utils::PrintSimulationParameters(cfg, outdir);
 
         // Initialize Mesh & Geometry
         Initialize_Geometry geometry(cfg);
@@ -74,7 +63,6 @@ int main(int argc, char *argv[]) {
             bc.SetupBoundaryConditions(sim::CellMode::HALF, cfg.half_electrode);
         } else {
             bc.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
-            // std::cout << "Full cell mode is not yet implemented. Please use half-cell mode." << std::endl;
         }
         bc.SaveBoundaryConditionFields();
 
@@ -240,75 +228,11 @@ int main(int argc, char *argv[]) {
                     state.electrolyte_potential->AddBoundaryVoltage(dV);
                     *state.phE_gf += dV;
 
-
-                    // ============================================================================
-                    // ===============================  PRINT STATEMENTS  =========================
-                    // ============================================================================
-
-
-                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    if (t % 5000 == 0)
                     {
-                        std::cout << "timestep: " << t << ", VCell = " << VCell << ", TotalCurrent = " << total_current << ", TotalTarget = " << total_target;
-
-                        for (int j = 0; j < np; ++j)
-                        {
-                            std::cout << ", Current_" << j << " = " << global_currents[j] << ", Target_" << j << " = " << domain_parameters.gTrgPs[j];
-                        }
-
-                        std::cout << std::endl;
+                        Utils::PrintHalfCellStatus(t, VCell, total_current, total_target, global_currents, state, domain_parameters, cfg.half_electrode);
                     }
 
-                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
-                    {
-                        double XfrA_avg = 0.0;
-                        double total_weight = 0.0;
-
-                        double XfrE_avg = 0.0;
-                        double total_weight_E = 0.0;
-
-                        std::cout << "timestep: " << t << " [ANODE HALF-CELL]" << ", VCell = " << VCell << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage();
-
-                        std::cout << "Cp_min = " << state.anode_particles[0].Cn_gf->Min()
-                            << ", Cp_max = " << state.anode_particles[0].Cn_gf->Max()
-                            << ", Ce_min = " << state.CnE_gf->Min()
-                            << ", Ce_max = " << state.CnE_gf->Max() << std::endl;
-
-                        for (int j = 0; j < np; ++j)
-                        {
-                            const double Xfr_j = state.anode_particles[j].concentration->GetLithiation();
-                            const double weight_j = domain_parameters.gtPs[j];
-
-                            XfrA_avg += weight_j * Xfr_j;
-                            total_weight += weight_j;
-
-                            std::cout << ", Xfr_" << j << " = " << Xfr_j;
-                        }
-
-                        if (total_weight > 0.0)
-                        {
-                            XfrA_avg /= total_weight;
-                        }
-
-                        std::cout << ", XfrA_avg = " << XfrA_avg << std::endl;
-
-
-                        const double Xfr_je = state.electrolyte_concentration->GetLithiation();
-                        const double weight_je = domain_parameters.gtPse;
-
-                        std::cout << "XfrE = " << Xfr_je << ", weight_je = " << weight_je;
-
-                        XfrE_avg += weight_je * Xfr_je;
-                        total_weight_E += weight_je;
-                        
-
-                        if (total_weight_E > 0.0)
-                        {
-                            XfrE_avg /= total_weight_E;
-                        }
-
-                        std::cout << ", XfrE_avg = " << XfrE_avg << std::endl;
-
-                    }
                 }
                 // ============================================================
                 // CATHODE HALF CELL SIMULATION
@@ -417,69 +341,9 @@ int main(int argc, char *argv[]) {
                     state.electrolyte_potential->AddBoundaryVoltage(dV);
                     *state.phE_gf += dV;
 
-
-                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
+                    if (t % 5000 == 0)
                     {
-                        std::cout << "timestep: " << t << ", VCell = " << VCell << ", TotalCurrent = " << total_current << ", TotalTarget = " << total_target;
-
-                        for (int j = 0; j < np; ++j)
-                        {
-                            std::cout << ", Current_" << j << " = " << global_currents[j] << ", Target_" << j << " = " << domain_parameters.gTrgPs[j];
-                        }
-
-                        std::cout << std::endl;
-                    }
-
-                    if (t % 5000 == 0 && mfem::Mpi::WorldRank() == 0)
-                    {
-                        double XfrC_avg = 0.0;
-                        double total_weight = 0.0;
-
-                        double XfrE_avg = 0.0;
-                        double total_weight_E = 0.0;
-
-                        std::cout << "timestep: " << t << " [CATHODE HALF-CELL]" << ", VCell = " << VCell << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage();
-
-                        std::cout << "Cp_min = " << state.cathode_particles[0].Cn_gf->Min()
-                            << ", Cp_max = " << state.cathode_particles[0].Cn_gf->Max()
-                            << ", Ce_min = " << state.CnE_gf->Min()
-                            << ", Ce_max = " << state.CnE_gf->Max() << std::endl;
-
-                        for (int j = 0; j < np; ++j)
-                        {
-                            const double Xfr_j = state.cathode_particles[j].concentration->GetLithiation();
-                            const double weight_j = domain_parameters.gtPs[j];
-
-                            XfrC_avg += weight_j * Xfr_j;
-                            total_weight += weight_j;
-
-                            std::cout << ", Xfr_" << j << " = " << Xfr_j;
-                        }
-
-                        if (total_weight > 0.0)
-                        {
-                            XfrC_avg /= total_weight;
-                        }
-
-                        std::cout << ", XfrC_avg = " << XfrC_avg << std::endl;
-
-
-                        const double Xfr_je = state.electrolyte_concentration->GetLithiation();
-                        const double weight_je = domain_parameters.gtPse;
-
-                        std::cout << "XfrE = " << Xfr_je << ", weight_je = " << weight_je;
-
-                        XfrE_avg += weight_je * Xfr_je;
-                        total_weight_E += weight_je;
-                        
-
-                        if (total_weight_E > 0.0)
-                        {
-                            XfrE_avg /= total_weight_E;
-                        }
-
-                        std::cout << ", XfrE_avg = " << XfrE_avg << std::endl;
-
+                        Utils::PrintHalfCellStatus(t, VCell, total_current, total_target, global_currents, state, domain_parameters, cfg.half_electrode);
                     }
                 }
                     
@@ -500,18 +364,9 @@ int main(int argc, char *argv[]) {
             const int npA = static_cast<int>(state.anode_particles.size());
             const int npC = static_cast<int>(state.cathode_particles.size());
 
-            MFEM_VERIFY(npA > 0, "Full-cell simulation contains no anode particles.");
-            MFEM_VERIFY(npC > 0, "Full-cell simulation contains no cathode particles.");
-            MFEM_VERIFY(state.RxnA_gf, "Full-cell anode reaction field RxnA_gf is not initialized.");
-            MFEM_VERIFY(state.RxnC_gf, "Full-cell cathode reaction field RxnC_gf is not initialized.");
-
             if (mfem::Mpi::WorldRank() == 0)
             {
-                std::cout
-                    << "Starting full-cell simulation.\n"
-                    << "    Anode particles:   " << npA << "\n"
-                    << "    Cathode particles: " << npC
-                    << std::endl;
+                std::cout << "Starting full-cell simulation.\n" << "    Anode particles:   " << npA << "\n" << "    Cathode particles: " << npC << std::endl;
             }
 
             while (true)
@@ -546,10 +401,6 @@ int main(int argc, char *argv[]) {
 
                 for (int j = 0; j < npA; ++j)
                 {
-                    MFEM_VERIFY(state.anode_particles[j].Rxn_gf, "Anode particle reaction field is null.");
-                    MFEM_VERIFY(state.anode_particles[j].Rx_src, "Anode particle reaction source field is null.");
-                    MFEM_VERIFY(state.anode_particles[j].Cn_gf, "Anode particle concentration field is null.");
-
                     // Freeze the previous reaction for the concentration solve.
                     *state.anode_particles[j].Rx_src = *state.anode_particles[j].Rxn_gf;
 
@@ -569,10 +420,6 @@ int main(int argc, char *argv[]) {
 
                 for (int j = 0; j < npC; ++j)
                 {
-                    MFEM_VERIFY(state.cathode_particles[j].Rxn_gf, "Cathode particle reaction field is null.");
-                    MFEM_VERIFY(state.cathode_particles[j].Rx_src, "Cathode particle reaction source field is null.");
-                    MFEM_VERIFY(state.cathode_particles[j].Cn_gf, "Cathode particle concentration field is null.");
-
                     // Freeze the previous reaction for the concentration solve.
                     *state.cathode_particles[j].Rx_src = *state.cathode_particles[j].Rxn_gf;
 
@@ -782,65 +629,9 @@ int main(int argc, char *argv[]) {
                 adjust.AdjustConstantCurrent(global_current_A, global_current_C, *state.anode_potential, *state.cathode_potential, *state.phA_gf, *state.phC_gf, VCell);
                 VCell = state.cathode_potential->GetBoundaryVoltage() - state.anode_potential->GetBoundaryVoltage();
 
-                // ========================================================================
-                // =====================  CALCULATE LITHIATION  =============================
-                // ========================================================================
-
-                double XfrA_avg = 0.0;
-                double XfrC_avg = 0.0;
-
-                double total_anode_weight = 0.0;
-                double total_cathode_weight = 0.0;
-
-                for (int j = 0; j < npA; ++j)
+                if (t % 1000 == 0)
                 {
-                    const double Xfr_j = state.anode_particles[j].concentration->GetLithiation();
-                    const double weight_j = domain_parameters.gtPsA[j];
-                    XfrA_avg += weight_j * Xfr_j;
-                    total_anode_weight += weight_j;
-                }
-
-                for (int j = 0; j < npC; ++j)
-                {
-                    const double Xfr_j = state.cathode_particles[j].concentration->GetLithiation();
-                    const double weight_j = domain_parameters.gtPsC[j];
-                    XfrC_avg += weight_j * Xfr_j;
-                    total_cathode_weight += weight_j;
-                }
-
-                if (total_anode_weight > 0.0)
-                {
-                    XfrA_avg /= total_anode_weight;
-                }
-
-                if (total_cathode_weight > 0.0)
-                {
-                    XfrC_avg /= total_cathode_weight;
-                }
-
-                // ========================================================================
-                // ===========================  PRINT OUTPUT  ===============================
-                // ========================================================================
-
-                if (t % 1000 == 0 &&
-                    mfem::Mpi::WorldRank() == 0)
-                {
-                    std::cout << "timestep: " << t << " [FULL-CELL]"
-                        << ", XfrA_avg = " << XfrA_avg << ", XfrC_avg = " << XfrC_avg
-                        << ", Anode current = " << global_current_A << ", Cathode current = " << global_current_C
-                        << ", Anode target = " << domain_parameters.gTrgI  << ", Cathode target = " << domain_parameters.gTrgI
-                        << ", VCell = " << VCell << ", BvA = " << state.anode_potential->GetBoundaryVoltage() << ", BvC = " << state.cathode_potential->GetBoundaryVoltage()
-                        << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage() << std::endl;
-
-                    for (int j = 0; j < npA; ++j)
-                    {
-                        std::cout << "    Anode particle " << j << ", Xfr = " << state.anode_particles[j].concentration->GetLithiation() << std::endl;
-                    }
-
-                    for (int j = 0; j < npC; ++j)
-                    {
-                        std::cout << "    Cathode particle " << j  << ", Xfr = " << state.cathode_particles[j].concentration->GetLithiation() << std::endl;
-                    }
+                    Utils::PrintFullCellStatus(t, VCell, global_current_A, global_current_C, state, domain_parameters);
                 }
 
                 Utils::SaveFullCellSnapshot(t, outdir, geometry, domain_parameters, state, 1000);
@@ -853,11 +644,9 @@ int main(int argc, char *argv[]) {
     
     if (mfem::Mpi::WorldRank() == 0) { std::cout << "Simulation complete.\n"; }
 
-    // End timing and output the total program execution time
-    auto program_end = high_resolution_clock::now();
-    if (mfem::Mpi::WorldRank() == 0) {std::cout << "Total Program Time: " 
-            << duration_cast<seconds>(program_end - program_start).count() 
-            << " seconds" << std::endl;}
+    auto program_end = std::chrono::high_resolution_clock::now();
+
+    Utils::PrintProgramTime(program_start, program_end);
 
     // Finalize HYPRE processing
     mfem::Hypre::Finalize();

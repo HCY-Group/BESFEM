@@ -150,6 +150,16 @@ public:
     static void SaveFullCellSnapshot(int t, const std::string& outdir, Initialize_Geometry& geometry,
         Domain_Parameters& domain_parameters, SimulationState& state, int save_interval);
 
+    static void PrintSimulationParameters(const SimulationConfig &cfg, const std::string &outdir);
+
+    static void PrintHalfCellStatus(int t, double VCell, double total_current, double total_target,
+        const std::vector<double> &particle_currents, const SimulationState &state, const Domain_Parameters &para, sim::Electrode electrode);
+
+    static void PrintFullCellStatus(int t, double VCell, double anode_current, double cathode_current,
+        const SimulationState &state, const Domain_Parameters &para);
+
+    static void PrintProgramTime(std::chrono::high_resolution_clock::time_point start, std::chrono::high_resolution_clock::time_point end);
+
 private:
     Initialize_Geometry &geometry_; ///< Geometry handler.
     Domain_Parameters   &domain_;   ///< Domain-parameter object.

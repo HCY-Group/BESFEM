@@ -241,7 +241,7 @@ void Utils::SaveFullCellSnapshot(int t, const std::string& outdir, Initialize_Ge
     CnA.SaveAsOne((outdir + "/CnA" + suffix).c_str());
     CnC.SaveAsOne((outdir + "/CnC" + suffix).c_str());
     state.CnE_gf->SaveAsOne((outdir + "/CnE" + suffix).c_str());
-    
+
     state.phA_gf->SaveAsOne((outdir + "/phA" + suffix).c_str());
     state.phC_gf->SaveAsOne((outdir + "/phC" + suffix).c_str());
     state.phE_gf->SaveAsOne((outdir + "/phE" + suffix).c_str());
@@ -249,4 +249,179 @@ void Utils::SaveFullCellSnapshot(int t, const std::string& outdir, Initialize_Ge
     state.RxnA_gf->SaveAsOne((outdir + "/RxnA" + suffix).c_str());
     state.RxnC_gf->SaveAsOne((outdir + "/RxnC" + suffix).c_str());
     state.RxnE_gf->SaveAsOne((outdir + "/RxnE" + suffix).c_str());
+}
+
+void Utils::PrintSimulationParameters(const SimulationConfig &cfg, const std::string &outdir)
+{
+    if (mfem::Mpi::WorldRank() != 0)
+    {
+        return;
+    }
+
+    std::cout << "\n===== Simulation Parameters =====\n"
+              << "output_dir = " << outdir << "\n"
+              << "dt   = " << cfg.dt << "\n"
+              << "dh   = " << cfg.dh << "\n"
+              << "gc   = " << cfg.gc << "\n"
+              << "Cr   = " << cfg.Cr << "\n"
+              << "Vsr0 = " << cfg.Vsr0 << "\n"
+              << "=================================\n"
+              << std::endl;
+}
+
+void Utils::PrintHalfCellStatus(int t, double VCell,double total_current, double total_target,
+    const std::vector<double> &particle_currents, const SimulationState &state, const Domain_Parameters &para, sim::Electrode electrode)
+{
+    if (mfem::Mpi::WorldRank() != 0)
+    {
+        return;
+    }
+
+    // const auto &particles = (electrode == sim::Electrode::ANODE) ? state.anode_particles : state.cathode_particles;
+    const bool is_anode = (electrode == sim::Electrode::ANODE);
+    const int np = is_anode ? state.anode_particles.size() : state.cathode_particles.size();
+
+    std::cout << "timestep: " << t << ", VCell = " << VCell << ", TotalCurrent = " << total_current << ", TotalTarget = " << total_target;
+
+    for (int j = 0; j < np; ++j)
+    {
+        std::cout << ", Current_" << j << " = " << particle_currents[j] << ", Target_" << j << " = " << para.gTrgPs[j];
+    }
+
+    std::cout << std::endl;
+
+    const char *electrode_name = (electrode == sim::Electrode::ANODE) ? "ANODE" : "CATHODE";
+
+    std::cout << "timestep: " << t << " [" << electrode_name << " HALF-CELL]" << ", VCell = " << VCell << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage();
+
+    if (np > 0)
+    {
+        if (is_anode)
+        {
+            std::cout << ", Cp_min = " << state.anode_particles[0].Cn_gf->Min()
+                    << ", Cp_max = " << state.anode_particles[0].Cn_gf->Max();
+        }
+        else
+        {
+            std::cout << ", Cp_min = " << state.cathode_particles[0].Cn_gf->Min()
+                    << ", Cp_max = " << state.cathode_particles[0].Cn_gf->Max();
+        }
+    }
+
+    std::cout << ", Ce_min = " << state.CnE_gf->Min() << ", Ce_max = " << state.CnE_gf->Max() << std::endl;
+
+    double Xfr_avg = 0.0;
+    double total_weight = 0.0;
+
+    for (int j = 0; j < np; ++j)
+    {
+
+        double Xfr_j;
+        if (is_anode)
+        {
+            Xfr_j = state.anode_particles[j].concentration->GetLithiation();
+        }
+        else
+        {
+            Xfr_j = state.cathode_particles[j].concentration->GetLithiation();
+        }
+        const double weight_j = para.gtPs[j];
+
+        Xfr_avg += weight_j * Xfr_j;
+        total_weight += weight_j;
+
+        std::cout << ", Xfr_" << j << " = " << Xfr_j;
+    }
+
+    if (total_weight > 0.0)
+    {
+        Xfr_avg /= total_weight;
+    }
+
+    std::cout << ", Xfr"  << (electrode == sim::Electrode::ANODE ? "A" : "C") << "_avg = " << Xfr_avg << std::endl;
+
+    const double XfrE = state.electrolyte_concentration->GetLithiation();
+    const double weight_E = para.gtPse;
+    const double XfrE_avg = (weight_E > 0.0) ? XfrE : 0.0;
+
+    std::cout << "XfrE = " << XfrE << ", weight_je = " << weight_E << ", XfrE_avg = " << XfrE_avg << std::endl;
+}
+
+void Utils::PrintFullCellStatus(int t, double VCell, double anode_current, double cathode_current, const SimulationState &state, const Domain_Parameters &para)
+{
+    if (mfem::Mpi::WorldRank() != 0)
+    {
+        return;
+    }
+
+    const int npA = static_cast<int>(state.anode_particles.size());
+    const int npC = static_cast<int>(state.cathode_particles.size());
+
+    double XfrA_avg = 0.0;
+    double total_anode_weight = 0.0;
+
+    for (int j = 0; j < npA; ++j)
+    {
+        const double Xfr_j = state.anode_particles[j].concentration->GetLithiation();
+        const double weight_j = para.gtPsA[j];
+
+        XfrA_avg += weight_j * Xfr_j;
+        total_anode_weight += weight_j;
+    }
+
+    if (total_anode_weight > 0.0)
+    {
+        XfrA_avg /= total_anode_weight;
+    }
+
+    // ------------------------------------------------------------
+    // Calculate average cathode lithiation
+    // ------------------------------------------------------------
+
+    double XfrC_avg = 0.0;
+    double total_cathode_weight = 0.0;
+
+    for (int j = 0; j < npC; ++j)
+    {
+        const double Xfr_j = state.cathode_particles[j].concentration->GetLithiation();
+        const double weight_j = para.gtPsC[j];
+
+        XfrC_avg += weight_j * Xfr_j;
+        total_cathode_weight += weight_j;
+    }
+
+    if (total_cathode_weight > 0.0)
+    {
+        XfrC_avg /= total_cathode_weight;
+    }
+
+    std::cout << "timestep: " << t << " [FULL-CELL]"
+              << ", XfrA_avg = " << XfrA_avg << ", XfrC_avg = " << XfrC_avg
+              << ", Anode current = " << anode_current << ", Cathode current = " << cathode_current
+              << ", Anode target = " << para.gTrgI  << ", Cathode target = " << para.gTrgI
+              << ", VCell = " << VCell << ", BvA = "  << state.anode_potential->GetBoundaryVoltage()
+              << ", BvC = " << state.cathode_potential->GetBoundaryVoltage()
+              << ", BvE = " << state.electrolyte_potential->GetBoundaryVoltage() << std::endl;
+
+
+    for (int j = 0; j < npA; ++j)
+    {
+        std::cout << "    Anode particle " << j << ", Xfr = " << state.anode_particles[j].concentration->GetLithiation() << std::endl;
+    }
+
+    for (int j = 0; j < npC; ++j)
+    {
+        std::cout << "    Cathode particle " << j << ", Xfr = " << state.cathode_particles[j].concentration->GetLithiation() << std::endl;
+    }
+}
+
+void Utils::PrintProgramTime(std::chrono::high_resolution_clock::time_point start, std::chrono::high_resolution_clock::time_point end)
+{
+    if (mfem::Mpi::WorldRank() != 0)
+    {
+        return;
+    }
+
+    const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+    std::cout << "Total Program Time: " << elapsed.count() << " seconds" << std::endl;
 }
