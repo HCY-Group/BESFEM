@@ -14,9 +14,9 @@ mesh_file = ../inputs/mesh/colored_labels_labels.tif
 combine_particles = true
 
 # TIFF crop bounds
-row_begin = 300
+row_begin = 370
 row_end = 400
-column_begin = 300
+column_begin = 340
 column_end = 370
 
 amr_levels = 0
@@ -71,4 +71,4 @@ init_CnE = 0.001
 # ============================================================
 
 init_BvA = -0.1
-init_BvE = -0.3996
+init_BvE = -0.4050

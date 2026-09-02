@@ -218,10 +218,6 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                    // if (iter == max_iter && mfem::Mpi::WorldRank() == 0) {
-                    //     std::cout << "Warning: Maximum iterations reached at timestep " << t << " with Global Error P = " << globalerror_P << ", Global Error E = " << globalerror_E << std::endl;
-                    // }
-
                     for (int j = 0; j < np; ++j)
                     {
                         state.anode_particles[j].reaction->TotalReactionCurrent(*state.anode_particles[j].Rxn_gf, global_currents[j]);
@@ -393,16 +389,6 @@ int main(int argc, char *argv[]) {
                                 *state.Rxn_gf += *state.cathode_particles[j].Rx_src;
                             }
 
-                        //     {
-                        //     state.anode_particles[j].reaction->ButlerVolmer(*state.anode_particles[j].Rxn_gf, *state.anode_particles[j].Cn_gf,*state.CnE_gf,
-                        //         *state.phA_gf, *state.phE_gf, *domain_parameters.AvEs[j]);
-
-                        //     *state.anode_particles[j].Rx_src = *state.anode_particles[j].Rxn_gf;
-                        //     *state.anode_particles[j].Rx_src *= *domain_parameters.WeightEs[j];
-                        //     *state.Rxn_gf += *state.anode_particles[j].Rx_src;
-                        // }
-
-
                             state.cathode_potential->UpdatePotential(*state.Rxn_gf, *state.phC_gf, *domain_parameters.psi, globalerror_P);
                             state.electrolyte_potential->UpdatePotential(*state.Rxn_gf, *state.phE_gf, *domain_parameters.pse, globalerror_E);
 
@@ -496,32 +482,8 @@ int main(int argc, char *argv[]) {
 
                     }
                 }
-
-                // if (cfg.half_electrode == sim::Electrode::ANODE)
-                // {
-                    // std::vector<mfem::ParGridFunction*> anode_cn_fields;
-                    // anode_cn_fields.reserve(state.anode_particles.size());
-
-                    // for (auto &p : state.anode_particles)
-                    // {
-                    //     anode_cn_fields.push_back(p.Cn_gf.get());
-                    // }
-
-                    // Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, anode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.anode_out, "A", 5000);
-                    Utils::SaveHalfCellSnapshot(t, outdir, geometry, domain_parameters, state, cfg.half_electrode, 5000);
-                // }
-                // else
-                // {
-                //     std::vector<mfem::ParGridFunction*> cathode_cn_fields;
-                //     cathode_cn_fields.reserve(state.cathode_particles.size());
-
-                //     for (auto &p : state.cathode_particles)
-                //     {
-                //         cathode_cn_fields.push_back(p.Cn_gf.get());
-                //     }
-
-                //     Utils::SaveSimulationSnapshotMulti(t, outdir, geometry, domain_parameters, cathode_cn_fields, domain_parameters.ps, *domain_parameters.psi, state.cathode_out, "C", 5000);
-                // }
+                    
+                Utils::SaveHalfCellSnapshot(t, outdir, geometry, domain_parameters, state, cfg.half_electrode, 5000);
 
                 t++;
             }
@@ -880,93 +842,6 @@ int main(int argc, char *argv[]) {
                         std::cout << "    Cathode particle " << j  << ", Xfr = " << state.cathode_particles[j].concentration->GetLithiation() << std::endl;
                     }
                 }
-
-                // ========================================================================
-                // =============================  SAVE OUTPUT  ==============================
-                // ========================================================================
-
-                // std::vector<mfem::ParGridFunction*>anode_cn_output;
-                // anode_cn_output.reserve(npA);
-
-                // for (auto& particle : state.anode_particles)
-                // {
-                //     anode_cn_output.push_back(particle.Cn_gf.get());
-                // }
-
-                // std::vector<mfem::ParGridFunction*>cathode_cn_output;
-                // cathode_cn_output.reserve(npC);
-
-                // for (auto& particle : state.cathode_particles)
-                // {
-                //     cathode_cn_output.push_back(particle.Cn_gf.get());
-                // }
-
-                // std::vector<mfem::ParGridFunction*>electrolyte_cn_output;
-                // electrolyte_cn_output.reserve(1);
-                // electrolyte_cn_output.push_back(state.CnE_gf.get());
-
-                // std::vector<mfem::ParGridFunction*>anode_potential_output;
-                // anode_potential_output.reserve(1);
-                // anode_potential_output.push_back(state.phA_gf.get());
-
-                // std::vector<mfem::ParGridFunction*>cathode_potential_output;
-                // cathode_potential_output.reserve(1);
-                // cathode_potential_output.push_back(state.phC_gf.get());
-
-                // std::vector<mfem::ParGridFunction*>electrolyte_potential_output;
-                // electrolyte_potential_output.reserve(1);
-                // electrolyte_potential_output.push_back(state.phE_gf.get());
-
-                // std::vector<mfem::ParGridFunction*> anode_psi_output;
-                // anode_psi_output.push_back(domain_parameters.psiA.get());
-
-                // std::vector<mfem::ParGridFunction*> cathode_psi_output;
-                // cathode_psi_output.push_back(domain_parameters.psiC.get());
-
-                // std::vector<mfem::ParGridFunction*> electrolyte_psi_output;
-                // electrolyte_psi_output.push_back(domain_parameters.pse.get());
-
-                // std::vector<mfem::ParGridFunction*> anode_ps_output;
-                // anode_ps_output.reserve(domain_parameters.psA.size());
-
-                // for (auto& ps : domain_parameters.psA)
-                // {
-                //     anode_ps_output.push_back(ps.get());
-                // }
-
-                // std::vector<mfem::ParGridFunction*> cathode_ps_output;
-                // cathode_ps_output.reserve(domain_parameters.psC.size());
-
-                // for (auto& ps : domain_parameters.psC)
-                // {
-                //     cathode_ps_output.push_back(ps.get());
-                // }
-
-                // if (t % 1000 == 0)
-                // {
-                //     std::ostringstream step;
-                //     step << "_" << std::setw(5) << std::setfill('0') << t;
-
-                //     state.phC_gf->SaveAsOne(
-                //         (outdir + "/phC" + step.str()).c_str());
-
-                //     state.phE_gf->SaveAsOne(
-                //         (outdir + "/phE" + step.str()).c_str());
-
-                //     state.phA_gf->SaveAsOne(
-                //         (outdir + "/phA" + step.str()).c_str());
-
-                //     state.CnE_gf->SaveAsOne(
-                //         (outdir + "/CnE" + step.str()).c_str());
-                // }
-
-                // Utils::SaveCombinedSnapshot(t, outdir, geometry, domain_parameters, anode_cn_output, anode_ps_output,
-                //     cathode_cn_output, cathode_ps_output, electrolyte_cn_output, electrolyte_psi_output,
-                //     "Cn_total", 1000);
-
-                // Utils::SaveCombinedSnapshot(t, outdir, geometry, domain_parameters, anode_potential_output, anode_psi_output,
-                //     cathode_potential_output, cathode_psi_output, electrolyte_potential_output, electrolyte_psi_output,
-                //     "Potential_total", 1000);
 
                 Utils::SaveFullCellSnapshot(t, outdir, geometry, domain_parameters, state, 1000);
 
