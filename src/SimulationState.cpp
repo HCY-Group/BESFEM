@@ -611,4 +611,7 @@ void UpdateButlerVolmerReactions(std::vector<ParticleState>& particles, mfem::Pa
 
         total_rxn += weighted_rxn;
     }
+
+    total_rxn.SaveAsOne("total_rxn.gf");
 }
+
