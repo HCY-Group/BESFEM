@@ -379,7 +379,7 @@ Update the mesh and GridFunction filenames within the notebook to visualize diff
 
 ## Cathode Concentration
 
-```math
+$$
 \frac{\partial C_c}{\partial t}
 =
 \frac{1}{\psi_c}
@@ -389,13 +389,13 @@ Update the mesh and GridFunction filenames within the notebook to visualize diff
 \right)
 -
 \frac{|\nabla\psi_c|}{\psi_c}r_c
-```
+$$
 
 ---
 
 ## Cathode Potential
 
-```math
+$$
 \nabla\cdot
 \left(
 \psi_c\kappa_c\nabla\phi_c
@@ -404,13 +404,13 @@ Update the mesh and GridFunction filenames within the notebook to visualize diff
 |\nabla\psi_c|z_-Fr_c
 =
 0
-```
+$$
 
 ---
 
 ## Electrolyte Concentration
 
-```math
+$$
 \frac{\partial C_e}{\partial t}
 =
 \frac{1}{\psi_e}
@@ -424,13 +424,13 @@ Update the mesh and GridFunction filenames within the notebook to visualize diff
 +
 \frac{|\nabla\psi_a|}{\psi_e}
 \frac{r_at_-}{\nu_+}
-```
+$$
 
 ---
 
 ## Electrolyte Potential
 
-```math
+$$
 \nabla\cdot
 \left[
 \psi_e
@@ -451,13 +451,13 @@ FC_e
 (D_- - D_+)
 \nabla C_e
 \right]
-```
+$$
 
 ---
 
 ## Anode Concentration
 
-```math
+$$
 \frac{\partial C_a}{\partial t}
 =
 \frac{1}{\psi_a}
@@ -474,13 +474,13 @@ M_a
 \right]
 -
 \frac{|\nabla\psi_a|}{\psi_a}r_a
-```
+$$
 
 ---
 
 ## Anode Potential
 
-```math
+$$
 \nabla\cdot
 \left(
 \psi_a\kappa_a\nabla\phi_a
@@ -489,7 +489,7 @@ M_a
 |\nabla\psi_a|z_-Fr_a
 =
 0
-```
+$$
 
 ---
 
