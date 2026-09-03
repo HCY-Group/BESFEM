@@ -378,8 +378,7 @@ Update the mesh and GridFunction filenames within the notebook to visualize diff
 
 ## Cathode Concentration
 
-$$\frac{\partial C_c}{\partial t}=\frac{1}{\psi_c}\nabla\cdot\left(
-\psi_c D_c \nabla C_c\right)-\frac{|\nabla\psi_c|}{\psi_c}r_c$$
+$$\frac{\partial C_c}{\partial t}=\frac{1}{\psi_c}\nabla\cdot\left(\psi_c D_c \nabla C_c\right)-\frac{|\nabla\psi_c|}{\psi_c}r_c$$
 
 ---
 
