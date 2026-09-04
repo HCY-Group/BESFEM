@@ -52,7 +52,8 @@ private:
 
     void PrintAMRMeshInfo(int level) const;
 
-    void ValidateCoarseningDimensions() const;
+    void ApplyPDEFilterToMask(const std::vector<uint8_t>& mask, int nx, int ny, int nz, mfem::ParGridFunction& filt_gf);
+
 
 protected:
     mfem::Vector elementVolumes;     ///< Per-element volumes (global or parallel).
@@ -214,16 +215,14 @@ public:
 
     /**
      * @brief Use MFEM-based solvers to compute distance function from voxel mask.
-     * @param dist Output unsigned distance function.
      * @param filt_gf Output filtered level set function.
-     * @param mode 0 = psi (keep 1s to right), 1 = pse (keep 0s to any boundary)
+     * @param phase Geometry phase (SOLID or ELECTROLYTE).
      * @param cell_mode Cell mode (HALF or FULL).
      * @param electrode Electrode type (ANODE, CATHODE, BOTH).
      */
     void ComputePDEFilter(
-        mfem::ParGridFunction &dist,
         mfem::ParGridFunction &filt_gf,
-        int mode,
+        sim::GeometryPhase phase,
         sim::CellMode cell_mode,
         sim::Electrode electrode);
 
@@ -234,7 +233,6 @@ public:
      * and computes a corresponding distance field. This is used for individual
      * particle or material-region masks in segmented microstructures.
      *
-     * @param dist Output unsigned distance field.
      * @param filt_gf Output filtered level-set field.
      * @param target_label Voxel label to isolate.
      * @param keep_boundary_connected Whether to keep only the boundary-connected region.
@@ -242,11 +240,10 @@ public:
      * @param cell_mode The mode of the cell (e.g., 2D or 3D).
      * @param electrode The electrode configuration.
      */
-    void ComputePDEFilterLabel(mfem::ParGridFunction &dist,
-            mfem::ParGridFunction &filt_gf,
+    void ComputePDEFilterLabel(mfem::ParGridFunction &filt_gf,
             int target_label,
             bool keep_boundary_connected,
-            int seed_side_or_face,
+            sim::BoundarySide seed_side_or_face,
             sim::CellMode cell_mode,
             sim::Electrode electrode);
 

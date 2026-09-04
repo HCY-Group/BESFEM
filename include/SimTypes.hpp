@@ -70,4 +70,40 @@ enum class StopMode
     VOLTAGE
 };
 
+
+/**
+ * @enum GeometryPhase
+ * @brief Represents the phase of the geometry in the simulation.
+ *
+ * - **SOLID**     — Solid electrode phase
+ * - **ELECTROLYTE** — Electrolyte phase
+ */
+enum class GeometryPhase
+{
+    SOLID,
+    ELECTROLYTE
+};
+
+/**
+ * @enum BoundarySide
+ * @brief Represents the sides of the simulation domain for boundary conditions.
+ *
+ * - **WEST**   — West boundary
+ * - **EAST**   — East boundary
+ * - **SOUTH**  — South boundary
+ * - **NORTH**  — North boundary
+ * - **BOTTOM** — Bottom boundary (for 3D simulations)
+ * - **TOP**    — Top boundary (for 3D simulations)
+ */
+enum class BoundarySide
+{
+    WEST,
+    EAST,
+    SOUTH,
+    NORTH,
+    BOTTOM,
+    TOP
+};
+
+
 } // namespace sim
