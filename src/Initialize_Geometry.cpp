@@ -1194,7 +1194,7 @@ std::unique_ptr<mfem::Mesh> Initialize_Geometry::CreateGlobalMeshFromTiffData(co
 
         if (nz > 1)
         {
-            std::cout << "  elements z = `" << ez << "\n";
+            std::cout << "  elements z = " << ez << "\n";
         }
 
         std::cout << "  element size after coarsening = " << cfg.dh * coarsen << "\n";
