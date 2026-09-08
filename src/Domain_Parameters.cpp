@@ -16,9 +16,7 @@
 #include <vector>
 #include <sstream>
 
-static inline void GlobalMinMax(const mfem::ParGridFunction& gf,
-                                double& gmin, double& gmax,
-                                MPI_Comm comm = MPI_COMM_WORLD)
+static inline void GlobalMinMax(const mfem::ParGridFunction& gf, double& gmin, double& gmax, MPI_Comm comm = MPI_COMM_WORLD)
 {
     double lmin =  std::numeric_limits<double>::infinity();
     double lmax = -std::numeric_limits<double>::infinity();
@@ -55,14 +53,6 @@ void Domain_Parameters::SetupDomainParameters(){
     AvB->SaveAsOne("AvB");
     pmesh->SaveAsOne("pmesh");
 
-    // AvEs[0]->SaveAsOne("AvE_carbon");
-    // AvEs[1]->SaveAsOne("AvE_graphite_1");
-    // AvEs[2]->SaveAsOne("AvE_graphite_2");
-
-    // WeightEs[0]->SaveAsOne("WeightE_carbon");
-    // WeightEs[1]->SaveAsOne("WeightE_graphite_1");
-    // WeightEs[2]->SaveAsOne("WeightE_graphite_2");
-
     if (cfg.mode == sim::CellMode::FULL)
     {
         psiA->SaveAsOne("psiA");
@@ -70,27 +60,6 @@ void Domain_Parameters::SetupDomainParameters(){
 
         AvPA->SaveAsOne("AvPA");
         AvPC->SaveAsOne("AvPC");
-
-        // denomA->SaveAsOne("denomA");
-        // denomC->SaveAsOne("denomC");
-
-        // for (int k = 0;
-        //     k < static_cast<int>(AvEsA.size());
-        //     ++k)
-        // {
-        //     std::ostringstream filename;
-        //     filename << "AvEsA_" << k;
-        //     AvEsA[k]->SaveAsOne(filename.str().c_str());
-        // }
-
-        // for (int k = 0;
-        //     k < static_cast<int>(AvEsC.size());
-        //     ++k)
-        // {
-        //     std::ostringstream filename;
-        //     filename << "AvEsC_" << k;
-        //     AvEsC[k]->SaveAsOne(filename.str().c_str());
-        // }
     }
 
     PrintInfo();
@@ -117,7 +86,6 @@ void Domain_Parameters::InitializeGridFunctions() {
     {
         InitializeFullCellGridFunctions();
     }    
-
 }
 
 void Domain_Parameters::InitializeHalfCellGridFunctions()
@@ -235,16 +203,14 @@ void Domain_Parameters::InitializeFullCellGridFunctions()
     WeightPairsA.resize(num_anode_particles);
 
     for (int j = 0;
-        j < num_anode_particles;
-        ++j)
+        j < num_anode_particles; ++j)
     {
         AvP_PairsA[j].resize(num_anode_particles);
         psi_PairsA[j].resize(num_anode_particles);
         WeightPairsA[j].resize(num_anode_particles);
 
         for (int k = j + 1;
-            k < num_anode_particles;
-            ++k)
+            k < num_anode_particles; ++k)
         {
             AvP_PairsA[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
             psi_PairsA[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
@@ -264,16 +230,14 @@ void Domain_Parameters::InitializeFullCellGridFunctions()
     WeightPairsC.resize(num_cathode_particles);
 
     for (int j = 0;
-        j < num_cathode_particles;
-        ++j)
+        j < num_cathode_particles; ++j)
     {
         AvP_PairsC[j].resize(num_cathode_particles);
         psi_PairsC[j].resize(num_cathode_particles);
         WeightPairsC[j].resize(num_cathode_particles);
 
         for (int k = j + 1;
-            k < num_cathode_particles;
-            ++k)
+            k < num_cathode_particles; ++k)
         {
             AvP_PairsC[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
             psi_PairsC[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
@@ -317,61 +281,29 @@ void Domain_Parameters::InitializeFullCellGridFunctions()
 
 void Domain_Parameters::InterpolateDomainParameters() {
 
-    // nV = pmesh->GetNV();
-
-    MFEM_VERIFY(pmesh, "Parallel mesh is not initialized.");
-    MFEM_VERIFY(geometry.MaskFilterPse, "Electrolyte mask is not initialized.");
-    MFEM_VERIFY(static_cast<int>(geometry.MaskFilters.size()) == static_cast<int>(ps.size()),
-                "Particle mask count does not match particle field count.");
-
     nV = pmesh->GetNV();
     nE = pmesh->GetNE();
     nC = pmesh->GetElement(0)->GetNVertices();
 
     if (cfg.mode == sim::CellMode::HALF){
-        MFEM_VERIFY(geometry.MaskFilters.size() == ps.size(), "Half-cell particle mask count does not match the particle field count.");
         InterpolateHalfCellMasks();
         BuildHalfCellInterfaces();
-
     }
     else
     {
-        MFEM_VERIFY(geometry.MaskFiltersAnode.size() == psA.size(), "Full-cell anode particle mask count does not match the anode particle field count.");
-        MFEM_VERIFY(geometry.MaskFiltersCathode.size() == psC.size(), "Full-cell cathode particle mask count does not match the cathode particle field count.");
         InterpolateFullCellMasks();
         BuildFullCellInterfaces();
     }
-
-    // ApplyAMR();
-
-    // if (cfg.mode == sim::CellMode::HALF){
-    //     BuildHalfCellInterfaces();
-    // }
-    // else
-    // {
-    //     BuildFullCellInterfaces();
-    // }
 }
 
 void Domain_Parameters::InterpolateHalfCellMasks()
 {
-    MFEM_VERIFY(geometry.MaskFilterPse, "Half-cell electrolyte mask is not initialized.");
-
-    MFEM_VERIFY(static_cast<int>(geometry.MaskFilters.size()) == static_cast<int>(ps.size()),
-        "Half-cell particle mask count does not match the particle field count.");
-
     // Shared electrolyte field.
     *pse = *geometry.MaskFilterPse;
     *psi = 0.0;
 
-    for (int k = 0;
-         k < static_cast<int>(ps.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
     {
-        MFEM_VERIFY(
-            geometry.MaskFilters[k],
-            "A half-cell particle mask is not initialized.");
-
         *ps[k] = *geometry.MaskFilters[k];
         *psi += *ps[k];
     }
@@ -384,13 +316,9 @@ void Domain_Parameters::InterpolateHalfCellMasks()
     }
 
     // Clamp each individual particle phase field.
-    for (int k = 0;
-         k < static_cast<int>(ps.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
     {
-        for (int i = 0;
-             i < ps[k]->Size();
-             ++i)
+        for (int i = 0; i < ps[k]->Size(); ++i)
         {
             (*ps[k])(i) = std::max(1.0e-6, std::min(1.0, (*ps[k])(i)));
         }
@@ -399,16 +327,6 @@ void Domain_Parameters::InterpolateHalfCellMasks()
 
 void Domain_Parameters::InterpolateFullCellMasks()
 {
-    MFEM_VERIFY(geometry.MaskFilterPse, "Full-cell electrolyte mask is not initialized.");
-    MFEM_VERIFY(geometry.MaskFilterAnode, "Full-cell anode mask is not initialized.");
-    MFEM_VERIFY(geometry.MaskFilterCathode, "Full-cell cathode mask is not initialized.");
-
-    MFEM_VERIFY(static_cast<int>(geometry.MaskFiltersAnode.size()) == static_cast<int>(psA.size()),
-        "Anode particle-mask count does not match the anode particle-field count.");
-
-    MFEM_VERIFY(static_cast<int>(geometry.MaskFiltersCathode.size()) == static_cast<int>(psC.size()),
-        "Cathode particle-mask count does not match the cathode particle-field count.");
-
     // Shared electrolyte field.
     *pse = *geometry.MaskFilterPse;
 
@@ -417,44 +335,26 @@ void Domain_Parameters::InterpolateFullCellMasks()
     *psiC = 0.0;
     *psi  = 0.0;
 
-    // -------------------------------------------------
-    // Anode particle fields
-    // -------------------------------------------------
-
     for (int k = 0;
          k < static_cast<int>(psA.size());
          ++k)
     {
-        MFEM_VERIFY(geometry.MaskFiltersAnode[k], "An anode particle mask is not initialized.");
         *psA[k] = *geometry.MaskFiltersAnode[k];
         *psiA += *psA[k];
     }
-
-    // -------------------------------------------------
-    // Cathode particle fields
-    // -------------------------------------------------
 
     for (int k = 0;
          k < static_cast<int>(psC.size());
          ++k)
     {
-        MFEM_VERIFY(geometry.MaskFiltersCathode[k], "A cathode particle mask is not initialized.");
         *psC[k] = *geometry.MaskFiltersCathode[k];
         *psiC += *psC[k];
     }
 
-    // Total solid field used for shared calculations
-    // such as AMR and total solid volume.
     *psi = *psiA;
     *psi += *psiC;
 
-    // -------------------------------------------------
-    // Clamp total phase fields
-    // -------------------------------------------------
-
-    for (int i = 0;
-         i < psi->Size();
-         ++i)
+    for (int i = 0; i < psi->Size(); ++i)
     {
         (*psiA)(i) = std::max(1.0e-6, std::min(1.0, (*psiA)(i)));
         (*psiC)(i) = std::max(1.0e-6, std::min(1.0, (*psiC)(i)));
@@ -462,319 +362,26 @@ void Domain_Parameters::InterpolateFullCellMasks()
         (*pse)(i) = std::max(1.0e-6, std::min(1.0, (*pse)(i)));
     }
 
-    // -------------------------------------------------
-    // Clamp individual anode particle fields
-    // -------------------------------------------------
-
-    for (int k = 0;
-         k < static_cast<int>(psA.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(psA.size()); ++k)
     {
-        for (int i = 0;
-             i < psA[k]->Size();
-             ++i)
+        for (int i = 0; i < psA[k]->Size(); ++i)
         {
             (*psA[k])(i) = std::max(1.0e-6, std::min(1.0, (*psA[k])(i)));
         }
     }
 
-    // -------------------------------------------------
-    // Clamp individual cathode particle fields
-    // -------------------------------------------------
-
-    for (int k = 0;
-         k < static_cast<int>(psC.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(psC.size()); ++k)
     {
-        for (int i = 0;
-             i < psC[k]->Size();
-             ++i)
+        for (int i = 0; i < psC[k]->Size(); ++i)
         {
             (*psC[k])(i) = std::max(1.0e-6, std::min(1.0, (*psC[k])(i)));
         }
     }
 }
 
-// void Domain_Parameters::ApplyAMR()
-// {
-//     if (cfg.amr_levels <= 0)
-//     {
-//         return;
-//     }
-
-//     MFEM_VERIFY(pmesh, "Parallel mesh is not initialized.");
-//     MFEM_VERIFY(fespace, "Finite element space is not initialized.");
-//     MFEM_VERIFY(psi, "Total solid phase field is not initialized.");
-
-//     const double outer_half_width = 0.45;
-
-//     for (int lev = 0;
-//          lev < cfg.amr_levels;
-//          ++lev)
-//     {
-//         mfem::Array<int> refinement_list;
-
-//         const double band_fraction = static_cast<double>(cfg.amr_levels - lev) / static_cast<double>(cfg.amr_levels);
-//         const double half_width = outer_half_width * band_fraction;
-//         const double psi_lower = 0.5 - half_width;
-//         const double psi_upper = 0.5 + half_width;
-
-//         // -------------------------------------------------
-//         // Mark elements using the total solid phase field
-//         // -------------------------------------------------
-
-//         for (int ei = 0;
-//              ei < pmesh->GetNE();
-//              ++ei)
-//         {
-//             mfem::Array<double> psi_values;
-
-//             psi->GetNodalValues(ei, psi_values);
-//             double psi_average = 0.0;
-
-//             for (int j = 0;
-//                  j < psi_values.Size();
-//                  ++j)
-//             {
-//                 psi_average += psi_values[j];
-//             }
-
-//             if (psi_values.Size() > 0)
-//             {
-//                 psi_average /= static_cast<double>(psi_values.Size());
-//             }
-
-//             if (psi_average > psi_lower && psi_average < psi_upper)
-//             {
-//                 refinement_list.Append(ei);
-//             }
-//         }
-
-//         // -------------------------------------------------
-//         // Global element counts
-//         // -------------------------------------------------
-
-//         const int local_marked = refinement_list.Size();
-
-//         const int local_elements = pmesh->GetNE();
-
-//         int global_marked = 0;
-//         int global_elements = 0;
-
-//         MPI_Allreduce(&local_marked, &global_marked, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-//         MPI_Allreduce(&local_elements, &global_elements, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
-//         if (mfem::Mpi::WorldRank() == 0)
-//         {
-//             std::cout << "[AMR] band " << lev + 1
-//                 << ": psi range = (" << psi_lower << ", " << psi_upper << "), marked "
-//                 << global_marked << " / " << global_elements << " elements globally"
-//                 << std::endl;
-//         }
-
-//         if (global_marked == 0)
-//         {
-//             if (mfem::Mpi::WorldRank() == 0)
-//             {
-//                 std::cout << "[AMR] No elements found in band " << lev + 1
-//                     << ". Stopping refinement." << std::endl;
-//             }
-
-//             break;
-//         }
-
-//         // -------------------------------------------------
-//         // Refine mesh and update the finite element space
-//         // -------------------------------------------------
-
-//         pmesh->GeneralRefinement(refinement_list, 1);
-//         fespace->Update();
-
-//         // -------------------------------------------------
-//         // Update grid functions
-//         // -------------------------------------------------
-
-//         auto UpdateGridFunction = [](std::unique_ptr<mfem::ParGridFunction> &field)
-//         {
-//             if (field)
-//             {
-//                 field->Update();
-//             }
-//         };
-
-//         auto UpdateGridFunctionVector = [&](std::vector<std::unique_ptr<mfem::ParGridFunction>> &fields)
-//         {
-//             for (auto &field : fields)
-//             {
-//                 UpdateGridFunction(field);
-//             }
-//         };
-
-//         auto UpdateGridFunctionMatrix =[&](std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> &fields)
-//         {
-//             for (auto &row : fields)
-//             {
-//                 for (auto &field : row)
-//                 {
-//                     UpdateGridFunction(field);
-//                 }
-//             }
-//         };
-
-//         // Shared fields.
-//         UpdateGridFunction(psi);
-//         UpdateGridFunction(pse);
-
-//         UpdateGridFunction(AvP);
-//         UpdateGridFunction(AvB);
-//         UpdateGridFunction(AvE);
-//         UpdateGridFunction(denom);
-
-//         // -------------------------------------------------
-//         // Half-cell fields
-//         // -------------------------------------------------
-
-//         if (cfg.mode == sim::CellMode::HALF)
-//         {
-//             UpdateGridFunctionVector(ps);
-//             UpdateGridFunctionVector(AvPs);
-//             UpdateGridFunctionVector(AvEs);
-//             UpdateGridFunctionVector(WeightEs);
-
-//             UpdateGridFunctionMatrix(AvP_Pairs);
-//             UpdateGridFunctionMatrix(psi_Pairs);
-//             UpdateGridFunctionMatrix(WeightPairs);
-//         }
-
-//         // -------------------------------------------------
-//         // Full-cell fields
-//         // -------------------------------------------------
-
-//         else
-//         {
-//             UpdateGridFunction(psiA);
-//             UpdateGridFunction(psiC);
-
-//             UpdateGridFunctionVector(psA);
-//             UpdateGridFunctionVector(psC);
-
-//             UpdateGridFunctionVector(AvPsA);
-//             UpdateGridFunctionVector(AvPsC);
-
-//             UpdateGridFunctionVector(AvEsA);
-//             UpdateGridFunctionVector(AvEsC);
-
-//             UpdateGridFunctionVector(WeightEsA);
-//             UpdateGridFunctionVector(WeightEsC);
-
-//             UpdateGridFunctionMatrix(AvP_PairsA);
-//             UpdateGridFunctionMatrix(AvP_PairsC);
-
-//             UpdateGridFunctionMatrix(psi_PairsA);
-//             UpdateGridFunctionMatrix(psi_PairsC);
-
-//             UpdateGridFunctionMatrix(WeightPairsA);
-//             UpdateGridFunctionMatrix(WeightPairsC);
-
-//             UpdateGridFunction(AvPA);
-//             UpdateGridFunction(AvPC);
-
-//             UpdateGridFunction(denomA);
-//             UpdateGridFunction(denomC);
-//         }
-
-//         // -------------------------------------------------
-//         // Update geometry masks attached to the same space
-//         // -------------------------------------------------
-
-//         UpdateGridFunction(geometry.MaskFilterPse);
-
-//         if (cfg.mode == sim::CellMode::HALF)
-//         {
-//             UpdateGridFunction(geometry.MaskFilter);
-
-//             for (auto &field : geometry.MaskFilters)
-//             {
-//                 UpdateGridFunction(field);
-//             }
-//         }
-//         else
-//         {
-//             UpdateGridFunction(geometry.MaskFilterAnode);
-
-//             UpdateGridFunction(geometry.MaskFilterCathode);
-
-//             for (auto &field : geometry.MaskFiltersAnode)
-//             {
-//                 UpdateGridFunction(field);
-//             }
-
-//             for (auto &field : geometry.MaskFiltersCathode)
-//             {
-//                 UpdateGridFunction(field);
-//             }
-//         }
-
-//         // -------------------------------------------------
-//         // Update stored mesh dimensions
-//         // -------------------------------------------------
-
-//         nV = pmesh->GetNV();
-//         nE = pmesh->GetNE();
-
-//         if (nE > 0)
-//         {
-//             nC = pmesh->GetElement(0)->GetNVertices();
-//         }
-
-//         geometry.nV = nV;
-//         geometry.nE = nE;
-//         geometry.nC = nC;
-
-//         // -------------------------------------------------
-//         // Determine element-size range
-//         // -------------------------------------------------
-
-//         double local_hmin = std::numeric_limits<double>::max();
-
-//         double local_hmax = 0.0;
-
-//         for (int ei = 0;
-//              ei < pmesh->GetNE();
-//              ++ei)
-//         {
-//             const double element_size = pmesh->GetElementSize(ei);
-
-//             local_hmin = std::min(local_hmin, element_size);
-
-//             local_hmax = std::max(local_hmax, element_size);
-//         }
-
-//         double global_hmin = 0.0;
-//         double global_hmax = 0.0;
-
-//         MPI_Allreduce(&local_hmin, &global_hmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-//         MPI_Allreduce(&local_hmax, &global_hmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-
-//         const int local_elements_after = pmesh->GetNE();
-//         int global_elements_after = 0;
-
-//         MPI_Allreduce(&local_elements_after, &global_elements_after, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
-//         if (mfem::Mpi::WorldRank() == 0)
-//         {
-//             std::cout << "[AMR] band " << lev + 1 << " element-size range after refinement: "
-//                 << global_hmin << " to " << global_hmax << std::endl;
-
-//             std::cout << "[AMR] band " << lev + 1 << " complete: " << global_elements_after << " total elements" << std::endl;
-//         }
-//     }
-// }
-
 void Domain_Parameters::ComputeGradientMagnitude(const mfem::ParGridFunction &phase_in, mfem::ParGridFunction &gradient_out)
 {
     const int dim = pmesh->Dimension();
-
     gradient_out = 0.0;
 
     mfem::ParGridFunction derivative(fespace.get());
@@ -786,18 +393,14 @@ void Domain_Parameters::ComputeGradientMagnitude(const mfem::ParGridFunction &ph
         mfem::ParGridFunction phase_copy(phase_in);
         phase_copy.GetDerivative(1, d, derivative);
 
-        for (int i = 0;
-             i < gradient_out.Size();
-             ++i)
+        for (int i = 0; i < gradient_out.Size(); ++i)
         {
             const double value = derivative(i);
             gradient_out(i) += value * value;
         }
     }
 
-    for (int i = 0;
-         i < gradient_out.Size();
-         ++i)
+    for (int i = 0; i < gradient_out.Size(); ++i)
     {
         gradient_out(i) = std::sqrt(gradient_out(i));
     }
@@ -824,9 +427,7 @@ void Domain_Parameters::BuildPairInterface(mfem::ParGridFunction &out, const mfe
     out *= overlap;
     out *= 4.0;
 
-    for (int i = 0;
-         i < out.Size();
-         ++i)
+    for (int i = 0; i < out.Size(); ++i)
     {
         if (out(i) > 9000.0)
         {
@@ -846,9 +447,7 @@ void Domain_Parameters::BuildPairPhaseMask(mfem::ParGridFunction &out, const mfe
     out = phase_a;
     out += phase_b;
 
-    for (int i = 0;
-         i < out.Size();
-         ++i)
+    for (int i = 0; i < out.Size(); ++i)
     {
         out(i) = std::max(0.0, std::min(1.0, out(i)));
     }
@@ -861,12 +460,7 @@ void Domain_Parameters::ComputeInterfaceWeight(mfem::ParGridFunction &weight_out
     const double beta = 0.8;
     const double epsilon = 1.0e-30;
 
-    MFEM_VERIFY(weight_out.Size() == numerator.Size(), "Weight and numerator sizes do not match.");
-    MFEM_VERIFY(denominator.Size() == numerator.Size(), "Denominator and numerator sizes do not match.");
-
-    for (int i = 0;
-         i < weight_out.Size();
-         ++i)
+    for (int i = 0; i < weight_out.Size(); ++i)
     {
         double ratio = 0.0;
 
@@ -887,340 +481,158 @@ void Domain_Parameters::ComputeInterfaceWeight(mfem::ParGridFunction &weight_out
 
 void Domain_Parameters::BuildHalfCellInterfaces()
 {
-    MFEM_VERIFY(psi, "Half-cell total solid field is not initialized.");
-    MFEM_VERIFY(pse, "Half-cell electrolyte field is not initialized.");
-    MFEM_VERIFY(AvP, "Half-cell total solid interface field is not initialized.");
-    MFEM_VERIFY(AvE, "Half-cell electrolyte interface field is not initialized.");
-    MFEM_VERIFY(denom, "Half-cell interface denominator is not initialized.");
-    MFEM_VERIFY(ps.size() == AvPs.size(), "Half-cell particle and gradient-field counts do not match.");
-    MFEM_VERIFY(ps.size() == AvEs.size(), "Half-cell particle and electrolyte-interface counts do not match.");
-    MFEM_VERIFY(ps.size() == WeightEs.size(), "Half-cell particle and electrolyte-weight counts do not match.");
-
-    // -------------------------------------------------
-    // Total solid and electrolyte gradient magnitudes
-    // -------------------------------------------------
-
     ComputeGradientMagnitude(*psi, *AvP);
     ComputeGradientMagnitude(*pse, *AvE);
 
-    // -------------------------------------------------
-    // Individual particle gradient magnitudes
-    // -------------------------------------------------
-
-    for (int k = 0;
-         k < static_cast<int>(ps.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
     {
         ComputeGradientMagnitude(*ps[k], *AvPs[k]);
     }
 
-    // -------------------------------------------------
-    // Particle-particle interfaces
-    // -------------------------------------------------
-
-    for (int j = 0;
-         j < static_cast<int>(ps.size());
-         ++j)
+    for (int j = 0; j < static_cast<int>(ps.size()); ++j)
     {
-        for (int k = j + 1;
-             k < static_cast<int>(ps.size());
-             ++k)
+        for (int k = j + 1; k < static_cast<int>(ps.size()); ++k)
         {
-            MFEM_VERIFY(AvP_Pairs[j][k], "Half-cell particle-pair interface field is missing.");
-            MFEM_VERIFY(psi_Pairs[j][k], "Half-cell particle-pair phase field is missing.");
-
             BuildPairInterface(*AvP_Pairs[j][k], *ps[j], *ps[k], *AvPs[j], *AvPs[k]);
             BuildPairPhaseMask(*psi_Pairs[j][k], *ps[j], *ps[k]);
 
             std::ostringstream filename;
             filename << "AvP_Pair_" << j << "_" << k;
             AvP_Pairs[j][k]->SaveAsOne(filename.str().c_str());
-            
         }
     }
 
-    // -------------------------------------------------
-    // Particle-electrolyte interfaces
-    // -------------------------------------------------
-
-    for (int k = 0;
-         k < static_cast<int>(ps.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
     {
         BuildElectrolyteInterface(*AvEs[k], *pse, *AvPs[k]);
     }
 
-    // -------------------------------------------------
-    // Build common half-cell denominator
-    // -------------------------------------------------
-
     *denom = 0.0;
 
-    for (int j = 0;
-         j < static_cast<int>(ps.size());
-         ++j)
+    for (int j = 0; j < static_cast<int>(ps.size()); ++j)
     {
-        for (int k = j + 1;
-             k < static_cast<int>(ps.size());
-             ++k)
+        for (int k = j + 1; k < static_cast<int>(ps.size()); ++k)
         {
             *denom += *AvP_Pairs[j][k];
         }
     }
 
-    for (int k = 0;
-         k < static_cast<int>(ps.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
     {
         *denom += *AvEs[k];
     }
 
-    // -------------------------------------------------
-    // Particle-electrolyte weights
-    // -------------------------------------------------
-
-    for (int k = 0;
-         k < static_cast<int>(ps.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
     {
         ComputeInterfaceWeight(*WeightEs[k], *AvEs[k], *denom);
     }
 
-    // -------------------------------------------------
-    // Particle-particle weights
-    // -------------------------------------------------
-
-    for (int j = 0;
-         j < static_cast<int>(ps.size());
-         ++j)
+    for (int j = 0; j < static_cast<int>(ps.size()); ++j)
     {
-        for (int k = j + 1;
-             k < static_cast<int>(ps.size());
-             ++k)
+        for (int k = j + 1; k < static_cast<int>(ps.size()); ++k)
         {
-            MFEM_VERIFY(WeightPairs[j][k], "Half-cell particle-pair weight field is missing.");
             ComputeInterfaceWeight(*WeightPairs[j][k], *AvP_Pairs[j][k], *denom, psi_Pairs[j][k].get());
-            // std::ostringstream filename;
-            // filename << "WeightPair_" << j << "_" << k;
-            // WeightPairs[j][k]->SaveAsOne(filename.str().c_str());
         }
     }
 }
 
 void Domain_Parameters::BuildFullCellInterfaces()
 {
-    MFEM_VERIFY(psi, "Full-cell total solid field is not initialized.");
-    MFEM_VERIFY(psiA, "Full-cell anode phase field is not initialized.");
-    MFEM_VERIFY(psiC, "Full-cell cathode phase field is not initialized.");
-    MFEM_VERIFY(pse, "Full-cell electrolyte phase field is not initialized.");
-    MFEM_VERIFY(AvP, "Full-cell total solid interface field is not initialized.");
-    MFEM_VERIFY(AvPA, "Full-cell anode interface field is not initialized.");
-    MFEM_VERIFY(AvPC, "Full-cell cathode interface field is not initialized.");
-    MFEM_VERIFY(AvE, "Full-cell electrolyte interface field is not initialized.");
-    MFEM_VERIFY(denomA, "Full-cell anode interface denominator is not initialized.");
-    MFEM_VERIFY(denomC, "Full-cell cathode interface denominator is not initialized.");
-    MFEM_VERIFY(psA.size() == AvPsA.size(), "Anode particle and gradient-field counts do not match.");
-    MFEM_VERIFY(psA.size() == AvEsA.size(), "Anode particle and electrolyte-interface counts do not match.");
-    MFEM_VERIFY(psA.size() == WeightEsA.size(), "Anode particle and electrolyte-weight counts do not match.");
-    MFEM_VERIFY(psC.size() == AvPsC.size(), "Cathode particle and gradient-field counts do not match.");
-    MFEM_VERIFY(psC.size() == AvEsC.size(), "Cathode particle and electrolyte-interface counts do not match.");
-    MFEM_VERIFY(psC.size() == WeightEsC.size(), "Cathode particle and electrolyte-weight counts do not match.");
-
-    // -------------------------------------------------
-    // Total phase-field gradient magnitudes
-    // -------------------------------------------------
-
     ComputeGradientMagnitude(*psi, *AvP);
     ComputeGradientMagnitude(*psiA, *AvPA);
     ComputeGradientMagnitude(*psiC, *AvPC);
     ComputeGradientMagnitude(*pse, *AvE);
 
-    // -------------------------------------------------
-    // Anode particle gradient magnitudes
-    // -------------------------------------------------
-
-    for (int k = 0;
-         k < static_cast<int>(psA.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(psA.size()); ++k)
     {
         ComputeGradientMagnitude(*psA[k], *AvPsA[k]);
     }
 
-    // -------------------------------------------------
-    // Cathode particle gradient magnitudes
-    // -------------------------------------------------
-
-    for (int k = 0;
-         k < static_cast<int>(psC.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(psC.size()); ++k)
     {
         ComputeGradientMagnitude(*psC[k], *AvPsC[k]);
     }
 
-    // -------------------------------------------------
-    // Anode particle-particle interfaces
-    // -------------------------------------------------
-
-    for (int j = 0;
-         j < static_cast<int>(psA.size());
-         ++j)
+    for (int j = 0; j < static_cast<int>(psA.size()); ++j)
     {
-        for (int k = j + 1;
-             k < static_cast<int>(psA.size());
-             ++k)
+        for (int k = j + 1; k < static_cast<int>(psA.size()); ++k)
         {
-            MFEM_VERIFY(AvP_PairsA[j][k], "Anode particle-pair interface field is missing.");
-            MFEM_VERIFY(psi_PairsA[j][k], "Anode particle-pair phase field is missing.");
-
             BuildPairInterface(*AvP_PairsA[j][k], *psA[j], *psA[k], *AvPsA[j], *AvPsA[k]);
             BuildPairPhaseMask(*psi_PairsA[j][k], *psA[j], *psA[k]);
         }
     }
 
-    // -------------------------------------------------
-    // Cathode particle-particle interfaces
-    // -------------------------------------------------
-
-    for (int j = 0;
-         j < static_cast<int>(psC.size());
-         ++j)
+    for (int j = 0; j < static_cast<int>(psC.size()); ++j)
     {
-        for (int k = j + 1;
-             k < static_cast<int>(psC.size());
-             ++k)
+        for (int k = j + 1; k < static_cast<int>(psC.size()); ++k)
         {
-            MFEM_VERIFY(AvP_PairsC[j][k], "Cathode particle-pair interface field is missing.");
-            MFEM_VERIFY(psi_PairsC[j][k], "Cathode particle-pair phase field is missing.");
-
             BuildPairInterface(*AvP_PairsC[j][k], *psC[j], *psC[k], *AvPsC[j], *AvPsC[k]);
             BuildPairPhaseMask(*psi_PairsC[j][k], *psC[j], *psC[k]);
         }
     }
 
-    // -------------------------------------------------
-    // Anode-electrolyte interfaces
-    // -------------------------------------------------
-
-    for (int k = 0;
-         k < static_cast<int>(psA.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(psA.size()); ++k)
     {
         BuildElectrolyteInterface(*AvEsA[k], *pse, *AvPsA[k]);
     }
 
-    // -------------------------------------------------
-    // Cathode-electrolyte interfaces
-    // -------------------------------------------------
-
-    for (int k = 0;
-         k < static_cast<int>(psC.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(psC.size()); ++k)
     {
         BuildElectrolyteInterface(*AvEsC[k], *pse, *AvPsC[k]);
     }
 
-    // -------------------------------------------------
-    // Anode interface denominator
-    // -------------------------------------------------
-
     *denomA = 0.0;
 
-    for (int j = 0;
-         j < static_cast<int>(psA.size());
-         ++j)
+    for (int j = 0; j < static_cast<int>(psA.size()); ++j)
     {
-        for (int k = j + 1;
-             k < static_cast<int>(psA.size());
-             ++k)
+        for (int k = j + 1; k < static_cast<int>(psA.size()); ++k)
         {
             *denomA += *AvP_PairsA[j][k];
         }
     }
 
-    for (int k = 0;
-         k < static_cast<int>(psA.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(psA.size()); ++k)
     {
         *denomA += *AvEsA[k];
     }
 
-    // -------------------------------------------------
-    // Cathode interface denominator
-    // -------------------------------------------------
-
     *denomC = 0.0;
 
-    for (int j = 0;
-         j < static_cast<int>(psC.size());
-         ++j)
+    for (int j = 0; j < static_cast<int>(psC.size()); ++j)
     {
-        for (int k = j + 1;
-             k < static_cast<int>(psC.size());
-             ++k)
+        for (int k = j + 1; k < static_cast<int>(psC.size()); ++k)
         {
             *denomC += *AvP_PairsC[j][k];
         }
     }
 
-    for (int k = 0;
-         k < static_cast<int>(psC.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(psC.size()); ++k)
     {
         *denomC += *AvEsC[k];
     }
 
-    // -------------------------------------------------
-    // Anode-electrolyte weights
-    // -------------------------------------------------
-
-    for (int k = 0;
-         k < static_cast<int>(psA.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(psA.size()); ++k)
     {
         ComputeInterfaceWeight(*WeightEsA[k], *AvEsA[k], *denomA);
     }
 
-    // -------------------------------------------------
-    // Cathode-electrolyte weights
-    // -------------------------------------------------
-
-    for (int k = 0;
-         k < static_cast<int>(psC.size());
-         ++k)
+    for (int k = 0; k < static_cast<int>(psC.size()); ++k)
     {
         ComputeInterfaceWeight(*WeightEsC[k], *AvEsC[k], *denomC);
     }
 
-    // -------------------------------------------------
-    // Anode particle-particle weights
-    // -------------------------------------------------
-
-    for (int j = 0;
-         j < static_cast<int>(psA.size());
-         ++j)
+    for (int j = 0; j < static_cast<int>(psA.size()); ++j)
     {
-        for (int k = j + 1;
-             k < static_cast<int>(psA.size());
-             ++k)
+        for (int k = j + 1; k < static_cast<int>(psA.size()); ++k)
         {
-            MFEM_VERIFY(WeightPairsA[j][k], "Anode particle-pair weight field is missing.");
             ComputeInterfaceWeight(*WeightPairsA[j][k], *AvP_PairsA[j][k], *denomA, psi_PairsA[j][k].get());
         }
     }
 
-    // -------------------------------------------------
-    // Cathode particle-particle weights
-    // -------------------------------------------------
-
-    for (int j = 0;
-         j < static_cast<int>(psC.size());
-         ++j)
+    for (int j = 0; j < static_cast<int>(psC.size()); ++j)
     {
-        for (int k = j + 1;
-             k < static_cast<int>(psC.size());
-             ++k)
+        for (int k = j + 1; k < static_cast<int>(psC.size()); ++k)
         {
-            MFEM_VERIFY(WeightPairsC[j][k], "Cathode particle-pair weight field is missing.");
             ComputeInterfaceWeight(*WeightPairsC[j][k], *AvP_PairsC[j][k], *denomC, psi_PairsC[j][k].get());
         }
     }
@@ -1229,14 +641,11 @@ void Domain_Parameters::BuildFullCellInterfaces()
 
 void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction &grid_function, const mfem::Vector &element_volumes, double &local_total, double &global_total)
 {
-    MFEM_VERIFY(element_volumes.Size() == pmesh->GetNE(), "Element-volume vector size does not match the local element count.");
-
     local_total = 0.0;
 
     for (int ei = 0; ei < pmesh->GetNE(); ++ei)
     {
         mfem::Array<double> nodal_values;
-
         grid_function.GetNodalValues(ei, nodal_values);
 
         if (nodal_values.Size() == 0)
@@ -1246,9 +655,7 @@ void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction &grid_functi
 
         double average_value = 0.0;
 
-        for (int j = 0;
-             j < nodal_values.Size();
-             ++j)
+        for (int j = 0; j < nodal_values.Size(); ++j)
         {
             average_value += nodal_values[j];
         }
@@ -1264,7 +671,6 @@ void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction &grid_functi
 void Domain_Parameters::CalculateTotalPhaseField(const mfem::ParGridFunction &grid_function, double &local_total, double &global_total)
 {
     const int local_element_count = pmesh->GetNE();
-
     EVol.SetSize(local_element_count);
 
     for (int ei = 0; ei < local_element_count; ++ei)
@@ -1292,9 +698,6 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent()
 
 void Domain_Parameters::CalculateHalfCellPhasePotentialsAndTargetCurrent()
 {
-    MFEM_VERIFY(psi, "Half-cell total solid phase field is not initialized.");
-    MFEM_VERIFY(ps.size() == particle_labels.size(), "Half-cell particle-field count does not match particle labels.");
-
     const std::vector<sim::MaterialType> &active_materials = (cfg.half_electrode == sim::Electrode::CATHODE) ? cfg.cathode_materials : cfg.anode_materials;
 
     MFEM_VERIFY(active_materials.size() == ps.size(), "Half-cell material count does not match particle count.");
@@ -1312,11 +715,6 @@ void Domain_Parameters::CalculateHalfCellPhasePotentialsAndTargetCurrent()
 
 void Domain_Parameters::CalculateFullCellPhasePotentialsAndTargetCurrent()
 {
-    MFEM_VERIFY(psiA, "Full-cell anode phase field is not initialized.");
-    MFEM_VERIFY(psiC, "Full-cell cathode phase field is not initialized.");
-    MFEM_VERIFY(psA.size() == cfg.anode_materials.size(), "Anode material count does not match anode particle count.");
-    MFEM_VERIFY(psC.size() == cfg.cathode_materials.size(), "Cathode material count does not match cathode particle count.");
-
     gTrgIA = 0.0;
     gTrgIC = 0.0;
     gTrgI = 0.0;
@@ -1333,9 +731,7 @@ void Domain_Parameters::CalculateFullCellPhasePotentialsAndTargetCurrent()
         gTrgIA += gTrgPsA[k];
     }
 
-    for (std::size_t k = 0;
-         k < psC.size();
-         ++k)
+    for (std::size_t k = 0; k < psC.size(); ++k)
     {
         CalculateTotalPhaseField(*psC[k], tPsC[k], gtPsC[k]);
         CalculateTargetCurrent(tPsC[k], gTrgPsC[k], cfg.cathode_materials[k]);
