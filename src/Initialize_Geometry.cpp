@@ -5,7 +5,6 @@
 #include "../include/dist_solver.hpp"
 
 #include "mfem.hpp"
-
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -77,7 +76,6 @@ static void KeepOnlyConnectedToBoundary_2D(std::vector<uint8_t> &solid, int nx, 
         else
             for (int t=0;t<8;t++) push(i+di8[t], j+dj8[t]);
     }
-
     // remove islands
     for (int k=0;k<nx*ny;k++) if (solid[k] && !keep[k]) solid[k] = 0;
 }
@@ -157,9 +155,7 @@ static void KeepOnlyConnectedToBoundary_3D(std::vector<uint8_t> &solid, int nx, 
 static void KeepOnlyElectrolyteTouchingBothElectrodes_2D(std::vector<uint8_t> &electrolyte, const std::vector<std::vector<std::vector<int>>> &labels,
     int nx, int ny, bool eight_conn)
 {
-    MFEM_VERIFY(
-        labels.size() == 1,
-        "KeepOnlyElectrolyteTouchingBothElectrodes_2D requires 2D TIFF data.");
+    MFEM_VERIFY(labels.size() == 1, "KeepOnlyElectrolyteTouchingBothElectrodes_2D requires 2D TIFF data.");
 
     auto id = [nx](int i, int j)
     {
@@ -214,8 +210,7 @@ static void KeepOnlyElectrolyteTouchingBothElectrodes_2D(std::vector<uint8_t> &e
                     const int ni = i + di[n];
                     const int nj = j + dj[n];
 
-                    if (ni < 0 || ni >= nx ||
-                        nj < 0 || nj >= ny)
+                    if (ni < 0 || ni >= nx || nj < 0 || nj >= ny)
                     {
                         continue;
                     }
@@ -231,8 +226,7 @@ static void KeepOnlyElectrolyteTouchingBothElectrodes_2D(std::vector<uint8_t> &e
                     {
                         touches_cathode = true;
                     }
-                    else if (electrolyte[neighbor_id] &&
-                             !visited[neighbor_id])
+                    else if (electrolyte[neighbor_id] && !visited[neighbor_id])
                     {
                         visited[neighbor_id] = 1;
                         q.push({ni, nj});
@@ -327,11 +321,8 @@ static void KeepOnlyElectrolyteTouchingBothElectrodes_3D(std::vector<uint8_t> &e
                                     continue;
                                 }
 
-                                const int neighbor_label =
-                                    labels[nk][nj][ni];
-
-                                const int neighbor_id =
-                                    id(ni, nj, nk);
+                                const int neighbor_label = labels[nk][nj][ni];
+                                const int neighbor_id = id(ni, nj, nk);
 
                                 if (neighbor_label < 0)
                                 {
@@ -341,8 +332,7 @@ static void KeepOnlyElectrolyteTouchingBothElectrodes_3D(std::vector<uint8_t> &e
                                 {
                                     touches_cathode = true;
                                 }
-                                else if (electrolyte[neighbor_id] &&
-                                         !visited[neighbor_id])
+                                else if (electrolyte[neighbor_id] && !visited[neighbor_id])
                                 {
                                     visited[neighbor_id] = 1;
                                     q.push({ni, nj, nk});
@@ -368,9 +358,7 @@ static void KeepOnlyElectrolyteTouchingBothElectrodes_3D(std::vector<uint8_t> &e
             }
         }
     }
-
     electrolyte.swap(keep);
-
     std::cout << "[Full Cell Connectivity] Electrolyte components kept: " << kept_components << ", removed: " << removed_components << "\n";
 }
 
@@ -406,7 +394,7 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
     if (mfem::Mpi::WorldRank() == 0)
     {
         std::cout << "[Initialize_Geometry] particle labels found: ";
-        for (int lbl : particle_labels) std::cout << lbl << " ";
+            for (int lbl : particle_labels) std::cout << lbl << " ";
         std::cout << std::endl;
     }
 
@@ -601,8 +589,7 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::MergeMeshes(cons
         anodeData[0][0].empty() ||
         cathodeData[0][0].empty())
     {
-        throw std::runtime_error(
-            "Anode or cathode TIFF data is empty.");
+        throw std::runtime_error("Anode or cathode TIFF data is empty.");
     }
 
     const int anodeNz = static_cast<int>(anodeData.size());
@@ -615,27 +602,18 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::MergeMeshes(cons
 
     if (anodeNz != cathodeNz)
     {
-        throw std::runtime_error(
-            "Anode and cathode TIFF files must have "
-            "the same number of depth slices.");
+        throw std::runtime_error("Anode and cathode TIFF files must have the same number of depth slices.");
     }
 
     if (anodeNy != cathodeNy)
     {
-        throw std::runtime_error(
-            "Anode and cathode TIFF files must have "
-            "the same number of rows.");
+        throw std::runtime_error("Anode and cathode TIFF files must have the same number of rows.");
     }
 
     const int separatorColumns = 0;
     const int mergedNx = anodeNx + separatorColumns + cathodeNx;
 
-    std::vector<std::vector<std::vector<int>>> mergedData( anodeNz,
-        std::vector<std::vector<int>>(
-            anodeNy,
-            std::vector<int>(
-                mergedNx,
-                0)));
+    std::vector<std::vector<std::vector<int>>> mergedData( anodeNz, std::vector<std::vector<int>>(anodeNy, std::vector<int>(mergedNx, 0)));
 
     for (int k = 0; k < anodeNz; ++k)
     {
@@ -643,18 +621,14 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::MergeMeshes(cons
         {
             for (int i = 0; i < anodeNx; ++i)
             {
-                const int label =
-                    anodeData[k][j][i];
+                const int label = anodeData[k][j][i];
 
                 if (label > 0)
                 {
-                    throw std::runtime_error(
-                        "Anode TIFF contains a positive "
-                        "particle label. Expected labels <= 0.");
+                    throw std::runtime_error("Anode TIFF contains a positive particle label. Expected labels <= 0.");
                 }
 
-                mergedData[k][j][i] =
-                    label;
+                mergedData[k][j][i] = label;
             }
 
             const int cathodeStart = anodeNx + separatorColumns;
@@ -665,13 +639,10 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::MergeMeshes(cons
 
                 if (label < 0)
                 {
-                    throw std::runtime_error(
-                        "Cathode TIFF contains a negative "
-                        "particle label. Expected labels >= 0.");
+                    throw std::runtime_error("Cathode TIFF contains a negative particle label. Expected labels >= 0.");
                 }
 
-                mergedData[k][j][cathodeStart + i] =
-                    label;
+                mergedData[k][j][cathodeStart + i] = label;
             }
         }
     }
@@ -1096,9 +1067,7 @@ void Initialize_Geometry::AssignGlobalValues()
             {
                 const int ii = coarsen * i;
                 const int jj = coarsen * j;
-
                 const int idx = i + vx * j;
-
                 (*gVox)[idx] = tiffData[0][jj][ii];
             }
         }
@@ -1117,10 +1086,7 @@ void Initialize_Geometry::AssignGlobalValues()
                     const int ii = coarsen * i;
                     const int jj = coarsen * j;
                     const int kk = coarsen * k;
-
-                    const int idx =
-                        i + vx * (j + vy * k);
-
+                    const int idx = i + vx * (j + vy * k);
                     (*gVox)[idx] = tiffData[kk][jj][ii];
                 }
             }
@@ -1137,10 +1103,7 @@ void Initialize_Geometry::MapGlobalToLocal() {
     if (!globalMesh) {
         throw std::runtime_error("Global mesh must be initialized before setting up FE space.");
     }
-
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        
+    
     nV = parallelMesh->GetNV();        // number of vertices
     nE = parallelMesh->GetNE();        // number of elements
     nC = pow(2, parallelMesh->Dimension());  // number of corner vertices
@@ -1283,7 +1246,6 @@ void Initialize_Geometry::SaveTiffDataToPGM(const std::vector<std::vector<std::v
     for (int j = 0; j < height; ++j) {
         for (int i = 0; i < width; ++i) {
             const int label = img[j][i];
-
             unsigned char val = 0;
             if (maxLabel > minLabel) {
                 val = static_cast<unsigned char>(std::round(255.0 * (label - minLabel) / (maxLabel - minLabel)));
@@ -1296,8 +1258,7 @@ void Initialize_Geometry::SaveTiffDataToPGM(const std::vector<std::vector<std::v
     out.close();
 
     if (mfem::Mpi::WorldRank() == 0) {
-        std::cout << "Saved PGM to " << filename
-                  << " using label range " << minLabel << "-" << maxLabel << "\n";
+        std::cout << "Saved PGM to " << filename << " using label range " << minLabel << "-" << maxLabel << "\n";
     }
 }
 
@@ -1393,10 +1354,6 @@ void Initialize_Geometry::ApplyPDEFilterToMask(const std::vector<uint8_t>& mask,
 void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &filt_gf, sim::GeometryPhase phase, sim::CellMode cell_mode, sim::Electrode electrode)
 
 {
-    MFEM_VERIFY(parallelMesh, "parallelMesh is not initialized.");
-    MFEM_VERIFY(parfespace, "parfespace is not initialized.");
-    MFEM_VERIFY(filt_gf.ParFESpace() == parfespace.get(), "filt_gf must be on parfespace.");
-    MFEM_VERIFY(parfespace_dg, "parfespace_dg is not initialized.");
     MFEM_VERIFY(parallelMesh->Dimension() == 2 || parallelMesh->Dimension() == 3, "ComputePDEFilter: mesh must be 2D or 3D.");
 
     // TIFF sizes
@@ -1504,12 +1461,6 @@ void Initialize_Geometry::ComputePDEFilter(mfem::ParGridFunction &filt_gf, sim::
 void Initialize_Geometry::ComputePDEFilterLabel(mfem::ParGridFunction &filt_gf, int target_label,
                                                 bool keep_boundary_connected, BoundarySide seed_side_or_face, sim::CellMode cell_mode, sim::Electrode electrode)
 {
-    MFEM_VERIFY(parallelMesh, "parallelMesh is not initialized.");
-    MFEM_VERIFY(parfespace, "parfespace is not initialized.");
-    MFEM_VERIFY(filt_gf.ParFESpace() == parfespace.get(), "filt_gf must be on parfespace.");
-    MFEM_VERIFY(parfespace_dg, "parfespace_dg is not initialized.");
-    MFEM_VERIFY(parallelMesh->Dimension() == 2 || parallelMesh->Dimension() == 3, "ComputePDEFilterLabel: mesh must be 2D or 3D.");
-
     const int nz = (int)tiffData.size();
     const int ny = (int)tiffData[0].size();
     const int nx = (int)tiffData[0][0].size();
