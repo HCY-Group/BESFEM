@@ -623,6 +623,7 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
             mfem::ParGridFunction diff_e_gf(*state.CnE_gf);
             diff_e_gf = state.electrolyte_concentration->GetDiffusivity();
             diff_e = diff_e_gf(offset_idx); //update diffusivity based on concentration
+            diff_e /= (*domain_parameters.pse)(offset_idx); //scale by psi
             B_n = -Rxn_const*Constants::t_minus; 
             B_n /= diff_e;  // scale by diffusivity               
            for (int i=0; i<CnE_an.Size(); i++) {
@@ -663,6 +664,10 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
               mfem::ParGridFunction CnP_an(*state.CnE_gf);
               double diff_p = state.cathode_particles[j].concentration->GetDiffusivity().Max();
               CnP_an = cfg.init_cathode_particles[j];
+              mfem::ParGridFunction diff_p_gf(*state.CnE_gf);
+              diff_p_gf = state.cathode_particles[j].concentration->GetDiffusivity();
+              diff_p = diff_p_gf(offset_idx); //update diffusivity based on concentration
+              diff_p /= (*domain_parameters.psi)(offset_idx); //scale by psi
               B_n = Rxn_const/MaterialProperties::SiteDensity(state.cathode_particles[j].material);
               B_n /= diff_p;  // scale by diffusivity
               for (int i=0; i<CnE_an.Size(); i++) {
