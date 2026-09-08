@@ -25,6 +25,8 @@ amr_levels = 2
 # Must be 1 when amr_levels = 0
 coarsen_factor = 2
 
+particle_color = black
+
 # ============================================================
 # NUMERICAL PARAMETERS
 # ============================================================

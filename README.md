@@ -130,6 +130,8 @@ column_end = 100
 amr_levels = 1
 coarsen_factor = 2
 
+particle_color = black
+
 dt = 1.2e-05
 dh = 8.0e-07
 gc = 6.38e-12
