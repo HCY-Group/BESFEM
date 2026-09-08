@@ -310,7 +310,7 @@ The geometry is oriented so that the **anode current collector is located on the
 For a full-cell simulation, the electrode arrangement is therefore
 
 ```text
-West                                                    East
+West                                                                           East
 Anode current collector → Anode → Electrolyte → Cathode → Cathode current collector
 ```
 
