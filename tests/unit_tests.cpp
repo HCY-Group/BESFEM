@@ -443,8 +443,13 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
                     break;
                 }
             }
+            std::cout << "offset: " << offset << std::endl;
             //double diff_e = state.electrolyte_concentration->GetDiffusivity().Max();
+            //mfem::ParGridFunction diff_e_gf(*state.CnE_gf);
+            //diff_e_gf = state.electrolyte_concentration->GetDiffusivity();
             double diff_e = MaterialProperties::Diffusivity(sim::MaterialType::Electrolyte, cfg.init_CnE);
+            //double diff_e = diff_e_gf(offset_idx);
+            //diff_e = diff_e_gf.Max();
             double time_elapsed = cfg.dt; 
             const double pi = std::acos(-1.0);
             double Rxn_const = 1e-6;
@@ -615,6 +620,9 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
             double time_elapsed = (t+1)*cfg.dt; //total time since start of simulation
             time_elapsed += cfg.dt; //add initial time
             // boundary condition (=q/k)
+            mfem::ParGridFunction diff_e_gf(*state.CnE_gf);
+            diff_e_gf = state.electrolyte_concentration->GetDiffusivity();
+            diff_e = diff_e_gf(offset_idx); //update diffusivity based on concentration
             B_n = -Rxn_const*Constants::t_minus; 
             B_n /= diff_e;  // scale by diffusivity               
            for (int i=0; i<CnE_an.Size(); i++) {
