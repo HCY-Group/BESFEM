@@ -181,6 +181,18 @@ static void ApplyConfigFile(SimulationConfig& cfg)
             mfem::mfem_error("Invalid config mode. Use: half | full.");
     }
 
+    if (HasKey(data, "particle_color"))
+    {
+        std::string particle_color = GetValue(data, "particle_color");
+
+        if (particle_color == "black")
+            cfg.particle_color = sim::TIFF_ParticleType::BLACK;
+        else if (particle_color == "white")
+            cfg.particle_color = sim::TIFF_ParticleType::WHITE;
+        else
+            mfem::mfem_error("Invalid config particle_color. Use: black | white.");
+    }
+
     if (HasKey(data, "electrode"))
     {
         std::string electrode = GetValue(data, "electrode");

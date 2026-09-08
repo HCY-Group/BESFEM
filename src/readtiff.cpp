@@ -1,13 +1,17 @@
 
 #include "../include/readtiff.h"
+#include "../include/SimTypes.hpp"
+
 #include "mfem.hpp"
+
+using sim::TIFF_ParticleType;
 
 Constraints::Constraints() : Row_begin(0), Row_end(-1), Column_begin(0), Column_end(-1), Depth_begin(0), Depth_end(-1) {}
 
 Constraints::Constraints(int row0, int row1, int col0, int col1, int depth0, int depth1)
     : Row_begin(row0), Row_end(row1), Column_begin(col0), Column_end(col1), Depth_begin(depth0), Depth_end(depth1) {}
 
-TIFFReader::TIFFReader(const char* filePath, const Constraints& constraints) {
+TIFFReader::TIFFReader(const char* filePath, const Constraints& constraints, const SimulationConfig& cfg) : cfg(cfg) {
     this->filePath = filePath;
     tiff = TIFFOpen(filePath, "r");
     if (tiff == nullptr) {
@@ -89,53 +93,36 @@ void TIFFReader::readinfo()
         uint16 sample_format = SAMPLEFORMAT_UINT;
 
         TIFFGetFieldDefaulted(tiff, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
-
         TIFFGetFieldDefaulted(tiff, TIFFTAG_SAMPLEFORMAT, &sample_format);
 
-        tdata_t buf =
-            _TIFFmalloc(
-                TIFFScanlineSize(tiff));
+        tdata_t buf = _TIFFmalloc(TIFFScanlineSize(tiff));
 
         if (buf == nullptr)
         {
-            throw std::runtime_error(
-                "Could not allocate TIFF scanline buffer.");
+            throw std::runtime_error("Could not allocate TIFF scanline buffer.");
         }
 
-        for (int row = constraints.Row_begin;
-            row < constraints.Row_end;
-            ++row)
+        for (int row = constraints.Row_begin; row < constraints.Row_end; ++row)
         {
-            if (TIFFReadScanline(
-                    tiff,
-                    buf,
-                    row,
-                    0) < 0)
+            if (TIFFReadScanline(tiff, buf, row, 0) < 0)
             {
                 _TIFFfree(buf);
 
-                throw std::runtime_error(
-                    "Failed to read TIFF scanline.");
+                throw std::runtime_error("Failed to read TIFF scanline.");
             }
 
-            for (int col = constraints.Column_begin;
-                col < constraints.Column_end;
-                ++col)
+            for (int col = constraints.Column_begin; col < constraints.Column_end; ++col)
             {
                 int value = 0;
 
                 // -------------------------------------------------
                 // Single-channel 8-bit TIFF
                 // -------------------------------------------------
-                if (spp == 1 &&
-                    bits_per_sample == 8)
+                if (spp == 1 && bits_per_sample == 8)
                 {
-                    const uint8_t *pixels =
-                        static_cast<const uint8_t *>(buf);
+                    const uint8_t *pixels = static_cast<const uint8_t *>(buf);
 
-                    value =
-                        static_cast<int>(
-                            pixels[col]);
+                    value = static_cast<int>(pixels[col]);
                 }
 
                 // -------------------------------------------------
@@ -266,12 +253,28 @@ void TIFFReader::readinfo()
                     if (first_photo == PHOTOMETRIC_MINISBLACK) {
                         // MINISBLACK: black is low value
                         // so black particle means v < 127
-                        v = (v < 127) ? 1 : 0;
+                        if (cfg.particle_color == sim::TIFF_ParticleType::BLACK) {
+                            v = (v < 127) ? 1 : 0;
+                        }
+                        else if (cfg.particle_color == sim::TIFF_ParticleType::WHITE) {
+                            v = (v < 127) ? 0 : 1;
+                        }
+                        else {
+                            v = (v < 127) ? 1 : 0;
+                        }
                     }
                     else if (first_photo == PHOTOMETRIC_MINISWHITE) {
                         // MINISWHITE: black is high value
                         // so black particle means v > 127
-                        v = (v < 127) ? 1 : 0;
+                        if (cfg.particle_color == sim::TIFF_ParticleType::BLACK) {
+                            v = (v > 127) ? 1 : 0;
+                        }
+                        else if (cfg.particle_color == sim::TIFF_ParticleType::WHITE) {
+                            v = (v > 127) ? 0 : 1;
+                        }
+                        else {
+                            v = (v > 127) ? 1 : 0;
+                        }
                     }
                     else {
                         v = (v < 127) ? 0 : 1;

@@ -30,6 +30,7 @@ struct SimulationConfig
 
     sim::CellMode mode = sim::CellMode::HALF; ///< Cell configuration (half-cell or full-cell).
     sim::Electrode half_electrode = sim::Electrode::ANODE; ///< Active electrode for half-cell simulations.
+    sim::TIFF_ParticleType particle_color = sim::TIFF_ParticleType::BLACK; ///< Particle color in TIFF geometry (black or white).
 
     // -------------------------------------------------------------------------
     // Input files
