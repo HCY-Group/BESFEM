@@ -368,7 +368,7 @@ void Domain_Parameters::InterpolateFullCellMasks()
         {
             (*psA[k])(i) = std::max(1.0e-6, std::min(1.0, (*psA[k])(i)));
         }
-    }-------------------------------------------------
+    }
 
     for (int k = 0; k < static_cast<int>(psC.size()); ++k)
     {
