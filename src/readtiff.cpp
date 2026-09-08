@@ -42,16 +42,6 @@ TIFFReader::TIFFReader(const char* filePath, const Constraints& constraints) {
     }
     
 
-    // TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &spp);
-    // TIFFGetField(tiff, TIFFTAG_BITSPERSAMPLE, &bps);
-    // TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
-    // TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar);
-
-    // std::cout << "spp=" << spp
-    //         << " bps=" << bps
-    //         << " photometric=" << photo
-    //         << " planar=" << planar << "\n";
-
 }
 
 void TIFFReader::readinfo()
@@ -60,12 +50,7 @@ void TIFFReader::readinfo()
     const int ny = constraints.Row_end    - constraints.Row_begin;
     const int nx = constraints.Column_end - constraints.Column_begin;
 
-    imageData.assign(
-        nz,
-        std::vector<std::vector<int>>(
-            ny,
-            std::vector<int>(nx, 0)
-        )
+    imageData.assign(nz, std::vector<std::vector<int>>(ny, std::vector<int>(nx, 0))
     );
 
     if (mfem::Mpi::WorldRank() == 0) {
@@ -103,15 +88,9 @@ void TIFFReader::readinfo()
         uint16 bits_per_sample = 8;
         uint16 sample_format = SAMPLEFORMAT_UINT;
 
-        TIFFGetFieldDefaulted(
-            tiff,
-            TIFFTAG_BITSPERSAMPLE,
-            &bits_per_sample);
+        TIFFGetFieldDefaulted(tiff, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
 
-        TIFFGetFieldDefaulted(
-            tiff,
-            TIFFTAG_SAMPLEFORMAT,
-            &sample_format);
+        TIFFGetFieldDefaulted(tiff, TIFFTAG_SAMPLEFORMAT, &sample_format);
 
         tdata_t buf =
             _TIFFmalloc(
@@ -198,20 +177,12 @@ void TIFFReader::readinfo()
                     spp >= 3 &&
                     bits_per_sample == 8)
                 {
-                    const uint8_t *pixels =
-                        static_cast<const uint8_t *>(buf);
+                    const uint8_t *pixels = static_cast<const uint8_t *>(buf);
+                    const int idx = static_cast<int>(spp) * col;
 
-                    const int idx =
-                        static_cast<int>(spp) * col;
-
-                    const uint8_t r =
-                        pixels[idx + 0];
-
-                    const uint8_t g =
-                        pixels[idx + 1];
-
-                    const uint8_t b =
-                        pixels[idx + 2];
+                    const uint8_t r = pixels[idx + 0];
+                    const uint8_t g = pixels[idx + 1];
+                    const uint8_t b = pixels[idx + 2];
 
                     const bool is_white =
                         r > 240 &&
@@ -258,26 +229,11 @@ void TIFFReader::readinfo()
     const int min_value = *observed_values.begin();
     const int max_value = *observed_values.rbegin();
 
-    const bool is_binary_01 =
-        observed_values.size() <= 2 &&
-        min_value == 0 &&
-        max_value == 1;
-
-    const bool is_binary_255 =
-        observed_values.size() <= 2 &&
-        min_value == 0 &&
-        max_value == 255;
-
-    const bool is_grayscale =
-        observed_values.size() > 20 &&
-        min_value == 0 &&
-        max_value <= 255;
-
-    const bool has_negative_labels =
-        min_value < 0;
-
-    const bool has_positive_labels =
-        max_value > 1;
+    const bool is_binary_01 = observed_values.size() <= 2 && min_value == 0 && max_value == 1;
+    const bool is_binary_255 = observed_values.size() <= 2 && min_value == 0 && max_value == 255;
+    const bool is_grayscale = observed_values.size() > 20 && min_value == 0 && max_value <= 255;
+    const bool has_negative_labels = min_value < 0;
+    const bool has_positive_labels = max_value > 1;
 
     const bool is_label_tiff =
         has_negative_labels ||

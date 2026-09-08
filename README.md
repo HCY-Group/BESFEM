@@ -2,7 +2,7 @@
 
 BESFEM (**B**attery **E**lectrode **S**imulation using **MFEM**) is a high-performance finite element framework for simulating lithium-ion battery electrodes. Built on top of **MFEM**, **MPI**, and **HYPRE**, BESFEM enables parallel electrochemical simulations of realistic battery microstructures using the **Smoothed Boundary Method (SBM)**.
 
-The framework supports both **half-cell** simulations, multiple active material chemistries, and particle-resolved modeling using either diffusion or Cahn–Hilliard-based transport models. The **full-cell** model is currently under construction. 
+The framework supports **half-cell** and **full-cell** simulations, multiple active material chemistries, and particle-resolved modeling using either diffusion or Cahn–Hilliard-based transport models. 
 
 ---
 
@@ -14,7 +14,7 @@ BESFEM/
 ├── include/             # Header files
 ├── src/                 # Source files
 ├── inputs/
-│   ├── mesh/            # Mesh and TIFF geometries
+│   ├── mesh/            # Mesh and TIF geometries
 │   ├── materials/       # Material property tables
 │   └── run_config.txt   # Simulation configuration
 │
@@ -89,7 +89,7 @@ grep timestep output.txt > timestep.txt
 # Simulation Workflow
 
 ```text
-Geometry (TIFF to Mesh)
+Geometry (TIF to Mesh)
           │
           ▼
 Define Domain Parameters (SBM)
@@ -170,14 +170,14 @@ init_BvE = -0.1
 
 * `mesh_file`
 
-  * TIFF geometry
+  * TIF geometry (particles are black and electrolyte is white)
 
 * `combine_particles`
 
   * `true` — treat all particles as a single particle.
   * `false` — solve each particle independently.
 
-* TIFF Crop Bounds
+* TIF Crop Bounds
 
   * `row_begin`
   * `row_end` 
