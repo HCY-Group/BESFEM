@@ -170,7 +170,7 @@ init_BvE = -0.1
 
 * `mesh_file`
 
-  * TIF geometry (particles are black and electrolyte is white)
+  * TIF geometry
 
 * `combine_particles`
 
@@ -190,6 +190,11 @@ init_BvE = -0.1
 
 * `coarsen_factor`
   * Select a factor at which the grid will coarsen before AMR usage. Typically 2 or 4. 
+
+* `particle_color`
+  * `black` - the color of the particles is black and the color of the electrolyte is white.
+  * `white` - the color of the particles is white and the color of the electrolyte is black.
+
 
 
 ---
