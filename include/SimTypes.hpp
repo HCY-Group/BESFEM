@@ -105,5 +105,11 @@ enum class BoundarySide
     TOP
 };
 
+enum class TIFF_ParticleType
+{
+    BLACK,
+    WHITE
+};
+
 
 } // namespace sim

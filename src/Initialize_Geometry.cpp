@@ -1147,7 +1147,7 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::ReadTiffFile(con
     args.Column_begin = cfg.column_begin;
     args.Column_end   = cfg.column_end;
 
-	TIFFReader reader(meshFile,args);
+	TIFFReader reader(meshFile,args,cfg);
 	reader.readinfo();
 	std::vector<std::vector<std::vector<int>>> tiffData;
 	tiffData = reader.getImageData();
