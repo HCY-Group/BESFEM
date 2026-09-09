@@ -46,6 +46,7 @@ enum class Electrode {
  * - **Graphite** — Common anode material
  * - **NMC**       — Nickel Manganese Cobalt Oxide, a common cathode material
  * - **LFP**       — Lithium Iron Phosphate, another common cathode material
+ * - **Carbon**    — Hard Carbon, an alternative anode material
  * - **Electrolyte** — Represents the electrolyte domain (not a solid electrode)
  */
 
