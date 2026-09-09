@@ -513,7 +513,7 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
         // =================================
         // UPDATE CONCENTRATION
         // =================================
-        for (int t=0; t<100; t++) {
+        for (int t=0; t<500; t++) {
         if (cfg.half_electrode == sim::Electrode::ANODE)
         {
             const int np = static_cast<int>(state.anode_particles.size());
