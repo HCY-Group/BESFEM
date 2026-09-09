@@ -386,6 +386,12 @@ Update the mesh and GridFunction filenames within the notebook to visualize diff
 ---
 # Governing Equations
 
+## Butler-Volmer Kinetics
+
+$$r_{xn} = k_f C_e {\text{exp}}\left[{\frac{-\alpha F \Delta \phi }{RT}}\right] - k_b C_p {\text{exp}}\left[{\frac{(1-\alpha)F \Delta \phi}{RT}}\right]$$ 
+
+---
+
 ## Cathode Concentration
 
 $$\frac{\partial C_c}{\partial t}=\frac{1}{\psi_c}\nabla\cdot\left(\psi_c D_c \nabla C_c\right)-\frac{|\nabla\psi_c|}{\psi_c}r_c$$
