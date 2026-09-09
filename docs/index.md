@@ -1,6 +1,6 @@
 ---
-title: Home
-layout: home
+title: BESFEM
+layout: default
 nav_order: 1
 ---
 
@@ -120,6 +120,8 @@ The generated finite element results can be visualized using PyGLVis and other M
 Use the navigation menu to access the BESFEM API documentation and other available project resources.
 
 The API reference is generated from the source code using Doxygen and provides detailed information about BESFEM classes, functions, files, and data structures.
+
+See the [Governing Equations](equations.md) for the mathematical models implemented in BESFEM.
 
 ---
 
