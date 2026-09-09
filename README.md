@@ -140,6 +140,8 @@ stop_mode = steps
 VCut = 3.41
 num_steps = 1501
 
+save_freq = 500
+
 Cr = 1.0
 Vsr0 = 0.9466
 
@@ -196,7 +198,6 @@ init_BvE = -0.1
 * `particle_color`
   * `black` - the color of the particles is black and the color of the electrolyte is white.
   * `white` - the color of the particles is white and the color of the electrolyte is black.
-
 
 
 ---
@@ -292,6 +293,8 @@ Simulation results are written to the `outputs/` directory and include quantitie
 * Simulation logs
 
 These outputs may be visualized using **PyGLVis** or other MFEM-compatible visualization tools.
+
+To adjust how frequently this information is saved, change `save_freq` in the config file in `inputs/run_config.txt`. 
 
 ---
 ### Boundary Conditions
