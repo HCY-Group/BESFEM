@@ -453,7 +453,7 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
             double time_elapsed = cfg.dt; 
             const double pi = std::acos(-1.0);
             double Rxn_const = 1e-6;
-            Rxn_const = 1e-10;
+            //Rxn_const = 1e-8;
             double B_n;
             B_n = -Rxn_const*Constants::t_minus; 
             B_n /= diff_e;  // scale by diffusivity               
