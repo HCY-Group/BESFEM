@@ -160,12 +160,12 @@ int main(int argc, char *argv[]) {
 
                 adjust.AdjustHalfCellCurrent(total_current, total_target, *state.electrolyte_potential, *state.phE_gf);
 
-                if (t % 5000 == 0)
+                if (t % cfg.save_freq == 0)
                 {
                     Utils::PrintHalfCellStatus(t, VCell, total_current, total_target, global_currents, state, domain_parameters, cfg.half_electrode);
                 }
 
-                Utils::SaveHalfCellSnapshot(t, outdir, geometry, domain_parameters, state, cfg.half_electrode, 5000);
+                Utils::SaveHalfCellSnapshot(t, outdir, geometry, domain_parameters, state, cfg.half_electrode, cfg.save_freq);
 
                 ++t;
             }
@@ -273,12 +273,12 @@ int main(int argc, char *argv[]) {
                 adjust.AdjustConstantCurrent(global_current_A, global_current_C, *state.anode_potential, *state.cathode_potential, *state.phA_gf, *state.phC_gf, VCell);
                 VCell = state.cathode_potential->GetBoundaryVoltage() - state.anode_potential->GetBoundaryVoltage();
 
-                if (t % 1000 == 0)
+                if (t % cfg.save_freq == 0)
                 {
                     Utils::PrintFullCellStatus(t, VCell, global_current_A, global_current_C, state, domain_parameters);
                 }
 
-                Utils::SaveFullCellSnapshot(t, outdir, geometry, domain_parameters, state, 1000);
+                Utils::SaveFullCellSnapshot(t, outdir, geometry, domain_parameters, state, cfg.save_freq);
 
                 ++t;
             }

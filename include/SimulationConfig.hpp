@@ -52,6 +52,8 @@ struct SimulationConfig
     int order = Constants::order; ///< Finite element polynomial order.
     int num_timesteps = -1; ///< Number of simulation timesteps.
 
+    int save_freq = 1000; ///< Frequency of saving simulation snapshots.
+
     bool combine_particle_groups = false; ///< Solve all particle groups as a combined system.
 
     // -------------------------------------------------------------------------

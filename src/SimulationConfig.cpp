@@ -229,6 +229,9 @@ static void ApplyConfigFile(SimulationConfig& cfg)
                     "cathode_mesh_file").c_str());
     }
 
+    if (HasKey(data, "save_freq"))
+        cfg.save_freq = std::stoi(GetValue(data, "save_freq"));
+
     if (HasKey(data, "num_steps"))
         cfg.num_timesteps = std::stoi(GetValue(data, "num_steps"));
 
