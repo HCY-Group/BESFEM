@@ -38,7 +38,6 @@ SRC_FILES = \
     src/ElectrolytePotential.cpp \
     src/Constants.cpp 
 
-# ====================================
 
 # Output executable
 EXEC_DIR = bin
@@ -54,8 +53,6 @@ TEST_SRC_FILES = $(SRC_FILES) tests/unit_tests.cpp tests/unit_tests_main.cpp
 
 
 # ====================================
-
-
 
 # Tiff reading
 LDFLAGS = -ltiff

@@ -5,6 +5,9 @@
 #include "Initialize_Geometry.hpp"
 #include "Domain_Parameters.hpp"
 #include "ElectrodePotential.hpp"
+#include "ElectrolytePotential.hpp"
+
+class ElectrolytePotential;
 
 /**
  * @class Adjust
@@ -62,6 +65,9 @@ public:
                                mfem::ParGridFunction &phA_gf,
                                mfem::ParGridFunction &phC_gf,
                                double &VCell);
+
+
+    void AdjustHalfCellCurrent(double total_current, double total_target, ElectrolytePotential& electrolyte_potential, mfem::ParGridFunction& phE);
 
 private:
     /// Pointer to the parallel mesh used by the potential solve.

@@ -1,0 +1,9 @@
+<map id="ConcentrationBase" name="ConcentrationBase">
+<area shape="rect" id="Node000001" title="Abstract base class for BESFEM concentration solvers." alt="" coords="190,5,335,33"/>
+<area shape="rect" id="Node000002" href="$classElectrodeCahnHilliard.html" title="Solves solid&#45;phase electrode concentration using a Cahn&#45;Hilliard model." alt="" coords="5,81,168,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="219,41,119,83,117,78,217,37"/>
+<area shape="rect" id="Node000003" href="$classElectrodeDiffusion.html" title="Solves solid&#45;state lithium diffusion within electrode particles." alt="" coords="192,81,333,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="265,48,265,81,260,81,260,48"/>
+<area shape="rect" id="Node000004" href="$classElectrolyteDiffusion.html" title="Solves electrolyte salt transport in BESFEM battery simulations." alt="" coords="357,81,507,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="307,37,403,78,401,83,305,42"/>
+</map>

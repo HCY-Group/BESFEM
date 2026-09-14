@@ -44,6 +44,12 @@ namespace MaterialProperties
         return val;
     }
 
+    static double Carbon_diff(double c)
+    {
+        double val = 1.0e-10;
+        return val;
+    }
+
     // static double LFP_i0(double c)
     // {
     //     double val = 1.2e-5 * std::pow(c, 0.35) * std::pow(1.0 - c, 2.5);
@@ -137,27 +143,29 @@ namespace MaterialProperties
 
     static double LFP_Mob(double c)
     {
-        c = std::min(1.0 - 1.0e-8, std::max(1.0e-8, c));
+        // c = std::min(1.0 - 1.0e-8, std::max(1.0e-8, c));
 
-        const double Mmin = 8.5e-13;
-        const double B    = 5.0e-14;
+        // const double Mmin = 8.5e-13;
+        // const double B    = 5.0e-14;
 
-        const double A1 = 4.5e-12;
-        const double A2 = 4.0e-12;
+        // const double A1 = 4.5e-12;
+        // const double A2 = 4.0e-12;
 
-        const double c1 = 0.07;
-        const double c2 = 0.86;
+        // const double c1 = 0.07;
+        // const double c2 = 0.86;
 
-        const double w1 = 0.04;
-        const double w2 = 0.04;
+        // const double w1 = 0.04;
+        // const double w2 = 0.04;
 
-        const double x1 = (c - c1) / w1;
-        const double x2 = (c - c2) / w2;
+        // const double x1 = (c - c1) / w1;
+        // const double x2 = (c - c2) / w2;
 
-        return Mmin
-            + B * (c - 0.5) * (c - 0.5)
-            + A1 / (1.0 + x1 * x1)
-            + A2 / (1.0 + x2 * x2);
+        // return Mmin
+        //     + B * (c - 0.5) * (c - 0.5)
+        //     + A1 / (1.0 + x1 * x1)
+        //     + A2 / (1.0 + x2 * x2);
+
+        return 1e-13;
     }
 
     double LFP_ChpValue(double c)
@@ -210,6 +218,19 @@ namespace MaterialProperties
         return GetTableValues(c, Ticks, OCV);
     }
 
+    double Carbon_OCV(double c)
+    {
+        // return (1.095 * c * c) - (8.234e-7 * std::exp(14.31 * c)) + (4.692 * std::exp(-0.5389 * c));
+        // carbon_ocv = (1.12165244 * (1.0 - carbon_x)**1.28022415 * np.exp(-1.76785792 * carbon_x))
+        return 1.12165244 * std::pow(1.0 - c, 1.28022415) * std::exp(-1.76785792 * c);
+    }
+
+    static double Carbon_mu(double c)
+    {
+        double val = -Carbon_OCV(c);
+        return val;
+    }
+
     double OCV(sim::MaterialType material, double c)
     {
         switch (material)
@@ -222,6 +243,9 @@ namespace MaterialProperties
 
             case sim::MaterialType::Graphite:
                 return Graphite_OCV(c);
+
+            case sim::MaterialType::Carbon:
+                return Carbon_OCV(c);
 
             default:
                 mfem::mfem_error("Unknown material in OCV.");
@@ -268,6 +292,9 @@ namespace MaterialProperties
             case sim::MaterialType::Graphite:
                 return Graphite_i0(c);
 
+            case sim::MaterialType::Carbon:
+                return Graphite_i0(c);
+
             default:
                 mfem::mfem_error("Unknown material in ExchangeCurrentDensity.");
                 return 0.0;
@@ -291,6 +318,9 @@ namespace MaterialProperties
 
             case sim::MaterialType::LFP:
                 return LFP_diff(c); // placeholder, constant diffusivity for LFP
+
+            case sim::MaterialType::Carbon:
+                return Carbon_diff(c);
 
             default:
                 mfem::mfem_error("Material does not have a defined diffusivity.");
@@ -378,6 +408,10 @@ namespace MaterialProperties
 
             case sim::MaterialType::LFP:
                 return LFP_mu(c);
+
+            case sim::MaterialType::Carbon:
+                return Carbon_mu(c);
+
             default:
                 mfem::mfem_error("Unknown material in Chemical Potential.");
                 return 0.0;
@@ -387,6 +421,11 @@ namespace MaterialProperties
     static double GraphiteConductivity(double c)
     {
         return 3.3; 
+    }
+
+    static double CarbonConductivity(double c)
+    {
+        return 1.0;
     }
 
     static double NMCConductivity(double c)
@@ -413,6 +452,9 @@ namespace MaterialProperties
             case sim::MaterialType::LFP:
                 return LFPConductivity(c);
 
+            case sim::MaterialType::Carbon:
+                return CarbonConductivity(c);
+
             default:
                 mfem::mfem_error("Unknown material in Conductivity.");
                 return 0.0;
@@ -434,6 +476,10 @@ namespace MaterialProperties
             case sim::MaterialType::LFP:
                 // std::cout << "using LFP density" << std::endl;
                 return 0.02273544498;
+
+            case sim::MaterialType::Carbon:
+            // std::cout << "using Carbon density" << std::endl;
+                return 0.0227;
 
             default:
                 mfem::mfem_error("Unknown material in SiteDensity.");

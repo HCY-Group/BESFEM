@@ -78,7 +78,9 @@ void ElectrolyteDiffusion::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::
 
     utils.InitializeReaction(Rx, Rxe, (-1.0 * Constants::t_minus));
     cAe.SetGridFunction(&Rxe);
-    utils.CalculateReactionInfx(Rxe, eCrnt);
+    utils.CalculateReactionInfx(Rxe, infx);
+
+    // std::cout << "infx: " << infx << std::endl;
 
     nbcCoef.constant = infx;
     mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
@@ -118,6 +120,9 @@ void ElectrolyteDiffusion::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::
     }
 
     Cn.Distribute(CeVn);
+
+    utils.CalculateLithiation(Cn, psx, gtPsx);
+    Xfr = utils.GetLithiation();
 }
 
 void ElectrolyteDiffusion::SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) {

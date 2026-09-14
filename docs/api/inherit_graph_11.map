@@ -1,0 +1,7 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" href="$classPotentialBase.html" title="Abstract base class for BESFEM electric&#45;potential solvers." alt="" coords="5,32,117,60"/>
+<area shape="rect" id="Node000001" href="$classElectrodePotential.html" title="Solves the solid&#45;phase electric potential within an electrode." alt="" coords="169,5,310,33"/>
+<area shape="poly" id="edge4_Node000000_Node000001" title=" " alt="" coords="131,33,168,27,169,32,131,38"/>
+<area shape="rect" id="Node000002" href="$classElectrolytePotential.html" title=" " alt="" coords="165,57,314,85"/>
+<area shape="poly" id="edge5_Node000000_Node000002" title=" " alt="" coords="132,53,164,58,164,63,131,58"/>
+</map>

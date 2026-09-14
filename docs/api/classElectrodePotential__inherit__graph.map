@@ -1,0 +1,5 @@
+<map id="ElectrodePotential" name="ElectrodePotential">
+<area shape="rect" id="Node000001" title="Solves the solid&#45;phase electric potential within an electrode." alt="" coords="5,81,146,109"/>
+<area shape="rect" id="Node000002" href="$classPotentialBase.html" title="Abstract base class for BESFEM electric&#45;potential solvers." alt="" coords="20,5,131,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="78,48,78,81,73,81,73,48"/>
+</map>

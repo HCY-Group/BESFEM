@@ -69,9 +69,14 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParGridFu
 {
     static bool printed = false;
 
+    *i0C = 0.0;
+    *OCV = 0.0;
+    *Kfw = 0.0;
+    *Kbw = 0.0;
+
     for (int vi = 0; vi < nV; vi++)
     {
-        if ((AvP_in)(vi) * cfg.dh > 0.05)
+        if ((AvP_in)(vi) * cfg.dh > 1e-3)
         {
             const double cn_val = Cn(vi);
 
@@ -86,7 +91,7 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParGridFu
 
 void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &AvA_in, mfem::ParGridFunction &AvC_in){
     for (int vi = 0; vi < nV; vi++){
-        if((AvC_in)(vi) * cfg.dh > 0.05){ 
+        if((AvC_in)(vi) * cfg.dh > 1e-3){ 
             double val = -0.2 * (Cn1(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn1(vi) - 3.195);
             (*i0CC)(vi) = pow(10.0, val) * 1.0e-3; // Exchange current density
             (*OCVC)(vi) = 1.095 * Cn1(vi) * Cn1(vi) - 8.234e-7 * exp(14.31 * Cn1(vi)) + 4.692 * exp(-0.5389 * Cn1(vi)); // open circuit voltage
@@ -94,7 +99,7 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn1, mfem::ParGridF
             (*KbC)(vi) = (*i0CC)(vi) / (Constants::Frd * Cn1(vi)) * exp(-Constants::alp * Constants::Cst1 * (*OCVC)(vi)); // backward rection constant
         }
 
-        if((AvA_in)(vi) * cfg.dh > 0.05){
+        if((AvA_in)(vi) * cfg.dh > 1e-3){
             double cn_val = Cn2(vi);
             double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
             double ocv = GetTableValues(cn_val, Ticks, OCV_file);
@@ -111,7 +116,7 @@ void Reaction::TableExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParG
 {
     for (int vi = 0; vi < nV; vi++) {
 
-        if ((AvP_in)(vi) * cfg.dh > 0.05) { // Check for interface presence
+        if ((AvP_in)(vi) * cfg.dh > 1e-3) { // Check for interface presence
             double cn_val = Cn(vi);
 
             double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
@@ -131,7 +136,7 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn
     Rx = 0.0;
 
     for (int vi = 0; vi < nV; vi++){
-        if ( (AvP_in)(vi) * cfg.dh > 0.05){ // Check for interface presence
+        if ( (AvP_in)(vi) * cfg.dh > 1e-3){ // Check for interface presence
             (*dPHE)(vi) = phx1(vi) - phx2(vi); // Voltage drop across the interface
             Rx(vi) = (AvP_in)(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
                                         (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
@@ -144,13 +149,13 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Rx
 {
     for (int vi = 0; vi < nV; vi++){
         
-        if ( (AvA_in)(vi) * cfg.dh > 0.05 ){ // Check for interface presence
+        if ( (AvA_in)(vi) * cfg.dh > 1e-3 ){ // Check for interface presence
                 (*dPHA)(vi) = phx2(vi) - phx3(vi); // Voltage drop across the interface
                 Rx2(vi) = (AvA_in)(vi) * ((*KfA)(vi)*Cn3(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHA)(vi)) - \
                                             (*KbA)(vi)*Cn2(vi)*exp( Constants::alp*Constants::Cst1*(*dPHA)(vi)));
             }
 
-        if ( (AvC_in)(vi) * cfg.dh > 0.05 ){ // Check for interface presence
+        if ( (AvC_in)(vi) * cfg.dh > 1e-3 ){ // Check for interface presence
                 (*dPHC)(vi) = phx1(vi) - phx3(vi); // Voltage drop across the interface
                 Rx1(vi) = (AvC_in)(vi) * ((*KfC)(vi)*Cn3(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHC)(vi)) - \
                                             (*KbC)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHC)(vi)));

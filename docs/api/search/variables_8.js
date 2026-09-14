@@ -1,0 +1,21 @@
+var searchData=
+[
+  ['i0_5ffile_0',['i0_file',['../classReaction.html#ab423533db249f357dd305464edf599cf',1,'Reaction']]],
+  ['i0c_1',['i0C',['../classReaction.html#a59ee3486fa22f0232ae49f322a02bda4',1,'Reaction']]],
+  ['i0ca_2',['i0CA',['../classReaction.html#a7137cc6656ec8aa3d3540c43fea17520',1,'Reaction']]],
+  ['i0cc_3',['i0CC',['../classReaction.html#afef6dcf72715480becef7525780de3cd',1,'Reaction']]],
+  ['imagedata_4',['imageData',['../classTIFFReader.html#a9601a310ddde0aa5370797c21ca90815',1,'TIFFReader']]],
+  ['infx_5',['infx',['../classElectrolyteDiffusion.html#ac79d6780a9798ea3bd33631c6df1e9d2',1,'ElectrolyteDiffusion']]],
+  ['infx_5f_6',['infx_',['../classUtils.html#ac2b34b74f211356277d6ee0af582d20f',1,'Utils']]],
+  ['init_5fanode_5fparticles_7',['init_anode_particles',['../structSimulationConfig.html#a9cd394deb8ba88bbb5d4eaa42e102af4',1,'SimulationConfig']]],
+  ['init_5fbva_8',['init_BvA',['../structSimulationConfig.html#a072d3da9a4bf9ff7ef3a88b4e55c049a',1,'SimulationConfig']]],
+  ['init_5fbvc_9',['init_BvC',['../structSimulationConfig.html#a8b16f5edd5f47f5e51c2d2dcf9b58f97',1,'SimulationConfig']]],
+  ['init_5fbve_10',['init_BvE',['../structSimulationConfig.html#a01355e0f905caaa461d567278b6d3e22',1,'SimulationConfig']]],
+  ['init_5fcathode_5fparticles_11',['init_cathode_particles',['../structSimulationConfig.html#a65aa81799d69eaff58ef401a8f7e8918',1,'SimulationConfig']]],
+  ['init_5fcna_12',['init_CnA',['../structSimulationConfig.html#a906b80a8d7e177be31bdc75c472df2f4',1,'SimulationConfig']]],
+  ['init_5fcnc_13',['init_CnC',['../structSimulationConfig.html#ab5da0a816a2dd4c40d57cd45a3796a5f',1,'SimulationConfig']]],
+  ['init_5fcne_14',['init_CnE',['../structSimulationConfig.html#a87d2cbdee12c9934e7999a671751feb6',1,'SimulationConfig']]],
+  ['init_5frxa_15',['init_RxA',['../namespaceConstants.html#abd8d1b95ce74e2f9cc8c750ca7b59425',1,'Constants']]],
+  ['init_5frxc_16',['init_RxC',['../namespaceConstants.html#afce8682bf027817a6dc986ee66867cca',1,'Constants']]],
+  ['init_5frxn_17',['init_Rxn',['../namespaceConstants.html#ab7d1fbe6e59e3e8b7fee89e82897fcb6',1,'Constants']]]
+];

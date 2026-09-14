@@ -1,13 +1,17 @@
 
 #include "../include/readtiff.h"
+#include "../include/SimTypes.hpp"
+
 #include "mfem.hpp"
+
+using sim::TIFF_ParticleType;
 
 Constraints::Constraints() : Row_begin(0), Row_end(-1), Column_begin(0), Column_end(-1), Depth_begin(0), Depth_end(-1) {}
 
 Constraints::Constraints(int row0, int row1, int col0, int col1, int depth0, int depth1)
     : Row_begin(row0), Row_end(row1), Column_begin(col0), Column_end(col1), Depth_begin(depth0), Depth_end(depth1) {}
 
-TIFFReader::TIFFReader(const char* filePath, const Constraints& constraints) {
+TIFFReader::TIFFReader(const char* filePath, const Constraints& constraints, const SimulationConfig& cfg) : cfg(cfg) {
     this->filePath = filePath;
     tiff = TIFFOpen(filePath, "r");
     if (tiff == nullptr) {
@@ -19,16 +23,28 @@ TIFFReader::TIFFReader(const char* filePath, const Constraints& constraints) {
     setConstraints(constraints);
     TIFFSetDirectory(tiff, 0);
 
-    uint16 spp=0, bps=0, photo=0, planar=0;
-    TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &spp);
-    TIFFGetField(tiff, TIFFTAG_BITSPERSAMPLE, &bps);
-    TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
-    TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar);
+    uint16 spp = 0;
+    uint16 bps = 0;
+    uint16 photo = 0;
+    uint16 planar = 0;
+    uint16 sample_format = SAMPLEFORMAT_UINT;
 
-    // std::cout << "spp=" << spp
-    //         << " bps=" << bps
-    //         << " photometric=" << photo
-    //         << " planar=" << planar << "\n";
+    TIFFGetFieldDefaulted(
+        tiff,
+        TIFFTAG_SAMPLEFORMAT,
+        &sample_format);
+
+    if (mfem::Mpi::WorldRank() == 0)
+    {
+        std::cout
+            << "spp=" << spp
+            << " bps=" << bps
+            << " sampleformat=" << sample_format
+            << " photometric=" << photo
+            << " planar=" << planar
+            << "\n";
+    }
+    
 
 }
 
@@ -38,12 +54,7 @@ void TIFFReader::readinfo()
     const int ny = constraints.Row_end    - constraints.Row_begin;
     const int nx = constraints.Column_end - constraints.Column_begin;
 
-    imageData.assign(
-        nz,
-        std::vector<std::vector<int>>(
-            ny,
-            std::vector<int>(nx, 0)
-        )
+    imageData.assign(nz, std::vector<std::vector<int>>(ny, std::vector<int>(nx, 0))
     );
 
     if (mfem::Mpi::WorldRank() == 0) {
@@ -78,56 +89,124 @@ void TIFFReader::readinfo()
             metadata_set = true;
         }
 
+        uint16 bits_per_sample = 8;
+        uint16 sample_format = SAMPLEFORMAT_UINT;
+
+        TIFFGetFieldDefaulted(tiff, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
+        TIFFGetFieldDefaulted(tiff, TIFFTAG_SAMPLEFORMAT, &sample_format);
+
         tdata_t buf = _TIFFmalloc(TIFFScanlineSize(tiff));
 
-        for (int row = constraints.Row_begin; row < constraints.Row_end; row++) {
-            TIFFReadScanline(tiff, buf, row);
-            uint8* p = static_cast<uint8*>(buf);
+        if (buf == nullptr)
+        {
+            throw std::runtime_error("Could not allocate TIFF scanline buffer.");
+        }
 
-            for (int col = constraints.Column_begin; col < constraints.Column_end; col++) {
-                uint8 gray = 0;
+        for (int row = constraints.Row_begin; row < constraints.Row_end; ++row)
+        {
+            if (TIFFReadScanline(tiff, buf, row, 0) < 0)
+            {
+                _TIFFfree(buf);
 
-                if (spp == 1) {
-                    gray = p[col];
-                } else {
-                    const int idx = static_cast<int>(spp) * col;
-                    const uint8 r = p[idx + 0];
-                    const uint8 g = p[idx + 1];
-                    const uint8 b = p[idx + 2];
+                throw std::runtime_error("Failed to read TIFF scanline.");
+            }
 
-                    gray = static_cast<uint8>(0.299*r + 0.587*g + 0.114*b);
-                }
-
+            for (int col = constraints.Column_begin; col < constraints.Column_end; ++col)
+            {
                 int value = 0;
 
-                if (spp >= 3)
+                // -------------------------------------------------
+                // Single-channel 8-bit TIFF
+                // -------------------------------------------------
+                if (spp == 1 && bits_per_sample == 8)
                 {
+                    const uint8_t *pixels = static_cast<const uint8_t *>(buf);
+
+                    value = static_cast<int>(pixels[col]);
+                }
+
+                // -------------------------------------------------
+                // Single-channel signed 16-bit TIFF
+                // -------------------------------------------------
+                else if (
+                    spp == 1 &&
+                    bits_per_sample == 16 &&
+                    sample_format == SAMPLEFORMAT_INT)
+                {
+                    const int16_t *pixels =
+                        static_cast<const int16_t *>(buf);
+
+                    value =
+                        static_cast<int>(
+                            pixels[col]);
+                }
+
+                // -------------------------------------------------
+                // Single-channel unsigned 16-bit TIFF
+                // -------------------------------------------------
+                else if (
+                    spp == 1 &&
+                    bits_per_sample == 16 &&
+                    sample_format == SAMPLEFORMAT_UINT)
+                {
+                    const uint16_t *pixels =
+                        static_cast<const uint16_t *>(buf);
+
+                    value =
+                        static_cast<int>(
+                            pixels[col]);
+                }
+
+                // -------------------------------------------------
+                // RGB 8-bit TIFF
+                // -------------------------------------------------
+                else if (
+                    spp >= 3 &&
+                    bits_per_sample == 8)
+                {
+                    const uint8_t *pixels = static_cast<const uint8_t *>(buf);
                     const int idx = static_cast<int>(spp) * col;
 
-                    const uint8 r = p[idx + 0];
-                    const uint8 g = p[idx + 1];
-                    const uint8 b = p[idx + 2];
+                    const uint8_t r = pixels[idx + 0];
+                    const uint8_t g = pixels[idx + 1];
+                    const uint8_t b = pixels[idx + 2];
 
                     const bool is_white =
                         r > 240 &&
                         g > 240 &&
                         b > 240;
 
-                    // White = electrolyte
-                    value = is_white ? 0 : 1;
+                    value =
+                        is_white ? 0 : 1;
                 }
                 else
                 {
-                    value = static_cast<int>(p[col]);
+                    _TIFFfree(buf);
+
+                    std::stringstream error;
+
+                    error
+                        << "Unsupported TIFF format: "
+                        << "samples per pixel = "
+                        << spp
+                        << ", bits per sample = "
+                        << bits_per_sample
+                        << ", sample format = "
+                        << sample_format
+                        << ".";
+
+                    throw std::runtime_error(
+                        error.str());
                 }
 
-                // int value = static_cast<int>(gray);
+                imageData
+                    [page - constraints.Depth_begin]
+                    [row - constraints.Row_begin]
+                    [col - constraints.Column_begin] =
+                        value;
 
-                imageData[page - constraints.Depth_begin]
-                         [row  - constraints.Row_begin]
-                         [col  - constraints.Column_begin] = value;
-
-                observed_values.insert(value);
+                observed_values.insert(
+                    value);
             }
         }
 
@@ -137,26 +216,20 @@ void TIFFReader::readinfo()
     const int min_value = *observed_values.begin();
     const int max_value = *observed_values.rbegin();
 
-    const bool is_binary_01 =
-        observed_values.size() <= 2 &&
-        min_value == 0 &&
-        max_value == 1;
-
-    const bool is_binary_255 =
-        observed_values.size() <= 2 &&
-        min_value == 0 &&
-        max_value < 255;
-
-    const bool is_grayscale =
-        observed_values.size() > 20 &&
-        min_value == 0 &&
-        max_value <= 255;
+    const bool is_binary_01 = observed_values.size() <= 2 && min_value == 0 && max_value == 1;
+    const bool is_binary_255 = observed_values.size() <= 2 && min_value == 0 && max_value == 255;
+    const bool is_grayscale = observed_values.size() > 20 && min_value == 0 && max_value <= 255;
+    const bool has_negative_labels = min_value < 0;
+    const bool has_positive_labels = max_value > 1;
 
     const bool is_label_tiff =
-        !is_binary_01 &&
-        !is_binary_255 &&
-        !is_grayscale &&
-        max_value > 1;
+        has_negative_labels ||
+        (
+            !is_binary_01 &&
+            !is_binary_255 &&
+            !is_grayscale &&
+            has_positive_labels
+        );
 
     if (is_label_tiff) {
         if (mfem::Mpi::WorldRank() == 0) {
@@ -180,15 +253,31 @@ void TIFFReader::readinfo()
                     if (first_photo == PHOTOMETRIC_MINISBLACK) {
                         // MINISBLACK: black is low value
                         // so black particle means v < 127
-                        v = (v < 127) ? 1 : 0;
+                        if (cfg.particle_color == sim::TIFF_ParticleType::BLACK) {
+                            v = (v < 127) ? 1 : 0;
+                        }
+                        else if (cfg.particle_color == sim::TIFF_ParticleType::WHITE) {
+                            v = (v < 127) ? 0 : 1;
+                        }
+                        else {
+                            v = (v < 127) ? 1 : 0;
+                        }
                     }
                     else if (first_photo == PHOTOMETRIC_MINISWHITE) {
                         // MINISWHITE: black is high value
                         // so black particle means v > 127
-                        v = (v < 127) ? 1 : 0;
+                        if (cfg.particle_color == sim::TIFF_ParticleType::BLACK) {
+                            v = (v > 127) ? 1 : 0;
+                        }
+                        else if (cfg.particle_color == sim::TIFF_ParticleType::WHITE) {
+                            v = (v > 127) ? 0 : 1;
+                        }
+                        else {
+                            v = (v > 127) ? 1 : 0;
+                        }
                     }
                     else {
-                        v = (v < 127) ? 1 : 0;
+                        v = (v < 127) ? 0 : 1;
                     }
                 }
             }

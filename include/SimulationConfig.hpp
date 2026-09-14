@@ -30,13 +30,20 @@ struct SimulationConfig
 
     sim::CellMode mode = sim::CellMode::HALF; ///< Cell configuration (half-cell or full-cell).
     sim::Electrode half_electrode = sim::Electrode::ANODE; ///< Active electrode for half-cell simulations.
+    sim::TIFF_ParticleType particle_color = sim::TIFF_ParticleType::BLACK; ///< Particle color in TIFF geometry (black or white).
 
     // -------------------------------------------------------------------------
     // Input files
     // -------------------------------------------------------------------------
 
     const char *config_file = "../inputs/run_config.txt"; ///< Simulation configuration file.
-    const char *mesh_file   = "../inputs/colored_labels_labels.tif"; ///< Mesh or voxelized geometry file.
+
+    // Half-cell geometry.
+    const char *mesh_file = nullptr;
+
+    // Full-cell geometries.
+    const char *anode_mesh_file = nullptr;
+    const char *cathode_mesh_file = nullptr;
     
     // -------------------------------------------------------------------------
     // Discretization
@@ -44,6 +51,8 @@ struct SimulationConfig
 
     int order = Constants::order; ///< Finite element polynomial order.
     int num_timesteps = -1; ///< Number of simulation timesteps.
+
+    int save_freq = 1000; ///< Frequency of saving simulation snapshots.
 
     bool combine_particle_groups = false; ///< Solve all particle groups as a combined system.
 
@@ -74,7 +83,7 @@ struct SimulationConfig
     // -------------------------------------------------------------------------
 
     double dh = 5.0e-06; ///< Characteristic mesh spacing (m).
-    double gc = 3.3800e-10 * 3.0; ///< Cahn--Hilliard gradient-energy coefficient.
+    double gc = 3.38e-10 * 3.0; ///< Cahn--Hilliard gradient-energy coefficient.
     double dt = 0.001; ///< Simulation timestep.
     double Cr = 1.0; ///< Applied C-rate.
     double Vsr0 = 2.0; ///< Voltage-adjustment rate for constant-current control.
@@ -82,6 +91,23 @@ struct SimulationConfig
     sim::StopMode stop_mode = sim::StopMode::STEPS; ///< Simulation stopping condition (by steps or voltage).
     double VCut = -1.0; ///< Voltage cutoff for stopping the simulation (V).
     double amr_levels = 0; ///< Number of AMR levels to apply near phase interfaces.
+
+    // -------------------------------------------------------------------------
+    // AMR parameters & geometry cropping
+    // -------------------------------------------------------------------------
+
+    // Initial structured-grid coarsening factor.
+    // 1 means no coarsening, 2 keeps every second TIFF node, etc.
+    int coarsen_factor = 1; ///< Initial structured-grid coarsening factor.
+
+    int row_begin = -1; ///< Beginning row for geometry cropping.
+    int row_end = -1;   ///< Ending row for geometry cropping.
+    int column_begin = -1; ///< Beginning column for geometry cropping.
+    int column_end = -1;   ///< Ending column for geometry cropping.
+
+    // Optional for future 3D use.
+    int depth_begin = 0; ///< Beginning depth for geometry cropping.
+    int depth_end = 1;   ///< Ending depth for geometry cropping.
 
 };
 

@@ -65,6 +65,9 @@ public:
      */
     void SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace);
 
+
+    void SaveBoundaryConditionFields();
+
     /**
      * @brief Selects a pinned node closest to the geometric center of the electrolyte.
      *
