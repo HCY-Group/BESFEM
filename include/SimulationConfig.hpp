@@ -30,6 +30,7 @@ struct SimulationConfig
 
     sim::CellMode mode = sim::CellMode::HALF; ///< Cell configuration (half-cell or full-cell).
     sim::Electrode half_electrode = sim::Electrode::ANODE; ///< Active electrode for half-cell simulations.
+    sim::TIFF_ParticleType particle_color = sim::TIFF_ParticleType::BLACK; ///< Particle color in TIFF geometry (black or white).
 
     // -------------------------------------------------------------------------
     // Input files
@@ -50,6 +51,8 @@ struct SimulationConfig
 
     int order = Constants::order; ///< Finite element polynomial order.
     int num_timesteps = -1; ///< Number of simulation timesteps.
+
+    int save_freq = 1000; ///< Frequency of saving simulation snapshots.
 
     bool combine_particle_groups = false; ///< Solve all particle groups as a combined system.
 
@@ -80,7 +83,7 @@ struct SimulationConfig
     // -------------------------------------------------------------------------
 
     double dh = 5.0e-06; ///< Characteristic mesh spacing (m).
-    double gc = 3.3800e-10 * 3.0; ///< Cahn--Hilliard gradient-energy coefficient.
+    double gc = 3.38e-10 * 3.0; ///< Cahn--Hilliard gradient-energy coefficient.
     double dt = 0.001; ///< Simulation timestep.
     double Cr = 1.0; ///< Applied C-rate.
     double Vsr0 = 2.0; ///< Voltage-adjustment rate for constant-current control.

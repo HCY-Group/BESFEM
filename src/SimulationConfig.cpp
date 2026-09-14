@@ -119,7 +119,10 @@ static sim::MaterialType ParseMaterial(const std::string& name)
     if (name == "LFP" || name == "lfp")
         return sim::MaterialType::LFP;
 
-    mfem::mfem_error(("Invalid material: " + name + ". Use Graphite, NMC, or LFP.").c_str());
+    if (name == "Carbon" || name == "carbon")
+        return sim::MaterialType::Carbon;
+
+    mfem::mfem_error(("Invalid material: " + name + ". Use Graphite, NMC, LFP, or Carbon.").c_str());
 
     return sim::MaterialType::Electrolyte;
 }
@@ -178,6 +181,18 @@ static void ApplyConfigFile(SimulationConfig& cfg)
             mfem::mfem_error("Invalid config mode. Use: half | full.");
     }
 
+    if (HasKey(data, "particle_color"))
+    {
+        std::string particle_color = GetValue(data, "particle_color");
+
+        if (particle_color == "black")
+            cfg.particle_color = sim::TIFF_ParticleType::BLACK;
+        else if (particle_color == "white")
+            cfg.particle_color = sim::TIFF_ParticleType::WHITE;
+        else
+            mfem::mfem_error("Invalid config particle_color. Use: black | white.");
+    }
+
     if (HasKey(data, "electrode"))
     {
         std::string electrode = GetValue(data, "electrode");
@@ -213,6 +228,9 @@ static void ApplyConfigFile(SimulationConfig& cfg)
                     data,
                     "cathode_mesh_file").c_str());
     }
+
+    if (HasKey(data, "save_freq"))
+        cfg.save_freq = std::stoi(GetValue(data, "save_freq"));
 
     if (HasKey(data, "num_steps"))
         cfg.num_timesteps = std::stoi(GetValue(data, "num_steps"));
@@ -386,7 +404,7 @@ static bool IsCathodeMaterial(sim::MaterialType m)
 
 static bool IsAnodeMaterial(sim::MaterialType m)
 {
-    return m == sim::MaterialType::Graphite;
+    return m == sim::MaterialType::Graphite || m == sim::MaterialType::Carbon;
 }
 static void CheckCathodeInitialBoundaryFromOCV(const SimulationConfig& cfg)
 {
@@ -625,8 +643,9 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
     if (cfg.gc <= 0.0)
         mfem::mfem_error("gc must be positive.");
     
-    if (cfg.Cr <= 0.0)
-        mfem::mfem_error("Cr must be positive.");
+    // if (cfg.Cr <= 0.0)
+    //     mfem::mfem_error("Cr must be positive.");
+    
     if (cfg.stop_mode == sim::StopMode::STEPS)
     {
         if (cfg.num_timesteps <= 0)
@@ -694,7 +713,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
         {
             if (!IsAnodeMaterial(material))
             {
-                mfem::mfem_error("Anode materials must be Graphite.");
+                mfem::mfem_error("Anode materials must be Graphite or Carbon.");
             }
         }
 
@@ -741,7 +760,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
                 {
                     mfem::mfem_error(
                         "Invalid cathode_materials: cathode can only use NMC or LFP. "
-                        "Graphite is an anode material.");
+                        "Graphite or Carbon is an anode material.");
                 }
             }
             CheckCathodeInitialBoundaryFromOCV(cfg);
@@ -791,7 +810,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
                 if (!IsAnodeMaterial(m))
                 {
                     mfem::mfem_error(
-                        "Invalid anode_materials: anode can only use graphite.");
+                        "Invalid anode_materials: anode can only use graphite or carbon.");
                 }
             }
             CheckAnodeInitialBoundaryFromOCV(cfg);
@@ -821,7 +840,7 @@ void PrintAvailableSimulationOptions()
 
     std::cout << "  Materials:\n";
     std::cout << "    cathode_materials: NMC, LFP\n";
-    std::cout << "    anode_materials:   Graphite\n\n";
+    std::cout << "    anode_materials:   Graphite, Carbon\n\n";
 
     std::cout << "  Mixed cathode example:\n";
     std::cout << "    cathode_materials = LFP,LFP,NMC\n\n";

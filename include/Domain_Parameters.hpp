@@ -86,15 +86,6 @@ public:
     double gTrgIA = 0.0; ///< Global target current for anode.
     double gTrgIC = 0.0; ///< Global target current for cathode.
 
-    double gTrg1 = 0.0; ///< Global target current for phase 1.
-    double gTrg2 = 0.0; ///< Global target current for phase 2.
-    double gTrg3 = 0.0; ///< Global target current for phase 3.
-
-    double gtPsi1 = 0.0; ///< Global integral of ψ for phase 1.
-    double gtPsi2 = 0.0; ///< Global integral of ψ for phase 2.
-    double gtPsi3 = 0.0; ///< Global integral of ψ for phase 3.
-
-
     std::vector<double> gtPsA;
     std::vector<double> gtPsC;
 
@@ -148,9 +139,6 @@ public:
     std::vector<double> tPsA; ///< Local per-particle anode phase-field totals.
     std::vector<double> tPsC; ///< Local per-particle cathode phase-field totals.
 
-    // std::vector<double> gtPsA; ///< Global per-particle anode phase-field totals.
-    // std::vector<double> gtPsC; ///< Global per-particle cathode phase-field totals.
-
     std::vector<double> gTrgPsA; ///< Global per-particle anode target currents.
     std::vector<double> gTrgPsC; ///< Global per-particle cathode target currents.
 
@@ -187,8 +175,6 @@ private:
     void BuildHalfCellInterfaces();
     void BuildFullCellInterfaces();
 
-    // void ApplyAMR();
-
     void ComputeGradientMagnitude(const mfem::ParGridFunction &phase_in, mfem::ParGridFunction &gradient_out);
 
     void BuildPairInterface(mfem::ParGridFunction &out, const mfem::ParGridFunction &phase_a, const mfem::ParGridFunction &phase_b,
@@ -199,7 +185,6 @@ private:
 
     void ComputeInterfaceWeight(mfem::ParGridFunction &weight_out, const mfem::ParGridFunction &numerator, const mfem::ParGridFunction &denominator,
         const mfem::ParGridFunction *mask = nullptr);
-
 
     void CalculateHalfCellPhasePotentialsAndTargetCurrent();
     void CalculateFullCellPhasePotentialsAndTargetCurrent();
@@ -280,12 +265,6 @@ private:
     double tPse = 0.0; ///< Local ψₑ total before MPI reduction.
     double trgI = 0.0; ///< Local target current before global reduction.
 
-    double tPsi1 = 0.0; ///< Local ψ for phase 1 total before MPI reduction.
-    double tPsi2 = 0.0; ///< Local ψ for phase 2 total before MPI reduction.
-    double tPsi3 = 0.0; ///< Local ψ for phase 3 total before MPI reduction.
-
-    // double tPsA = 0.0; ///< Local ψ_A total before MPI reduction.
-    // double tPsC = 0.0; ///< Local ψ_C total before MPI reduction.
 };
 
 #endif // DOMAIN_PARAMETERS_HPP

@@ -46,6 +46,7 @@ enum class Electrode {
  * - **Graphite** — Common anode material
  * - **NMC**       — Nickel Manganese Cobalt Oxide, a common cathode material
  * - **LFP**       — Lithium Iron Phosphate, another common cathode material
+ * - **Carbon**    — Hard Carbon, an alternative anode material
  * - **Electrolyte** — Represents the electrolyte domain (not a solid electrode)
  */
 
@@ -53,6 +54,7 @@ enum class MaterialType {
     Graphite, ///< Anode material
     NMC,       ///< Cathode material: Nickel Manganese Cobalt Oxide
     LFP,        ///< Cathode material: Lithium Iron Phosphate
+    Carbon,   ///< Anode material: Carbon
     Electrolyte   ///< Electrolyte material
 };
 
@@ -68,5 +70,47 @@ enum class StopMode
     STEPS,
     VOLTAGE
 };
+
+
+/**
+ * @enum GeometryPhase
+ * @brief Represents the phase of the geometry in the simulation.
+ *
+ * - **SOLID**     — Solid electrode phase
+ * - **ELECTROLYTE** — Electrolyte phase
+ */
+enum class GeometryPhase
+{
+    SOLID,
+    ELECTROLYTE
+};
+
+/**
+ * @enum BoundarySide
+ * @brief Represents the sides of the simulation domain for boundary conditions.
+ *
+ * - **WEST**   — West boundary
+ * - **EAST**   — East boundary
+ * - **SOUTH**  — South boundary
+ * - **NORTH**  — North boundary
+ * - **BOTTOM** — Bottom boundary (for 3D simulations)
+ * - **TOP**    — Top boundary (for 3D simulations)
+ */
+enum class BoundarySide
+{
+    WEST,
+    EAST,
+    SOUTH,
+    NORTH,
+    BOTTOM,
+    TOP
+};
+
+enum class TIFF_ParticleType
+{
+    BLACK,
+    WHITE
+};
+
 
 } // namespace sim

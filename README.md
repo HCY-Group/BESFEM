@@ -2,7 +2,7 @@
 
 BESFEM (**B**attery **E**lectrode **S**imulation using **MFEM**) is a high-performance finite element framework for simulating lithium-ion battery electrodes. Built on top of **MFEM**, **MPI**, and **HYPRE**, BESFEM enables parallel electrochemical simulations of realistic battery microstructures using the **Smoothed Boundary Method (SBM)**.
 
-The framework supports both **half-cell** simulations, multiple active material chemistries, and particle-resolved modeling using either diffusion or Cahn–Hilliard-based transport models. The **full-cell** model is currently under construction. 
+The framework supports **half-cell** and **full-cell** simulations, multiple active material chemistries, and particle-resolved modeling using either diffusion or Cahn–Hilliard-based transport models. 
 
 ---
 
@@ -14,7 +14,7 @@ BESFEM/
 ├── include/             # Header files
 ├── src/                 # Source files
 ├── inputs/
-│   ├── mesh/            # Mesh and TIFF geometries
+│   ├── mesh/            # Mesh and TIF geometries
 │   ├── materials/       # Material property tables
 │   └── run_config.txt   # Simulation configuration
 │
@@ -89,7 +89,7 @@ grep timestep output.txt > timestep.txt
 # Simulation Workflow
 
 ```text
-Geometry (TIFF to Mesh)
+Geometry (TIF to Mesh)
           │
           ▼
 Define Domain Parameters (SBM)
@@ -130,6 +130,8 @@ column_end = 100
 amr_levels = 1
 coarsen_factor = 2
 
+particle_color = black
+
 dt = 1.2e-05
 dh = 8.0e-07
 gc = 6.38e-12
@@ -137,6 +139,8 @@ gc = 6.38e-12
 stop_mode = steps       
 VCut = 3.41
 num_steps = 1501
+
+save_freq = 500
 
 Cr = 1.0
 Vsr0 = 0.9466
@@ -170,14 +174,14 @@ init_BvE = -0.1
 
 * `mesh_file`
 
-  * TIFF geometry
+  * TIF geometry
 
 * `combine_particles`
 
   * `true` — treat all particles as a single particle.
   * `false` — solve each particle independently.
 
-* TIFF Crop Bounds
+* TIF Crop Bounds
 
   * `row_begin`
   * `row_end` 
@@ -190,6 +194,10 @@ init_BvE = -0.1
 
 * `coarsen_factor`
   * Select a factor at which the grid will coarsen before AMR usage. Typically 2 or 4. 
+
+* `particle_color`
+  * `black` - the color of the particles is black and the color of the electrolyte is white.
+  * `white` - the color of the particles is white and the color of the electrolyte is black.
 
 
 ---
@@ -234,6 +242,7 @@ Currently supported materials include
 **Anodes**
 
 * Graphite
+* Carbon
 
 ---
 
@@ -261,6 +270,14 @@ init_BvC = 3.40
 init_BvE = -0.10
 ```
 
+The battery discharge and charge rate can be declared. 
+A positive rate (+) is a discharge simulation and a negative rate (-) is a charge simulation.
+
+```ini
+Cr = 1.0     # discharge simulation
+Cr = -1.0    # charge simulation
+```
+
 ---
 
 ### Output
@@ -276,6 +293,8 @@ Simulation results are written to the `outputs/` directory and include quantitie
 * Simulation logs
 
 These outputs may be visualized using **PyGLVis** or other MFEM-compatible visualization tools.
+
+To adjust how frequently this information is saved, change `save_freq` in the config file in `inputs/run_config.txt`. 
 
 ---
 ### Boundary Conditions
@@ -294,7 +313,7 @@ The geometry is oriented so that the **anode current collector is located on the
 For a full-cell simulation, the electrode arrangement is therefore
 
 ```text
-West                                                    East
+West                                                                           East
 Anode current collector → Anode → Electrolyte → Cathode → Cathode current collector
 ```
 
@@ -365,122 +384,47 @@ plotting/
 Update the mesh and GridFunction filenames within the notebook to visualize different simulation outputs.
 
 ---
-
 # Governing Equations
+
+## Butler-Volmer Kinetics
+
+$$r_{xn} = k_f C_e {\text{exp}}\left[{\frac{-\alpha F \Delta \phi }{RT}}\right] - k_b C_p {\text{exp}}\left[{\frac{(1-\alpha)F \Delta \phi}{RT}}\right]$$ 
+
+---
 
 ## Cathode Concentration
 
-```math
-\frac{\partial C_c}{\partial t}
-=
-\frac{1}{\psi_c}
-\nabla\cdot
-\left(
-\psi_c D_c \nabla C_c
-\right)
--
-\frac{|\nabla\psi_c|}{\psi_c}r_c
-```
+$$\frac{\partial C_c}{\partial t}=\frac{1}{\psi_c}\nabla\cdot\left(\psi_c D_c \nabla C_c\right)-\frac{|\nabla\psi_c|}{\psi_c}r_c$$
 
 ---
 
 ## Cathode Potential
 
-```math
-\nabla\cdot
-\left(
-\psi_c\kappa_c\nabla\phi_c
-\right)
--
-|\nabla\psi_c|z_-Fr_c
-=
-0
-```
+$$\nabla\cdot\left(\psi_c\kappa_c\nabla\phi_c\right)-|\nabla\psi_c|z_-Fr_c=0$$
 
 ---
 
 ## Electrolyte Concentration
 
-```math
-\frac{\partial C_e}{\partial t}
-=
-\frac{1}{\psi_e}
-\nabla\cdot
-\left(
-\psi_eD_e\nabla C_e
-\right)
-+
-\frac{|\nabla\psi_c|}{\psi_e}
-\frac{r_ct_-}{\nu_+}
-+
-\frac{|\nabla\psi_a|}{\psi_e}
-\frac{r_at_-}{\nu_+}
-```
+$$\frac{\partial C_e}{\partial t}=\frac{1}{\psi_e}\nabla\cdot\left(\psi_eD_e\nabla C_e\right)+\frac{|\nabla\psi_c|}{\psi_e}\frac{r_ct_-}{\nu_+}+\frac{|\nabla\psi_a|}{\psi_e}\frac{r_at_-}{\nu_+}$$
 
 ---
 
 ## Electrolyte Potential
 
-```math
-\nabla\cdot
-\left[
-\psi_e
-(z_+m_+-z_-m_-)
-FC_e
-\nabla\phi_e
-\right]
-+
-|\nabla\psi_c|
-\frac{r_c}{\nu_+}
-+
-|\nabla\psi_a|
-\frac{r_a}{\nu_+}
-=
-\nabla\cdot
-\left[
-\psi_e
-(D_- - D_+)
-\nabla C_e
-\right]
-```
+$$\nabla\cdot\left[\psi_e(z_+m_+-z_-m_-)FC_e\nabla\phi_e\right]+|\nabla\psi_c|\frac{r_c}{\nu_+}+|\nabla\psi_a|\frac{r_a}{\nu_+}=\nabla\cdot\left[\psi_e(D_- - D_+)\nabla C_e\right]$$
 
 ---
 
 ## Anode Concentration
 
-```math
-\frac{\partial C_a}{\partial t}
-=
-\frac{1}{\psi_a}
-\nabla\cdot
-\left[
-\psi_a
-M_a
-\nabla
-\left(
-\frac{\partial f_G}{\partial C_a}
--
-\varepsilon\nabla^2C_a
-\right)
-\right]
--
-\frac{|\nabla\psi_a|}{\psi_a}r_a
-```
+$$\frac{\partial C_a}{\partial t}=\frac{1}{\psi_a}\nabla\cdot\left[\psi_aM_a\nabla\left(\frac{\partial f_G}{\partial C_a}-\varepsilon\nabla^2C_a\right)\right]-\frac{|\nabla\psi_a|}{\psi_a}r_a$$
 
 ---
 
 ## Anode Potential
 
-```math
-\nabla\cdot
-\left(
-\psi_a\kappa_a\nabla\phi_a
-\right)
--
-|\nabla\psi_a|z_-Fr_a
-=
-0
-```
+$$\nabla\cdot\left(\psi_a\kappa_a\nabla\phi_a\right)-|\nabla\psi_a|z_-Fr_a=0$$
 
 ---
 

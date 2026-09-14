@@ -1,6 +1,8 @@
 #include <tiffio.h>
 #include <iostream>
 #include <vector>
+#include "SimulationConfig.hpp"
+
 
 struct Constraints {
     int Row_begin, Row_end, Column_begin, Column_end, Depth_begin, Depth_end;
@@ -10,7 +12,9 @@ struct Constraints {
 
 class TIFFReader {
 public:
-    TIFFReader(const char* filePath, const Constraints& constraints);
+    const SimulationConfig& cfg;
+
+    TIFFReader(const char* filePath, const Constraints& constraints, const SimulationConfig& cfg);
     void readinfo();
     ~TIFFReader();
     void calculateNumPages();
