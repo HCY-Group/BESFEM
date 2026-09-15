@@ -121,6 +121,29 @@ public:
      *
      * @return Output directory path.
      */
+    // static inline std::string BuildRunOutdir()
+    // {
+    //     namespace fs = std::filesystem;
+
+    //     auto now = std::chrono::system_clock::now();
+    //     std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+    //     std::tm tm{};
+
+    //     #if defined(_WIN32)
+    //         localtime_s(&tm, &now_c);
+    //     #else
+    //         localtime_r(&now_c, &tm);
+    //     #endif
+
+    //     std::ostringstream ts;
+    //     ts << std::put_time(&tm, "%Y%m%d_%H%M%S");
+
+    //     std::ostringstream od;
+    //     od << "../outputs/Results/" << ts.str();
+
+    //     return od.str();
+    // }
+
     static inline std::string BuildRunOutdir()
     {
         namespace fs = std::filesystem;
@@ -129,19 +152,19 @@ public:
         std::time_t now_c = std::chrono::system_clock::to_time_t(now);
         std::tm tm{};
 
-        #if defined(_WIN32)
-            localtime_s(&tm, &now_c);
-        #else
-            localtime_r(&now_c, &tm);
-        #endif
+    #if defined(_WIN32)
+        localtime_s(&tm, &now_c);
+    #else
+        localtime_r(&now_c, &tm);
+    #endif
 
         std::ostringstream ts;
         ts << std::put_time(&tm, "%Y%m%d_%H%M%S");
 
-        std::ostringstream od;
-        od << "../outputs/Results/" << ts.str();
+        fs::path outdir =
+            fs::path("/mnt/gs21/scratch/brandlan/BESFEM/Results") / ts.str();
 
-        return od.str();
+        return outdir.string();
     }
 
     static void SaveHalfCellSnapshot(int t, const std::string& outdir, Initialize_Geometry& geometry,
