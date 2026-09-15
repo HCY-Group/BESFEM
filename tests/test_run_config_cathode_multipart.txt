@@ -15,6 +15,12 @@ combine_particles = false
 
 amr_levels = 0
 
+row_begin = 0
+row_end = 100
+column_begin = 0
+column_end = 100
+
+
 # ============================================================
 # NUMERICAL PARAMETERS
 # ============================================================
