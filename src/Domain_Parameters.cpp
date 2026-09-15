@@ -436,10 +436,13 @@ void Domain_Parameters::BuildPairInterface(mfem::ParGridFunction &out, const mfe
     }
 }
 
-void Domain_Parameters::BuildElectrolyteInterface(mfem::ParGridFunction &out, const mfem::ParGridFunction &electrolyte_phase, const mfem::ParGridFunction &particle_gradient)
+void Domain_Parameters::BuildElectrolyteInterface(mfem::ParGridFunction &out, const mfem::ParGridFunction &electrolyte_gradient, const mfem::ParGridFunction &particle_gradient)
 {
-    out = electrolyte_phase;
+    out = electrolyte_gradient;
     out *= particle_gradient;
+    for (int i=0; i<out.Size(); i++){
+        out(i) = std::sqrt( out(i) );
+    }
 }
 
 void Domain_Parameters::BuildPairPhaseMask(mfem::ParGridFunction &out, const mfem::ParGridFunction &phase_a, const mfem::ParGridFunction &phase_b)
@@ -504,6 +507,7 @@ void Domain_Parameters::BuildHalfCellInterfaces()
 
     for (int k = 0; k < static_cast<int>(ps.size()); ++k)
     {
+        //BuildElectrolyteInterface(*AvEs[k], *pse, *AvPs[k]);
         BuildElectrolyteInterface(*AvEs[k], *AvE, *AvPs[k]);
     }
 
@@ -573,12 +577,14 @@ void Domain_Parameters::BuildFullCellInterfaces()
 
     for (int k = 0; k < static_cast<int>(psA.size()); ++k)
     {
-        BuildElectrolyteInterface(*AvEsA[k], *pse, *AvPsA[k]);
+        //BuildElectrolyteInterface(*AvEsA[k], *pse, *AvPsA[k]);
+        BuildElectrolyteInterface(*AvEsA[k], *AvE, *AvPsA[k]);
     }
 
     for (int k = 0; k < static_cast<int>(psC.size()); ++k)
     {
-        BuildElectrolyteInterface(*AvEsC[k], *pse, *AvPsC[k]);
+        //BuildElectrolyteInterface(*AvEsC[k], *pse, *AvPsC[k]);
+        BuildElectrolyteInterface(*AvEsC[k], *AvE, *AvPsC[k]);
     }
 
     *denomA = 0.0;
