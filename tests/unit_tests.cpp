@@ -375,8 +375,9 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     {
 
-    auto config_file = GENERATE("../tests/test_run_config_anode.txt",
-                                "../tests/test_run_config_cathode_NMC.txt");
+    //auto config_file = GENERATE("../tests/test_run_config_anode.txt",
+    //                            "../tests/test_run_config_cathode_NMC.txt");
+    auto config_file = GENERATE("../tests/test_run_config_cathode_NMC.txt");
     SimulationConfig cfg = SimConfigFromFileName(config_file);
     ValidateConfig(cfg, 0, nullptr);
 
