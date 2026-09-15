@@ -515,6 +515,7 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
         // UPDATE CONCENTRATION
         // =================================
         for (int t=0; t<500; t++) {
+                if (Utils::ShouldStopSimulation(cfg, t, 0.0)){break;}
 /*
         if (cfg.half_electrode == sim::Electrode::ANODE)
         {

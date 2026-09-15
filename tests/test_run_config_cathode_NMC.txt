@@ -37,7 +37,7 @@ gc = 3.38e-10
 
 stop_mode = steps        # options: steps, voltage
 VCut = 3.454
-num_steps = 501
+num_steps = 10
 
 # ============================================================
 # CURRENT CONTROL
