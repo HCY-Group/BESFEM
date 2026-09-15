@@ -514,6 +514,7 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
         // UPDATE CONCENTRATION
         // =================================
         for (int t=0; t<500; t++) {
+/*
         if (cfg.half_electrode == sim::Electrode::ANODE)
         {
             const int np = static_cast<int>(state.anode_particles.size());
@@ -550,10 +551,20 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
         }
         else 
         {
-            const int np = static_cast<int>(state.cathode_particles.size());
+*/
+
+            const bool is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
+            auto& particles = is_anode ? state.anode_particles : state.cathode_particles;
+            auto& pairs = is_anode ? state.anode_pairs : state.cathode_pairs;
+            auto& solid_potential = is_anode ? state.anode_potential : state.cathode_potential;
+            auto& phS_gf = is_anode ? state.phA_gf : state.phC_gf;
+
+
+            const int np = static_cast<int>(particles.size());
             std::vector<double> global_currents(np, 0.0);
 
-            UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters);
+            //UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters);
+            UpdatePairChemicalPotentials(particles, pairs, geometry, domain_parameters.AvP_Pairs);
 
 
 
@@ -561,22 +572,25 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
             for (int j = 0; j < np; ++j)
             {
                 // constant reaction (no Butler Volmer)
-                *state.cathode_particles[j].Rxn_gf = *domain_parameters.AvEs[j];
-                *state.cathode_particles[j].Rxn_gf *= Rxn_const;
+                *particles[j].Rxn_gf = *domain_parameters.AvEs[j];
+                *particles[j].Rxn_gf *= Rxn_const;
 
-                *state.cathode_particles[j].Rx_src = *state.cathode_particles[j].Rxn_gf;
-                *state.Rxn_gf += *state.cathode_particles[j].Rxn_gf;
+                *particles[j].Rx_src = *particles[j].Rxn_gf;
+                *state.Rxn_gf += *particles[j].Rxn_gf;
 
-                std::vector<ConcentrationBase::PairCoupling> pair_terms;
-                Pairs(state, geometry, domain_parameters, j, pair_terms, np, 0);
 
-                state.cathode_particles[j].concentration->UpdateConcentration(*state.cathode_particles[j].Rx_src, *state.cathode_particles[j].Cn_gf,
-                   *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
+                UpdateParticleConcentrations(particles, pairs, domain_parameters.WeightPairs, domain_parameters.AvP_Pairs, domain_parameters.ps, domain_parameters.gtPs, domain_parameters.WeightEs, *state.Rxn_gf, t);
+
+                //std::vector<ConcentrationBase::PairCoupling> pair_terms;
+                //Pairs(state, geometry, domain_parameters, j, pair_terms, np, 0);
+
+                //particles[j].concentration->UpdateConcentration(*particles[j].Rx_src, *particles[j].Cn_gf,
+                //   *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
                 //state.cathode_particles[j].concentration->UpdateConcentration(*domain_parameters.AvEs[j], *state.cathode_particles[j].Cn_gf,
                 //    *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
         
                 string CnP_name = "CnP" + std::to_string(j);
-                state.cathode_particles[j].Cn_gf->SaveAsOne(CnP_name.c_str());
+                particles[j].Cn_gf->SaveAsOne(CnP_name.c_str());
 
             }
             state.Rxn_gf->SaveAsOne("Rxn_test");
@@ -662,13 +676,13 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
             for (int j = 0; j < np; ++j)
             {
               mfem::ParGridFunction CnP_an(*state.CnE_gf);
-              double diff_p = state.cathode_particles[j].concentration->GetDiffusivity().Max();
+              double diff_p = particles[j].concentration->GetDiffusivity().Max();
               CnP_an = cfg.init_cathode_particles[j];
               mfem::ParGridFunction diff_p_gf(*state.CnE_gf);
-              diff_p_gf = state.cathode_particles[j].concentration->GetDiffusivity();
+              diff_p_gf = particles[j].concentration->GetDiffusivity();
               diff_p = diff_p_gf(offset_idx); //update diffusivity based on concentration
               diff_p /= (*domain_parameters.psi)(offset_idx); //scale by psi
-              B_n = Rxn_const/MaterialProperties::SiteDensity(state.cathode_particles[j].material);
+              B_n = Rxn_const/MaterialProperties::SiteDensity(particles[j].material);
               B_n /= diff_p;  // scale by diffusivity
               for (int i=0; i<CnE_an.Size(); i++) {
                   double yprime = y(i)-offset;
@@ -690,20 +704,20 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
               
               //check
               mfem::ParGridFunction diff(*state.CnE_gf);
-              diff = *state.cathode_particles[j].Cn_gf;
+              diff = *particles[j].Cn_gf;
               diff -= CnP_an;
               diff /= CnP_an;  //weight by magnitude of analytical solution
               diff *= *domain_parameters.psi;  // only get errors in domain of interest
               std::cout << "L2 error electrode: " << diff.Norml2() << std::endl;
               //CHECK( diff.Norml2() < 0.05 );
                
-              mfem::ParGridFunction CnP_der(*state.cathode_particles[j].Cn_gf);
-              state.cathode_particles[j].Cn_gf->GetDerivative(1,1,CnP_der);
+              mfem::ParGridFunction CnP_der(*particles[j].Cn_gf);
+              particles[j].Cn_gf->GetDerivative(1,1,CnP_der);
               CnP_der.SaveAsOne("CnP_der");
               std::cout << "CnP der offset: " << (CnP_der(offset_idx)+B_n)/B_n << std::endl;
             } 
 
-        }
+        //}
         }
 
     }
