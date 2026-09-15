@@ -672,7 +672,9 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
             mfem::ParGridFunction CnE_der(*state.CnE_gf);
             state.CnE_gf->GetDerivative(1,1,CnE_der);
             CnE_der.SaveAsOne("CnE_der");
-            std::cout << "CnE der offset: " << (CnE_der(offset_idx)-B_n)/B_n << std::endl;
+            double SBM_error_e = (CnE_der(offset_idx)-B_n)/B_n; 
+            std::cout << "CnE der offset: " << SBM_error_e << std::endl;
+            CHECK( abs(SBM_error_e) < 0.05 );
 
             // PARTICLE
             for (int j = 0; j < np; ++j)
@@ -716,7 +718,9 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
               mfem::ParGridFunction CnP_der(*particles[j].Cn_gf);
               particles[j].Cn_gf->GetDerivative(1,1,CnP_der);
               CnP_der.SaveAsOne("CnP_der");
-              std::cout << "CnP der offset: " << (CnP_der(offset_idx)+B_n)/B_n << std::endl;
+              double SBM_error_p = (CnP_der(offset_idx)+B_n)/B_n; 
+              std::cout << "CnP der offset: " << SBM_error_p << std::endl;
+              CHECK( abs(SBM_error_p) < 0.05 );
             } 
 
         //}
