@@ -48,14 +48,14 @@ Vsr0 = 0.09466
 # MATERIALS
 # ============================================================
 
-cathode_materials = LFP
+cathode_materials = LFP, LFP, LFP
 anode_materials = graphite, graphite, graphite
 
 # ============================================================
 # INITIAL PARTICLE STOICHIOMETRIES
 # ============================================================
 
-init_cathode_particles = 0.043
+init_cathode_particles = 0.043, 0.043, 0.043
 init_anode_particles = 0.3, 0.3, 0.3
 
 # ============================================================
