@@ -1,6 +1,6 @@
 #!/bin/bash --login
 # Job name: 
-#SBATCH --job-name=NMC-half-96wt-2000bar-40x100x100
+#SBATCH --job-name=NMC-half-2D-pybamm-i0-chen2020-0.5C
 
 # Number of nodes
 #SBATCH --nodes=8
@@ -17,7 +17,7 @@
 # Wall time
 # Format: "minutes", "hours:minutes:seconds", 
 # "days-hours", or "days-hours:minutes"
-#SBATCH --time=48:00:00
+#SBATCH --time=01:00:00
 
 # Mail type
 # e.g., which events trigger email notifications

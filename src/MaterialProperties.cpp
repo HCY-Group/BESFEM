@@ -32,10 +32,45 @@ namespace MaterialProperties
         return val;
     }
 
+    // static double NMC_i0(double c)
+    // {
+    //     double val = -0.2 * (c - 0.37) - 1.559 - 0.9376 * std::tanh(8.961 * c - 3.195);
+    //     return std::pow(10.0, val) * 1.0e-3;
+    // }
+
+    // static double NMC_i0(double c)
+    // {
+    //     double val = 3.42e-6 * std::exp(17800.0 / Constants::R_GAS * (1.0 / 298.15 - 1.0 / Constants::T));
+    //     val *= std::pow(Constants::CE, 0.5) * std::pow(c, 0.5) * std::pow(1.0 - c, 0.5);
+    //     return val;
+    // }
+
     static double NMC_i0(double c)
     {
-        double val = -0.2 * (c - 0.37) - 1.559 - 0.9376 * std::tanh(8.961 * c - 3.195);
-        return std::pow(10.0, val) * 1.0e-3;
+        // Chen2020 / PyBaMM NMC exchange-current density
+        // Input:
+        //   c = NMC Li stoichiometric fraction [0, 1]
+        //
+        // Output:
+        //   i0 [A/cm^2]
+
+        constexpr double c_e   = 1000.0;   // mol/m^3
+        constexpr double c_max = 63104.0;  // mol/m^3
+        constexpr double m_ref = 3.42e-6;
+
+        c = std::clamp(c, 0.0, 1.0);
+
+        const double c_s = c * c_max;
+
+        // PyBaMM gives A/m^2
+        const double i0_A_m2 =
+            m_ref *
+            std::sqrt(c_e) *
+            std::sqrt(c_s) *
+            std::sqrt(c_max - c_s);
+
+        // Convert A/m^2 -> A/cm^2
+        return i0_A_m2 / 1.0e4;
     }
 
     static double NMC_diff(double c)
