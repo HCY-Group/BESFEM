@@ -386,6 +386,8 @@ Update the mesh and GridFunction filenames within the notebook to visualize diff
 ---
 # Governing Equations
 
+> **Note:** For a MathJax-rendered version of the governing equations, please visit the [BESFEM documentation](https://hcy-group.github.io/BESFEM/equations.html).
+
 ## Butler-Volmer Kinetics
 
 $$r_{xn} = k_f C_e {\text{exp}}\left[{\frac{-\alpha F \Delta \phi }{RT}}\right] - k_b C_p {\text{exp}}\left[{\frac{(1-\alpha)F \Delta \phi}{RT}}\right]$$ 
