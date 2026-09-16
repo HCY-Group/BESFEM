@@ -338,6 +338,27 @@ In full-cell geometries, the electrolyte phase is retained only when it forms a 
 
 # Generating Documentation
 
+The website source is in `docs/`, and `Doxyfile` configures the API reference
+generated from `src/` and `include/`.
+
+## Automatic publishing
+
+The workflow in `.github/workflows/pages.yml` rebuilds and publishes the full
+website, including fresh Doxygen API documentation, on every push to `main`.
+It can also be started from the **Actions** tab using **Run workflow**.
+
+To enable it, commit and push the workflow, then in the GitHub repository go to
+**Settings → Pages → Build and deployment → Source** and select **GitHub Actions**.
+If the initial run failed before that setting was changed, rerun it from **Actions**.
+The website is published at <https://hcy-group.github.io/BESFEM/> and the API at
+<https://hcy-group.github.io/BESFEM/api/>. Generated API files do not need to be
+committed for deployment; the workflow generates them on the runner.
+
+The template workflows under `docs/.github/workflows/` are inactive: GitHub only
+discovers workflows in the repository-root `.github/workflows/` directory.
+
+## Local preview
+
 Generate the Doxygen documentation:
 
 ```bash
@@ -350,7 +371,7 @@ doxygen Doxyfile
 Open the generated documentation
 
 ```bash
-cd docs/html
+cd docs/api
 ```
 
 Preview locally
