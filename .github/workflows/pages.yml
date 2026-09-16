@@ -28,6 +28,10 @@ jobs:
           source: ./docs
           destination: ./_site
 
+      # The Jekyll Docker action creates files owned by root.
+      - name: Make website output writable by the runner
+        run: sudo chown -R "$(id -u):$(id -g)" _site
+
       - name: Install Doxygen and Graphviz
         run: |
           sudo apt-get update
