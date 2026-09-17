@@ -35,58 +35,10 @@ struct ParticleState
     std::unique_ptr<mfem::ParGridFunction> ph_gf;
 };
 
-// /**
-//  * @struct AnodeParticleState
-//  * @brief Stores solver objects and fields for one anode particle group.
-//  *
-//  * AnodeParticleState collects the concentration solver, reaction solver,
-//  * potential solver, and associated MFEM grid functions for a single labeled
-//  * anode particle or particle group.
-//  */
-// struct AnodeParticleState
-// {
-//     int label = -1; ///< Integer label identifying this particle in the input geometry.
-
-//     sim::MaterialType material = sim::MaterialType::Graphite; ///< Material assigned to this anode particle.
-
-//     std::unique_ptr<ConcentrationBase> concentration; ///< Concentration solver for this particle.
-//     std::unique_ptr<mfem::ParGridFunction> Cn_gf; ///< Particle concentration field.
-//     std::unique_ptr<mfem::ParGridFunction> Cn_gf_psi; ///< Concentration field masked by the particle phase field.
-
-//     std::unique_ptr<Reaction> reaction; ///< Reaction model for this particle.
-//     std::unique_ptr<mfem::ParGridFunction> Rxn_gf; ///< Butler--Volmer reaction field.
-//     std::unique_ptr<mfem::ParGridFunction> Rx_src; ///< Reaction source term used by the concentration update.
-
-//     std::unique_ptr<PotentialBase> potential; ///< Solid-phase potential solver for this particle.
-//     std::unique_ptr<mfem::ParGridFunction> ph_gf; ///< Solid-phase potential field.
-// };
-
-// /**
-//  * @struct CathodeParticleState
-//  * @brief Stores solver objects and fields for one cathode particle group.
-//  *
-//  * CathodeParticleState collects the concentration solver, reaction solver,
-//  * potential solver, and associated MFEM grid functions for a single labeled
-//  * cathode particle or particle group.
-//  */
-// struct CathodeParticleState
-// {
-//     int label = -1; ///< Integer label identifying this particle in the input geometry.
-
-//     sim::MaterialType material = sim::MaterialType::NMC; ///< Material assigned to this cathode particle.
-
-//     std::unique_ptr<ConcentrationBase> concentration; ///< Concentration solver for this particle.
-//     std::unique_ptr<mfem::ParGridFunction> Cn_gf; ///< Particle concentration field.
-//     std::unique_ptr<mfem::ParGridFunction> Cn_gf_psi; ///< Concentration field masked by the particle phase field.
-
-//     std::unique_ptr<Reaction> reaction; ///< Reaction model for this particle.
-//     std::unique_ptr<mfem::ParGridFunction> Rxn_gf; ///< Butler--Volmer reaction field.
-//     std::unique_ptr<mfem::ParGridFunction> Rx_src; ///< Reaction source term used by the concentration update.
-
-//     std::unique_ptr<PotentialBase> potential; ///< Solid-phase potential solver for this particle.
-//     std::unique_ptr<mfem::ParGridFunction> ph_gf; ///< Solid-phase potential field.
-// };
-
+/**
+ * @struct PairWorkspaces
+ * @brief Stores pairwise chemical-potential workspaces for the simulation.
+ */
 struct PairWorkspaces
 {
     std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> mu_pair_a;
