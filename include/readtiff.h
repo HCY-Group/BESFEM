@@ -4,12 +4,19 @@
 #include "SimulationConfig.hpp"
 
 
+/** @struct Constraints
+ * @brief Defines the constraints for reading a subset of a TIFF image.
+ *
+ */
 struct Constraints {
     int Row_begin, Row_end, Column_begin, Column_end, Depth_begin, Depth_end;
     Constraints();
     Constraints(int row0, int row1, int col0, int col1, int depth0, int depth1);
 };
 
+/** @class TIFFReader
+ * @brief A class for reading TIFF image files with constraints.
+ */
 class TIFFReader {
 public:
     const SimulationConfig& cfg;
