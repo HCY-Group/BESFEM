@@ -8,6 +8,10 @@
  * electrode selection (anode, cathode, or both in full-cell mode).
  */
 
+/**
+ * @namespace sim
+ * @brief Contains simulation types used throughout BESFEM.
+ */
 namespace sim {
 
 /**
