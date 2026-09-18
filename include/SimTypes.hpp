@@ -44,6 +44,7 @@ enum class Electrode {
 
 enum class MaterialType {
     Graphite, ///< Anode material
+    NMC_Chen2020, ///< Chen2020 NMC at 298.15 K
     NMC,       ///< Cathode material: Nickel Manganese Cobalt Oxide
     LFP,        ///< Cathode material: Lithium Iron Phosphate
     Carbon,   ///< Anode material: Carbon

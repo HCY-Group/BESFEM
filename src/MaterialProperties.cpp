@@ -1,6 +1,7 @@
 // MaterialProperties.cpp
 #include "../include/MaterialProperties.hpp"
 #include "../include/Constants.hpp"
+#include "../include/Chen2020NMC.hpp"
 #include "mfem.hpp"
 #include <cmath>
 #include <fstream>
@@ -235,6 +236,9 @@ namespace MaterialProperties
     {
         switch (material)
         {
+            case sim::MaterialType::NMC_Chen2020:
+                return Chen2020NMC::OCP(c);
+
             case sim::MaterialType::NMC:
                 return NMC_OCV(c);
 
@@ -283,6 +287,9 @@ namespace MaterialProperties
     {
         switch (material)
         {
+            case sim::MaterialType::NMC_Chen2020:
+                return Chen2020NMC::ExchangeCurrent(c, 0.001);
+
             case sim::MaterialType::NMC:
                 return NMC_i0(c);
 
@@ -310,6 +317,9 @@ namespace MaterialProperties
     {
         switch (material)
         {
+            case sim::MaterialType::NMC_Chen2020:
+                return Chen2020NMC::diffusivity;
+
             case sim::MaterialType::NMC:
                 return NMC_diff(c);
 
@@ -403,6 +413,9 @@ namespace MaterialProperties
             case sim::MaterialType::Graphite:
                 return Graphite_mu(c);
             
+            case sim::MaterialType::NMC_Chen2020:
+                return -Constants::Frd * Chen2020NMC::OCP(c);
+
             case sim::MaterialType::NMC:
                 return NMC_mu(c);
 
@@ -446,6 +459,9 @@ namespace MaterialProperties
             case sim::MaterialType::Graphite:
                 return GraphiteConductivity(c);
 
+            case sim::MaterialType::NMC_Chen2020:
+                return Chen2020NMC::conductivity;
+
             case sim::MaterialType::NMC:
                 return NMCConductivity(c);
 
@@ -468,6 +484,9 @@ namespace MaterialProperties
             case sim::MaterialType::Graphite:
                 // std::cout << "using graphite density" << std::endl;
                 return 0.0312;
+
+            case sim::MaterialType::NMC_Chen2020:
+                return Chen2020NMC::site_density;
 
             case sim::MaterialType::NMC:
                 // std::cout << "using NMC density" << std::endl;

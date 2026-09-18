@@ -113,6 +113,9 @@ static sim::MaterialType ParseMaterial(const std::string& name)
     if (name == "Graphite" || name == "graphite")
         return sim::MaterialType::Graphite;
 
+    if (name == "NMC_Chen2020" || name == "nmc_chen2020")
+        return sim::MaterialType::NMC_Chen2020;
+
     if (name == "NMC" || name == "nmc")
         return sim::MaterialType::NMC;
 
@@ -122,7 +125,7 @@ static sim::MaterialType ParseMaterial(const std::string& name)
     if (name == "Carbon" || name == "carbon")
         return sim::MaterialType::Carbon;
 
-    mfem::mfem_error(("Invalid material: " + name + ". Use Graphite, NMC, LFP, or Carbon.").c_str());
+    mfem::mfem_error(("Invalid material: " + name + ". Use Graphite, NMC, NMC_Chen2020, LFP, or Carbon.").c_str());
 
     return sim::MaterialType::Electrolyte;
 }
@@ -398,7 +401,7 @@ SimulationConfig ParseSimulationArgs(int argc, char *argv[])
 
 static bool IsCathodeMaterial(sim::MaterialType m)
 {
-    return m == sim::MaterialType::NMC ||
+    return m == sim::MaterialType::NMC_Chen2020 || m == sim::MaterialType::NMC ||
            m == sim::MaterialType::LFP;
 }
 
@@ -721,7 +724,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
         {
             if (!IsCathodeMaterial(material))
             {
-                mfem::mfem_error("Cathode materials must be LFP or NMC.");
+                mfem::mfem_error("Cathode materials must be LFP, NMC, or NMC_Chen2020.");
             }
         }
 
@@ -759,7 +762,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
                 if (!IsCathodeMaterial(m))
                 {
                     mfem::mfem_error(
-                        "Invalid cathode_materials: cathode can only use NMC or LFP. "
+                        "Invalid cathode_materials: cathode can only use NMC, NMC_Chen2020, or LFP. "
                         "Graphite or Carbon is an anode material.");
                 }
             }
@@ -839,7 +842,7 @@ void PrintAvailableSimulationOptions()
     std::cout << "    cathode\n\n";
 
     std::cout << "  Materials:\n";
-    std::cout << "    cathode_materials: NMC, LFP\n";
+    std::cout << "    cathode_materials: NMC, NMC_Chen2020, LFP\n";
     std::cout << "    anode_materials:   Graphite, Carbon\n\n";
 
     std::cout << "  Mixed cathode example:\n";

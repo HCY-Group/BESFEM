@@ -280,6 +280,10 @@ static void InitializeCathodeParticles(SimulationState& state, Initialize_Geomet
 
             switch (p.material)
             {
+                case sim::MaterialType::NMC_Chen2020:
+                    std::cout << "NMC_Chen2020";
+                    break;
+
                 case sim::MaterialType::NMC:
                     std::cout << "NMC";
                     break;
@@ -299,6 +303,7 @@ static void InitializeCathodeParticles(SimulationState& state, Initialize_Geomet
 
         switch (p.material)
         {
+            case sim::MaterialType::NMC_Chen2020:
             case sim::MaterialType::NMC:
             {
                 p.concentration = std::make_unique<ElectrodeDiffusion>(geometry, domain_parameters, p.material, cfg);
