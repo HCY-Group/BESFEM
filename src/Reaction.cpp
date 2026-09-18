@@ -1,6 +1,5 @@
 #include "../include/Reaction.hpp"
 #include "../include/Constants.hpp"
-#include "../include/Chen2020NMC.hpp"
 #include "mfem.hpp"
 #include "../include/MaterialProperties.hpp"
 #include "../include/SimulationConfig.hpp"
@@ -68,7 +67,6 @@ void Reaction::SetInitialReaction(mfem::ParGridFunction &Rx, double initial_valu
 
 void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &AvP_in, sim::MaterialType material)
 {
-    reaction_material = material;
     static bool printed = false;
 
     *i0C = 0.0;
@@ -140,15 +138,6 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn
     for (int vi = 0; vi < nV; vi++){
         if ( (AvP_in)(vi) * cfg.dh > 1e-3){ // Check for interface presence
             (*dPHE)(vi) = phx1(vi) - phx2(vi); // Voltage drop across the interface
-            if (reaction_material == sim::MaterialType::NMC_Chen2020)
-            {
-                // Evaluate the SI Chen2020 kinetics in BESFEM units at local ce.
-                // This avoids the legacy reference-electrolyte mass-action law.
-                (*i0C)(vi) = Chen2020NMC::ExchangeCurrent(Cn1(vi), Cn2(vi));
-                Rx(vi) = AvP_in(vi) * Chen2020NMC::InsertionCurrent(
-                    Cn1(vi), Cn2(vi), (*dPHE)(vi)) / Constants::Frd;
-                continue;
-            }
             Rx(vi) = (AvP_in)(vi) * ((*Kfw)(vi)*Cn2(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHE)(vi)) - \
                                         (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
 

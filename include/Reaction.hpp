@@ -140,7 +140,6 @@ public:
     // -------------------------------------------------------------------------
     // Material and reaction-related grid functions (owned)
     // -------------------------------------------------------------------------
-    sim::MaterialType reaction_material = sim::MaterialType::NMC;
     std::unique_ptr<mfem::ParGridFunction> Kfw;  ///< Forward rate constant k_f.
     std::unique_ptr<mfem::ParGridFunction> Kbw;  ///< Backward rate constant k_b.
     std::unique_ptr<mfem::ParGridFunction> KfA;  ///< Forward rate (anode).
