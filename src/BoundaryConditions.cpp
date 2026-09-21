@@ -79,9 +79,6 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
             dbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());
             dbc_w_bdr = 0;
             dbc_w_bdr[4] = 1;
-            // dbc_w_bdr[1] = 1;
-            // dbc_w_bdr[2] = 1;
-            // dbc_w_bdr[3] = 1;
 
             // East Dirichlet Boundary Condition
             dbc_e_bdr.SetSize(parallelMesh.bdr_attributes.Max());
@@ -137,17 +134,11 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
             nbc_e_bdr.SetSize(parallelMesh.bdr_attributes.Max());
             nbc_e_bdr = 0;
             nbc_e_bdr[1] = 1;
-            // nbc_e_bdr[2] = 1;
-            // nbc_e_bdr[3] = 1;
-            // nbc_e_bdr[0] = 1;
 
             // East Dirichlet Boundary Condition
             dbc_e_bdr.SetSize(parallelMesh.bdr_attributes.Max());
             dbc_e_bdr = 0;
             dbc_e_bdr[1] = 1;
-            // dbc_e_bdr[2] = 1;
-            // dbc_e_bdr[3] = 1;
-            // dbc_e_bdr[0] = 1;
 
             // West Dirichlet Boundary Condition
             dbc_w_bdr.SetSize(parallelMesh.bdr_attributes.Max());
@@ -191,8 +182,7 @@ void BoundaryConditions::SetupBoundaryConditions(CellMode mode, Electrode electr
             parfespace.GetEssentialTrueDofs(dbc_e_bdr, ess_tdof_list_e);
 
             if (myid == 0)
-            std::cout << "ess_tdof_list_e size = " 
-                    << ess_tdof_list_e.Size() << std::endl;
+            std::cout << "ess_tdof_list_e size = " << ess_tdof_list_e.Size() << std::endl;
 
             ess_tdof_list = ess_tdof_list_e;
 
@@ -246,12 +236,7 @@ void BoundaryConditions::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
     local_candidate.dist = (local_lVpp >= 0) ? cand_dist : std::numeric_limits<double>::infinity();
     local_candidate.rank = myid;
 
-    MPI_Allreduce(&local_candidate,
-                  &global_candidate,
-                  1,
-                  MPI_DOUBLE_INT,
-                  MPI_MINLOC,
-                  MPI_COMM_WORLD);
+    MPI_Allreduce(&local_candidate, &global_candidate, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 
     pin = false;
     rkpp = global_candidate.rank;
@@ -270,14 +255,12 @@ void BoundaryConditions::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
 
     if (myid == global_candidate.rank)
     {
-        MFEM_VERIFY(local_lVpp >= 0,
-                    "The elected rank does not have a valid local pinned vertex.");
+        MFEM_VERIFY(local_lVpp >= 0, "The elected rank does not have a valid local pinned vertex.");
 
         mfem::Array<int> vdofs;
         fespace.GetVertexVDofs(local_lVpp, vdofs);
 
-        MFEM_VERIFY(vdofs.Size() > 0,
-                    "The selected pinned vertex has no finite element DOFs.");
+        MFEM_VERIFY(vdofs.Size() > 0, "The selected pinned vertex has no finite element DOFs.");
 
         int ldof = vdofs[0];
         if (ldof < 0)
@@ -285,8 +268,7 @@ void BoundaryConditions::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
 
         int ltdof = fespace.GetLocalTDofNumber(ldof);
 
-        MFEM_VERIFY(ltdof >= 0,
-                    "The selected pinned DOF is not owned by the elected rank.");
+        MFEM_VERIFY(ltdof >= 0, "The selected pinned DOF is not owned by the elected rank.");
 
         ess_tdof_marker[ltdof] = 1;
         pin = true;
@@ -294,9 +276,7 @@ void BoundaryConditions::SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace)
         const double *X = parallelMesh.GetVertex(local_lVpp);
         int dim = parallelMesh.Dimension();
 
-        std::cout << "Rank " << myid
-                  << " pinning local vertex " << local_lVpp << std::endl;
-
+        std::cout << "Rank " << myid << " pinning local vertex " << local_lVpp << std::endl;
         std::cout << "coordinates of pinned vertex: (" << X[0];
         for (int d = 1; d < dim; d++)
             std::cout << ", " << X[d];
@@ -589,8 +569,6 @@ int BoundaryConditions::SelectFirstPin(double threshold, double &out_dist2)
                 return VTX[vi]; // LOCAL vertex index
             }
         }
-
-        // If all vertices lie on the boundary or are not owned, skip element
     }
 
     // No interior element found
@@ -678,7 +656,6 @@ void BoundaryConditions::SaveBoundaryConditionFields()
         east_ofs.close();
         pinned_ofs.close();
 
-        std::cout << "Saved boundary_mesh, west_bc, east_bc, and pinned_bc."
-                  << std::endl;
+        std::cout << "Saved boundary_mesh, west_bc, east_bc, and pinned_bc." << std::endl;
     }
 }
