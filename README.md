@@ -336,7 +336,7 @@ The solid-phase electrical-potential boundary conditions are applied at the corr
 
 External boundaries that are not explicitly assigned a Dirichlet or nonzero Neumann condition use the natural boundary condition associated with the finite-element weak form.
 
-For species transport, this generally corresponds to a zero normal flux,
+<!-- For species transport, this generally corresponds to a zero normal flux,
 
 $$
 \mathbf{n}\cdot\left(-D\nabla C\right)=0,
@@ -346,9 +346,9 @@ while for electrical conduction it corresponds to an electrically insulating bou
 
 $$
 \mathbf{n}\cdot\left(-\kappa\nabla\phi\right)=0.
-$$
+$$ -->
 
-Thus, the north and south boundaries are normally treated as no-flux or electrically insulating boundaries unless another boundary condition is explicitly specified.
+The north and south boundaries are normally treated as no-flux or electrically insulating boundaries unless another boundary condition is explicitly specified.
 
 The electrolyte-facing boundary is located on the side opposite the current collector. Internal active-material/electrolyte interfaces are represented through the SBM phase fields and are not assigned external mesh-boundary indicators. Electrochemical reaction terms are evaluated along these diffuse internal interfaces.
 
