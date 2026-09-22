@@ -315,11 +315,11 @@ TEST_CASE("UpdatePotential", "[phi]") {
         for (int i=0; i < phP_an.Size(); i++)
         {
           if (cfg.half_electrode == sim::Electrode::ANODE){
-            phP_an(i) = slope_p*y(i) + intercept_p;
-            phE_an(i) = -slope_e*(y.Max()-y(i)) + intercept_e;
+            phP_an(i) = slope_p*x(i) + intercept_p;
+            phE_an(i) = -slope_e*(x.Max()-x(i)) + intercept_e;
           } else {
-            phP_an(i) = slope_p*(y.Max()-y(i)) + intercept_p;
-            phE_an(i) = -slope_e*y(i) + intercept_e;
+            phP_an(i) = slope_p*(x.Max()-x(i)) + intercept_p;
+            phE_an(i) = -slope_e*x(i) + intercept_e;
           }
         }
         phP_an.SaveAsOne("phiP_an");
