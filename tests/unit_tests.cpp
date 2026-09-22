@@ -439,7 +439,7 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
             int offset_idx;
             for (int i=0; i<domain_parameters.AvE->Size(); i++) {
                 if ( (*domain_parameters.AvE)(i) == domain_parameters.AvE->Max() ){
-                    offset = y(i);
+                    offset = x(i);
                     offset_idx = i;
                     break;
                 }
@@ -462,10 +462,10 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
             std::cout << "diff_e" << diff_e << std::endl;
             mfem::ParGridFunction modify(*state.CnE_gf);
              for (int i=0; i<state.CnE_gf->Size(); i++) {
-                double yprime = offset-y(i);
+                double xprime = offset-x(i);
                 double a = std::sqrt( 4*diff_e*time_elapsed/pi );
-                double b = std::exp( -yprime*yprime/4/diff_e/time_elapsed );
-                double c = yprime*( 1.0-std::erf( yprime/2.0/std::sqrt(diff_e*time_elapsed)  )  );
+                double b = std::exp( -xprime*xprime/4/diff_e/time_elapsed );
+                double c = xprime*( 1.0-std::erf( xprime/2.0/std::sqrt(diff_e*time_elapsed)  )  );
 
                 
                 (*state.CnE_gf)(i) += B_n * (a*b - c);
@@ -488,10 +488,10 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
             std::cout << "B_n: " << B_n << std::endl;
             std::cout << "diff_p" << diff_p << std::endl;
               for (int i=0; i<state.cathode_particles[j].Cn_gf->Size(); i++) {
-                  double yprime = y(i)-offset;
+                  double xprime = x(i)-offset;
                   double a = std::sqrt( 4*diff_p*time_elapsed/pi );
-                  double b = std::exp( -yprime*yprime/4/diff_p/time_elapsed );
-                  double c = yprime*( 1.0-std::erf( yprime/2.0/std::sqrt(diff_p*time_elapsed)  )  );
+                  double b = std::exp( -xprime*xprime/4/diff_p/time_elapsed );
+                  double c = xprime*( 1.0-std::erf( xprime/2.0/std::sqrt(diff_p*time_elapsed)  )  );
 
                 
                     (*state.cathode_particles[j].Cn_gf)(i) += B_n * (a*b - c);
@@ -643,10 +643,10 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
             B_n = -Rxn_const*Constants::t_minus; 
             B_n /= diff_e;  // scale by diffusivity               
            for (int i=0; i<CnE_an.Size(); i++) {
-                double yprime = offset-y(i);
+                double xprime = offset-x(i);
                 double a = std::sqrt( 4*diff_e*time_elapsed/pi );
-                double b = std::exp( -yprime*yprime/4/diff_e/time_elapsed );
-                double c = yprime*( 1.0-std::erf( yprime/2.0/std::sqrt(diff_e*time_elapsed)  )  );
+                double b = std::exp( -xprime*xprime/4/diff_e/time_elapsed );
+                double c = xprime*( 1.0-std::erf( xprime/2.0/std::sqrt(diff_e*time_elapsed)  )  );
 
                 
                 CnE_an(i) += B_n * (a*b - c);
@@ -670,10 +670,12 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
             //CHECK( diff.Norml2() < 0.05 );
 
             mfem::ParGridFunction CnE_der(*state.CnE_gf);
-            state.CnE_gf->GetDerivative(1,1,CnE_der);
+            state.CnE_gf->GetDerivative(1,0,CnE_der);
             CnE_der.SaveAsOne("CnE_der");
             double SBM_error_e = (CnE_der(offset_idx)-B_n)/B_n; 
-            std::cout << "CnE der offset: " << SBM_error_e << std::endl;
+            std::cout << "SBM_error: " << SBM_error_e << std::endl;
+            std::cout << "CnE der offset: " << CnE_der(offset_idx) << std::endl;
+            std::cout << "B_n_e: " << B_n << std::endl;
             CHECK( abs(SBM_error_e) < 0.05 );
 
             // PARTICLE
@@ -689,10 +691,10 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
               B_n = Rxn_const/MaterialProperties::SiteDensity(particles[j].material);
               B_n /= diff_p;  // scale by diffusivity
               for (int i=0; i<CnE_an.Size(); i++) {
-                  double yprime = y(i)-offset;
+                  double xprime = x(i)-offset;
                   double a = std::sqrt( 4*diff_p*time_elapsed/pi );
-                  double b = std::exp( -yprime*yprime/4/diff_p/time_elapsed );
-                  double c = yprime*( 1.0-std::erf( yprime/2.0/std::sqrt(diff_p*time_elapsed)  )  );
+                  double b = std::exp( -xprime*xprime/4/diff_p/time_elapsed );
+                  double c = xprime*( 1.0-std::erf( xprime/2.0/std::sqrt(diff_p*time_elapsed)  )  );
 
                 
                   CnP_an(i) += B_n * (a*b - c);
@@ -716,10 +718,12 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
               //CHECK( diff.Norml2() < 0.05 );
                
               mfem::ParGridFunction CnP_der(*particles[j].Cn_gf);
-              particles[j].Cn_gf->GetDerivative(1,1,CnP_der);
+              particles[j].Cn_gf->GetDerivative(1,0,CnP_der);
               CnP_der.SaveAsOne("CnP_der");
               double SBM_error_p = (CnP_der(offset_idx)+B_n)/B_n; 
-              std::cout << "CnP der offset: " << SBM_error_p << std::endl;
+              std::cout << "SBM_error: " << SBM_error_p << std::endl;
+              std::cout << "CnP der offset: " << CnP_der(offset_idx) << std::endl;
+              std::cout << "B_n_p: " << B_n << std::endl;
               CHECK( abs(SBM_error_p) < 0.05 );
             } 
 
