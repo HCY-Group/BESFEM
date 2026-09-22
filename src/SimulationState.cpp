@@ -154,6 +154,14 @@ static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry
                     std::cout << "Carbon";
                     break;
                 
+                case sim::MaterialType::Test_Diff:
+                    std::cout << "test material - fickian diffusion";
+                    break;
+
+                case sim::MaterialType::Test_CH:
+                    std::cout << "test material - phase separating";
+                    break;
+
                 default:
                 {
                     mfem::mfem_error("Unsupported anode material chosen. Anode materials supported at this time: graphite, carbon.");
@@ -174,6 +182,18 @@ static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry
             case sim::MaterialType::Carbon:
             {
                 p.concentration = std::make_unique<ElectrodeDiffusion>(geometry, domain_parameters, p.material, cfg);
+                break;
+            }
+
+            case sim::MaterialType::Test_Diff:
+            {
+                p.concentration = std::make_unique<ElectrodeDiffusion>(geometry, domain_parameters, p.material, cfg);
+                break;
+            }
+
+            case sim::MaterialType::Test_CH:
+            {
+                p.concentration = std::make_unique<ElectrodeCahnHilliard>(geometry, domain_parameters, p.material, cfg);
                 break;
             }
 
@@ -288,6 +308,14 @@ static void InitializeCathodeParticles(SimulationState& state, Initialize_Geomet
                     std::cout << "LFP";
                     break;
                 
+                case sim::MaterialType::Test_Diff:
+                    std::cout << "test material - fickian diffusion";
+                    break;
+
+                case sim::MaterialType::Test_CH:
+                    std::cout << "test material - phase separating";
+                    break;
+
                 default:
                 {
                     mfem::mfem_error("Unsupported cathode material chosen. Cathode materials supported at this time: NMC, LFP.");
@@ -306,6 +334,18 @@ static void InitializeCathodeParticles(SimulationState& state, Initialize_Geomet
             }
 
             case sim::MaterialType::LFP:
+            {
+                p.concentration = std::make_unique<ElectrodeCahnHilliard>(geometry, domain_parameters, p.material, cfg);
+                break;
+            }
+
+            case sim::MaterialType::Test_Diff:
+            {
+                p.concentration = std::make_unique<ElectrodeDiffusion>(geometry, domain_parameters, p.material, cfg);
+                break;
+            }
+
+            case sim::MaterialType::Test_CH:
             {
                 p.concentration = std::make_unique<ElectrodeCahnHilliard>(geometry, domain_parameters, p.material, cfg);
                 break;

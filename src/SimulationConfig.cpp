@@ -122,6 +122,12 @@ static sim::MaterialType ParseMaterial(const std::string& name)
     if (name == "Carbon" || name == "carbon")
         return sim::MaterialType::Carbon;
 
+    if (name == "Test_Diff")
+        return sim::MaterialType::Test_Diff;
+
+    if (name == "Test_CH")
+        return sim::MaterialType::Test_CH;
+
     mfem::mfem_error(("Invalid material: " + name + ". Use Graphite, NMC, LFP, or Carbon.").c_str());
 
     return sim::MaterialType::Electrolyte;
