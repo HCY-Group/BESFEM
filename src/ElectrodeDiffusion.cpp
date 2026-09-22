@@ -43,125 +43,19 @@ void ElectrodeDiffusion::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::Pa
     const double rho = MaterialProperties::SiteDensity(material);
     utils.InitializeReaction(Rx, Rxn, (1.0/rho));
 
-    net_pair_source = 0.0;
-    absolute_pair_source = 0.0;
-
     if (!combine_particle_groups)
     {
-        mfem::ParGridFunction total_pp_source(fespace.get());
-        total_pp_source = 0.0;
-
-        // Rxn *= weight_elec;
-
-        // for (const auto &pair : pair_terms)
-        // {
-        //     utils.ComputePairFlux(
-        //         *pair.sum_part,
-        //         *pair.weight,
-        //         *pair.grad_psi,
-        //         *pair.mu_self,
-        //         *pair.mu_nbr,
-        //         rho
-        //     );
-
-        //     total_pp_source += *pair.sum_part;
-        //     Rxn += *pair.sum_part;
-        // }
-
-        int pair_counter = 0;
+        Rxn *= weight_elec;
 
         for (const auto &pair : pair_terms)
         {
-            utils.ComputePairFlux(
-                *pair.sum_part,
-                *pair.weight,
-                *pair.grad_psi,
-                *pair.mu_self,
-                *pair.mu_nbr,
-                rho
-            );
-
-            // --------------------------------------------------------
-            // Integrate this directed pair source
-            // --------------------------------------------------------
-
-            double local_pair_source = 0.0;
-
-            mfem::Array<double> values(nC);
-
-            for (int ei = 0; ei < nE; ++ei)
-            {
-                pair.sum_part->GetNodalValues(ei, values);
-
-                double element_average = 0.0;
-
-                for (int k = 0; k < values.Size(); ++k)
-                {
-                    element_average += values[k];
-                }
-
-                element_average /= values.Size();
-
-                local_pair_source +=
-                    element_average * EVol(ei);
-            }
-
-            double global_pair_source = 0.0;
-
-            MPI_Allreduce(
-                &local_pair_source,
-                &global_pair_source,
-                1,
-                MPI_DOUBLE,
-                MPI_SUM,
-                MPI_COMM_WORLD
-            );
-
-            // if (mfem::Mpi::WorldRank() == 0)
-            // {
-            //     std::cout
-            //         << "Directed pair source "
-            //         << pair_counter
-            //         << " = "
-            //         << global_pair_source
-            //         << std::endl;
-            // }
-
-            total_pp_source += *pair.sum_part;
+            utils.ComputePairFlux(*pair.sum_part, *pair.weight, *pair.grad_psi, *pair.mu_self, *pair.mu_nbr, rho);
+            // pair.sum_part->SaveAsOne("pair_sum_part_test_diffusion.gf"); // reaction field for particle-particle
             Rxn += *pair.sum_part;
-
-            ++pair_counter;
         }
-
-        double local_signed_sum = 0.0;
-        double local_absolute_sum = 0.0;
-
-        for (int i = 0; i < total_pp_source.Size(); ++i)
-        {
-            const double value = total_pp_source(i);
-
-            local_signed_sum += value;
-            local_absolute_sum += std::abs(value);
-        }
-
-        MPI_Allreduce(
-            &local_signed_sum,
-            &net_pair_source,
-            1,
-            MPI_DOUBLE,
-            MPI_SUM,
-            MPI_COMM_WORLD
-        );
-
-        MPI_Allreduce(
-            &local_absolute_sum,
-            &absolute_pair_source,
-            1,
-            MPI_DOUBLE,
-            MPI_SUM,
-            MPI_COMM_WORLD
-        );
     }
+
+    // Rxn.SaveAsOne("Rxn_test_diffusion.gf"); // reaction field for particle-electrolyte
 
     cAp.SetGridFunction(&Rxn);
 
