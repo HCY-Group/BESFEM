@@ -409,31 +409,40 @@ void Domain_Parameters::ComputeGradientMagnitude(const mfem::ParGridFunction &ph
 void Domain_Parameters::BuildPairInterface(mfem::ParGridFunction &out, const mfem::ParGridFunction &phase_a, const mfem::ParGridFunction &phase_b,
     const mfem::ParGridFunction &gradient_a, const mfem::ParGridFunction &gradient_b)
 {
-    out = phase_a;
+
+
+    out = gradient_a;
     out *= gradient_b;
-
-    mfem::ParGridFunction temporary(fespace.get());
-
-    temporary = phase_b;
-    temporary *= gradient_a;
-
-    out += temporary;
-
-    mfem::ParGridFunction overlap(fespace.get());
-
-    overlap = phase_a;
-    overlap *= phase_b;
-
-    out *= overlap;
-    out *= 4.0;
-
-    for (int i = 0; i < out.Size(); ++i)
-    {
-        if (out(i) > 9000.0)
-        {
-            out(i) = 1.4e4;
-        }
+    for (int i=0; i<out.Size(); i++){
+        out(i) = std::sqrt( out(i) );
     }
+
+
+    //out = phase_a;
+    //out *= gradient_b;
+    //
+    //mfem::ParGridFunction temporary(fespace.get());
+    //
+    //temporary = phase_b;
+    //temporary *= gradient_a;
+    //
+    //out += temporary;
+    //
+    //mfem::ParGridFunction overlap(fespace.get());
+    //
+    //overlap = phase_a;
+    //overlap *= phase_b;
+    //
+    //out *= overlap;
+    //out *= 4.0;
+    //
+    //for (int i = 0; i < out.Size(); ++i)
+    //{
+    //    if (out(i) > 9000.0)
+    //    {
+    //        out(i) = 1.4e4;
+    //    }
+    //}
 }
 
 void Domain_Parameters::BuildElectrolyteInterface(mfem::ParGridFunction &out, const mfem::ParGridFunction &electrolyte_gradient, const mfem::ParGridFunction &particle_gradient)
