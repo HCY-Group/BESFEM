@@ -299,14 +299,24 @@ To adjust how frequently this information is saved, change `save_freq` in the co
 ---
 ### Boundary Conditions
 
-BESFEM uses a fixed orientation convention for the external boundaries of the computational domain. Boundary attribute indicators are assigned as follows:
+BESFEM uses a fixed orientation convention for the external boundaries of the computational domain. The boundary conditions are assigned in `src/BoundaryConditions.cpp` and attribute indicators are assigned as follows:
 
-| Boundary | Indicator |
+#### 2D Boundary Convention
+
+| Boundary | Indicator |  
 | -------- | --------: |
-| South    |       `0` |
+| South    |       `0` | 
 | East     |       `1` |
-| North    |       `2` |
+| North    |       `2` | 
 | West     |       `3` |
+
+
+#### 3D Boundary Convention
+
+| Boundary | Indicator |  
+| -------- | --------: |
+| East     |       `2` |
+| West     |       `4` |
 
 The geometry is oriented so that the **anode current collector is located on the west side** of the domain and the **cathode current collector is located on the east side**. The boundary conditions are assigned in `src/BoundaryConditions.cpp`. 
 
@@ -322,21 +332,48 @@ The solid-phase electrical-potential boundary conditions are applied at the corr
 * The anode solid potential is constrained on the west boundary, with boundary indicator `3`.
 * The cathode solid potential is constrained on the east boundary, with boundary indicator `1`.
 
-The north and south boundaries, with indicators `2` and `0`, respectively, represent the transverse edges of the geometry. Unless otherwise specified by a particular model, these boundaries use no-flux or electrically insulating boundary conditions.
+#### Remaining External Boundaries
 
-For half-cell simulations, the current collector remains on the electrode-specific side:
+External boundaries that are not explicitly assigned a Dirichlet or nonzero Neumann condition use the natural boundary condition associated with the finite-element weak form.
 
-* Anode half-cell: current collector on the west boundary.
-* Cathode half-cell: current collector on the east boundary.
+<!-- For species transport, this generally corresponds to a zero normal flux,
+
+$$
+\mathbf{n}\cdot\left(-D\nabla C\right)=0,
+$$
+
+while for electrical conduction it corresponds to an electrically insulating boundary,
+
+$$
+\mathbf{n}\cdot\left(-\kappa\nabla\phi\right)=0.
+$$ -->
+
+The north and south boundaries are normally treated as no-flux or electrically insulating boundaries unless another boundary condition is explicitly specified.
 
 The electrolyte-facing boundary is located on the side opposite the current collector. Internal active-material/electrolyte interfaces are represented through the SBM phase fields and are not assigned external mesh-boundary indicators. Electrochemical reaction terms are evaluated along these diffuse internal interfaces.
-
-In full-cell geometries, the electrolyte phase is retained only when it forms a connected pathway that contacts both the anode and cathode phases. Isolated electrolyte regions that do not connect both electrodes are removed from the electrolyte connectivity mask.
-
 
 ---
 
 # Generating Documentation
+
+The website source is in `docs/`, and `Doxyfile` configures the API reference
+generated from `src/` and `include/`.
+
+The workflow in `.github/workflows/pages.yml` rebuilds and publishes the full
+website, including fresh Doxygen API documentation, on every push to `main`.
+It can also be started from the **Actions** tab using **Run workflow**. The website is published at <https://hcy-group.github.io/BESFEM/> and the API at <https://hcy-group.github.io/BESFEM/api/>.
+
+<!-- To enable it, commit and push the workflow, then in the GitHub repository go to
+**Settings → Pages → Build and deployment → Source** and select **GitHub Actions**.
+If the initial run failed before that setting was changed, rerun it from **Actions**.
+The website is published at <https://hcy-group.github.io/BESFEM/> and the API at
+<https://hcy-group.github.io/BESFEM/api/>. Generated API files do not need to be
+committed for deployment; the workflow generates them on the runner. -->
+
+<!-- The template workflows under `docs/.github/workflows/` are inactive: GitHub only
+discovers workflows in the repository-root `.github/workflows/` directory. -->
+
+<!-- ## Local preview
 
 Generate the Doxygen documentation:
 
@@ -350,7 +387,7 @@ doxygen Doxyfile
 Open the generated documentation
 
 ```bash
-cd docs/html
+cd docs/api
 ```
 
 Preview locally
@@ -363,7 +400,7 @@ Then open
 
 ```
 http://127.0.0.1:8001
-```
+``` -->
 
 ---
 
@@ -385,6 +422,8 @@ Update the mesh and GridFunction filenames within the notebook to visualize diff
 
 ---
 # Governing Equations
+
+> **Note:** For a MathJax-rendered version of the governing equations, please visit the [BESFEM documentation](https://hcy-group.github.io/BESFEM/equations.html).
 
 ## Butler-Volmer Kinetics
 
