@@ -24,5 +24,5 @@ We use GitHub to organize our work. When making updates, we try to follow the pr
 
 
 ## Acknowledgements
-Sections of this CONTRIBUTING.md file was inspired from the [PyBAMM GitHub Repo](https://github.com/pybamm-team/PyBaMM/tree/main). 
+Sections of this CONTRIBUTING.md file were inspired from the [PyBAMM GitHub Repo](https://github.com/pybamm-team/PyBaMM/tree/main). 
 
