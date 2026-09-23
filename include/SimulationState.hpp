@@ -117,11 +117,8 @@ struct SimulationState
  * @param bc Boundary-condition handler.
  * @param cfg Simulation configuration.
  */
-void InitializeFields(SimulationState& state,
-                      Initialize_Geometry& geometry,
-                      Domain_Parameters& domain_parameters,
-                      BoundaryConditions& bc,
-                      const SimulationConfig& cfg);
+void InitializeFields(SimulationState& state, Initialize_Geometry& geometry, Domain_Parameters& domain_parameters,
+                      BoundaryConditions& bc, const SimulationConfig& cfg);
 
 
 void UpdatePairChemicalPotentials(std::vector<ParticleState>& particles, PairWorkspaces& workspace,

@@ -153,10 +153,14 @@ static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry
                 case sim::MaterialType::Carbon:
                     std::cout << "Carbon";
                     break;
+
+                case sim::MaterialType::Silicon:
+                    std::cout << "Silicon";
+                    break;
                 
                 default:
                 {
-                    mfem::mfem_error("Unsupported anode material chosen. Anode materials supported at this time: graphite, carbon.");
+                    mfem::mfem_error("Unsupported anode material chosen. Anode materials supported at this time: graphite, carbon, silicon.");
                 }
             }
 
@@ -172,6 +176,12 @@ static void InitializeAnodeParticles(SimulationState& state, Initialize_Geometry
             }
 
             case sim::MaterialType::Carbon:
+            {
+                p.concentration = std::make_unique<ElectrodeDiffusion>(geometry, domain_parameters, p.material, cfg);
+                break;
+            }
+
+            case sim::MaterialType::Silicon:
             {
                 p.concentration = std::make_unique<ElectrodeDiffusion>(geometry, domain_parameters, p.material, cfg);
                 break;
