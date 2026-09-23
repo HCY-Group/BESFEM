@@ -71,6 +71,9 @@ public:
     /// Reference to the simulation configuration.
     const SimulationConfig& cfg;
 
+    /// Return the GridFunction for diffusivity
+    mfem::ParGridFunction GetDiffusivity() override {return Dp;}
+
 private:
 
     mfem::ParGridFunction Dp;   ///< Diffusivity field.

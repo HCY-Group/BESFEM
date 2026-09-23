@@ -81,6 +81,11 @@ public:
     /// Reference to user-defined simulation settings.
     const SimulationConfig &cfg;
 
+    /// Return the GridFunction for diffusivity
+    mfem::ParGridFunction GetDiffusivity() override {
+        mfem::mfem_error("GetDiffusivity not implemented for CahnHilliard");
+    }
+
 private:
     mfem::ParGridFunction Mub; ///< Chemical-potential field.
     mfem::ParGridFunction Mob; ///< Mobility field.

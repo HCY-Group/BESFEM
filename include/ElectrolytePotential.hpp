@@ -128,7 +128,11 @@ public:
                          mfem::ParGridFunction &phx, mfem::ParGridFunction &psx, double &gerror);
 
     double GetBoundaryVoltage() const override { return BvE; }
+
     void AddBoundaryVoltage(double dV){BvE += dV;}
+
+    /// Return the GridFunction for conductivity
+    mfem::ParGridFunction GetConductivity() override {return kpl;}
 
 private:
 

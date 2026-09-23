@@ -89,6 +89,7 @@ public:
      * @param meshFile Path to mesh file.
      * @param comm MPI communicator.
      * @param order Polynomial order for FE space.
+     * @param half_electrode Electrode type for half-cell simulation.
      */
     void InitializeMesh(const char* meshFile, MPI_Comm comm, int order);
 

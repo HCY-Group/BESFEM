@@ -138,6 +138,7 @@ public:
      */
     double GetLithiation() const { return Xfr; }
 
+    virtual mfem::ParGridFunction GetDiffusivity() = 0;
     
     
     // double GetNetPairSource() const
