@@ -751,12 +751,21 @@ void Domain_Parameters::CalculateTargetCurrent(double local_phase_volume, double
 
 void Domain_Parameters::PrintInfo()
 {
+    // All ranks participate; the fraction is relative to the entire mesh.
+    const double local_volume = EVol.Sum();
+    double total_volume = 0.0;
+    MPI_Allreduce(&local_volume, &total_volume, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MFEM_VERIFY(total_volume > 0.0, "Domain volume must be positive.");
+    const double active_volume_fraction = gtPsi / total_volume;
+
     if (mfem::Mpi::WorldRank() != 0)
     {
         return;
     }
 
     std::cout << "Total solid phase: " << gtPsi << '\n' << "Total electrolyte phase: " << gtPse << '\n';
+    std::cout << "Active material volume fraction (whole domain): "
+              << active_volume_fraction << " (" << 100.0 * active_volume_fraction << "%)\n";
 
     if (cfg.mode == sim::CellMode::HALF)
     {
@@ -785,4 +794,3 @@ void Domain_Parameters::PrintInfo()
         }
     }
 }
-
