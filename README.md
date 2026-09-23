@@ -243,6 +243,7 @@ Currently supported materials include
 
 * Graphite
 * Carbon
+* Silicon
 
 ---
 
