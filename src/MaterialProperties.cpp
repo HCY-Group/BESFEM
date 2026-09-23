@@ -2,6 +2,7 @@
 #include "../include/MaterialProperties.hpp"
 #include "../include/Constants.hpp"
 #include "mfem.hpp"
+#include <algorithm>
 #include <cmath>
 #include <fstream>
 
@@ -42,6 +43,55 @@ namespace MaterialProperties
     {
         double val = (0.0277 - 0.084 * c + 0.1003 * c * c) * 1.0e-8;
         return val;
+    }
+
+    // PyBaMM Chen2020_composite secondary negative-electrode phase.
+    // c is silicon lithium stoichiometry. Use the single-OCP (average) model.
+    static double Silicon_OCV(double c)
+    {
+        // The lithiation fit is singular at 0 and 1.
+        c = std::min(1.0 - 1.0e-8, std::max(1.0e-8, c));
+
+        double lithiation = (((((((-96.63 * c + 372.6) * c - 587.6)
+                            * c + 489.9) * c - 232.8) * c + 62.99)
+                            * c - 9.286) * c + 0.8633)
+                            + 1.0e-4 * (1.0 / c + 1.0 / (c - 1.0));
+        double delithiation = (((((((-51.02 * c + 161.3) * c - 205.7)
+                              * c + 140.2) * c - 58.76) * c + 16.87)
+                              * c - 3.792) * c + 0.9937);
+
+        return 0.5 * (lithiation + delithiation);
+    }
+
+    static double Silicon_mu(double c)
+    {
+        return -Constants::Frd * Silicon_OCV(c);
+    }
+
+    static double Silicon_i0(double c)
+    {
+        c = std::min(1.0, std::max(0.0, c));
+
+        // Fixed T = 298.15 K (Arrhenius factor = 1) and c_e = 1000 mol/m^3.
+        // The existing material API accepts only stoichiometry.
+        const double c_e = 1000.0;
+        const double c_max = 278000.0;
+        const double m_ref = 6.48e-7 * 28700.0 / 278000.0;
+        double val = m_ref * std::sqrt(c_e) * c_max * std::sqrt(c * (1.0 - c));
+
+        return val * 1.0e-4; // A/m^2 to A/cm^2
+    }
+
+    static double Silicon_diff(double c)
+    {
+        return 1.67e-14 * 1.0e4; // m^2/s to cm^2/s
+    }
+
+    static double SiliconConductivity(double c)
+    {
+        // Chen2020_composite provides only a shared negative-electrode value,
+        // not intrinsic silicon conductivity. Use that value as a proxy here.
+        return 215.0 / 100.0; // S/m to S/cm
     }
 
     static double Carbon_diff(double c)
@@ -247,6 +297,9 @@ namespace MaterialProperties
             case sim::MaterialType::Carbon:
                 return Carbon_OCV(c);
 
+            case sim::MaterialType::Silicon:
+                return Silicon_OCV(c);
+
             default:
                 mfem::mfem_error("Unknown material in OCV.");
                 return 0.0;
@@ -295,6 +348,9 @@ namespace MaterialProperties
             case sim::MaterialType::Carbon:
                 return Graphite_i0(c);
 
+            case sim::MaterialType::Silicon:
+                return Silicon_i0(c);
+
             default:
                 mfem::mfem_error("Unknown material in ExchangeCurrentDensity.");
                 return 0.0;
@@ -321,6 +377,9 @@ namespace MaterialProperties
 
             case sim::MaterialType::Carbon:
                 return Carbon_diff(c);
+
+            case sim::MaterialType::Silicon:
+                return Silicon_diff(c);
 
             default:
                 mfem::mfem_error("Material does not have a defined diffusivity.");
@@ -412,6 +471,9 @@ namespace MaterialProperties
             case sim::MaterialType::Carbon:
                 return Carbon_mu(c);
 
+            case sim::MaterialType::Silicon:
+                return Silicon_mu(c);
+
             default:
                 mfem::mfem_error("Unknown material in Chemical Potential.");
                 return 0.0;
@@ -455,6 +517,9 @@ namespace MaterialProperties
             case sim::MaterialType::Carbon:
                 return CarbonConductivity(c);
 
+            case sim::MaterialType::Silicon:
+                return SiliconConductivity(c);
+
             default:
                 mfem::mfem_error("Unknown material in Conductivity.");
                 return 0.0;
@@ -480,6 +545,9 @@ namespace MaterialProperties
             case sim::MaterialType::Carbon:
             // std::cout << "using Carbon density" << std::endl;
                 return 0.0227;
+
+            case sim::MaterialType::Silicon:
+                return 0.0233; // mol/m^3 to mol/cm^3
 
             default:
                 mfem::mfem_error("Unknown material in SiteDensity.");
