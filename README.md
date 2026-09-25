@@ -285,10 +285,9 @@ A curve contains two columns with strictly increasing concentrations:
 Keep the defaults or override any individual property in the run config:
 
 ```ini
-material.Graphite.ocv = table materials/Graphite/ocv.txt clamp
+material.Graphite.ocv = table materials/Graphite/ocv.txt
 material.Graphite.exchange_current_density = table materials/Graphite/exchange_current_density.txt
 material.Graphite.conductivity = constant 3.3
-material.Graphite.site_density = table materials/Graphite/site_density.txt
 ```
 
 <!-- Override filenames are arbitrary; their paths are relative to the **config file**.

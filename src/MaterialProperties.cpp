@@ -27,7 +27,7 @@ namespace MaterialProperties
             {"Silicon", Material::Silicon}, {"Electrolyte", Material::Electrolyte}};
         const std::vector<std::string> property_names = {
             "ocv", "chemical_potential", "exchange_current_density",
-            "diffusivity", "mobility", "conductivity", "site_density", "chp_value"};
+            "diffusivity", "mobility", "conductivity", "site_density"};
 
         // Only list properties implemented by the original models. Missing
         // physics is not silently replaced by a zero-valued property.
