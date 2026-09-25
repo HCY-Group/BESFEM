@@ -75,7 +75,7 @@ Override individual properties using the existing config interface:
 
 ```ini
 material.Graphite.ocv = table materials/Graphite/ocv.txt clamp
-material.Graphite.site_density = table materials/Graphite/site_density.txt
+; material.Graphite.site_density = table materials/Graphite/site_density.txt
 material.Graphite.conductivity = constant 4.0
 material.NMC.ocv = table my_measurements/nmc_ocv.txt error
 ```
