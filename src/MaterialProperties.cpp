@@ -146,8 +146,7 @@ namespace MaterialProperties
                 }
                 catch (const std::runtime_error& error)
                 {
-                    throw std::runtime_error(path.string() + ":" +
-                        std::to_string(line_number) + ": " + error.what());
+                    throw std::runtime_error(path.string() + ":" + std::to_string(line_number) + ": " + error.what());
                 }
             }
             if (input.bad()) throw std::runtime_error("error reading " + path.string());

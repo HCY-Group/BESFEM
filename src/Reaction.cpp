@@ -9,35 +9,19 @@
  
 Reaction::Reaction(Initialize_Geometry &geo, Domain_Parameters &para, const SimulationConfig &cfg)
     : pmesh(geo.parallelMesh.get()), fespace(geo.parfespace), geometry(geo), cfg(cfg),
-    domain_parameters(para), EVol(para.EVol),
-AvB(para.AvB ? para.AvB.get() : nullptr),
-AvA(para.AvA ? para.AvA.get() : nullptr),
-AvC(para.AvC ? para.AvC.get() : nullptr)
+    domain_parameters(para), EVol(para.EVol)
 {
-nE = geometry.nE; 
-nC = geometry.nC; 
-nV = geometry.nV; 
+    nE = geometry.nE; 
+    nC = geometry.nC; 
+    nV = geometry.nV; 
 
-i0C = std::make_unique<mfem::ParGridFunction>(fespace.get()); // exchange current density
-OCV = std::make_unique<mfem::ParGridFunction>(fespace.get()); // open circuit voltage
+    i0C = std::make_unique<mfem::ParGridFunction>(fespace.get()); // exchange current density
+    OCV = std::make_unique<mfem::ParGridFunction>(fespace.get()); // open circuit voltage
 
-i0CC = std::make_unique<mfem::ParGridFunction>(fespace.get()); // exchange current density (cathode)
-OCVC = std::make_unique<mfem::ParGridFunction>(fespace.get()); // open circuit voltage (cathode)
-i0CA = std::make_unique<mfem::ParGridFunction>(fespace.get()); // exchange current density (anode)
-OCVA = std::make_unique<mfem::ParGridFunction>(fespace.get()); // open circuit voltage (anode)
+    Kfw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // forward reaction constant
+    Kbw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // backward reaction constant
 
-Kfw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // forward reaction constant
-Kbw = std::make_unique<mfem::ParGridFunction>(fespace.get()); // backward reaction constant
-
-KfA = std::make_unique<mfem::ParGridFunction>(fespace.get()); // forward reaction constant (anode)
-KbA = std::make_unique<mfem::ParGridFunction>(fespace.get()); // backward reaction constant (anode)
-
-KfC = std::make_unique<mfem::ParGridFunction>(fespace.get()); // forward reaction constant (cathode)
-KbC = std::make_unique<mfem::ParGridFunction>(fespace.get()); // backward reaction constant (cathode)
-
-dPHE = std::make_unique<mfem::ParGridFunction>(fespace.get()); // voltage drop
-dPHA = std::make_unique<mfem::ParGridFunction>(fespace.get()); // voltage drop
-dPHC = std::make_unique<mfem::ParGridFunction>(fespace.get()); // voltage drop
+    dPHE = std::make_unique<mfem::ParGridFunction>(fespace.get()); // voltage drop
 
 }
 
@@ -89,29 +73,6 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParGridFu
     }
 }
 
-void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &AvA_in, mfem::ParGridFunction &AvC_in){
-    for (int vi = 0; vi < nV; vi++){
-        if((AvC_in)(vi) * cfg.dh > 1e-3){ 
-            double val = -0.2 * (Cn1(vi) - 0.37) - 1.559 - 0.9376 * tanh(8.961 * Cn1(vi) - 3.195);
-            (*i0CC)(vi) = pow(10.0, val) * 1.0e-3; // Exchange current density
-            (*OCVC)(vi) = 1.095 * Cn1(vi) * Cn1(vi) - 8.234e-7 * exp(14.31 * Cn1(vi)) + 4.692 * exp(-0.5389 * Cn1(vi)); // open circuit voltage
-            (*KfC)(vi) = (*i0CC)(vi) / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * (*OCVC)(vi)); // forward reaction constant
-            (*KbC)(vi) = (*i0CC)(vi) / (Constants::Frd * Cn1(vi)) * exp(-Constants::alp * Constants::Cst1 * (*OCVC)(vi)); // backward rection constant
-        }
-
-        if((AvA_in)(vi) * cfg.dh > 1e-3){
-            double cn_val = Cn2(vi);
-            double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
-            double ocv = GetTableValues(cn_val, Ticks, OCV_file);
-
-            (*i0CA)(vi) = i0;
-            (*OCVA)(vi) = ocv;
-            (*KfA)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
-            (*KbA)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
-        }
-    }
-}
-
 void Reaction::TableExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &AvP_in)
 {
     for (int vi = 0; vi < nV; vi++) {
@@ -142,24 +103,6 @@ void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn
                                         (*Kbw)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHE)(vi)));
 
         }
-    }
-}
-
-void Reaction::ButlerVolmer(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Rx1, mfem::ParGridFunction &Rx2, mfem::ParGridFunction &Cn1, mfem::ParGridFunction &Cn2, mfem::ParGridFunction &Cn3, mfem::ParGridFunction &phx1, mfem::ParGridFunction &phx2, mfem::ParGridFunction &phx3, mfem::ParGridFunction &AvA_in, mfem::ParGridFunction &AvC_in)
-{
-    for (int vi = 0; vi < nV; vi++){
-        
-        if ( (AvA_in)(vi) * cfg.dh > 1e-3 ){ // Check for interface presence
-                (*dPHA)(vi) = phx2(vi) - phx3(vi); // Voltage drop across the interface
-                Rx2(vi) = (AvA_in)(vi) * ((*KfA)(vi)*Cn3(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHA)(vi)) - \
-                                            (*KbA)(vi)*Cn2(vi)*exp( Constants::alp*Constants::Cst1*(*dPHA)(vi)));
-            }
-
-        if ( (AvC_in)(vi) * cfg.dh > 1e-3 ){ // Check for interface presence
-                (*dPHC)(vi) = phx1(vi) - phx3(vi); // Voltage drop across the interface
-                Rx1(vi) = (AvC_in)(vi) * ((*KfC)(vi)*Cn3(vi)*exp(-Constants::alp*Constants::Cst1*(*dPHC)(vi)) - \
-                                            (*KbC)(vi)*Cn1(vi)*exp( Constants::alp*Constants::Cst1*(*dPHC)(vi)));
-            }
     }
 }
 
