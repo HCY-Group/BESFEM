@@ -1,0 +1,2 @@
+# LFP diffusivity; solver units (see ../README.md)
+4.9999999999999997e-12

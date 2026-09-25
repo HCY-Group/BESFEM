@@ -1,0 +1,2 @@
+# NMC site_density; solver units (see ../README.md)
+0.050099999999999999

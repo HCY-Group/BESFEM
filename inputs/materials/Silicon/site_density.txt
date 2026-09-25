@@ -1,0 +1,2 @@
+# Silicon site_density; solver units (see ../README.md)
+0.023300000000000001

@@ -1,0 +1,2 @@
+# Graphite conductivity; solver units (see ../README.md)
+3.2999999999999998
