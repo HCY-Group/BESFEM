@@ -37,9 +37,9 @@ gc = 6.38e-10
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = voltage       
+stop_mode = steps       
 VCut = 0.02
-num_steps = 4
+num_steps = 100
 
 # ============================================================
 # CURRENT CONTROL

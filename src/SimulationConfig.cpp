@@ -70,6 +70,8 @@ ReadConfigFile(const std::string& filename)
         std::string key = Trim(line.substr(0, eq_pos));
         std::string val = Trim(line.substr(eq_pos + 1));
 
+        if (key.compare(0, 9, "material.") == 0 && data.count(key))
+            mfem::mfem_error(("Duplicate material config key: " + key).c_str());
         data[key] = val;
     }
 
@@ -171,6 +173,14 @@ static sim::StopMode ParseStopMode(const std::string& value)
 static void ApplyConfigFile(SimulationConfig& cfg)
 {
     auto data = ReadConfigFile(cfg.config_file);
+    try
+    {
+        MaterialProperties::Configure(data, cfg.config_file);
+    }
+    catch (const std::exception& error)
+    {
+        mfem::mfem_error(error.what());
+    }
 
     if (HasKey(data, "mode"))
     {

@@ -247,6 +247,90 @@ Currently supported materials include
 
 ---
 
+### Material property files and overrides
+
+Every built-in material property comes from a text file under
+`inputs/materials/<Material>/<property>.txt`:
+
+```text
+inputs/materials/
+├── Graphite/
+├── LFP/
+├── NMC/
+├── Carbon/
+├── Silicon/
+└── Electrolyte/
+```
+
+For example, `Graphite/ocv.txt` stores concentration/OCV pairs and
+`Graphite/conductivity.txt` contains a single constant. Edit these files without
+recompiling. Default folder and property names are case-sensitive.
+
+A constant file contains one number:
+
+```text
+# conductivity [S/cm]
+3.3
+```
+
+A curve contains two columns with strictly increasing concentrations:
+
+```text
+# stoichiometry OCV [V] -- illustrative values only
+0.0 0.9
+0.5 0.2
+1.0 0.1
+```
+
+Keep the defaults or override any individual property in the run config:
+
+```ini
+material.Graphite.ocv = table materials/Graphite/ocv.txt clamp
+material.Graphite.exchange_current_density = table materials/Graphite/exchange_current_density.txt
+material.Graphite.conductivity = constant 3.3
+material.Graphite.site_density = table materials/Graphite/site_density.txt
+```
+
+<!-- Override filenames are arbitrary; their paths are relative to the **config file**.
+Quote table paths containing spaces. Config keys use the exact form
+`material.<MaterialName>.<property_name>`. Unspecified properties use the default
+files. Constants can be supplied inline or in a scalar text file; site density
+must be scalar. Tables interpolate linearly and default to endpoint clamping;
+use `error` instead of `clamp` to reject out-of-range evaluation. Clamping affects
+the lookup, not the simulated concentration. -->
+
+<!-- The makefile embeds the absolute default data directory, so loading defaults
+does not depend on the working directory. A relocated executable or a different
+complete library can select a root relative to its config: -->
+
+<!-- ```ini
+materials_dir = materials
+``` -->
+
+The supported property names, units, migration details, concentration ranges,
+and OCV/chemical-potential dependency rules are documented in
+[the material data guide](inputs/materials/README.md). 
+<!-- In particular, the default
+electrolyte table covers 0–0.01 mol/cm³, and editing a default OCV file does not
+automatically update its separate chemical-potential file. -->
+
+A complete example is
+[Graphite_material_overrides_config.txt](inputs/Graphite_material_overrides_config.txt).
+From `bin/`, run:
+
+```bash
+mpirun -np 4 ./battery_simulation -cfg ../inputs/Graphite_material_overrides_config.txt
+```
+<!--  -->
+<!-- Run the loader, config integration, and default-value regression tests with: -->
+
+<!-- ```bash
+make test-materials MFEM_BUILD_DIR=/path/to/mfem/install
+``` -->
+
+
+---
+
 ### Initial Conditions
 
 Particle lithiation is specified per particle.

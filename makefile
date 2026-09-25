@@ -12,6 +12,10 @@ CXX = mpicxx
 CXXFLAGS = -g -O3 -std=c++17 -w
 
 # Use MFEM-provided flags (includes Hypre/Metis/etc)
+# Absolute default data root also works when running outside bin/.
+# Relocated installations can select a different root with materials_dir in config.
+MATERIALS_DIR ?= $(abspath inputs/materials)
+CPPFLAGS += -DBESFEM_MATERIALS_DIR='"$(MATERIALS_DIR)"'
 INCLUDE_FLAGS := $(MFEM_INCFLAGS)
 LIB_FLAGS     := $(MFEM_LIBS)
 
@@ -63,17 +67,26 @@ all: $(EXEC)
 # Compile the simulation target
 $(EXEC): $(EXEC_SRC_FILES)
 	@mkdir -p $(EXEC_DIR)
-	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) $^ -o $@ $(LIB_FLAGS) $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) $^ -o $@ $(LIB_FLAGS) $(LDFLAGS)
 
 
 test: $(TEST_EXEC)
 # Build test binary
 $(TEST_EXEC): $(TEST_SRC_FILES)
 	@mkdir -p $(EXEC_DIR)
-	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) $^ -o $@ $(LIB_FLAGS) $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) $^ -o $@ $(LIB_FLAGS) $(LDFLAGS)
 
 
 # Clean build artifacts
 clean:
 	rm -f $(EXEC) *.o *~ *.dSYM *.TVD.*breakpoints
 	rm -rf $(OBJ_DIR) $(TEST_BIN)
+
+# Focused material input tests (no mesh or Catch2 dependency).
+.PHONY: test-materials
+test-materials: $(EXEC_DIR)/material_properties_test
+	./$(EXEC_DIR)/material_properties_test
+
+$(EXEC_DIR)/material_properties_test: src/MaterialProperties.cpp src/SimulationConfig.cpp src/Constants.cpp tests/material_properties_test.cpp include/MaterialProperties.hpp
+	@mkdir -p $(EXEC_DIR)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) $(filter %.cpp,$^) -o $@ $(LIB_FLAGS)

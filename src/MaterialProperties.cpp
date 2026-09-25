@@ -1,558 +1,259 @@
-// MaterialProperties.cpp
 #include "../include/MaterialProperties.hpp"
 #include "../include/Constants.hpp"
-#include "mfem.hpp"
+
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
+#include <iomanip>
+#include <map>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
+
+#ifndef BESFEM_MATERIALS_DIR
+#define BESFEM_MATERIALS_DIR "inputs/materials"
+#endif
 
 namespace MaterialProperties
 {
-    static double GetTableValues(double x, const mfem::Vector &ticks, const mfem::Vector &data)
+    namespace
     {
-        const int n = ticks.Size();
+        using Material = sim::MaterialType;
+        using Key = std::pair<Material, std::string>;
+        const std::map<std::string, Material> materials = {
+            {"Graphite", Material::Graphite}, {"LFP", Material::LFP},
+            {"NMC", Material::NMC}, {"Carbon", Material::Carbon},
+            {"Silicon", Material::Silicon}, {"Electrolyte", Material::Electrolyte}};
+        const std::vector<std::string> property_names = {
+            "ocv", "chemical_potential", "exchange_current_density",
+            "diffusivity", "mobility", "conductivity", "site_density", "chp_value"};
 
-        if (x <= ticks(0)){return data(0);}
-        if (x >= ticks(n - 1)){return data(n - 1);}
-
-        int idx = 0;
-        while (idx < n - 2 && ticks(idx + 1) < x) { idx++;}
-
-        const double dx = ticks(idx + 1) - ticks(idx);
-        return data(idx) + (x - ticks(idx)) / dx * (data(idx + 1) - data(idx));
-    }
-    
-    static double NMC_OCV(double c)
-    {
-        return (1.095 * c * c) - (8.234e-7 * std::exp(14.31 * c)) + (4.692 * std::exp(-0.5389 * c));
-    }
-
-    static double NMC_mu(double c)
-    {
-        double val = -Constants::Frd * NMC_OCV(c);
-        return val;
-    }
-
-    static double NMC_i0(double c)
-    {
-        double val = -0.2 * (c - 0.37) - 1.559 - 0.9376 * std::tanh(8.961 * c - 3.195);
-        return std::pow(10.0, val) * 1.0e-3;
-    }
-
-    static double NMC_diff(double c)
-    {
-        double val = (0.0277 - 0.084 * c + 0.1003 * c * c) * 1.0e-8;
-        return val;
-    }
-
-    // PyBaMM Chen2020_composite secondary negative-electrode phase.
-    // c is silicon lithium stoichiometry. Use the single-OCP (average) model.
-    static double Silicon_OCV(double c)
-    {
-        // The lithiation fit is singular at 0 and 1.
-        c = std::min(1.0 - 1.0e-8, std::max(1.0e-8, c));
-
-        double lithiation = (((((((-96.63 * c + 372.6) * c - 587.6)
-                            * c + 489.9) * c - 232.8) * c + 62.99)
-                            * c - 9.286) * c + 0.8633)
-                            + 1.0e-4 * (1.0 / c + 1.0 / (c - 1.0));
-        double delithiation = (((((((-51.02 * c + 161.3) * c - 205.7)
-                              * c + 140.2) * c - 58.76) * c + 16.87)
-                              * c - 3.792) * c + 0.9937);
-
-        return 0.5 * (lithiation + delithiation);
-    }
-
-    static double Silicon_mu(double c)
-    {
-        return -Constants::Frd * Silicon_OCV(c);
-    }
-
-    static double Silicon_i0(double c)
-    {
-        c = std::min(1.0, std::max(0.0, c));
-
-        // Fixed T = 298.15 K (Arrhenius factor = 1) and c_e = 1000 mol/m^3.
-        // The existing material API accepts only stoichiometry.
-        const double c_e = 1000.0;
-        const double c_max = 278000.0;
-        const double m_ref = 6.48e-7 * 28700.0 / 278000.0;
-        double val = m_ref * std::sqrt(c_e) * c_max * std::sqrt(c * (1.0 - c));
-
-        return val * 1.0e-4; // A/m^2 to A/cm^2
-    }
-
-    static double Silicon_diff(double c)
-    {
-        return 1.67e-14 * 1.0e4; // m^2/s to cm^2/s
-    }
-
-    static double SiliconConductivity(double c)
-    {
-        // Chen2020_composite provides only a shared negative-electrode value,
-        // not intrinsic silicon conductivity. Use that value as a proxy here.
-        return 215.0 / 100.0; // S/m to S/cm
-    }
-
-    static double Carbon_diff(double c)
-    {
-        double val = 1.0e-10;
-        return val;
-    }
-
-    // static double LFP_i0(double c)
-    // {
-    //     double val = 1.2e-5 * std::pow(c, 0.35) * std::pow(1.0 - c, 2.5);
-    //     return val * 6;
-    // }
-
-    static double LFP_i0(double c)
-    {
-        c = std::min(1.0 - 1.0e-8, std::max(1.0e-8, c));
-
-        double i0_mA = 2.75
-                    * (1.0 - std::exp(-18.0 * c))
-                    * (1.0 - std::exp(-18.0 * (1.0 - c)));
-
-        // std::cout << "LFP_i0 at c = " << c << " is " << i0_mA * 1.0e-6 << std::endl;
-
-        return 4* i0_mA * 1.0e-6; // mA/cm^2 to A/cm^2
-
-    }
-
-    
-    static double LFP_OCV(double c)
-    {
-        static mfem::Vector Ticks(201);
-        static mfem::Vector chmPot(201);
-        static bool loaded = false;
-
-        if (!loaded)
+        // Only list properties implemented by the original models. Missing
+        // physics is not silently replaced by a zero-valued property.
+        bool HasDefault(Material m, const std::string& name)
         {
-            std::ifstream myXfile("../inputs/materials/LFP_Chm_Pot_Ticks.txt");
-            std::ifstream mydFfile("../inputs/materials/LFP_Chm_Pot.txt");
+            if (m == Material::Electrolyte) return name == "diffusivity";
+            if (name == "mobility") return m == Material::Graphite || m == Material::LFP;
+            if (name == "diffusivity") return m != Material::Graphite;
+            return true;
+        }
 
-            if (!myXfile || !mydFfile)
+        std::string Label(const Key& key)
+        {
+            for (const auto& material : materials)
+                if (material.second == key.first) return material.first + "." + key.second;
+            return "unknown material." + key.second;
+        }
+
+        struct Property1D
+        {
+            double constant = 0.0;
+            std::vector<double> x, y;
+            bool error_outside = false;
+            std::string source;
+
+            double Evaluate(double c) const
             {
-                mfem::mfem_error("Could not open LFP chemical potential input files.");
+                if (!std::isfinite(c)) throw std::runtime_error("nonfinite concentration");
+                if (x.empty()) return constant;
+                if (error_outside && (c < x.front() || c > x.back()))
+                    throw std::runtime_error("concentration outside table range [" +
+                        std::to_string(x.front()) + ", " + std::to_string(x.back()) + "]");
+                if (c <= x.front()) return y.front();
+                if (c >= x.back()) return y.back();
+                const auto i = std::lower_bound(x.begin(), x.end(), c) - x.begin();
+                return y[i-1] + (c-x[i-1])/(x[i]-x[i-1])*(y[i]-y[i-1]);
             }
+        };
 
-            for (int i = 0; i < 201; i++) myXfile >> Ticks(i);
-            for (int i = 0; i < 201; i++) mydFfile >> chmPot(i);
+        std::map<Key, Property1D> database;
+        bool initialized = false;
 
-            loaded = true;
-        }
-        
-        return (-1*GetTableValues(c, Ticks, chmPot)) + 3.4;    
-    }
-    
-    static double LFP_mu(double c)
-    {
-	    double val = -Constants::Frd*LFP_OCV(c);
-        // std::cout << "LFP_mu at c = " << c << " is " << val << std::endl;
-        return val;
-    }
-
-
-    static double LFP_dmu_dc(double c)
-    {
-        const double h = 0.01;
-
-        double c1 = std::max(0.0, c - h);
-        double c2 = std::min(1.0, c + h);
-
-        return (LFP_mu(c2) - LFP_mu(c1)) / (c2 - c1);
-    }
-
-    static double LFP_diff(double c)
-    {
-        // return 5.0e-14; // LFP diffusivity e-14 gives e-12 for mobility
-        return 5.0e-12; // e-12 gives e-10 for mobility
-    }
-
-    // static double LFP_Mob(double c)
-    // {
-    //     c = std::min(1.0 - 1.0e-8, std::max(1.0e-8, c));
-
-    //     double D = LFP_diff(c);
-    //     double dmu_dc = LFP_dmu_dc(c);
-
-    //     double M = D / std::abs(dmu_dc);
-
-    //     if (!std::isfinite(M))
-    //     {
-    //         std::cout << "Bad mobility at c = " << c
-    //                 << " dmu_dc = " << dmu_dc
-    //                 << std::endl;
-    //     }
-
-    //     std::cout << "LFP_Mob at c = " << c << " is " << M << std::endl;
-
-    //     return D / std::abs(dmu_dc);
-    // }
-
-    static double LFP_Mob(double c)
-    {
-        // c = std::min(1.0 - 1.0e-8, std::max(1.0e-8, c));
-
-        // const double Mmin = 8.5e-13;
-        // const double B    = 5.0e-14;
-
-        // const double A1 = 4.5e-12;
-        // const double A2 = 4.0e-12;
-
-        // const double c1 = 0.07;
-        // const double c2 = 0.86;
-
-        // const double w1 = 0.04;
-        // const double w2 = 0.04;
-
-        // const double x1 = (c - c1) / w1;
-        // const double x2 = (c - c2) / w2;
-
-        // return Mmin
-        //     + B * (c - 0.5) * (c - 0.5)
-        //     + A1 / (1.0 + x1 * x1)
-        //     + A2 / (1.0 + x2 * x2);
-
-        return 1e-13;
-    }
-
-    double LFP_ChpValue(double c)
-    {
-        static mfem::Vector Ticks(201);
-        static mfem::Vector chmPot(201);
-        static bool loaded = false;
-
-        if (!loaded)
+        void ValidateValue(const Key& key, double value)
         {
-            std::ifstream myXfile("../inputs/materials/LFP_Chm_Pot_Ticks.txt");
-            std::ifstream mydFfile("../inputs/materials/LFP_Chm_Pot.txt");
+            const auto& name = key.second;
+            if (!std::isfinite(value)) throw std::runtime_error("value must be finite");
+            if (name == "site_density" && value <= 0)
+                throw std::runtime_error("site density must be positive");
+            if ((name == "diffusivity" || name == "mobility" ||
+                 name == "conductivity" || name == "exchange_current_density") && value < 0)
+                throw std::runtime_error("value must be nonnegative");
+        }
 
-            if (!myXfile || !mydFfile)
+        Property1D ReadProperty(const Key& key, const std::string& specification,
+                                const std::filesystem::path& base)
+        {
+            Property1D property;
+            property.source = specification;
+            std::istringstream spec(specification);
+            std::string kind, extra;
+            spec >> kind;
+            if (kind == "constant")
             {
-                mfem::mfem_error("Could not open LFP chemical potential input files.");
+                if (!(spec >> property.constant) || (spec >> extra))
+                    throw std::runtime_error("expected constant <number>");
+                ValidateValue(key, property.constant);
+                return property;
             }
-
-            for (int i = 0; i < 201; i++) myXfile >> Ticks(i);
-            for (int i = 0; i < 201; i++) mydFfile >> chmPot(i);
-
-            loaded = true;
-        }
-
-        return GetTableValues(c, Ticks, chmPot) ;
-    }
-
-    static double Graphite_OCV(double c)
-    {
-        static mfem::Vector Ticks(101);
-        static mfem::Vector OCV(101);
-        static bool loaded = false;
-
-        if (!loaded)
-        {
-            std::ifstream myXfile("../inputs/materials/C_Li_X_101.txt");
-            std::ifstream myOCVfile("../inputs/materials/C_Li_O3_101.txt");
-
-            if (!myXfile || !myOCVfile)
+            if (kind != "table") throw std::runtime_error("expected constant or table");
+            std::string filename, policy;
+            if (!(spec >> std::quoted(filename))) throw std::runtime_error("expected table <path> [clamp|error]");
+            if (spec >> policy)
             {
-                mfem::mfem_error("Could not open graphite OCV input files.");
+                if (policy != "clamp" && policy != "error")
+                    throw std::runtime_error("expected clamp or error");
+                property.error_outside = policy == "error";
             }
-
-            for (int i = 0; i < 101; i++) myXfile >> Ticks(i);
-            for (int i = 0; i < 101; i++) myOCVfile >> OCV(i);
-
-            loaded = true;
-        }
-
-        return GetTableValues(c, Ticks, OCV);
-    }
-
-    double Carbon_OCV(double c)
-    {
-        // return (1.095 * c * c) - (8.234e-7 * std::exp(14.31 * c)) + (4.692 * std::exp(-0.5389 * c));
-        // carbon_ocv = (1.12165244 * (1.0 - carbon_x)**1.28022415 * np.exp(-1.76785792 * carbon_x))
-        return 1.12165244 * std::pow(1.0 - c, 1.28022415) * std::exp(-1.76785792 * c);
-    }
-
-    static double Carbon_mu(double c)
-    {
-        double val = -Carbon_OCV(c);
-        return val;
-    }
-
-    double OCV(sim::MaterialType material, double c)
-    {
-        switch (material)
-        {
-            case sim::MaterialType::NMC:
-                return NMC_OCV(c);
-
-            case sim::MaterialType::LFP:
-                return LFP_OCV(c);
-
-            case sim::MaterialType::Graphite:
-                return Graphite_OCV(c);
-
-            case sim::MaterialType::Carbon:
-                return Carbon_OCV(c);
-
-            case sim::MaterialType::Silicon:
-                return Silicon_OCV(c);
-
-            default:
-                mfem::mfem_error("Unknown material in OCV.");
-                return 0.0;
-        }
-    }
-
-    static double Graphite_i0(double c)
-    {
-        static mfem::Vector Ticks(101);
-        static mfem::Vector i0(101);
-        static bool loaded = false;
-
-        if (!loaded)
-        {
-            std::ifstream myXfile("../inputs/materials/C_Li_X_101.txt");
-            std::ifstream myi0file("../inputs/materials/C_Li_J2_101.txt");
-
-            if (!myXfile || !myi0file)
+            if (spec >> extra) throw std::runtime_error("unexpected table options");
+            const auto path = base / filename;
+            property.source = path.string();
+            std::ifstream input(path);
+            if (!input) throw std::runtime_error("cannot open " + path.string());
+            std::string line;
+            size_t line_number = 0;
+            bool scalar = false;
+            while (std::getline(input, line))
             {
-                mfem::mfem_error("Could not open graphite i0 input files.");
+                ++line_number;
+                line = line.substr(0, line.find('#'));
+                std::istringstream row(line);
+                row >> std::ws;
+                if (row.eof()) continue;
+                try
+                {
+                    double x, y;
+                    if (scalar) throw std::runtime_error("scalar file must contain exactly one number");
+                    if (!(row >> x)) throw std::runtime_error("expected a number");
+                    row >> std::ws;
+                    if (row.eof() && property.x.empty())
+                    {
+                        ValidateValue(key, x);
+                        property.constant = x;
+                        scalar = true;
+                        continue;
+                    }
+                    if (!(row >> y) || (row >> extra)) throw std::runtime_error("expected two numbers");
+                    if (key.second == "site_density")
+                        throw std::runtime_error("site density file must contain one scalar");
+                    if (!std::isfinite(x) || (!property.x.empty() && x <= property.x.back()))
+                        throw std::runtime_error("concentrations must be finite and strictly increasing");
+                    if (x < 0 || (key.first != Material::Electrolyte && x > 1))
+                        throw std::runtime_error("concentration outside physical domain");
+                    ValidateValue(key, y);
+                    property.x.push_back(x);
+                    property.y.push_back(y);
+                }
+                catch (const std::runtime_error& error)
+                {
+                    throw std::runtime_error(path.string() + ":" +
+                        std::to_string(line_number) + ": " + error.what());
+                }
             }
-
-            for (int i = 0; i < 101; i++) myXfile >> Ticks(i);
-            for (int i = 0; i < 101; i++) myi0file >> i0(i);
-
-            loaded = true;
+            if (input.bad()) throw std::runtime_error("error reading " + path.string());
+            if (!scalar && property.x.size() < 2)
+                throw std::runtime_error(path.string() + ": need a scalar or at least two concentration/value rows");
+            return property;
         }
 
-        return GetTableValues(c, Ticks, i0) * 1.0e-3; // mA/cm^2 to A/cm^2
-
-    }
-
-    double ExchangeCurrentDensity(sim::MaterialType material, double c)
-    {
-        switch (material)
+        double Evaluate(Material material, const std::string& name, double c)
         {
-            case sim::MaterialType::NMC:
-                return NMC_i0(c);
-
-            case sim::MaterialType::LFP:
-                return LFP_i0(c);
-
-            case sim::MaterialType::Graphite:
-                return Graphite_i0(c);
-
-            case sim::MaterialType::Carbon:
-                return Graphite_i0(c);
-
-            case sim::MaterialType::Silicon:
-                return Silicon_i0(c);
-
-            default:
-                mfem::mfem_error("Unknown material in ExchangeCurrentDensity.");
-                return 0.0;
-        }
-    }
-
-    static double Electrolyte_diff(double c)
-    {
-        return Constants::D0 * std::exp(-7.02 - 830 * c + 50000 * c * c);
-    }
-
-    double Diffusivity(sim::MaterialType material, double c)
-    {
-        switch (material)
-        {
-            case sim::MaterialType::NMC:
-                return NMC_diff(c);
-
-            case sim::MaterialType::Electrolyte:
-                return Electrolyte_diff(c);
-
-            case sim::MaterialType::LFP:
-                return LFP_diff(c); // placeholder, constant diffusivity for LFP
-
-            case sim::MaterialType::Carbon:
-                return Carbon_diff(c);
-
-            case sim::MaterialType::Silicon:
-                return Silicon_diff(c);
-
-            default:
-                mfem::mfem_error("Material does not have a defined diffusivity.");
-                return 0.0;
-        }
-    }
-
-    static double Graphite_Mob(double c)
-    {
-        static mfem::Vector Ticks(101);
-        static mfem::Vector Mob(101);
-        static bool loaded = false;
-
-        if (!loaded)
-        {
-            std::ifstream myXfile("../inputs/materials/C_Li_X_101.txt");
-            std::ifstream mydFfile("../inputs/materials/C_Li_Mb5_101.txt");
-
-            if (!myXfile || !mydFfile)
+            if (!initialized) Configure({}, "");
+            const Key key{material, name};
+            const auto it = database.find(key);
+            if (it == database.end()) throw std::runtime_error("No property defined for " + Label(key));
+            try { return it->second.Evaluate(c); }
+            catch (const std::runtime_error& error)
             {
-                mfem::mfem_error("Could not open graphite mobility input files.");
+                throw std::runtime_error(Label(key) + " (" + it->second.source +
+                    ") at concentration " + std::to_string(c) + ": " + error.what());
             }
-
-            for (int i = 0; i < 101; i++) myXfile >> Ticks(i);
-            for (int i = 0; i < 101; i++) mydFfile >> Mob(i);
-            for (int i = 0; i < 101; i++) Mob(i) *= 100.0 * 2.0/3.0;
-
-
-            loaded = true;
-        }
-        
-        return GetTableValues(c, Ticks, Mob);  
-    }
-
-    double Mobility(sim::MaterialType material, double c)
-    {
-        switch (material)
-        {
-            case sim::MaterialType::Graphite:
-                return Graphite_Mob(c);
-
-            case sim::MaterialType::LFP:
-                return LFP_Mob(c);
-
-            default:
-                mfem::mfem_error("Unknown material in Mobility.");
-                return 0.0;
         }
     }
 
-    static double Graphite_mu(double c)
+    void Configure(const std::unordered_map<std::string, std::string>& values,
+                   const std::string& config_file)
     {
-        static mfem::Vector Ticks(101);
-        static mfem::Vector chmPot(101);
-        static bool loaded = false;
+        const auto base = std::filesystem::absolute(config_file.empty() ? "." : config_file).parent_path();
+        auto root = std::filesystem::path(BESFEM_MATERIALS_DIR);
+        const auto directory = values.find("materials_dir");
+        if (directory != values.end()) root = base / directory->second;
+        root = std::filesystem::absolute(root);
 
-        if (!loaded)
+        // Assemble the final sources before reading: an override replaces its
+        // default file entirely, even when that default file is absent.
+        std::map<Key, std::string> specifications;
+        for (const auto& material : materials)
+            for (const auto& name : property_names)
+                if (HasDefault(material.second, name))
+                {
+                    std::ostringstream spec;
+                    spec << "table " << std::quoted((root / material.first / (name + ".txt")).string());
+                    specifications[{material.second, name}] = spec.str();
+                }
+
+        std::map<Key, std::string> explicit_overrides;
+        for (const auto& entry : values)
         {
-            std::ifstream myXfile("../inputs/materials/C_Li_X_101.txt");
-            std::ifstream mydFfile("../inputs/materials/C_Li_M6_101.txt");
+            if (entry.first.compare(0, 9, "material.") != 0) continue;
+            const auto dot = entry.first.find('.', 9);
+            const auto material = materials.find(entry.first.substr(9, dot - 9));
+            const auto name = dot == std::string::npos ? "" : entry.first.substr(dot + 1);
+            if (material == materials.end()) throw std::runtime_error(entry.first + ": unknown material");
+            if (std::find(property_names.begin(), property_names.end(), name) == property_names.end() ||
+                (name == "chp_value" && material->second != Material::LFP))
+                throw std::runtime_error(entry.first + ": unknown property");
+            if (material->second == Material::Electrolyte && name != "diffusivity")
+                throw std::runtime_error(entry.first + ": only electrolyte diffusivity is supported");
+            const Key key{material->second, name};
+            explicit_overrides[key] = entry.second;
+            specifications[key] = entry.second;
+        }
 
-            if (!myXfile || !mydFfile)
+        // Preserve the previously supported OCV override dependency. Default
+        // chemical potentials themselves are now independent, editable files.
+        for (const auto& material : materials)
+            if (material.second != Material::Graphite &&
+                explicit_overrides.count({material.second, "ocv"}) &&
+                !explicit_overrides.count({material.second, "chemical_potential"}))
+                specifications.erase({material.second, "chemical_potential"});
+
+        std::map<Key, Property1D> next;
+        for (const auto& specification : specifications)
+        {
+            try { next[specification.first] = ReadProperty(specification.first, specification.second, base); }
+            catch (const std::runtime_error& error)
             {
-                mfem::mfem_error("Could not open graphite chemical potential input files.");
+                throw std::runtime_error(Label(specification.first) + ": " + error.what());
             }
-
-            for (int i = 0; i < 101; i++) myXfile >> Ticks(i);
-            for (int i = 0; i < 101; i++) mydFfile >> chmPot(i);
-
-            loaded = true;
         }
-
-        return GetTableValues(c, Ticks, chmPot);
-    }
-
-    double ChemicalPotential(sim::MaterialType material, double c)
-    {
-        switch (material)
+        for (const auto& material : materials)
         {
-            case sim::MaterialType::Graphite:
-                return Graphite_mu(c);
-            
-            case sim::MaterialType::NMC:
-                return NMC_mu(c);
-
-            case sim::MaterialType::LFP:
-                return LFP_mu(c);
-
-            case sim::MaterialType::Carbon:
-                return Carbon_mu(c);
-
-            case sim::MaterialType::Silicon:
-                return Silicon_mu(c);
-
-            default:
-                mfem::mfem_error("Unknown material in Chemical Potential.");
-                return 0.0;
+            const auto m = material.second;
+            if (m == Material::Graphite || !explicit_overrides.count({m, "ocv"}) ||
+                explicit_overrides.count({m, "chemical_potential"})) continue;
+            auto mu = next.at({m, "ocv"});
+            const double scale = m == Material::Carbon ? -1.0 : -Constants::Frd;
+            mu.constant *= scale;
+            ValidateValue({m, "chemical_potential"}, mu.constant);
+            for (auto& value : mu.y)
+            {
+                value *= scale;
+                ValidateValue({m, "chemical_potential"}, value);
+            }
+            mu.source = "derived from " + mu.source;
+            next[{m, "chemical_potential"}] = std::move(mu);
         }
+        database.swap(next);
+        initialized = true;
     }
 
-    static double GraphiteConductivity(double c)
-    {
-        return 3.3; 
-    }
-
-    static double CarbonConductivity(double c)
-    {
-        return 1.0;
-    }
-
-    static double NMCConductivity(double c)
-    {
-        return (0.01929 + 0.7045 * tanh(2.399 * c) - 0.7238 * tanh(2.412 * c) - 4.2106e-6); 
-    }
-
-    static double LFPConductivity(double c)
-    {
-        // return 1e-11; // S/cm
-        return 1e-4;
-    }
-
-    double Conductivity(sim::MaterialType material, double c)
-    {
-        switch (material)
-        {
-            case sim::MaterialType::Graphite:
-                return GraphiteConductivity(c);
-
-            case sim::MaterialType::NMC:
-                return NMCConductivity(c);
-
-            case sim::MaterialType::LFP:
-                return LFPConductivity(c);
-
-            case sim::MaterialType::Carbon:
-                return CarbonConductivity(c);
-
-            case sim::MaterialType::Silicon:
-                return SiliconConductivity(c);
-
-            default:
-                mfem::mfem_error("Unknown material in Conductivity.");
-                return 0.0;
-        }
-    }
-
-    double SiteDensity(sim::MaterialType material)
-    {
-        switch (material)
-        {
-            case sim::MaterialType::Graphite:
-                // std::cout << "using graphite density" << std::endl;
-                return 0.0312;
-
-            case sim::MaterialType::NMC:
-                // std::cout << "using NMC density" << std::endl;
-                return 0.0501;
-
-            case sim::MaterialType::LFP:
-                // std::cout << "using LFP density" << std::endl;
-                return 0.02273544498;
-
-            case sim::MaterialType::Carbon:
-            // std::cout << "using Carbon density" << std::endl;
-                return 0.0227;
-
-            case sim::MaterialType::Silicon:
-                return 0.0233; // mol/m^3 to mol/cm^3
-
-            default:
-                mfem::mfem_error("Unknown material in SiteDensity.");
-                return 0.0;
-        }
-    }
-
+    double OCV(sim::MaterialType m, double c) { return Evaluate(m, "ocv", c); }
+    double ChemicalPotential(sim::MaterialType m, double c) { return Evaluate(m, "chemical_potential", c); }
+    double ExchangeCurrentDensity(sim::MaterialType m, double c) { return Evaluate(m, "exchange_current_density", c); }
+    double Diffusivity(sim::MaterialType m, double c) { return Evaluate(m, "diffusivity", c); }
+    double Mobility(sim::MaterialType m, double c) { return Evaluate(m, "mobility", c); }
+    double Conductivity(sim::MaterialType m, double c) { return Evaluate(m, "conductivity", c); }
+    double SiteDensity(sim::MaterialType m) { return Evaluate(m, "site_density", 0.0); }
+    double LFP_ChpValue(double c) { return Evaluate(sim::MaterialType::LFP, "chp_value", c); }
 }
