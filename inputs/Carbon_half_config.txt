@@ -14,10 +14,10 @@ mesh_file = ../inputs/mesh/colored_labels_labels.tif
 combine_particles = true
 
 # TIFF crop bounds
-row_begin = 200
+row_begin = 370
 row_end = 400
-column_begin = 200
-column_end = 400
+column_begin = 340
+column_end = 370
 
 amr_levels = 1
 
