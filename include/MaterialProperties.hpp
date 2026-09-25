@@ -59,17 +59,6 @@ namespace MaterialProperties
     double ExchangeCurrentDensity(sim::MaterialType material, double c);
 
     /**
-     * @brief Return the tabulated LFP chemical-potential value.
-     *
-     * This function evaluates the tabulated chemical-potential curve used for
-     * lithium iron phosphate (LFP).
-     *
-     * @param c Normalized lithium concentration.
-     * @return LFP chemical-potential value.
-     */
-    double LFP_ChpValue(double c);
-
-    /**
      * @brief Return the lithium diffusivity.
      *
      * @param material Electrode material.

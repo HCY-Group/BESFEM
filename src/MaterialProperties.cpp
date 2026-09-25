@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <map>
 #include <sstream>
+#include <set>
 #include <stdexcept>
 #include <vector>
 
@@ -191,7 +192,7 @@ namespace MaterialProperties
                     specifications[{material.second, name}] = spec.str();
                 }
 
-        std::map<Key, std::string> explicit_overrides;
+        std::set<Key> explicit_overrides;
         for (const auto& entry : values)
         {
             if (entry.first.compare(0, 9, "material.") != 0) continue;
@@ -199,13 +200,12 @@ namespace MaterialProperties
             const auto material = materials.find(entry.first.substr(9, dot - 9));
             const auto name = dot == std::string::npos ? "" : entry.first.substr(dot + 1);
             if (material == materials.end()) throw std::runtime_error(entry.first + ": unknown material");
-            if (std::find(property_names.begin(), property_names.end(), name) == property_names.end() ||
-                (name == "chp_value" && material->second != Material::LFP))
+            if (std::find(property_names.begin(), property_names.end(), name) == property_names.end())
                 throw std::runtime_error(entry.first + ": unknown property");
             if (material->second == Material::Electrolyte && name != "diffusivity")
                 throw std::runtime_error(entry.first + ": only electrolyte diffusivity is supported");
             const Key key{material->second, name};
-            explicit_overrides[key] = entry.second;
+            explicit_overrides.insert(key);
             specifications[key] = entry.second;
         }
 
@@ -254,5 +254,4 @@ namespace MaterialProperties
     double Mobility(sim::MaterialType m, double c) { return Evaluate(m, "mobility", c); }
     double Conductivity(sim::MaterialType m, double c) { return Evaluate(m, "conductivity", c); }
     double SiteDensity(sim::MaterialType m) { return Evaluate(m, "site_density", 0.0); }
-    double LFP_ChpValue(double c) { return Evaluate(sim::MaterialType::LFP, "chp_value", c); }
 }
