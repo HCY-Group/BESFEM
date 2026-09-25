@@ -40,9 +40,9 @@ dh = 2.07407e-05
 
 stop_mode = steps       
 VCut = 3.6
-num_steps = 40001
+num_steps = 3001
 
-save_freq = 1000
+save_freq = 100
 
 # ============================================================
 # CURRENT CONTROL

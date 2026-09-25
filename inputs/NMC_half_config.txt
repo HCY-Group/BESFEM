@@ -38,7 +38,7 @@ dh = 2.07407e-05
 
 stop_mode = steps       
 VCut = 3.6
-num_steps = 401
+num_steps = 3001
 
 save_freq = 100
 

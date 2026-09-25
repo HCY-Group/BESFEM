@@ -37,9 +37,11 @@ gc = 5e-15
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = voltage       
+stop_mode = steps       
 VCut = 3.2
-num_steps = 3000001
+num_steps = 3001
+
+save_freq = 100
 
 # ============================================================
 # CURRENT CONTROL

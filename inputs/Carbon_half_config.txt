@@ -36,9 +36,11 @@ dh = 2.07407e-05
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = voltage       
+stop_mode = steps       
 VCut = 0.02
-num_steps = 4
+num_steps = 3001
+
+save_freq = 100
 
 # ============================================================
 # CURRENT CONTROL

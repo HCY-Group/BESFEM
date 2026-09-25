@@ -39,7 +39,9 @@ gc = 6.38e-10
 
 stop_mode = steps       
 VCut = 0.02
-num_steps = 100
+num_steps = 3001
+
+save_freq = 100
 
 # ============================================================
 # CURRENT CONTROL
