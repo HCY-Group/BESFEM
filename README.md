@@ -306,20 +306,19 @@ complete library can select a root relative to its config: -->
 materials_dir = materials
 ``` -->
 
-The supported property names, units, migration details, concentration ranges,
-and OCV/chemical-potential dependency rules are documented in
+Additional information is documented in
 [the material data guide](inputs/materials/README.md). 
 <!-- In particular, the default
 electrolyte table covers 0–0.01 mol/cm³, and editing a default OCV file does not
 automatically update its separate chemical-potential file. -->
 
-A complete example is
+<!-- A complete example is
 [Graphite_material_overrides_config.txt](inputs/Graphite_material_overrides_config.txt).
 From `bin/`, run:
 
 ```bash
 mpirun -np 4 ./battery_simulation -cfg ../inputs/Graphite_material_overrides_config.txt
-```
+``` -->
 <!--  -->
 <!-- Run the loader, config integration, and default-value regression tests with: -->
 

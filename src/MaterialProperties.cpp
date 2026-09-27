@@ -1,14 +1,11 @@
 #include "../include/MaterialProperties.hpp"
-#include "../include/Constants.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
-#include <map>
 #include <sstream>
-#include <set>
 #include <stdexcept>
 #include <vector>
 
@@ -18,11 +15,17 @@
 
 namespace MaterialProperties
 {
+    // Helpers and stored data below are private to this source file.
     namespace
     {
         using Material = sim::MaterialType;
-        using Key = std::pair<Material, std::string>;
-        const std::map<std::string, Material> materials = {
+        struct MaterialInfo
+        {
+            std::string name;
+            Material type;
+        };
+
+        const std::vector<MaterialInfo> materials = {
             {"Graphite", Material::Graphite}, {"LFP", Material::LFP},
             {"NMC", Material::NMC}, {"Carbon", Material::Carbon},
             {"Silicon", Material::Silicon}, {"Electrolyte", Material::Electrolyte}};
@@ -32,226 +35,335 @@ namespace MaterialProperties
 
         // Only list properties implemented by the original models. Missing
         // physics is not silently replaced by a zero-valued property.
-        bool HasDefault(Material m, const std::string& name)
+        bool HasDefault(Material material, const std::string& name)
         {
-            if (m == Material::Electrolyte) return name == "diffusivity";
-            if (name == "mobility") return m == Material::Graphite || m == Material::LFP;
-            if (name == "diffusivity") return m != Material::Graphite;
+            if (material == Material::Electrolyte)
+            {
+                return name == "diffusivity";
+            }
+            if (name == "mobility")
+            {
+                return material == Material::Graphite || material == Material::LFP;
+            }
+            if (name == "diffusivity")
+            {
+                return material != Material::Graphite;
+            }
             return true;
         }
 
-        std::string Label(const Key& key)
-        {
-            for (const auto& material : materials)
-                if (material.second == key.first) return material.first + "." + key.second;
-            return "unknown material." + key.second;
-        }
-
+        // Each property holds either one constant or a table of values.
+        // An empty concentration vector means this is a constant property.
         struct Property1D
         {
+            Material material;
+            std::string name;
             double constant = 0.0;
-            std::vector<double> x, y;
+            std::vector<double> concentrations;
+            std::vector<double> values;
             bool error_outside = false;
-            std::string source;
 
-            double Evaluate(double c) const
+            double Evaluate(double concentration) const
             {
-                if (!std::isfinite(c)) throw std::runtime_error("nonfinite concentration");
-                if (x.empty()) return constant;
-                if (error_outside && (c < x.front() || c > x.back()))
+                if (!std::isfinite(concentration))
+                {
+                    throw std::runtime_error("nonfinite concentration");
+                }
+                if (concentrations.empty())
+                {
+                    return constant;
+                }
+
+                // With the "error" option, reject values outside the table.
+                // Otherwise, clamp them to the nearest endpoint below.
+                if (error_outside && (concentration < concentrations.front() || concentration > concentrations.back()))
+                {
                     throw std::runtime_error("concentration outside table range [" +
-                        std::to_string(x.front()) + ", " + std::to_string(x.back()) + "]");
-                if (c <= x.front()) return y.front();
-                if (c >= x.back()) return y.back();
-                const auto i = std::lower_bound(x.begin(), x.end(), c) - x.begin();
-                return y[i-1] + (c-x[i-1])/(x[i]-x[i-1])*(y[i]-y[i-1]);
+                        std::to_string(concentrations.front()) + ", " +
+                        std::to_string(concentrations.back()) + "]");
+                }
+                if (concentration <= concentrations.front())
+                {
+                    return values.front();
+                }
+                if (concentration >= concentrations.back())
+                {
+                    return values.back();
+                }
+
+                // Find the first table concentration at or above the requested one.
+                // lower_bound uses binary search, which is fast for large tables.
+                auto upper_point = std::lower_bound(concentrations.begin(), concentrations.end(), concentration);
+                size_t upper_index = upper_point - concentrations.begin();
+                size_t lower_index = upper_index - 1;
+
+                // Linear interpolation: move the same fraction between the values
+                // as the requested concentration lies between the concentrations.
+                double fraction = (concentration - concentrations[lower_index]) / (concentrations[upper_index] - concentrations[lower_index]);
+                double value_change = values[upper_index] - values[lower_index];
+                return values[lower_index] + fraction * value_change;
             }
         };
 
-        std::map<Key, Property1D> database;
+        // One entry per loaded property (for example, NMC's OCV).
+        std::vector<Property1D> database;
         bool initialized = false;
 
-        void ValidateValue(const Key& key, double value)
+        void ValidateValue(const std::string& name, double value)
         {
-            const auto& name = key.second;
-            if (!std::isfinite(value)) throw std::runtime_error("value must be finite");
+            if (!std::isfinite(value))
+            {
+                throw std::runtime_error("value must be finite");
+            }
             if (name == "site_density" && value <= 0)
+            {
                 throw std::runtime_error("site density must be positive");
-            if ((name == "diffusivity" || name == "mobility" ||
-                 name == "conductivity" || name == "exchange_current_density") && value < 0)
+            }
+            bool requires_nonnegative_value =
+                name == "diffusivity" || name == "mobility" ||
+                name == "conductivity" || name == "exchange_current_density";
+            if (requires_nonnegative_value && value < 0)
+            {
                 throw std::runtime_error("value must be nonnegative");
+            }
         }
 
-        Property1D ReadProperty(const Key& key, const std::string& specification,
-                                const std::filesystem::path& base)
+        Property1D ReadFile(Property1D property, const std::filesystem::path& path)
         {
-            Property1D property;
-            property.source = specification;
-            std::istringstream spec(specification);
-            std::string kind, extra;
-            spec >> kind;
-            if (kind == "constant")
-            {
-                if (!(spec >> property.constant) || (spec >> extra))
-                    throw std::runtime_error("expected constant <number>");
-                ValidateValue(key, property.constant);
-                return property;
-            }
-            if (kind != "table") throw std::runtime_error("expected constant or table");
-            std::string filename, policy;
-            if (!(spec >> std::quoted(filename))) throw std::runtime_error("expected table <path> [clamp|error]");
-            if (spec >> policy)
-            {
-                if (policy != "clamp" && policy != "error")
-                    throw std::runtime_error("expected clamp or error");
-                property.error_outside = policy == "error";
-            }
-            if (spec >> extra) throw std::runtime_error("unexpected table options");
-            const auto path = base / filename;
-            property.source = path.string();
             std::ifstream input(path);
-            if (!input) throw std::runtime_error("cannot open " + path.string());
+            if (!input)
+            {
+                throw std::runtime_error("cannot open " + path.string());
+            }
             std::string line;
             size_t line_number = 0;
             bool scalar = false;
             while (std::getline(input, line))
             {
                 ++line_number;
-                line = line.substr(0, line.find('#'));
+                // Remove comments, then skip blank or whitespace-only lines.
+                size_t comment_start = line.find('#');
+                line = line.substr(0, comment_start);
                 std::istringstream row(line);
                 row >> std::ws;
-                if (row.eof()) continue;
+                if (row.eof())
+                {
+                    continue;
+                }
                 try
                 {
-                    double x, y;
-                    if (scalar) throw std::runtime_error("scalar file must contain exactly one number");
-                    if (!(row >> x)) throw std::runtime_error("expected a number");
-                    row >> std::ws;
-                    if (row.eof() && property.x.empty())
+                    double concentration;
+                    double value;
+                    if (scalar)
                     {
-                        ValidateValue(key, x);
-                        property.constant = x;
+                        throw std::runtime_error("scalar file must contain exactly one number");
+                    }
+                    if (!(row >> concentration))
+                    {
+                        throw std::runtime_error("expected a number");
+                    }
+                    row >> std::ws;
+                    // A first row with just one number defines a constant.
+                    // Otherwise every data row must contain concentration/value.
+                    if (row.eof() && property.concentrations.empty())
+                    {
+                        ValidateValue(property.name, concentration);
+                        property.constant = concentration;
                         scalar = true;
                         continue;
                     }
-                    if (!(row >> y) || (row >> extra)) throw std::runtime_error("expected two numbers");
-                    if (key.second == "site_density")
+                    std::string extra;
+                    if (!(row >> value) || (row >> extra))
+                    {
+                        throw std::runtime_error("expected two numbers");
+                    }
+                    if (property.name == "site_density")
+                    {
                         throw std::runtime_error("site density file must contain one scalar");
-                    if (!std::isfinite(x) || (!property.x.empty() && x <= property.x.back()))
+                    }
+                    if (!std::isfinite(concentration) || (!property.concentrations.empty() && concentration <= property.concentrations.back()))
+                    {
                         throw std::runtime_error("concentrations must be finite and strictly increasing");
-                    if (x < 0 || (key.first != Material::Electrolyte && x > 1))
+                    }
+                    if (concentration < 0 || (property.material != Material::Electrolyte && concentration > 1))
+                    {
                         throw std::runtime_error("concentration outside physical domain");
-                    ValidateValue(key, y);
-                    property.x.push_back(x);
-                    property.y.push_back(y);
+                    }
+                    ValidateValue(property.name, value);
+                    property.concentrations.push_back(concentration);
+                    property.values.push_back(value);
                 }
                 catch (const std::runtime_error& error)
                 {
                     throw std::runtime_error(path.string() + ":" + std::to_string(line_number) + ": " + error.what());
                 }
             }
-            if (input.bad()) throw std::runtime_error("error reading " + path.string());
-            if (!scalar && property.x.size() < 2)
+            if (input.bad())
+            {
+                throw std::runtime_error("error reading " + path.string());
+            }
+            if (!scalar && property.concentrations.size() < 2)
+            {
                 throw std::runtime_error(path.string() + ": need a scalar or at least two concentration/value rows");
+            }
             return property;
         }
 
-        double Evaluate(Material material, const std::string& name, double c)
+        Property1D ReadOverride(Material material, const std::string& name,
+                                const std::string& setting, const std::filesystem::path& base)
         {
-            if (!initialized) Configure({}, "");
-            const Key key{material, name};
-            const auto it = database.find(key);
-            if (it == database.end()) throw std::runtime_error("No property defined for " + Label(key));
-            try { return it->second.Evaluate(c); }
-            catch (const std::runtime_error& error)
+            Property1D property;
+            property.material = material;
+            property.name = name;
+
+            std::istringstream input(setting);
+            std::string kind, extra;
+            input >> kind;
+            if (kind == "constant")
             {
-                throw std::runtime_error(Label(key) + " (" + it->second.source +
-                    ") at concentration " + std::to_string(c) + ": " + error.what());
+                if (!(input >> property.constant) || (input >> extra))
+                {
+                    throw std::runtime_error("expected constant <number>");
+                }
+                ValidateValue(name, property.constant);
+                return property;
             }
+            if (kind != "table")
+            {
+                throw std::runtime_error("expected constant or table");
+            }
+
+            std::string filename;
+            std::string policy = "clamp";
+            if (!(input >> std::quoted(filename)))
+            {
+                throw std::runtime_error("expected table <path> [clamp|error]");
+            }
+            input >> policy;
+            if ((policy != "clamp" && policy != "error") || (input >> extra))
+            {
+                throw std::runtime_error("expected table <path> [clamp|error]");
+            }
+            property.error_outside = policy == "error";
+            return ReadFile(property, base / filename);
+        }
+
+        double Evaluate(Material material, const std::string& name, double concentration)
+        {
+            if (!initialized)
+            {
+                Configure({}, "");
+            }
+            for (const Property1D& property : database)
+            {
+                if (property.material == material && property.name == name)
+                {
+                    return property.Evaluate(concentration);
+                }
+            }
+            throw std::runtime_error("No property defined for " + name);
         }
     }
 
-    void Configure(const std::unordered_map<std::string, std::string>& values,
+    void Configure(const std::unordered_map<std::string, std::string>& settings,
                    const std::string& config_file)
     {
-        const auto base = std::filesystem::absolute(config_file.empty() ? "." : config_file).parent_path();
-        auto root = std::filesystem::path(BESFEM_MATERIALS_DIR);
-        const auto directory = values.find("materials_dir");
-        if (directory != values.end()) root = base / directory->second;
-        root = std::filesystem::absolute(root);
+        std::string config_path = config_file;
+        if (config_path.empty())
+        {
+            config_path = ".";
+        }
+        std::filesystem::path base = std::filesystem::absolute(config_path).parent_path();
+        std::filesystem::path root = BESFEM_MATERIALS_DIR;
+        if (settings.count("materials_dir") > 0)
+        {
+            root = base / settings.at("materials_dir");
+        }
 
-        // Assemble the final sources before reading: an override replaces its
-        // default file entirely, even when that default file is absent.
-        std::map<Key, std::string> specifications;
-        for (const auto& material : materials)
-            for (const auto& name : property_names)
-                if (HasDefault(material.second, name))
+        // Keep the old data until all new files have loaded successfully.
+        std::vector<Property1D> loaded;
+        size_t overrides_loaded = 0;
+        for (const MaterialInfo& material : materials)
+        {
+            for (const std::string& name : property_names)
+            {
+                std::string setting_name = "material." + material.name + "." + name;
+                bool overridden = settings.count(setting_name) > 0;
+                if (material.type == Material::Electrolyte && name != "diffusivity")
                 {
-                    std::ostringstream spec;
-                    spec << "table " << std::quoted((root / material.first / (name + ".txt")).string());
-                    specifications[{material.second, name}] = spec.str();
+                    continue;
                 }
-
-        std::set<Key> explicit_overrides;
-        for (const auto& entry : values)
-        {
-            if (entry.first.compare(0, 9, "material.") != 0) continue;
-            const auto dot = entry.first.find('.', 9);
-            const auto material = materials.find(entry.first.substr(9, dot - 9));
-            const auto name = dot == std::string::npos ? "" : entry.first.substr(dot + 1);
-            if (material == materials.end()) throw std::runtime_error(entry.first + ": unknown material");
-            if (std::find(property_names.begin(), property_names.end(), name) == property_names.end())
-                throw std::runtime_error(entry.first + ": unknown property");
-            if (material->second == Material::Electrolyte && name != "diffusivity")
-                throw std::runtime_error(entry.first + ": only electrolyte diffusivity is supported");
-            const Key key{material->second, name};
-            explicit_overrides.insert(key);
-            specifications[key] = entry.second;
-        }
-
-        // Preserve the previously supported OCV override dependency. Default
-        // chemical potentials themselves are now independent, editable files.
-        for (const auto& material : materials)
-            if (material.second != Material::Graphite &&
-                explicit_overrides.count({material.second, "ocv"}) &&
-                !explicit_overrides.count({material.second, "chemical_potential"}))
-                specifications.erase({material.second, "chemical_potential"});
-
-        std::map<Key, Property1D> next;
-        for (const auto& specification : specifications)
-        {
-            try { next[specification.first] = ReadProperty(specification.first, specification.second, base); }
-            catch (const std::runtime_error& error)
-            {
-                throw std::runtime_error(Label(specification.first) + ": " + error.what());
+                try
+                {
+                    if (overridden)
+                    {
+                        loaded.push_back(ReadOverride(material.type, name, settings.at(setting_name), base));
+                        ++overrides_loaded;
+                    }
+                    else if (HasDefault(material.type, name))
+                    {
+                        Property1D property;
+                        property.material = material.type;
+                        property.name = name;
+                        loaded.push_back(ReadFile(property, root / material.name / (name + ".txt")));
+                    }
+                }
+                catch (const std::runtime_error& error)
+                {
+                    throw std::runtime_error(setting_name + ": " + error.what());
+                }
             }
         }
-        for (const auto& material : materials)
+
+        // Catch misspelled or unsupported material settings instead of ignoring them.
+        size_t overrides_supplied = 0;
+        for (const auto& setting : settings)
         {
-            const auto m = material.second;
-            if (m == Material::Graphite || !explicit_overrides.count({m, "ocv"}) ||
-                explicit_overrides.count({m, "chemical_potential"})) continue;
-            auto mu = next.at({m, "ocv"});
-            const double scale = m == Material::Carbon ? -1.0 : -Constants::Frd;
-            mu.constant *= scale;
-            ValidateValue({m, "chemical_potential"}, mu.constant);
-            for (auto& value : mu.y)
+            if (setting.first.compare(0, 9, "material.") == 0)
             {
-                value *= scale;
-                ValidateValue({m, "chemical_potential"}, value);
+                ++overrides_supplied;
             }
-            mu.source = "derived from " + mu.source;
-            next[{m, "chemical_potential"}] = std::move(mu);
         }
-        database.swap(next);
+        if (overrides_loaded != overrides_supplied)
+        {
+            throw std::runtime_error("Unknown or unsupported material property setting");
+        }
+        database.swap(loaded);
         initialized = true;
     }
 
-    double OCV(sim::MaterialType m, double c) { return Evaluate(m, "ocv", c); }
-    double ChemicalPotential(sim::MaterialType m, double c) { return Evaluate(m, "chemical_potential", c); }
-    double ExchangeCurrentDensity(sim::MaterialType m, double c) { return Evaluate(m, "exchange_current_density", c); }
-    double Diffusivity(sim::MaterialType m, double c) { return Evaluate(m, "diffusivity", c); }
-    double Mobility(sim::MaterialType m, double c) { return Evaluate(m, "mobility", c); }
-    double Conductivity(sim::MaterialType m, double c) { return Evaluate(m, "conductivity", c); }
-    double SiteDensity(sim::MaterialType m) { return Evaluate(m, "site_density", 0.0); }
+    double OCV(sim::MaterialType material, double concentration)
+    {
+        return Evaluate(material, "ocv", concentration);
+    }
+
+    double ChemicalPotential(sim::MaterialType material, double concentration)
+    {
+        return Evaluate(material, "chemical_potential", concentration);
+    }
+
+    double ExchangeCurrentDensity(sim::MaterialType material, double concentration)
+    {
+        return Evaluate(material, "exchange_current_density", concentration);
+    }
+
+    double Diffusivity(sim::MaterialType material, double concentration)
+    {
+        return Evaluate(material, "diffusivity", concentration);
+    }
+
+    double Mobility(sim::MaterialType material, double concentration)
+    {
+        return Evaluate(material, "mobility", concentration);
+    }
+
+    double Conductivity(sim::MaterialType material, double concentration)
+    {
+        return Evaluate(material, "conductivity", concentration);
+    }
+
+    double SiteDensity(sim::MaterialType material)
+    {
+        return Evaluate(material, "site_density", 0.0);
+    }
 }

@@ -6,17 +6,14 @@ Each run loads the files once when its config is read.
 <!-- Files are not watched
 while a simulation runs. -->
 
-| Material folder | Default properties |
+<!-- | Material folder | Default properties |
 | --- | --- |
 | Graphite | ocv, chemical_potential, exchange_current_density, mobility, conductivity, site_density |
 | LFP | ocv, chemical_potential, exchange_current_density, diffusivity, mobility, conductivity, site_density|
 | NMC | ocv, chemical_potential, exchange_current_density, diffusivity, conductivity, site_density |
 | Carbon | ocv, chemical_potential, exchange_current_density, diffusivity, conductivity, site_density |
 | Silicon | ocv, chemical_potential, exchange_current_density, diffusivity, conductivity, site_density |
-| Electrolyte | diffusivity |
-
-Unavailable properties are not synthesized. For example, graphite transport
-uses mobility, and no graphite diffusivity default is supplied.
+| Electrolyte | diffusivity | -->
 
 ## File format and units
 
@@ -36,10 +33,9 @@ A curve contains at least two concentration/value rows:
 1.0 0.1
 ```
 
-All numbers must be finite. Concentration must be strictly increasing, in [0,1]
-for electrodes and nonnegative for electrolyte. Site density requires a scalar.
+All numbers must be finite. Concentration must be strictly increasing. Site density requires a scalar.
 Diffusivity, mobility, conductivity, and exchange current density must be
-nonnegative; site density must be positive. Other property values can be signed.
+nonnegative; site density must be positive. 
 
 | Property | Units/convention |
 | --- | --- |
@@ -48,8 +44,8 @@ nonnegative; site density must be positive. Other property values can be signed.
 | diffusivity | cm²/s |
 | conductivity | S/cm |
 | site_density | mol/cm³ |
-| chemical_potential | Preserves the original solver conventions: NMC/LFP/Silicon use -Frd × OCV; Carbon uses -OCV; Graphite uses its independent legacy data |
-| mobility | Original Cahn–Hilliard solver convention; graphite's legacy ×(100 × 2/3) conversion is already included |
+<!-- | chemical_potential | Preserves the original solver conventions: NMC/LFP/Silicon use -Frd × OCV; Carbon uses -OCV; Graphite uses its independent legacy data |
+| mobility | Original Cahn–Hilliard solver convention; graphite's legacy ×(100 × 2/3) conversion is already included | -->
 
 <!-- Electrode table concentration is stoichiometry; electrolyte concentration is
 mol/cm³. Linear interpolation is used between rows. Default files clamp to the
@@ -59,38 +55,36 @@ all electrode curves now clamp outside [0,1]. The electrolyte table covers
 
 ## Overrides and locating defaults
 
-The makefile embeds the absolute `inputs/materials` directory in the executable.
+<!-- The makefile embeds the `inputs/materials` directory in the executable.
 To relocate the data or choose a different complete default library, use:
 
 ```ini
 materials_dir = materials
-```
+``` -->
 
-That directory is relative to the run config (absolute paths also work).
+<!-- That directory is relative to the run config.
 Alternatively set `MATERIALS_DIR=/path/to/materials` when building. All default
 files listed above must exist unless replaced by a property override. An
-explicitly selected directory never silently falls back to another library.
+explicitly selected directory never silently falls back to another library. -->
 
 Override individual properties using the existing config interface:
 
 ```ini
-material.Graphite.ocv = table materials/Graphite/ocv.txt clamp
-; material.Graphite.site_density = table materials/Graphite/site_density.txt
+material.Graphite.ocv = table materials/Graphite/ocv.txt 
 material.Graphite.conductivity = constant 4.0
-material.NMC.ocv = table my_measurements/nmc_ocv.txt error
+material.NMC.ocv = table my_measurements/nmc_ocv.txt
 ```
 
-Override filenames are arbitrary and relative to the config file. Quote table
+<!-- Override filenames are arbitrary and relative to the config file. Quote table
 paths containing spaces. `clamp` is optional; `error` rejects evaluation outside
-the supplied table range. Scalar files have no concentration range.
+the supplied table range. Scalar files have no concentration range. -->
 
-Default OCV and chemical-potential files are independent: editing one does not
-rewrite the other. Keep physically related tables consistent when editing the
-library. For compatibility with the earlier override interface, a **config OCV
-override** for NMC/LFP/Silicon/Carbon also supplies a scaled chemical potential
-unless the config explicitly overrides chemical_potential. Graphite always
-keeps its independent chemical-potential data. Diffusivity overrides never
-implicitly change mobility.
+<!-- OCV and chemical potential are independent for every material. Editing an OCV
+file or setting a config OCV override changes only OCV. Chemical potential uses
+its own default file unless explicitly overridden with
+`material.<MaterialName>.chemical_potential`. Keep physically related tables
+consistent when editing the library. Diffusivity overrides never implicitly
+change mobility.
 <!-- 
 ## Migration provenance and numerical accuracy
 

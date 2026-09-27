@@ -36,11 +36,11 @@ dh = 2.07407e-05
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = steps       
-VCut = 3.6
+stop_mode = voltage       
+VCut = 3.2
 num_steps = 3001
 
-save_freq = 100
+save_freq = 3000
 
 # ============================================================
 # CURRENT CONTROL
@@ -54,6 +54,8 @@ Vsr0 = 0.009466
 # ============================================================
 
 cathode_materials = NMC
+
+material.NMC.exchange_current_density = table materials/NMC/pybamm_exchange_current_density.txt
 
 # ============================================================
 # INITIAL PARTICLE STOICHIOMETRIES
