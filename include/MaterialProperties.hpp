@@ -24,8 +24,9 @@ namespace MaterialProperties
 {
     /** Load per-material default text files, then apply material.* overrides.
      * Override paths and materials_dir are relative to the config file.
-     * Replaces the active database atomically; throws std::runtime_error for
-     * invalid input. Call before validation/initialization, not during a solve.
+     * Tables use increasing concentrations and clamp to their endpoint values.
+     * Input is not validated; missing data defaults to zero.
+     * Call before validation/initialization, not during a solve.
      * The existing material API supports one active configuration per process.
      */
     void Configure(const std::unordered_map<std::string, std::string>& values,

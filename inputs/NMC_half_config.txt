@@ -55,7 +55,7 @@ Vsr0 = 0.009466
 
 cathode_materials = NMC
 
-material.NMC.exchange_current_density = table materials/NMC/pybamm_exchange_current_density.txt
+# material.NMC.exchange_current_density = table materials/NMC/pybamm_exchange_current_density.txt
 
 # ============================================================
 # INITIAL PARTICLE CONCENTRATION
