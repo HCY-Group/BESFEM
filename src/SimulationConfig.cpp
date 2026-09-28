@@ -38,8 +38,7 @@ static std::vector<std::string> SplitString(const std::string& text, char delimi
     return tokens;
 }
 
-static std::unordered_map<std::string, std::string>
-ReadConfigFile(const std::string& filename)
+static std::unordered_map<std::string, std::string>ReadConfigFile(const std::string& filename)
 {
     std::unordered_map<std::string, std::string> data;
 
