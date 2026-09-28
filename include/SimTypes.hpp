@@ -47,7 +47,7 @@ enum class MaterialType {
     NMC,              ///< Cathode material: Nickel Manganese Cobalt Oxide
     LFP,              ///< Cathode material: Lithium Iron Phosphate
     Carbon,           ///< Anode material: Carbon
-    Electrolyte,      ///< Electrolyte material
+    LiPF6,            ///< Electrolyte material
 
     Test_Diff,        ///< Test material with concentration-independent properties for fickian diffusion
     Test_CH,          ///< Test material with concentration-independent properties for Cahn-Hilliard

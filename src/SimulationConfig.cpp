@@ -122,15 +122,20 @@ static sim::MaterialType ParseMaterial(const std::string& name)
     if (name == "Carbon" || name == "carbon")
         return sim::MaterialType::Carbon;
 
+    if (name == "LiPF6")
+        return sim::MaterialType::LiPF6;
+
     if (name == "Test_Diff")
         return sim::MaterialType::Test_Diff;
 
     if (name == "Test_CH")
         return sim::MaterialType::Test_CH;
 
-    mfem::mfem_error(("Invalid material: " + name + ". Use Graphite, NMC, LFP, or Carbon.").c_str());
+    if (name == "Test_Electrolyte")
+        return sim::MaterialType::Test_Electrolyte;
 
-    return sim::MaterialType::Electrolyte;
+    mfem::mfem_error(("Invalid material: " + name + ". Use Graphite, NMC, LFP, Carbon, or LiPF6.").c_str());
+
 }
 
 static std::vector<sim::MaterialType> ParseMaterialList(const std::string& text)
@@ -249,6 +254,9 @@ static void ApplyConfigFile(SimulationConfig& cfg)
 
     if (HasKey(data, "anode_materials"))
         cfg.anode_materials = ParseMaterialList(GetValue(data, "anode_materials"));
+
+    if (HasKey(data, "electrolyte_materials"))
+        cfg.cathode_materials = ParseMaterialList(GetValue(data, "electrolyte_materials"));
 
     if (HasKey(data, "init_cathode_particles"))
         cfg.init_cathode_particles = ParseDoubleList(GetValue(data, "init_cathode_particles"));
@@ -421,6 +429,12 @@ static bool IsAnodeMaterial(sim::MaterialType m)
 {
     return m == sim::MaterialType::Graphite || m == sim::MaterialType::Carbon;
 }
+
+static bool IsElectrolyteMaterial(sim::MaterialType m)
+{
+    return m == sim::MaterialType::LiPF6;
+}
+
 static void CheckCathodeInitialBoundaryFromOCV(const SimulationConfig& cfg)
 {
     const double tolerance = 0.3;
@@ -680,6 +694,11 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
 
     if (cfg.mode == sim::CellMode::FULL)
     {
+        if (cfg.electrolyte_materials.empty())
+        {
+            mfem::mfem_error("FULL mode requires electrolyte_materials.");
+        }
+
         if (cfg.cathode_materials.empty())
         {
             mfem::mfem_error("FULL mode requires cathode_materials.");
@@ -740,6 +759,14 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
             }
         }
 
+        for (const auto material : cfg.electrolyte_materials)
+        {
+            if (!IsElectrolyteMaterial(material))
+            {
+                mfem::mfem_error("Electrolyte materials must be LiPF6.");
+            }
+        }
+
         CheckParticleStoichiometry(cfg.init_anode_particles, "init_anode_particles");
 
         CheckParticleStoichiometry(cfg.init_cathode_particles, "init_cathode_particles");
@@ -752,6 +779,11 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
         if (cathode)
         {
     
+            if (cfg.electrolyte_materials.empty())
+            {
+                mfem::mfem_error("HALF mode requires electrolyte_materials.");
+            }
+
             if (cfg.cathode_materials.empty())
                 mfem::mfem_error("cathode_materials cannot be empty.");
     
@@ -777,6 +809,11 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
                         "Invalid cathode_materials: cathode can only use NMC or LFP. "
                         "Graphite or Carbon is an anode material.");
                 }
+                if (!IsElectrolyteMaterial(m))
+                {
+                    mfem::mfem_error(
+                        "Invalid electrolyte_materials: electrolyte can only use LiFP6.");
+                }
             }
             CheckCathodeInitialBoundaryFromOCV(cfg);
              CheckParticleStoichiometry(
@@ -786,6 +823,11 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
         }
         else
         {
+            if (cfg.electrolyte_materials.empty())
+            {
+                mfem::mfem_error("HALF mode requires electrolyte_materials.");
+            }
+
             if (cfg.anode_materials.empty())
                 mfem::mfem_error("anode_materials cannot be empty.");
     
@@ -826,6 +868,11 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
                 {
                     mfem::mfem_error(
                         "Invalid anode_materials: anode can only use graphite or carbon.");
+                }
+                if (!IsElectrolyteMaterial(m))
+                {
+                    mfem::mfem_error(
+                        "Invalid electrolyte_materials: electrolyte can only use LiFP6.");
                 }
             }
             CheckAnodeInitialBoundaryFromOCV(cfg);

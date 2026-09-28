@@ -65,6 +65,7 @@ struct SimulationConfig
 
     std::vector<sim::MaterialType> anode_materials; ///< Material assigned to each anode particle.
     std::vector<sim::MaterialType> cathode_materials; ///< Material assigned to each cathode particle.
+    std::vector<sim::MaterialType> electrolyte_materials; ///< Material assigned to each cathode particle.
 
     // -------------------------------------------------------------------------
     // Initial conditions

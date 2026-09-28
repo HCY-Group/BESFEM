@@ -301,9 +301,24 @@ namespace MaterialProperties
         }
     }
 
-    static double Electrolyte_diff(double c)
+    static double LiPF6_diff(double c)
     {
         return Constants::D0 * std::exp(-7.02 - 830 * c + 50000 * c * c);
+    }
+
+    static double Test_Electrolyte_diff(double c)
+    {
+        return 1.0e-6;
+    }
+
+    static double Test_Diff_diff(double c)
+    {
+        return 1.0e-11;
+    }
+
+    static double Test_CH_diff(double c)
+    {
+        return 1.0e-11;
     }
 
     double Diffusivity(sim::MaterialType material, double c)
@@ -313,14 +328,23 @@ namespace MaterialProperties
             case sim::MaterialType::NMC:
                 return NMC_diff(c);
 
-            case sim::MaterialType::Electrolyte:
-                return Electrolyte_diff(c);
+            case sim::MaterialType::LiPF6:
+                return LiPF6_diff(c);
 
             case sim::MaterialType::LFP:
                 return LFP_diff(c); // placeholder, constant diffusivity for LFP
 
             case sim::MaterialType::Carbon:
                 return Carbon_diff(c);
+
+            case sim::MaterialType::Test_Electrolyte:
+                return Test_Electrolyte_diff(c);
+
+            case sim::MaterialType::Test_Diff:
+                return Test_Diff_diff(c);
+
+            case sim::MaterialType::Test_CH:
+                return Test_CH_diff(c);
 
             default:
                 mfem::mfem_error("Material does not have a defined diffusivity.");
