@@ -1,6 +1,6 @@
 # BESFEM: Battery Electrode Simulation using MFEM
 
-BESFEM (**B**attery **E**lectrode **S**imulation using **MFEM**) is a high-performance finite element framework for simulating lithium-ion battery electrodes. Built on top of **MFEM**, **MPI**, and **HYPRE**, BESFEM enables parallel electrochemical simulations of realistic battery microstructures using the **Smoothed Boundary Method (SBM)**.
+BESFEM (**B**attery **E**lectrode **S**imulation using **MFEM**) is a high-performance finite element framework for simulating lithium-ion battery electrodes. Built using **MFEM**'s library, **MPI**, and **HYPRE**, BESFEM enables parallel electrochemical simulations of realistic battery microstructures using the **Smoothed Boundary Method (SBM)**.
 
 The framework supports **half-cell** and **full-cell** simulations, multiple active material chemistries, and particle-resolved modeling using either diffusion or Cahn–Hilliard-based transport models. 
 
@@ -30,6 +30,7 @@ BESFEM/
 # Building BESFEM
 
 Ensure that MFEM, MPI, and HYPRE are installed and available.
+> Depending on your system, you may need to update the makefile with the appropriate MFEM and HYPRE include/library paths.
 
 ```bash
 # Clone the repository
@@ -48,7 +49,7 @@ make
 cd bin
 ```
 
-> Depending on your system, you may need to update the makefile with the appropriate MFEM and HYPRE include/library paths.
+<!-- > Depending on your system, you may need to update the makefile with the appropriate MFEM and HYPRE include/library paths. -->
 
 ---
 
@@ -187,13 +188,15 @@ init_BvE = -0.1
   * `row_end` 
   * `column_begin` 
   * `column_end`
+  * `depth_begin` - used for 3D.
+  * `depth_end` - used for 3D.
 
 * `amr_levels`
 
   * AMR is supported for 1 level of refinement.
 
 * `coarsen_factor`
-  * Select a factor at which the grid will coarsen before AMR usage. Typically 2 or 4. 
+  * Select a factor at which the grid will coarsen before AMR usage.  
 
 * `particle_color`
   * `black` - the color of the particles is black and the color of the electrolyte is white.
@@ -205,7 +208,7 @@ init_BvE = -0.1
 ### Stopping Criteria
 
 * `stop_mode`
-  * Choose how the simulation will stop - either by steps or voltage.
+  * Choose how the simulation will stop - either by `steps` or `voltage`.
 
 * `num_steps`
 
@@ -236,8 +239,8 @@ Currently supported materials include
 
 **Cathodes**
 
-* LFP
 * NMC
+* LFP
 
 **Anodes**
 
@@ -273,7 +276,7 @@ A constant file contains one number:
 3.3
 ```
 
-A curve contains two columns with strictly increasing concentrations:
+A curve contains two columns and at least two rows in a table with strictly increasing concentrations:
 
 ```text
 # stoichiometry OCV [V] -- illustrative values only

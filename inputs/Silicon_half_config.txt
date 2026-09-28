@@ -58,13 +58,13 @@ Vsr0 = 0.009466
 anode_materials = silicon
 
 # ============================================================
-# INITIAL PARTICLE STOICHIOMETRIES
+# INITIAL PARTICLE CONCENTRATION
 # ============================================================
 
 init_anode_particles = 0.05
 
 # ============================================================
-# INITIAL ELECTROLYTE
+# INITIAL ELECTROLYTE CONCENTRATION
 # ============================================================
 
 init_CnE = 0.001

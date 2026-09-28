@@ -58,14 +58,14 @@ anode_materials = Graphite
 cathode_materials = NMC
 
 # ============================================================
-# INITIAL PARTICLE STOICHIOMETRIES
+# INITIAL PARTICLE CONCENTRATION
 # ============================================================
 
 init_anode_particles = 0.95
 init_cathode_particles = 0.30
 
 # ============================================================
-# INITIAL ELECTROLYTE
+# INITIAL ELECTROLYTE CONCENTRATION
 # ============================================================
 
 init_CnE = 0.001

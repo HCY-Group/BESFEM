@@ -56,13 +56,13 @@ Vsr0 = 0.009466
 anode_materials = Carbon
 
 # ============================================================
-# INITIAL PARTICLE STOICHIOMETRIES
+# INITIAL PARTICLE CONCENTRATION
 # ============================================================
 
 init_anode_particles = 0.10
 
 # ============================================================
-# INITIAL ELECTROLYTE
+# INITIAL ELECTROLYTE CONCENTRATION
 # ============================================================
 
 init_CnE = 0.001

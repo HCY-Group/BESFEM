@@ -58,13 +58,13 @@ cathode_materials = NMC
 material.NMC.exchange_current_density = table materials/NMC/pybamm_exchange_current_density.txt
 
 # ============================================================
-# INITIAL PARTICLE STOICHIOMETRIES
+# INITIAL PARTICLE CONCENTRATION
 # ============================================================
 
 init_cathode_particles = 0.30
 
 # ============================================================
-# INITIAL ELECTROLYTE
+# INITIAL ELECTROLYTE CONCENTRATION
 # ============================================================
 
 init_CnE = 0.001
