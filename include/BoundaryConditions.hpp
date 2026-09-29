@@ -1,3 +1,7 @@
+/**
+ * @file BoundaryConditions.hpp
+ * @brief Boundary markers and distributed electrolyte-potential anchoring.
+ */
 #ifndef BOUNDARYCONDITIONS_HPP
 #define BOUNDARYCONDITIONS_HPP
 
@@ -28,7 +32,7 @@ public:
      * @brief Construct a BoundaryConditions object.
      *
      * Initializes geometry references, domain parameters, and internal data
-     * structures required to construct the boundary masks. 
+     * structures required to construct the boundary masks.
      *
      * @param geo  Reference to the initialized geometry (meshes, FE spaces, ψ-fields).
      * @param para Reference to global domain parameters (operating mode, material constants).
@@ -51,12 +55,14 @@ public:
      * based on geometry, mesh extents, and simulation mode (full cell vs half cell).
      *
      * @param mode      Cell mode (full-cell, anode-only, cathode-only).
-     * @param electrode Active electrode domain (anode or cathode).
+     * @param electrode ANODE or CATHODE in HALF mode; BOTH in FULL mode.
      */
     void SetupBoundaryConditions(sim::CellMode mode, sim::Electrode electrode);
 
     /**
      * @brief Sets the pinned DOF for electrolyte potential stability.
+     *
+     * @param fespace Parallel finite-element space containing the anchor.
      *
      * Solving for the electrolyte potential for the full cell requires anchoring a single DOF
      * to avoid a null space. This routine selects a vertex inside the
@@ -66,6 +72,10 @@ public:
     void SetupPinnedDOF(mfem::ParFiniteElementSpace &fespace);
 
 
+    /**
+     * @brief Save the mesh and boundary-marker fields for inspection.
+     * @note Uses parallel SaveAsOne operations; all ranks must participate.
+     */
     void SaveBoundaryConditionFields();
 
     /**

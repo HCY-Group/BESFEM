@@ -211,7 +211,7 @@ TEST_CASE("UpdatePotential", "[phi]") {
 
         // Initialize Concentration & Potential & Reaction Fields
         SimulationState state;
-        InitializeFields(state, geometry, domain_parameters, bc, cfg);
+        state.InitializeFields(geometry, domain_parameters, bc, cfg);
 
 
 
@@ -225,9 +225,9 @@ TEST_CASE("UpdatePotential", "[phi]") {
                     
         int np;
         if (cfg.half_electrode == sim::Electrode::ANODE){
-            np = static_cast<int>(state.anode_particles.size());
+            np = static_cast<int>(state.anode.particles.size());
         } else {
-            np = static_cast<int>(state.cathode_particles.size());
+            np = static_cast<int>(state.cathode.particles.size());
         }
  
         cn_fields.reserve(np); // pre-allocate memory
@@ -238,17 +238,17 @@ TEST_CASE("UpdatePotential", "[phi]") {
         {
             psi_fields.push_back(domain_parameters.ps[j].get());
             if (cfg.half_electrode == sim::Electrode::ANODE){
-                cn_fields.push_back(state.anode_particles[j].Cn_gf.get()); 
-                materials.push_back(state.anode_particles[j].material);
+                cn_fields.push_back(state.anode.particles[j].Cn_gf.get());
+                materials.push_back(state.anode.particles[j].material);
             } else {
-                cn_fields.push_back(state.cathode_particles[j].Cn_gf.get()); 
-                materials.push_back(state.cathode_particles[j].material);
+                cn_fields.push_back(state.cathode.particles[j].Cn_gf.get());
+                materials.push_back(state.cathode.particles[j].material);
             }
         }
         if (cfg.half_electrode == sim::Electrode::ANODE){
-            state.anode_potential->AssembleSystem(cn_fields, psi_fields, materials, *state.phA_gf);
+            state.anode.potential->AssembleSystem(cn_fields, psi_fields, materials, *state.anode.ph_gf);
         } else {
-            state.cathode_potential->AssembleSystem(cn_fields, psi_fields, materials, *state.phC_gf);
+            state.cathode.potential->AssembleSystem(cn_fields, psi_fields, materials, *state.cathode.ph_gf);
         }
         state.electrolyte_potential->AssembleSystem(*state.CnE_gf, *domain_parameters.pse, *state.phE_gf);
 
@@ -259,18 +259,18 @@ TEST_CASE("UpdatePotential", "[phi]") {
         mfem::ParGridFunction Rxn_e(*domain_parameters.AvE);
 
         if (cfg.half_electrode == sim::Electrode::ANODE){
-            state.anode_potential->UpdatePotential(Rxn_p, *state.phA_gf, *domain_parameters.psi, globalerror_P);
+            state.anode.potential->UpdatePotential(Rxn_p, *state.anode.ph_gf, *domain_parameters.psi, globalerror_P);
         } else {
-            state.cathode_potential->UpdatePotential(Rxn_p, *state.phC_gf, *domain_parameters.psi, globalerror_P);
+            state.cathode.potential->UpdatePotential(Rxn_p, *state.cathode.ph_gf, *domain_parameters.psi, globalerror_P);
         }
         state.electrolyte_potential->UpdatePotential(Rxn_e, *state.phE_gf, *domain_parameters.pse, globalerror_E);
         
         domain_parameters.psi->SaveAsOne("psi_test");
         domain_parameters.pse->SaveAsOne("pse_test");
         if (cfg.half_electrode == sim::Electrode::ANODE){
-            state.phA_gf->SaveAsOne("phiA");
+            state.anode.ph_gf->SaveAsOne("phiA");
         } else {
-            state.phC_gf->SaveAsOne("phiC");
+            state.cathode.ph_gf->SaveAsOne("phiC");
         }
         state.phE_gf->SaveAsOne("phiE");
         //std::cout << "Faraday: " << Constants::Frd << std::endl;
@@ -290,13 +290,13 @@ TEST_CASE("UpdatePotential", "[phi]") {
         }
         
         if (cfg.half_electrode == sim::Electrode::ANODE){
-            std::cout << "kappa: " << state.anode_potential->GetConductivity().Min() << " " << 
-                                      state.anode_potential->GetConductivity().Max() << std::endl;
-            std::cout << "F/kap: " << Constants::Frd/state.anode_potential->GetConductivity().Max() << std::endl;
+            std::cout << "kappa: " << state.anode.potential->GetConductivity().Min() << " " <<
+                                      state.anode.potential->GetConductivity().Max() << std::endl;
+            std::cout << "F/kap: " << Constants::Frd/state.anode.potential->GetConductivity().Max() << std::endl;
         } else {
-            std::cout << "kappa: " << state.cathode_potential->GetConductivity().Min() << " " << 
-                                      state.cathode_potential->GetConductivity().Max() << std::endl;
-            std::cout << "F/kap: " << Constants::Frd/state.cathode_potential->GetConductivity().Max() << std::endl;
+            std::cout << "kappa: " << state.cathode.potential->GetConductivity().Min() << " " <<
+                                      state.cathode.potential->GetConductivity().Max() << std::endl;
+            std::cout << "F/kap: " << Constants::Frd/state.cathode.potential->GetConductivity().Max() << std::endl;
         }
 
 
@@ -305,11 +305,11 @@ TEST_CASE("UpdatePotential", "[phi]") {
         double slope_p;
         double intercept_p;
         if (cfg.half_electrode == sim::Electrode::ANODE){
-            slope_p = Constants::Frd/state.anode_potential->GetConductivity().Max(); 
-            intercept_p = state.anode_potential->GetBoundaryVoltage();
+            slope_p = Constants::Frd/state.anode.potential->GetConductivity().Max();
+            intercept_p = state.anode.potential->GetBoundaryVoltage();
         } else {
-            slope_p = Constants::Frd/state.cathode_potential->GetConductivity().Max(); 
-            intercept_p = state.cathode_potential->GetBoundaryVoltage();
+            slope_p = Constants::Frd/state.cathode.potential->GetConductivity().Max();
+            intercept_p = state.cathode.potential->GetBoundaryVoltage();
         }
         std::cout << "particle slope and intercept: " << slope_p << " " << intercept_p << std::endl;
         for (int i=0; i < phP_an.Size(); i++)
@@ -327,11 +327,11 @@ TEST_CASE("UpdatePotential", "[phi]") {
         //Multiply by psi to compare
         phP_an *= *domain_parameters.psi;
         if (cfg.half_electrode == sim::Electrode::ANODE){
-            *state.phA_gf *= *domain_parameters.psi;
-            state.phA_gf->SaveAsOne("phiA");
+            *state.anode.ph_gf *= *domain_parameters.psi;
+            state.anode.ph_gf->SaveAsOne("phiA");
         } else {
-            *state.phC_gf *= *domain_parameters.psi;
-            state.phC_gf->SaveAsOne("phiC");
+            *state.cathode.ph_gf *= *domain_parameters.psi;
+            state.cathode.ph_gf->SaveAsOne("phiC");
         }
         phP_an.SaveAsOne("phiP_an");
 
@@ -343,9 +343,9 @@ TEST_CASE("UpdatePotential", "[phi]") {
         // compute difference, calculate l2 norm
         mfem::ParGridFunction diff_c(phE_an);
         if (cfg.half_electrode == sim::Electrode::ANODE){
-            diff_c = *state.phA_gf;
+            diff_c = *state.anode.ph_gf;
         } else {
-            diff_c = *state.phC_gf;
+            diff_c = *state.cathode.ph_gf;
         }
         diff_c -= phP_an;
         diff_c /= phP_an;  //weight by magnitude of analytical solution
@@ -412,7 +412,7 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
 
         // Initialize Concentration & Potential & Reaction Fields
         SimulationState state;
-        InitializeFields(state, geometry, domain_parameters, bc, cfg);
+        state.InitializeFields(geometry, domain_parameters, bc, cfg);
 
 
 
@@ -477,31 +477,31 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
             modify.SaveAsOne("mod_e_init");
 
             if (cfg.half_electrode == sim::Electrode::CATHODE){
-            const int np = static_cast<int>(state.cathode_particles.size());
+            const int np = static_cast<int>(state.cathode.particles.size());
             for (int j = 0; j < np; ++j)
             {
               //mfem::ParGridFunction CnP_an(*state.CnE_gf);
-              double diff_p = MaterialProperties::Diffusivity(state.cathode_particles[j].material, cfg.init_cathode_particles[j]);
+              double diff_p = MaterialProperties::Diffusivity(state.cathode.particles[j].material, cfg.init_cathode_particles[j]);
               //CnP_an = cfg.init_cathode_particles[j];
-              B_n = Rxn_const/MaterialProperties::SiteDensity(state.cathode_particles[j].material);
+              B_n = Rxn_const/MaterialProperties::SiteDensity(state.cathode.particles[j].material);
               B_n /= diff_p;  // scale by diffusivity
             std::cout << "B_n: " << B_n << std::endl;
             std::cout << "diff_p" << diff_p << std::endl;
-              for (int i=0; i<state.cathode_particles[j].Cn_gf->Size(); i++) {
+              for (int i=0; i<state.cathode.particles[j].Cn_gf->Size(); i++) {
                   double xprime = x(i)-offset;
                   double a = std::sqrt( 4*diff_p*time_elapsed/pi );
                   double b = std::exp( -xprime*xprime/4/diff_p/time_elapsed );
                   double c = xprime*( 1.0-std::erf( xprime/2.0/std::sqrt(diff_p*time_elapsed)  )  );
 
                 
-                    (*state.cathode_particles[j].Cn_gf)(i) += B_n * (a*b - c);
+                    (*state.cathode.particles[j].Cn_gf)(i) += B_n * (a*b - c);
                   
                   //std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
                   //std::cout << CnE_an(i) << std::endl;
                   //std::cout << B_n * (a*b -c) << std::endl;
                   modify(i) = B_n * (a*b -c);
               }
-             state.cathode_particles[j].Cn_gf->SaveAsOne("CnC_init");
+             state.cathode.particles[j].Cn_gf->SaveAsOne("CnC_init");
              modify.SaveAsOne("mod_p_init");
              }
              }
@@ -519,7 +519,7 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
 /*
         if (cfg.half_electrode == sim::Electrode::ANODE)
         {
-            const int np = static_cast<int>(state.anode_particles.size());
+            const int np = static_cast<int>(state.anode.particles.size());
             std::vector<double> global_currents(np, 0.0);
 
             UpdateAnodePairChemicalPotentials(state, geometry, domain_parameters);
@@ -527,19 +527,19 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
             *state.Rxn_gf = 0.0;
             for (int j = 0; j < np; ++j)
             {
-                *state.anode_particles[j].Rx_src = *state.anode_particles[j].Rxn_gf;
-                *state.Rxn_gf += *state.anode_particles[j].Rxn_gf;
+                *state.anode.particles[j].Rx_src = *state.anode.particles[j].Rxn_gf;
+                *state.Rxn_gf += *state.anode.particles[j].Rxn_gf;
 
                 std::vector<ConcentrationBase::PairCoupling> pair_terms;
                 Pairs(state, geometry, domain_parameters, j, pair_terms, np, 0);
 
-                //state.anode_particles[j].concentration->UpdateConcentration(*state.anode_particles[j].Rx_src, *state.anode_particles[j].Cn_gf,
+                //state.anode.particles[j].concentration->UpdateConcentration(*state.anode.particles[j].Rx_src, *state.anode.particles[j].Cn_gf,
                 //   *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
-                state.anode_particles[j].concentration->UpdateConcentration(*domain_parameters.AvEs[j], *state.anode_particles[j].Cn_gf,
+                state.anode.particles[j].concentration->UpdateConcentration(*domain_parameters.AvEs[j], *state.anode.particles[j].Cn_gf,
                     *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
         
                 string CnP_name = "CnP" + std::to_string(j);
-                state.anode_particles[j].Cn_gf->SaveAsOne(CnP_name.c_str());
+                state.anode.particles[j].Cn_gf->SaveAsOne(CnP_name.c_str());
 
             }
 
@@ -556,17 +556,17 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
 */
 
             const bool is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
-            auto& particles = is_anode ? state.anode_particles : state.cathode_particles;
-            auto& pairs = is_anode ? state.anode_pairs : state.cathode_pairs;
-            auto& solid_potential = is_anode ? state.anode_potential : state.cathode_potential;
-            auto& phS_gf = is_anode ? state.phA_gf : state.phC_gf;
+            auto& electrode = is_anode ? state.anode : state.cathode;
+            auto& particles = electrode.particles;
+            auto& solid_potential = electrode.potential;
+            auto& phS_gf = electrode.ph_gf;
 
 
             const int np = static_cast<int>(particles.size());
             std::vector<double> global_currents(np, 0.0);
 
             //UpdateCathodePairChemicalPotentials(state, geometry, domain_parameters);
-            UpdatePairChemicalPotentials(particles, pairs, geometry, domain_parameters.AvP_Pairs);
+            electrode.UpdatePairChemicalPotentials(geometry, domain_parameters.AvP_Pairs);
 
 
 
@@ -581,14 +581,14 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
                 *state.Rxn_gf += *particles[j].Rxn_gf;
 
 
-                UpdateParticleConcentrations(particles, pairs, domain_parameters.WeightPairs, domain_parameters.AvP_Pairs, domain_parameters.ps, domain_parameters.gtPs, domain_parameters.WeightEs, *state.Rxn_gf, t);
+                electrode.UpdateParticleConcentrations(domain_parameters.WeightPairs, domain_parameters.AvP_Pairs, domain_parameters.ps, domain_parameters.gtPs, domain_parameters.WeightEs, *state.Rxn_gf);
 
                 //std::vector<ConcentrationBase::PairCoupling> pair_terms;
                 //Pairs(state, geometry, domain_parameters, j, pair_terms, np, 0);
 
                 //particles[j].concentration->UpdateConcentration(*particles[j].Rx_src, *particles[j].Cn_gf,
                 //   *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
-                //state.cathode_particles[j].concentration->UpdateConcentration(*domain_parameters.AvEs[j], *state.cathode_particles[j].Cn_gf,
+                //state.cathode.particles[j].concentration->UpdateConcentration(*domain_parameters.AvEs[j], *state.cathode.particles[j].Cn_gf,
                 //    *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
         
                 string CnP_name = "CnP" + std::to_string(j);

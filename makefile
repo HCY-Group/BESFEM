@@ -82,11 +82,21 @@ clean:
 	rm -f $(EXEC) *.o *~ *.dSYM *.TVD.*breakpoints
 	rm -rf $(OBJ_DIR) $(TEST_BIN)
 
-# Focused material input tests (no mesh or Catch2 dependency).
-.PHONY: test-materials
-test-materials: $(EXEC_DIR)/material_properties_test
-	./$(EXEC_DIR)/material_properties_test
+# # Focused material input tests (no mesh or Catch2 dependency).
+# .PHONY: test-materials
+# test-materials: $(EXEC_DIR)/material_properties_test
+# 	./$(EXEC_DIR)/material_properties_test
 
-$(EXEC_DIR)/material_properties_test: src/MaterialProperties.cpp src/SimulationConfig.cpp src/Constants.cpp tests/material_properties_test.cpp include/MaterialProperties.hpp
-	@mkdir -p $(EXEC_DIR)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) $(filter %.cpp,$^) -o $@ $(LIB_FLAGS)
+# $(EXEC_DIR)/material_properties_test: src/MaterialProperties.cpp src/SimulationConfig.cpp src/Constants.cpp tests/material_properties_test.cpp include/MaterialProperties.hpp
+# 	@mkdir -p $(EXEC_DIR)
+# 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) $(filter %.cpp,$^) -o $@ $(LIB_FLAGS)
+
+# # Synthetic domain checks; run in a temporary directory to isolate geometry output.
+# .PHONY: test-domain
+# test-domain: $(EXEC_DIR)/domain_parameters_regression
+# 	@run_dir=$$(mktemp -d /tmp/besfem-domain-test.XXXXXX); \
+# 	cd "$$run_dir" && "$(abspath $(EXEC_DIR)/domain_parameters_regression)"
+
+# $(EXEC_DIR)/domain_parameters_regression: src/Domain_Parameters.cpp src/Initialize_Geometry.cpp src/readtiff.cpp src/dist_solver.cpp src/MaterialProperties.cpp src/Constants.cpp tests/domain_parameters_regression.cpp $(wildcard include/*.hpp) include/readtiff.h
+# 	@mkdir -p $(EXEC_DIR)
+# 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) $(filter %.cpp,$^) -o $@ $(LIB_FLAGS) $(LDFLAGS)

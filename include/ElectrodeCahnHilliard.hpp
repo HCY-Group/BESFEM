@@ -81,7 +81,8 @@ public:
     /// Reference to user-defined simulation settings.
     const SimulationConfig &cfg;
 
-    /// Return the GridFunction for diffusivity
+    /// @brief Report an MFEM error: this mobility-based model has no diffusivity getter.
+    /// @return No field is returned; this method reports an unsupported operation.
     mfem::ParGridFunction GetDiffusivity() override {
         mfem::mfem_error("GetDiffusivity not implemented for CahnHilliard");
     }
@@ -119,10 +120,6 @@ private:
     mfem::GridFunctionCoefficient cAp; ///< Coefficient wrapper for reaction/source field.
     mfem::GridFunctionCoefficient cDp; ///< Coefficient wrapper for mobility field.
 
-    std::unique_ptr<mfem::HypreParMatrix> TmatCH; ///< System matrix for the CH concentration update.
-
-    double gtPsA = 0.0; ///< Global particle phase-field integral.
-    double gtPsi = 0.0; ///< Global solid phase-field integral.
 
     mfem::CGSolver MCH_solver; ///< Linear solver for the CH system.
     mfem::HypreSmoother MCH_prec; ///< Preconditioner for the CH solver.

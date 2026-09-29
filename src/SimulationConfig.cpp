@@ -793,26 +793,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
                 mfem::mfem_error(
                     "anode_materials and init_anode_particles must have the same length.");
             }
-            // if (cfg.anode_materials.size() != 3)
-            // {
-            //     std::stringstream ss;
-            //     ss << "Invalid anode particle group count. "
-            //        << "BESFEM currently expects exactly 3 anode psi/material groups, but you provided "
-            //        << cfg.anode_materials.size()
-            //        << ". Example: anode_materials = Graphite,Graphite,Graphite ";     
-            //     mfem::mfem_error(ss.str().c_str());
-            // }
-            // if (cfg.init_anode_particles.size() != 3)
-            // {
-            //     std::stringstream ss;
-            //     ss << "Invalid anode particle group count. "
-            //        << "BESFEM currently expects exactly 3 anode particles groups, but you provided "
-            //        << cfg.init_anode_particles.size()
-            //        << ". Example: init_anode_particles = 0.02,0.02,0.02.";
-            
-            //     mfem::mfem_error(ss.str().c_str());
-            // }
-             if (cfg.init_BvA == -9999.0)
+            if (cfg.init_BvA == -9999.0)
             {
                 mfem::mfem_error(
                     "Missing init_BvA. HALF-CATHODE mode requires init_BvA in run_config.txt.");
@@ -826,9 +807,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
                 }
             }
             CheckAnodeInitialBoundaryFromOCV(cfg);
-            CheckParticleStoichiometry(
-                    cfg.init_anode_particles,
-                    "init_anode_particles");
+            CheckParticleStoichiometry(cfg.init_anode_particles, "init_anode_particles");
     
         }
     }

@@ -21,43 +21,96 @@ using namespace std;
  * @brief Central geometry handler for BESFEM simulations.
  *
  * This class is responsible for:
- * - Loading meshes (serial or voxel-based)
+ * - Reading TIFF voxel data and constructing Cartesian meshes
  * - Creating global and parallel MFEM meshes
  * - Initializing serial and parallel FE spaces (H1 and DG)
  * - Mapping global fields to parallel fields
- * - Loading distance functions ψ (solid), ψ_e (electrolyte), and voxel data
- * - Setting up boundary-condition markers
- * - Selecting pinned DOFs for potential anchoring
+ * - Filtering solid, electrolyte, and particle-group voxel masks
+ * - Refining phase interfaces and updating parallel spaces
+ *
+ * Boundary-condition setup and potential anchoring are handled by
+ * BoundaryConditions in the current simulation driver.
  *
  * It serves as the lowest-level mesh/geometry infrastructure on which all
  * physics components (CnA, CnC, CnE, potentials, reactions) depend.
  */
 class Initialize_Geometry {
 private:
-    bool tiffDataLoaded = false; ///< Whether TIFF voxel data has been loaded.
-    const SimulationConfig& cfg;
+    const SimulationConfig& cfg; ///< Borrowed configuration; must outlive this geometry handler.
 
+    /**
+     * @brief Refine the half-cell interface region using a temporary solid mask.
+     * Uses cfg.amr_levels and updates parallel spaces after refinement.
+     * Returns immediately when no AMR levels are requested.
+     */
     void HalfCellAMR();
+    /**
+     * @brief Refine full-cell interfaces using temporary anode and cathode masks.
+     * Uses cfg.amr_levels and updates parallel spaces after refinement.
+     * Returns immediately when no AMR levels are requested.
+     */
     void FullCellAMR();
 
+    /**
+     * @brief Update parallel H1, scalar DG, vector DG, and any existing Vox field.
+     * @pre Parallel finite-element spaces have been initialized.
+     */
     void UpdateSpacesAfterAMR();
 
+    /**
+     * @brief Refresh local vertex, element, and element-corner counts.
+     * Sets nC to zero when this rank has no elements.
+     */
     void UpdateMeshData();
 
+    /**
+     * @brief Allocate and zero solid, electrolyte, and per-group half-cell masks.
+     * @pre parfespace and particle_labels are prepared.
+     */
     void AllocateHalfCellGeometryFields();
+    /**
+     * @brief Build half-cell masks on the current parallel mesh.
+     * Builds collector-connected particle masks or copies the total solid mask
+     * when cfg.combine_particle_groups is enabled.
+     * @pre Half-cell geometry fields have been allocated.
+     */
     void BuildHalfCellGeometryFields();
 
+    /**
+     * @brief Allocate and zero total and per-group full-cell phase masks.
+     * @pre parfespace and both electrode label lists are prepared.
+     */
     void AllocateFullCellGeometryFields();
+    /**
+     * @brief Filter full-cell anode, cathode, electrolyte, and particle masks.
+     * Per-label calls do not request boundary-connectivity pruning.
+     * @pre Full-cell geometry fields have been allocated.
+     */
     void BuildFullCellGeometryFields();
 
+    /**
+     * @brief Reduce mesh statistics across ranks and print them on rank zero.
+     * @param level Refinement level displayed with element counts and size bounds.
+     * @note All MPI ranks must participate.
+     */
     void PrintAMRMeshInfo(int level) const;
 
+    /**
+     * @brief Smooth a binary voxel mask and project it into the output space.
+     *
+     * Projects mask values as -1/+1 into DG, applies a PDE filter with weight
+     * 3 * cfg.dh, rescales by (value + 1) / 2, and synchronizes true DOFs.
+     * @param mask Flattened binary mask, indexed as x + nx * (y + ny * z).
+     * @param nx Number of voxel columns.
+     * @param ny Number of voxel rows.
+     * @param nz Number of slices; one for a 2D image.
+     * @param[out] filt_gf Filtered mask on the parallel finite-element space.
+     * @pre Mesh and parallel spaces exist; mask contains nx * ny * nz entries.
+     */
     void ApplyPDEFilterToMask(const std::vector<uint8_t>& mask, int nx, int ny, int nz, mfem::ParGridFunction& filt_gf);
 
 
 protected:
-    mfem::Vector elementVolumes;     ///< Per-element volumes (global or parallel).
-    mfem::Array<int> boundaryMarkers; ///< Boundary attribute markers.
     std::vector<std::vector<std::vector<int>>> data; ///< Raw voxel data container.
 
 public:
@@ -81,55 +134,81 @@ public:
     // -------------------------------------------------------------------------
 
     /**
-     * @brief Initialize mesh and distance fields for a half-cell simulation.
+     * @brief Initialize meshes, spaces, and filtered masks for a half cell.
      *
-     * Creates the global mesh, assigns the distance field ψ or ψ_e from file,
-     * builds FE spaces, and initializes parallel mesh/FESpaces.
+     * Reads TIFF data, creates serial and parallel spaces, maps voxel labels,
+     * identifies particle groups, applies AMR, and builds final phase masks.
+     * Uses cfg.half_electrode to select the electrode and writes geometry files.
      *
-     * @param meshFile Path to mesh file.
+     * @param meshFile Path to a TIFF file with the .tif extension.
      * @param comm MPI communicator.
      * @param order Polynomial order for FE space.
-     * @param half_electrode Electrode type for half-cell simulation.
      */
     void InitializeMesh(const char* meshFile, MPI_Comm comm, int order);
 
 
     /**
-     * @brief Initialize mesh and distance fields for a full-cell simulation.
+     * @brief Initialize meshes, spaces, and filtered masks for a full cell.
      *
-     * Loads separate anode and cathode distance functions.
+     * Merges signed electrode TIFF stacks, creates meshes and spaces, maps
+     * labels, applies AMR, and builds total and per-group phase masks.
+     * Writes the merged geometry preview and parallel geometry fields.
      *
-     * @param AnodeMeshFile Path to anode mesh file.
-     * @param CathodeMeshFile Path to cathode mesh file.
+     * @param AnodeMeshFile TIFF stack with nonpositive anode labels.
+     * @param CathodeMeshFile TIFF stack with nonnegative cathode labels.
      * @param comm MPI communicator.
      * @param order Polynomial order for FEspace.
      */
     void InitializeMesh(const char* AnodeMeshFile, const char* CathodeMeshFile, MPI_Comm comm, int order);
 
-    /*
-     * @brief Merge anode and cathode meshes.
+    /**
+     * @brief Concatenate signed anode and cathode TIFF stacks along x.
      *
-     * @param anode_mesh_file Path to anode mesh file.
-     * @param cathode_mesh_file Path to cathode mesh file.
-     * @return Merged mesh.
+     * @param AnodeMeshFile TIFF stack with labels <= 0.
+     * @param CathodeMeshFile TIFF stack with labels >= 0.
+     * @return Merged voxel array indexed by [z][y][x], without added separator columns.
+     * @throws std::runtime_error If either stack is empty, row/depth counts differ,
+     *         or electrode labels have the wrong sign.
+     * @note Writes a PGM preview of the first merged slice.
      */
     std::vector<std::vector<std::vector<int>>> MergeMeshes(const char *AnodeMeshFile, const char *CathodeMeshFile);
 
+    /**
+     * @brief Sample TIFF labels onto the serial voxel field gVox.
+     * Uses cfg.coarsen_factor to select voxel samples in Cartesian vertex order.
+     * @pre Nonempty tiffData and a compatible serial space are available.
+     * @throws std::runtime_error If globalfespace is not initialized.
+     */
     void AssignGlobalValues();
+    /**
+     * @brief Populate Vox from gVox using local-to-global element indices.
+     * Also initializes mesh counts and vertex-index workspaces.
+     * @pre Serial and parallel meshes, spaces, and gVox are initialized.
+     * @throws std::runtime_error If a required mesh is missing.
+     */
     void MapGlobalToLocal();
+    /**
+     * @brief Extract signed electrode labels from tiffData.
+     * Negative labels belong to the anode and are ordered by absolute value;
+     * positive cathode labels are ascending. Zero denotes electrolyte.
+     * When combining groups, replaces nonempty lists with -1 and +1 respectively.
+     */
     void FullCellParticleLabels();
 
 
     /**
      * @brief Initialize the global mesh from voxel data.
-     * @param voxelData vector of voxel data.
+     * @param voxelData Nonempty voxel array indexed by [z][y][x].
+     * @throws std::invalid_argument If voxel data is empty.
+     * @throws std::runtime_error If the generated mesh has no elements.
+     * @note Copies voxelData into tiffData and enables nonconforming refinement.
      */
     void InitializeGlobalMesh(const std::vector<std::vector<std::vector<int>>> &voxelData);
 
     /**
-     * @brief Load and construct global serial MFEM mesh.
+     * @brief Read a .tif file and construct a serial mesh supporting refinement.
      *
-     * @param meshFile Path to mesh file.
+     * @param meshFile Path to a TIFF file with the .tif extension.
      */
     void InitializeGlobalMesh(const char* meshFile);
 
@@ -148,14 +227,19 @@ public:
      * @brief Read TIFF voxel data for voxel-mesh construction.
      *
      * @param meshFile TIFF volume file.
-     * @return 3D voxel array.
+     * @return Cropped integer array indexed by [page][row][column].
+     * @note Uses crop bounds and particle-color settings from cfg.
      */
     std::vector<std::vector<std::vector<int>>> ReadTiffFile(const char* meshFile);
 
     /**
      * @brief Construct global mesh from voxelized TIFF data.
      *
-     * @param tiffData 3D voxel grid.
+     * @param tiffData Nonempty rectangular voxel array indexed by [z][y][x].
+     * @pre cfg.coarsen_factor is positive and produces at least one element
+     *      in each active dimension.
+     * @note One slice creates quadrilaterals; multiple slices create hexahedra.
+     *       Element counts use cfg.coarsen_factor; physical extents use cfg.dh.
      * @return Newly constructed MFEM mesh.
      */
     std::unique_ptr<mfem::Mesh>
@@ -183,43 +267,37 @@ public:
     // Boundary conditions and pinning
     // -------------------------------------------------------------------------
 
-    /**
-     * @brief Set Neumann/Dirichlet boundary condition markers.
-     *
-     * Uses boundary attributes + cell mode to mark anode, cathode, electrolyte regions.
-     *
-     * @param mode HALF or FULL cell.
-     * @param electrode ANODE, CATHODE, BOTH.
-     */
-    void SetupBoundaryConditions(sim::CellMode mode, sim::Electrode electrode);
 
     /**
-     * @brief Print mesh information (elements, vertices, dimensions).
+     * @brief Report when the parallel mesh has not been initialized.
+     * @note Currently prints nothing when the parallel mesh exists.
      */
     void PrintMeshInfo();
 
+
     /**
-     * @brief Select and assign a pinned DOF for potential anchoring.
+     * @brief Save the first voxel slice as an 8-bit binary PGM preview.
      *
-     * @param fespace FE space in which to anchor a single true DOF.
-     */
-    void SetupPinnedDOF(mfem::ParFiniteElementSpace& fespace);
-    
-    /**
-     * @brief Save TIFF voxel data to a series of PGM files.
-     * 
-     * @param data voxel data.
-     * @param filename Base filename for output PGM files.
+     * @param data Voxel array indexed by [z][y][x]; only data[0] is saved.
+     * @param filename Complete output filename.
+     * @note Maps the slice label range to 0-255; a constant slice becomes zero.
+     *       Reports empty input or file-open failure and returns.
      */
     void SaveTiffDataToPGM(const std::vector<std::vector<std::vector<int>>> &data,
                        const std::string &filename);
 
     /**
-     * @brief Use MFEM-based solvers to compute distance function from voxel mask.
-     * @param filt_gf Output filtered level set function.
+     * @brief Build a connectivity-pruned phase mask and apply the PDE filter.
+     *
+     * Solid is positive in half cells, negative for full-cell anodes, and
+     * positive for full-cell cathodes. Zero denotes electrolyte. Retains solid
+     * connected to its collector, half-cell electrolyte connected to the
+     * opposite boundary, or full-cell electrolyte touching both electrodes.
+     * @note All MPI ranks participate in mask broadcast and filtering.
+     * @param[out] filt_gf Filtered phase mask.
      * @param phase Geometry phase (SOLID or ELECTROLYTE).
      * @param cell_mode Cell mode (HALF or FULL).
-     * @param electrode Electrode type (ANODE, CATHODE, BOTH).
+     * @param electrode ANODE or CATHODE; selects the solid phase and collector side.
      */
     void ComputePDEFilter(
         mfem::ParGridFunction &filt_gf,
@@ -228,17 +306,18 @@ public:
         sim::Electrode electrode);
 
     /**
-     * @brief Compute a filtered distance field for a specific voxel label.
+     * @brief Compute a filtered mask for a particle label or combined group.
      *
-     * Builds a label-specific mask from the TIFF data, applies the PDE filter,
-     * and computes a corresponding distance field. This is used for individual
-     * particle or material-region masks in segmented microstructures.
+     * Builds the electrode solid network, optionally retains its boundary-connected
+     * component, then selects the requested label and filters the mask. When
+     * cfg.combine_particle_groups is enabled, selects all solids of the electrode
+     * instead of matching target_label. All MPI ranks participate.
      *
-     * @param filt_gf Output filtered level-set field.
+     * @param[out] filt_gf Filtered particle-group mask.
      * @param target_label Voxel label to isolate.
      * @param keep_boundary_connected Whether to keep only the boundary-connected region.
-     * @param seed_side_or_face Optional boundary side/face used as the seed region.
-     * @param cell_mode The mode of the cell (e.g., 2D or 3D).
+     * @param seed_side_or_face Seed boundary used when keep_boundary_connected is true.
+     * @param cell_mode HALF or FULL cell mode.
      * @param electrode The electrode configuration.
      */
     void ComputePDEFilterLabel(mfem::ParGridFunction &filt_gf,
@@ -251,7 +330,7 @@ public:
     /**
      * @brief Return the unique particle/material labels found in the TIFF data.
      *
-     * @return Vector of integer labels present in the voxelized geometry.
+     * @return Sorted unique nonzero labels; zero (electrolyte) is excluded.
      */
     std::vector<int> GetParticleLabelsFromTiff() const;
 
@@ -261,7 +340,7 @@ public:
 
     /**
      * @brief Access distributed mesh.
-     * @return Pointer to parallel mesh.
+     * @return Borrowed parallel mesh pointer, or nullptr before initialization.
      */
     mfem::ParMesh *GetParallelMesh() const { return parallelMesh.get(); }
 
@@ -275,19 +354,13 @@ public:
     // -------------------------------------------------------------------------
     // Public geometry/mesh fields
     // -------------------------------------------------------------------------
-    int nV = 0; ///< Number of vertices.
-    int nE = 0; ///< Number of elements.
+    int nV = 0; ///< Number of vertices on this MPI rank.
+    int nE = 0; ///< Number of elements on this MPI rank.
     int nC = 0; ///< Corners per element.
 
     int gei = 0; ///< Global element index.
     int ei  = 0; ///< Local element index.
 
-    // Boundary condition marker arrays
-    mfem::Array<int> nbc_w_bdr, nbc_s_bdr, nbc_e_bdr, nbc_n_bdr; ///< Neumann boundary markers for west, south, east, and north boundaries.
-    mfem::Array<int> nbc_bdr, dbc_bdr;                           ///< Global Neumann and Dirichlet boundary markers.
-    mfem::Array<int> dbc_w_bdr, dbc_e_bdr;                      ///< Dirichlet markers for west and east boundaries.
-
-    mfem::Array<int> ess_tdof_list_w, ess_tdof_list_e;          ///< Essential true DOFs on west and east boundaries.
 
     mfem::Array<int> gVTX; ///< Global vertex IDs of current element.
     mfem::Array<int> VTX;  ///< Local vertex IDs of current element.
@@ -295,47 +368,27 @@ public:
     std::unique_ptr<mfem::Mesh> globalMesh; ///< Global serial mesh.
     mfem::Array<HYPRE_BigInt> E_L2G;         ///< Local-to-global element mapping.
 
-    double Onm = 0.0; ///< Number of grid function entries.
-
-    // Pinned DOF information
-    mfem::Array<int> ess_tdof_potE;          ///< Essential true DOFs used to anchor the electrolyte potential.
-    bool anchor_set = false;                 ///< Whether the global anchor has been selected.
-    HYPRE_BigInt global_anchor_potE = -1;    ///< Global ID of the pinned electrolyte potential DOF.
-    int anchor_owner_potE = -1;              ///< MPI rank that owns the pinned DOF.
-    bool pin = false;                        ///< Whether this MPI rank owns the pinned DOF.
-
-    mfem::Array<int> ess_tdof_listPinned;    ///< Essential true DOF list for the pinned node.
-    mfem::Array<int> boundary_dofs;          ///< Boundary true DOFs.
-    mfem::Array<int> ess_tdof_marker;        ///< Marker array identifying essential DOFs.
 
     int myid = 0; ///< MPI rank.
-    int rkpp = -1; ///< Rank that owns the pinned DOF.
 
     std::shared_ptr<mfem::ParMesh> parallelMesh; ///< Distributed parallel mesh.
 
-    std::shared_ptr<mfem::FiniteElementSpace> feSpace; ///< Serial H1 finite element space.
     std::shared_ptr<mfem::FiniteElementSpace> globalfespace; ///< Global serial finite element space.
 
     std::shared_ptr<mfem::ParFiniteElementSpace> parfespace; ///< Parallel H1 finite element space.
     std::shared_ptr<mfem::ParFiniteElementSpace> parfespace_dg; ///< Parallel DG finite element space.
     std::shared_ptr<mfem::ParFiniteElementSpace> pardimfespace_dg; ///< Vector-valued parallel DG finite element space.
 
-    std::unique_ptr<mfem::GridFunction> gDsF; ///< Global serial distance field.
-    std::unique_ptr<mfem::ParGridFunction> dsF; ///< Parallel distance field.
-
-    std::unique_ptr<mfem::GridFunction> gDsF_A, gDsF_C; ///< Global anode/cathode distance fields.
-    std::unique_ptr<mfem::ParGridFunction> dsF_A, dsF_C; ///< Parallel anode/cathode distance fields.
 
     std::unique_ptr<mfem::GridFunction> gVox; ///< Global voxel-label field.
     std::unique_ptr<mfem::ParGridFunction> Vox; ///< Parallel voxel-label field.
 
-    std::vector<std::vector<std::vector<int>>> tiffData; ///< Raw TIFF voxel labels.
+    std::vector<std::vector<std::vector<int>>> tiffData; ///< TIFF voxel labels indexed by [z][y][x].
 
-    std::unique_ptr<mfem::H1_FECollection> gfec, pfec; ///< Serial/parallel H1 finite element collections.
+    std::unique_ptr<mfem::H1_FECollection> gfec; ///< Serial H1 finite element collection.
+    std::unique_ptr<mfem::H1_FECollection> pfec; ///< Parallel H1 finite element collection.
     std::unique_ptr<mfem::DG_FECollection> pfec_dg; ///< Parallel DG finite element collection.
 
-    std::unique_ptr<mfem::ParGridFunction> distMask; ///< Unsigned distance-to-mask field.
-    std::unique_ptr<mfem::ParGridFunction> distMaskSigned; ///< Optional signed distance-to-mask field.
     std::unique_ptr<mfem::ParGridFunction> MaskFilter; ///< Filtered solid-mask level-set field.
     std::unique_ptr<mfem::ParGridFunction> MaskFilterPse; ///< Filtered electrolyte-mask level-set field.
 

@@ -39,12 +39,12 @@ struct SimulationConfig
     const char *config_file = "../inputs/run_config.txt"; ///< Simulation configuration file.
 
     // Half-cell geometry.
-    const char *mesh_file = nullptr;
+    const char *mesh_file = nullptr; ///< Half-cell TIFF path.
 
     // Full-cell geometries.
-    const char *anode_mesh_file = nullptr;
-    const char *cathode_mesh_file = nullptr;
-    
+    const char *anode_mesh_file = nullptr; ///< Signed anode TIFF path for a full cell.
+    const char *cathode_mesh_file = nullptr; ///< Signed cathode TIFF path for a full cell.
+
     // -------------------------------------------------------------------------
     // Discretization
     // -------------------------------------------------------------------------
@@ -82,7 +82,7 @@ struct SimulationConfig
     // Numerical and operating parameters
     // -------------------------------------------------------------------------
 
-    double dh = 5.0e-06; ///< Characteristic mesh spacing (m).
+    double dh = 5.0e-06; ///< Voxel spacing in the simulation length units.
     double gc = 3.38e-10 * 3.0; ///< Cahn--Hilliard gradient-energy coefficient.
     double dt = 0.001; ///< Simulation timestep.
     double Cr = 1.0; ///< Applied C-rate.
@@ -101,13 +101,12 @@ struct SimulationConfig
     int coarsen_factor = 1; ///< Initial structured-grid coarsening factor.
 
     int row_begin = -1; ///< Beginning row for geometry cropping.
-    int row_end = -1;   ///< Ending row for geometry cropping.
+    int row_end = -1;   ///< Exclusive final row; -1 selects the full height.
     int column_begin = -1; ///< Beginning column for geometry cropping.
-    int column_end = -1;   ///< Ending column for geometry cropping.
+    int column_end = -1;   ///< Exclusive final column; -1 selects the full width.
 
-    // Optional for future 3D use.
     int depth_begin = 0; ///< Beginning depth for geometry cropping.
-    int depth_end = 1;   ///< Ending depth for geometry cropping.
+    int depth_end = 1;   ///< Exclusive final TIFF slice; -1 selects the full depth.
 
 };
 
@@ -126,7 +125,7 @@ SimulationConfig ParseSimulationArgs(int argc, char *argv[]);
 /**
  * @brief Set up run directly from a config file.
  *
- * Takes the filename of a config file and sets up the run.  
+ * Takes the filename of a config file and sets up the run.
  * Does not accept any additional arguments to override config parameters.
  *
  * @param filename Name of the config file to use.

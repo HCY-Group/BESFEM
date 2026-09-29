@@ -20,7 +20,8 @@ class Initialize_Geometry;
  *
  * Domain_Parameters constructs and manages the phase-field masks, interface
  * fields, element volumes, and global integrals required by the concentration,
- * potential, and reaction solvers.
+ * potential, and reaction solvers. Particle pair arrays allocate only entries
+ * [j][k] with j < k; reverse and diagonal entries remain null.
  */
 class Domain_Parameters {
 
@@ -44,12 +45,12 @@ public:
      * @brief Initialize all domain parameters based on the mesh type.
      *
      * Steps:
-     * - Allocates and zeros ψ, ψₑ, ψ_A, ψ_C, AvP, AvA, AvC, AvB  
-     * - Projects/interpolates distance-function-based fields  
-     * - Computes element volumes (EVol)  
-     * - Integrates ψ and ψₑ to compute gtPsi, gtPse  
-     * - Computes global target current gTrgI  
-     * 
+     * - Allocates phase masks, interface fields, and particle-pair storage
+     * - Copies and clamps geometry masks, then constructs interfaces
+     * - Computes element volumes (EVol)
+     * - Integrates ψ and ψₑ to compute gtPsi, gtPse
+     * - Computes global target current gTrgI
+     *
      */
     void SetupDomainParameters();
 
@@ -65,8 +66,6 @@ public:
     // Surface-area / geometry-related auxiliary fields
     // -------------------------------------------------------------------------
     std::unique_ptr<mfem::ParGridFunction> AvP; ///< Particle surface-area density.
-    std::unique_ptr<mfem::ParGridFunction> AvA; ///< Anode surface-area density.
-    std::unique_ptr<mfem::ParGridFunction> AvC; ///< Cathode surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvB; ///< Boundary surface-area density.
     std::unique_ptr<mfem::ParGridFunction> AvE; ///< Electrolyte surface-area density.
 
@@ -76,28 +75,28 @@ public:
     double gtPsi = 0.0; ///< Global integral of ψ (solid).
     double gtPse = 0.0; ///< Global integral of ψₑ (electrolyte).
     double gTrgI = 0.0; ///< Global target current (galvanostatic control).
-   
+
     double gtPsiA = 0.0; ///< Global integral of ψ_A (anode).
     double gtPsiC = 0.0; ///< Global integral of ψ_C (cathode).
 
     double tPsiA = 0.0; ///< Local integral of ψ_A (anode).
-    double tPsiC = 0.0; ///< Local integral of ψ_C (cathode).   
+    double tPsiC = 0.0; ///< Local integral of ψ_C (cathode).
 
     double gTrgIA = 0.0; ///< Global target current for anode.
     double gTrgIC = 0.0; ///< Global target current for cathode.
 
-    std::vector<double> gtPsA;
-    std::vector<double> gtPsC;
+    std::vector<double> gtPsA; ///< Global phase integrals in anode particle-group order.
+    std::vector<double> gtPsC; ///< Global phase integrals in cathode particle-group order.
 
     mfem::Vector EVol; ///< Element volumes for FEM integration.
 
     std::unique_ptr<mfem::ParGridFunction> denom; ///< Denominator/workspace field used in phase-field normalization.
 
-    std::unique_ptr<mfem::ParGridFunction> AvPA;
-    std::unique_ptr<mfem::ParGridFunction> AvPC;
+    std::unique_ptr<mfem::ParGridFunction> AvPA; ///< Magnitude of the total anode phase gradient.
+    std::unique_ptr<mfem::ParGridFunction> AvPC; ///< Magnitude of the total cathode phase gradient.
 
-    std::unique_ptr<mfem::ParGridFunction> denomA;
-    std::unique_ptr<mfem::ParGridFunction> denomC;
+    std::unique_ptr<mfem::ParGridFunction> denomA; ///< Sum of anode interface densities used to normalize weights.
+    std::unique_ptr<mfem::ParGridFunction> denomC; ///< Sum of cathode interface densities used to normalize weights.
 
     std::vector<int> particle_labels; ///< Material/particle labels read from the segmented geometry.
     std::vector<int> anode_particle_labels; ///< Anode particle labels.
@@ -114,7 +113,7 @@ public:
 
     std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> AvP_Pairs; ///< Pairwise particle-particle interfacial area fields.
     std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> AvP_PairsA; ///< Pairwise anode particle-particle interfacial area fields.
-    std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> AvP_PairsC; ///< Pairwise cathode particle-particle interfacial area fields.   
+    std::vector<std::vector<std::unique_ptr<mfem::ParGridFunction>>> AvP_PairsC; ///< Pairwise cathode particle-particle interfacial area fields.
 
     std::vector<std::unique_ptr<mfem::ParGridFunction>> AvEs; ///< Per-particle electrolyte interface area fields.
     std::vector<std::unique_ptr<mfem::ParGridFunction>> AvEsA; ///< Per-particle anode electrolyte interface area fields.
@@ -144,59 +143,168 @@ public:
 
     /// Reference to geometry handler.
     Initialize_Geometry &geometry;
-    const SimulationConfig& cfg;
+    const SimulationConfig& cfg; ///< Borrowed runtime configuration; must outlive this object.
 
 
 private:
+
+    /// Owned fields for particle groups in configuration order.
+    using FieldList = std::vector<std::unique_ptr<mfem::ParGridFunction>>;
+    /// Pair fields indexed by [j][k]; only j < k entries are allocated.
+    using PairFields = std::vector<FieldList>;
+
+    /** @brief Borrowed view of one electrode's particle arrays.
+     * Keeps the public half-cell/anode/cathode storage compatible with callers
+     * while shared algorithms operate on the same set of named fields.
+     */
+    struct ParticleGroups
+    {
+        FieldList& phase; ///< Per-group phase masks.
+        FieldList& gradient; ///< Per-group gradient magnitudes.
+        FieldList& electrolyte_interface; ///< Electrolyte interface densities.
+        FieldList& electrolyte_weight; ///< Electrolyte coupling weights.
+        PairFields& pair_interface; ///< Particle-pair interface densities.
+        PairFields& pair_phase; ///< Combined masks for each pair.
+        PairFields& pair_weight; ///< Particle-pair coupling weights.
+        std::vector<double>& local_total; ///< Local phase integrals.
+        std::vector<double>& global_total; ///< MPI-reduced phase integrals.
+        std::vector<double>& target_current; ///< MPI-reduced group target currents.
+    };
+
+    /** @brief Select the particle arrays for shared operations.
+     * @param electrode ANODE or CATHODE; half cells use their single active set.
+     * @return Non-owning references to this object's particle arrays.
+     */
+    ParticleGroups GetParticleGroups(sim::Electrode electrode);
+
+    /** @brief Allocate group fields, upper-triangular pairs, and zero totals.
+     * @param groups Borrowed particle arrays to populate.
+     * @param count Number of particle groups.
+     */
+    void AllocateParticleGroups(ParticleGroups groups, std::size_t count);
+
+    /** @brief Copy masks, accumulate their raw sum, and clamp individual masks.
+     * @param groups Destination particle arrays.
+     * @param masks Filtered geometry masks in group order.
+     * @param[out] total Raw mask sum; the caller clamps it after combining electrodes.
+     */
+    void CopyParticleMasks(ParticleGroups groups, const FieldList& masks, mfem::ParGridFunction& total);
+
+    /** @brief Build one electrode's interfaces, denominator, and coupling weights.
+     * @param groups Particle masks and output interface storage.
+     * @param[out] denominator Sum of pair and electrolyte interface densities.
+     * @pre AvE contains the electrolyte gradient magnitude.
+     */
+    void BuildParticleInterfaces(ParticleGroups groups, mfem::ParGridFunction& denominator);
+
+    /** @brief Integrate each group and calculate its material-dependent target current.
+     * @param groups Phase masks and output totals.
+     * @param materials One material per particle group.
+     * @return Sum of the electrode's group target currents.
+     * @pre EVol contains current mesh element volumes.
+     */
+    double CalculateParticleTotals(ParticleGroups groups, const std::vector<sim::MaterialType>& materials);
+
 
     // -------------------------------------------------------------------------
     // Internal setup routines
     // -------------------------------------------------------------------------
 
-    /// Allocate grid functions (psi, pse, AvP, AvA, AvC, AvB).
+    /// Allocate phase and interface storage for the configured cell mode.
     void InitializeGridFunctions();
 
     /**
      * @brief Project/interpolate distance-function-based parameters.
      *
-     * Converts dsF / dsF_A / dsF_C into phase indicators ψ, ψₑ and surface-area
-     * fields AvP, etc., depending on mesh type. Clamps values to ensure
-     * physical consistency.
+     * Copies the filtered masks from Initialize_Geometry, clamps phase values,
+     * and builds interface fields and weights for the configured cell mode.
      *
      */
     void InterpolateDomainParameters();
 
+    /**
+     * @brief Allocate half-cell phase, interface, pair, and integration storage.
+     */
     void InitializeHalfCellGridFunctions();
+    /**
+     * @brief Allocate separate anode and cathode phase, interface, and pair storage.
+     */
     void InitializeFullCellGridFunctions();
 
+    /**
+     * @brief Copy and clamp filtered half-cell geometry masks into domain fields.
+     */
     void InterpolateHalfCellMasks();
+    /**
+     * @brief Copy and clamp filtered electrode and electrolyte masks into domain fields.
+     */
     void InterpolateFullCellMasks();
 
+    /**
+     * @brief Build half-cell gradient magnitudes, pair interfaces, and coupling weights.
+     */
     void BuildHalfCellInterfaces();
+    /**
+     * @brief Build electrode-specific gradients, pair interfaces, and coupling weights.
+     */
     void BuildFullCellInterfaces();
 
+    /**
+     * @brief Compute the Euclidean magnitude of a scalar field gradient.
+     * @param phase_in Phase indicator.
+     * @param[out] gradient_out Magnitude of its spatial gradient.
+     */
     void ComputeGradientMagnitude(const mfem::ParGridFunction &phase_in, mfem::ParGridFunction &gradient_out);
 
-    void BuildPairInterface(mfem::ParGridFunction &out, const mfem::ParGridFunction &phase_a, const mfem::ParGridFunction &phase_b,
-        const mfem::ParGridFunction &gradient_a, const mfem::ParGridFunction &gradient_b);
+    /** @brief Compute the geometric mean of two gradient-magnitude fields.
+     * @param[out] out Interface density for a particle pair or electrolyte contact.
+     * @param gradient_a First gradient magnitude.
+     * @param gradient_b Second gradient magnitude.
+     */
+    void BuildInterface(mfem::ParGridFunction& out, const mfem::ParGridFunction& gradient_a,
+        const mfem::ParGridFunction& gradient_b);
 
-    void BuildElectrolyteInterface(mfem::ParGridFunction &out, const mfem::ParGridFunction &electrolyte_phase, const mfem::ParGridFunction &particle_gradient);
+    /**
+     * @brief Sum two phase masks and clamp their sum to [0, 1].
+     * @param[out] out Combined pair mask.
+     * @param phase_a First phase mask.
+     * @param phase_b Second phase mask.
+     */
     void BuildPairPhaseMask(mfem::ParGridFunction &out, const mfem::ParGridFunction &phase_a, const mfem::ParGridFunction &phase_b);
 
+    /**
+     * @brief Compute nonnegative interface-density ratios raised to power 0.8.
+     * @param[out] weight_out Weights, zero where denominator is at most 1e-30.
+     * @param numerator Interface density to normalize.
+     * @param denominator Sum of interface densities.
+     * @param mask Optional phase mask multiplied into the weights.
+     */
     void ComputeInterfaceWeight(mfem::ParGridFunction &weight_out, const mfem::ParGridFunction &numerator, const mfem::ParGridFunction &denominator,
         const mfem::ParGridFunction *mask = nullptr);
 
+    /**
+     * @brief Integrate half-cell phase volumes and compute per-group target currents.
+     */
     void CalculateHalfCellPhasePotentialsAndTargetCurrent();
+    /**
+     * @brief Integrate both electrodes and compute their group and total target currents.
+     */
     void CalculateFullCellPhasePotentialsAndTargetCurrent();
+    /**
+     * @brief Convert a local phase volume into a globally reduced target current.
+     * @param local_phase_volume Local integrated particle phase.
+     * @param[out] global_target_current MPI-reduced target current.
+     * @param material Material supplying lithium site density.
+     */
     void CalculateTargetCurrent(double local_phase_volume, double &global_target_current, sim::MaterialType material);
 
     /**
      * @brief Compute the local and global totals of a field.
      *
      * Performs:
-     * - Element-wise multiplication with the element volumes (EVol)  
-     * - Local summation  
-     * - MPI reduction to compute a global total  
+     * - Element-wise multiplication with the element volumes (EVol)
+     * - Local summation
+     * - MPI reduction to compute a global total
      *
      * @param grid_function Field to integrate.
      * @param element_volumes Precomputed element volumes.
@@ -206,10 +314,10 @@ private:
     void CalculateTotals(const mfem::ParGridFunction &grid_function, const mfem::Vector &element_volumes, double &local_total, double &global_total);
 
     /**
-     * @brief Compute EVol and integrate a phase field (ψ or ψₑ).
+     * @brief Integrate a phase field using cached element volumes.
      *
-     * Fills @ref EVol using geometric data, then calls @ref CalculateTotals
-     * to compute the local and global integrals.
+     * Calls CalculateTotals to compute the local and global integrals.
+     * @pre EVol was filled by CalculatePhasePotentialsAndTargetCurrent().
      *
      * @param grid_function Phase-field indicator.
      * @param total         [out] Local total.
@@ -226,16 +334,6 @@ private:
      */
     void CalculatePhasePotentialsAndTargetCurrent();
 
-    // /**
-    //  * @brief Compute local contribution to target current from ψ.
-    //  *
-    //  * Uses electrochemical constants (density, capacity, etc.) to convert
-    //  * the integrated particle-phase volume into a target current contribution.
-    //  *
-    //  * @param total_psi Local integral of ψ.
-    //  * @param global_total [out] Global target current contribution after MPI reduction.
-    //  */
-    // void CalculateTargetCurrent(double total_psi, double &global_total, sim::MaterialType material);
 
     /**
      * @brief Print diagnostic totals (rank 0 only).
@@ -247,13 +345,7 @@ private:
     // -------------------------------------------------------------------------
     // Geometry / storage members
     // -------------------------------------------------------------------------
-    int nV = 0; ///< Number of vertices.
-    int nE = 0; ///< Number of elements.
-    int nC = 0; ///< Nodes per element (corners).
 
-    mfem::ParGridFunction *dsF     = nullptr; ///< Distance function (whole domain).
-    mfem::ParGridFunction *dsF_A   = nullptr; ///< Distance function (anode).
-    mfem::ParGridFunction *dsF_C   = nullptr; ///< Distance function (cathode).
 
     mfem::ParMesh *pmesh = nullptr; ///< Parallel mesh reference.
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< Parallel FE space.
@@ -263,7 +355,6 @@ private:
     // -------------------------------------------------------------------------
     double tPsi = 0.0; ///< Local ψ total before MPI reduction.
     double tPse = 0.0; ///< Local ψₑ total before MPI reduction.
-    double trgI = 0.0; ///< Local target current before global reduction.
 
 };
 

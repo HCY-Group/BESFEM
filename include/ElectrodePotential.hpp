@@ -31,7 +31,7 @@ class BoundaryConditions;
 class ElectrodePotential : public PotentialBase
 {
 public:
-    
+
     /**
      * @brief Construct an electrode potential solver.
      *
@@ -39,7 +39,8 @@ public:
      * @param para Reference to the domain parameter object.
      * @param bc Reference to the boundary-condition handler.
      * @param electrode Electrode being solved (anode or cathode).
-     * @param material Active material associated with this electrode.
+     * @param material Initial conductivity material and single-group fallback;
+     *                 multi-group assembly receives its own complete material list.
      * @param cfg Reference to the simulation configuration.
      */
     ElectrodePotential(Initialize_Geometry &geo, Domain_Parameters &para, BoundaryConditions &bc, sim::Electrode electrode, sim::MaterialType material, const SimulationConfig &cfg);
@@ -55,7 +56,7 @@ public:
      * @param psx Electrode phase-field mask.
      */
     void SetupField(mfem::ParGridFunction &ph, double initial_value, mfem::ParGridFunction &psx);
-    
+
     /**
      * @brief Solve the solid-phase potential equation.
      *
@@ -80,7 +81,7 @@ public:
      * @param potential Electrode potential field.
      */
     void AssembleSystem(mfem::ParGridFunction &Cn,mfem::ParGridFunction &psx,mfem::ParGridFunction &potential) override;
-    
+
     /**
      * @brief Assemble the electrode potential system for multiple particle groups.
      *
@@ -94,13 +95,16 @@ public:
      */
     void AssembleSystem(const std::vector<mfem::ParGridFunction*> &Cn_groups, const std::vector<mfem::ParGridFunction*> &psi_groups, const std::vector<sim::MaterialType> &materials, mfem::ParGridFunction &potential);
 
-    /// Return the applied electrode boundary voltage.
+    /// @brief Return the applied electrode boundary voltage.
+    /// @return Current boundary voltage Bv.
     double GetBoundaryVoltage() const override { return Bv; }
-    
-    /// Increment the applied boundary voltage.
+
+    /// @brief Increment the applied boundary voltage.
+    /// @param dV Voltage increment to add.
     void AddBoundaryVoltage(double dV){Bv += dV;}
 
-    /// Return the GridFunction for conductivity
+    /// @brief Return a copy of the assembled solid conductivity field.
+    /// @return Phase-weighted solid conductivity.
     mfem::ParGridFunction GetConductivity() override {return kap;}
 
 private:

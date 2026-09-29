@@ -40,13 +40,14 @@ public:
      *
      * @param geo  Geometry/mesh handler.
      * @param para Domain parameter container.
+     * @param cfg Runtime settings including voxel spacing.
      */
     Reaction(Initialize_Geometry &geo, Domain_Parameters &para, const SimulationConfig &cfg);
 
     Initialize_Geometry &geometry;          ///< Geometry and mesh infrastructure.
     Domain_Parameters   &domain_parameters; ///< Material and phase-field parameters.
 
-    const SimulationConfig& cfg;
+    const SimulationConfig& cfg; ///< Borrowed runtime configuration; must outlive this object.
 
     /**
      * @brief Assign an initial reaction rate.
@@ -55,17 +56,6 @@ public:
      * @param initial_value Scalar initialization value.
      */
     void Initialize(mfem::ParGridFunction &Rx, double initial_value);
-
-    /**
-     * @brief Compute exchange-current density using lookup tables.
-     *
-     * Uses concentration-dependent \( i_0(c) \), OCV(c), and mobility tables
-     * to populate reaction-related material fields.
-     *
-     * @param Cn Concentration field used in the lookup.
-     * @param AvP_in Surface-area weighting function for the interface.
-     */
-    void TableExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &AvP_in);
 
     /**
      * @brief Compute exchange-current density (single concentration field).
@@ -95,7 +85,9 @@ public:
     /**
      * @brief Compute global reaction current.
      *
-     * Integrates \( R(x)\,A_v(x) \) across the domain using MPI reduction.
+     * Integrates the supplied reaction field using element nodal averages and
+     * volumes, then sums across MPI ranks. Interface area is already included
+     * by ButlerVolmer(); this method does not multiply it a second time.
      *
      * @param Rx             Reaction-rate field.
      * @param global_current Output: MPI-reduced total reaction current.
@@ -145,25 +137,6 @@ private:
     double local_current = 0.0; ///< Local reaction current (before MPI reduce).
     std::unique_ptr<mfem::ParGridFunction> dPHE; ///< Potential drop (electrolyte).
     const mfem::Vector &EVol; ///< Element volumes.
-
-    // -------------------------------------------------------------------------
-    // Lookup-table data (size = 101)
-    // -------------------------------------------------------------------------
-    mfem::Vector Ticks     = mfem::Vector(101); ///< Concentration ticks.
-    mfem::Vector chmPot    = mfem::Vector(101); ///< Charge-transfer potential.
-    mfem::Vector Mobility  = mfem::Vector(101); ///< Mobility table.
-    mfem::Vector OCV_file  = mfem::Vector(101); ///< OCV lookup.
-    mfem::Vector i0_file   = mfem::Vector(101); ///< Exchange-current lookup.
-
-    /**
-     * @brief Linearly interpolate from a reaction lookup table.
-     *
-     * @param cn    Concentration value (0–1).
-     * @param ticks Sorted tick positions.
-     * @param data  Tabulated values.
-     * @return Interpolated value.
-     */
-    double GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vector &data);
 };
 
 #endif // REACTION_HPP

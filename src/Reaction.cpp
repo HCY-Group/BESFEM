@@ -25,18 +25,6 @@ Reaction::Reaction(Initialize_Geometry &geo, Domain_Parameters &para, const Simu
 
 }
 
-double Reaction::GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vector &data)
-{
-    if (cn < 1.0e-6) cn = 1.0e-6;
-    if (cn > 0.999999) cn = 0.999999;
-
-    int idx = std::floor(cn / 0.01);
-    if (idx < 0) idx = 0;
-    if (idx > 99) idx = 99;
-
-    return data(idx) + (cn - ticks(idx)) / 0.01 * (data(idx + 1) - data(idx));
-}
-
 void Reaction::Initialize(mfem::ParGridFunction &Rx, double initial_value)
 {
     SetInitialReaction(Rx, initial_value);
@@ -70,25 +58,6 @@ void Reaction::ExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParGridFu
             (*Kfw)(vi) = (*i0C)(vi) / (Constants::Frd * 0.001) * std::exp(Constants::alp * Constants::Cst1 * (*OCV)(vi));
             (*Kbw)(vi) = (*i0C)(vi) / (Constants::Frd * cn_val) * std::exp(-Constants::alp * Constants::Cst1 * (*OCV)(vi));
         }
-    }
-}
-
-void Reaction::TableExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &AvP_in)
-{
-    for (int vi = 0; vi < nV; vi++) {
-
-        if ((AvP_in)(vi) * cfg.dh > 1e-3) { // Check for interface presence
-            double cn_val = Cn(vi);
-
-            double i0 = GetTableValues(cn_val, Ticks, i0_file) * 1.0e-3; // Convert mA to A
-            double ocv = GetTableValues(cn_val, Ticks, OCV_file);
-
-            (*i0C)(vi) = i0;
-            (*OCV)(vi) = ocv;
-            (*Kfw)(vi) = i0 / (Constants::Frd * 0.001) * exp(Constants::alp * Constants::Cst1 * ocv);
-            (*Kbw)(vi) = i0 / (Constants::Frd * cn_val) * exp(-Constants::alp * Constants::Cst1 * ocv);
-        }
-
     }
 }
 

@@ -1,3 +1,7 @@
+/**
+ * @file FEMOperators.hpp
+ * @brief Reusable parallel finite-element assembly helpers.
+ */
 #ifndef FEMOPERATORS_HPP
 #define FEMOPERATORS_HPP
 
@@ -142,29 +146,14 @@ public:
      */
     void Update(std::unique_ptr<mfem::ParBilinearForm> &B);
 
-    // -------------------------------------------------------------------------
-    // Public fields
-    // -------------------------------------------------------------------------
-    std::shared_ptr<mfem::ParBilinearForm> K; ///< Assembled stiffness form.
-    mfem::HypreParVector X1v;                 ///< Scratch true-DoF vector.
-    mfem::Array<int> boundary_dofs;           ///< Essential boundary DOFs.
 
 private:
     // -------------------------------------------------------------------------
     // Internal FE/Mesh context
     // -------------------------------------------------------------------------
-    mfem::ParMesh *pmesh = nullptr; ///< Parallel mesh.
     std::shared_ptr<mfem::ParFiniteElementSpace> fespace; ///< FE space (shared_ptr).
-    mfem::ParFiniteElementSpace *raw_fespace = nullptr;   ///< Raw FE space pointer.
     mfem::ParFiniteElementSpace *local_fespace = nullptr; ///< Local FE space (alias).
 
-    // -------------------------------------------------------------------------
-    // Operator storage
-    // -------------------------------------------------------------------------
-    mfem::ParBilinearForm *M = nullptr; ///< Mass matrix (raw pointer).
-    std::unique_ptr<mfem::ParLinearForm> B; ///< Force/forcing term.
-    mfem::ParGridFunction *temp_ps = nullptr; ///< Temporary phase-field grid-function.
-    mfem::GridFunctionCoefficient *coef = nullptr; ///< Coefficient wrapper for grid-functions.
 };
 
 #endif // FEMOPERATORS_HPP

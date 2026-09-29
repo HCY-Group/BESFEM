@@ -51,7 +51,7 @@ public:
      * @param gtPsx Global integral of the phase-field mask.
      */
     void SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, double gtPsx);
-    
+
     /**
      * @brief Advance the concentration field by one timestep.
      *
@@ -71,7 +71,8 @@ public:
     /// Reference to the simulation configuration.
     const SimulationConfig& cfg;
 
-    /// Return the GridFunction for diffusivity
+    /// @brief Return a copy of the assembled diffusivity field.
+    /// @return Phase-weighted diffusivity field.
     mfem::ParGridFunction GetDiffusivity() override {return Dp;}
 
 private:
@@ -103,8 +104,6 @@ private:
 
     std::unique_ptr<mfem::HypreParMatrix> Tmatp; ///< System matrix.
 
-    double gtPsC = 0.0; ///< Global particle phase-field integral.
-    double gtPsi = 0.0; ///< Global solid phase-field integral.
 
     bool combine_particle_groups = false; ///< Combine all particles into a single diffusion solve.
 

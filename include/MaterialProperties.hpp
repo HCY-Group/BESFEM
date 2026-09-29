@@ -22,7 +22,9 @@
  */
 namespace MaterialProperties
 {
-    /** Load per-material default text files, then apply material.* overrides.
+    /** @brief Load material defaults, then apply material.* overrides.
+     * @param values Configuration key/value pairs containing material overrides.
+     * @param config_file Configuration path used to resolve relative data paths.
      * Override paths and materials_dir are relative to the config file.
      * Tables use increasing concentrations and clamp to their endpoint values.
      * Input is not validated; missing data defaults to zero.

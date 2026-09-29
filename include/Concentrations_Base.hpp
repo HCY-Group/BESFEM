@@ -1,3 +1,7 @@
+/**
+ * @file Concentrations_Base.hpp
+ * @brief Shared interfaces and workspaces for concentration transport.
+ */
 #pragma once
 
 #include "mfem.hpp"
@@ -30,8 +34,6 @@ protected:
     /// Material type associated with this concentration solver.
     sim::MaterialType material;
 
-    double net_pair_source = 0.0;
-    double absolute_pair_source = 0.0;
 
 public:
     /**
@@ -87,8 +89,6 @@ public:
         mfem::ParGridFunction *mu_self  = nullptr; ///< Chemical potential of the current particle.
         mfem::ParGridFunction *mu_nbr   = nullptr; ///< Chemical potential of the neighboring particle.
 
-        // int self_index = -1;
-        // int neighbor_index = -1;
     };
 
     /**
@@ -138,18 +138,11 @@ public:
      */
     double GetLithiation() const { return Xfr; }
 
+    /**
+     * @brief Return a copy of the solver's diffusivity field.
+     * @return Material coefficient field; unsupported models may report an error.
+     */
     virtual mfem::ParGridFunction GetDiffusivity() = 0;
-    
-    
-    // double GetNetPairSource() const
-    // {
-    //     return net_pair_source;
-    // }
-
-    // double GetAbsolutePairSource() const
-    // {
-    //     return absolute_pair_source;
-    // }
 
 
     // -------------------------------------------------------------------------
@@ -169,7 +162,7 @@ public:
 
     int nE = 0; ///< Number of mesh elements.
     int nC = 0; ///< Number of nodes per element (corners).
-    int nV = 0; ///< Total number of global vertices.
+    int nV = 0; ///< Number of vertices on this MPI rank.
 
     mfem::Vector EAvg;          ///< Per-element averages (workspace).
     const mfem::Vector &EVol;   ///< Element volumes (from Domain_Parameters).

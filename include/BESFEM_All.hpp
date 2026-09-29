@@ -1,3 +1,7 @@
+/**
+ * @file BESFEM_All.hpp
+ * @brief Convenience header collecting the BESFEM simulation interfaces.
+ */
 #pragma once
 #include "mfem.hpp"
 #include "mpi.h"
