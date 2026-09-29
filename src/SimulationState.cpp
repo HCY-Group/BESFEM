@@ -33,8 +33,7 @@ void PairWorkspaces::Initialize(Initialize_Geometry& geometry, int np, const cha
     {
         const int number_of_pairs = np * (np - 1) / 2;
 
-        std::cout << "[DEBUG] Initialized " << electrode_name << " pair workspaces for np = "
-            << np << " (" << number_of_pairs << " pairs)" << std::endl;
+        std::cout << "[DEBUG] Initialized " << electrode_name << " pair workspaces for np = " << np << " (" << number_of_pairs << " pairs)" << std::endl;
     }
 }
 
