@@ -55,12 +55,12 @@ all electrode curves now clamp outside [0,1]. The electrolyte table covers
 
 ## Overrides and locating defaults
 
-<!-- The makefile embeds the `inputs/materials` directory in the executable.
+The makefile embeds the `inputs/materials` directory in the executable.
 To relocate the data or choose a different complete default library, use:
 
 ```ini
 materials_dir = materials
-``` -->
+```
 
 <!-- That directory is relative to the run config.
 Alternatively set `MATERIALS_DIR=/path/to/materials` when building. All default
