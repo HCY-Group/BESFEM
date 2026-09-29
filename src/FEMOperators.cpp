@@ -12,11 +12,11 @@ using namespace std;
 
 // Constructor for shared_ptr
 FEMOperators::FEMOperators(std::shared_ptr<mfem::ParFiniteElementSpace> fespace)
-: fespace(fespace), raw_fespace(nullptr), local_fespace(fespace.get()) {}
+: fespace(fespace), local_fespace(fespace.get()) {}
 
 // Constructor for raw pointer
 FEMOperators::FEMOperators(mfem::ParFiniteElementSpace* fespace)
-: raw_fespace(fespace), fespace(nullptr), local_fespace(fespace) {}
+: fespace(nullptr), local_fespace(fespace) {}
 
 // Destructor
 FEMOperators::~FEMOperators() {}

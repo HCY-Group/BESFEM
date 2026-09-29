@@ -1,3 +1,7 @@
+/**
+ * @file Adjust.hpp
+ * @brief Boundary-voltage feedback for constant-current simulations.
+ */
 #ifndef ADJUST_HPP
 #define ADJUST_HPP
 
@@ -67,6 +71,13 @@ public:
                                double &VCell);
 
 
+    /**
+     * @brief Shift electrolyte voltage according to the sign of the current error.
+     * @param total_current Computed active-electrode current.
+     * @param total_target Target active-electrode current.
+     * @param[in,out] electrolyte_potential Solver whose boundary voltage is shifted.
+     * @param[in,out] phE Potential field shifted by the same cfg.dt * cfg.Vsr0 step.
+     */
     void AdjustHalfCellCurrent(double total_current, double total_target, ElectrolytePotential& electrolyte_potential, mfem::ParGridFunction& phE);
 
 private:

@@ -5,23 +5,21 @@
  * @file Constants.hpp
  * @brief Declares global constants used throughout BESFEM simulations.
  *
- * Includes mesh/input file names, polynomial order, grid spacing parameters,
- * numerical tolerances, electrochemical constants, and initial conditions.
+ * Includes polynomial order, numerical thresholds, electrochemical constants,
+ * and initial reaction values. Runtime settings are stored in SimulationConfig.
  */
 
 /**
  * @namespace Constants
- * @brief Global user-adjustable simulation constants.
+ * @brief Compiled numerical and electrochemical constants.
  *
  * This namespace provides a central location for:
- * - mesh and distance-function file paths,
  * - finite element order,
  * - physical parameters,
  * - model constants,
- * - default initialization values for potentials, concentrations, and reactions.
+ * - default initialization values for reactions.
  *
- * Many of these values are read at runtime or overridden by command-line
- * arguments (see `SimulationConfig`).
+ * SimulationConfig provides separate runtime settings and uses order as a default.
  */
 namespace Constants {
 

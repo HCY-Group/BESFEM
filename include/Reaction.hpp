@@ -40,13 +40,14 @@ public:
      *
      * @param geo  Geometry/mesh handler.
      * @param para Domain parameter container.
+     * @param cfg Runtime settings including voxel spacing.
      */
     Reaction(Initialize_Geometry &geo, Domain_Parameters &para, const SimulationConfig &cfg);
 
     Initialize_Geometry &geometry;          ///< Geometry and mesh infrastructure.
     Domain_Parameters   &domain_parameters; ///< Material and phase-field parameters.
 
-    const SimulationConfig& cfg;
+    const SimulationConfig& cfg; ///< Borrowed runtime configuration; must outlive this object.
 
     /**
      * @brief Assign an initial reaction rate.
@@ -59,7 +60,7 @@ public:
     /**
      * @brief Compute exchange-current density using lookup tables.
      *
-     * Uses concentration-dependent \( i_0(c) \), OCV(c), and mobility tables
+     * Uses concentration-dependent \( i_0(c) \) and OCV(c) tables
      * to populate reaction-related material fields.
      *
      * @param Cn Concentration field used in the lookup.
@@ -95,7 +96,9 @@ public:
     /**
      * @brief Compute global reaction current.
      *
-     * Integrates \( R(x)\,A_v(x) \) across the domain using MPI reduction.
+     * Integrates the supplied reaction field using element nodal averages and
+     * volumes, then sums across MPI ranks. Interface area is already included
+     * by ButlerVolmer(); this method does not multiply it a second time.
      *
      * @param Rx             Reaction-rate field.
      * @param global_current Output: MPI-reduced total reaction current.
@@ -150,8 +153,6 @@ private:
     // Lookup-table data (size = 101)
     // -------------------------------------------------------------------------
     mfem::Vector Ticks     = mfem::Vector(101); ///< Concentration ticks.
-    mfem::Vector chmPot    = mfem::Vector(101); ///< Charge-transfer potential.
-    mfem::Vector Mobility  = mfem::Vector(101); ///< Mobility table.
     mfem::Vector OCV_file  = mfem::Vector(101); ///< OCV lookup.
     mfem::Vector i0_file   = mfem::Vector(101); ///< Exchange-current lookup.
 

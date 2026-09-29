@@ -22,7 +22,7 @@ class Domain_Parameters;
  * to maintain the electrolyte inventory during time integration.
  */
 class ElectrolyteDiffusion : public ConcentrationBase
-{ 
+{
 public:
 
     /**
@@ -50,7 +50,7 @@ public:
      * @param gtPsx Global integral of the electrolyte phase-field mask.
      */
     void SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, double gtPsx);
-    
+
     /**
      * @brief Advance the electrolyte concentration by one timestep.
      *
@@ -78,7 +78,8 @@ public:
      */
     void SaltConservation(mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx) override;
 
-    /// Return the GridFunction for diffusivity
+    /// @brief Return a copy of the assembled diffusivity field.
+    /// @return Phase-weighted diffusivity field.
     mfem::ParGridFunction GetDiffusivity() override {return De;}
 
     BoundaryConditions &boundary_conditions; ///< Boundary-condition manager.
@@ -91,7 +92,7 @@ public:
     std::unique_ptr<mfem::ProductCoefficient> m_nbcCoef; ///< Natural-boundary-condition coefficient.
     mfem::ConstantCoefficient nbcCoef;       ///< Constant natural-boundary coefficient.
     mfem::GridFunctionCoefficient matCoef_R; ///< Reaction/source coefficient.
-    mfem::Array<int> boundary_dofs;          ///< Boundary true DOFs.         
+    mfem::Array<int> boundary_dofs;          ///< Boundary true DOFs.
 
 
 private:
@@ -113,9 +114,7 @@ private:
     mfem::ParGridFunction Rxe; ///< Electrolyte reaction/source field.
     mfem::ParGridFunction PeR; ///< Electrolyte phase/reaction workspace field.
 
-    double eCrnt = 0.0; ///< Electrolyte current/source diagnostic.
     double infx  = 0.0; ///< Boundary flux diagnostic.
-    double L_w   = 0.0; ///< Salt-conservation correction factor.
 
     mfem::HypreParVector Feb; ///< Boundary/source contribution vector.
     mfem::HypreParVector X1v; ///< Temporary solution/work vector.

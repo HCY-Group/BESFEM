@@ -72,8 +72,8 @@ public:
     /**
      * @brief Assemble the potential system for multiple particle/material groups.
      *
-     * The default implementation may be overridden by derived classes that
-     * support multi-particle or multi-material conductivity assembly.
+     * The default implementation reports an MFEM error. Derived classes must
+     * override it to support multi-group conductivity assembly.
      *
      * @param Cn_groups Concentration fields for each particle/material group.
      * @param psi_groups Phase-field masks for each particle/material group.
@@ -116,6 +116,10 @@ public:
      */
     virtual void AddBoundaryVoltage(double dV) = 0;
 
+    /**
+     * @brief Return a copy of the solver's conductivity field.
+     * @return Material coefficient field; unsupported models may report an error.
+     */
     virtual mfem::ParGridFunction GetConductivity() = 0;
 
     int nE = 0; ///< Number of mesh elements.

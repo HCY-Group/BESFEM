@@ -4,7 +4,7 @@
  * @file SimTypes.hpp
  * @brief Defines small enumeration types used throughout BESFEM simulations.
  *
- * Contains standard enumerations for cell configuration (half/full cell) and 
+ * Contains standard enumerations for cell configuration (half/full cell) and
  * electrode selection (anode, cathode, or both in full-cell mode).
  */
 
@@ -27,7 +27,7 @@ enum class CellMode {
 /**
  * @enum Electrode
  * @brief Identifies which electrode is active in a simulation.
- * 
+ *
  */
 enum class Electrode {
     ANODE,    ///< Solid anode electrode
@@ -39,7 +39,7 @@ enum class Electrode {
 /**
  * @enum MaterialType
  * @brief Enumerates the types of electrode materials supported in the simulation.
- * 
+ *
  */
 
 enum class MaterialType {
@@ -54,7 +54,7 @@ enum class MaterialType {
 /**
  * @enum StopMode
  * @brief Defines the stopping condition for the simulation.
- * 
+ *
  */
 enum class StopMode
 {
@@ -92,12 +92,12 @@ enum class BoundarySide
 /**
  * @enum TIFF_ParticleType
  * @brief Represents the color of the particle in a TIFF image.
- * 
+ *
  */
 enum class TIFF_ParticleType
 {
-    BLACK, ///< Particle is black, Electrolye is white 
-    WHITE ///< Particle is white, Electrolye is black
+    BLACK, ///< Particle is black, Electrolyte is white
+    WHITE ///< Particle is white, Electrolyte is black
 };
 
 
