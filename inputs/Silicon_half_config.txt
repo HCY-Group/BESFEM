@@ -40,9 +40,9 @@ dh = 2.07407e-05
 
 stop_mode = steps       
 VCut = 3.6
-num_steps = 40001
+num_steps = 3001
 
-save_freq = 1000
+save_freq = 100
 
 # ============================================================
 # CURRENT CONTROL
@@ -58,13 +58,13 @@ Vsr0 = 0.009466
 anode_materials = silicon
 
 # ============================================================
-# INITIAL PARTICLE STOICHIOMETRIES
+# INITIAL PARTICLE CONCENTRATION
 # ============================================================
 
 init_anode_particles = 0.05
 
 # ============================================================
-# INITIAL ELECTROLYTE
+# INITIAL ELECTROLYTE CONCENTRATION
 # ============================================================
 
 init_CnE = 0.001

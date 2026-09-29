@@ -37,9 +37,11 @@ gc = 6.38e-10
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = voltage       
+stop_mode = steps       
 VCut = 0.02
-num_steps = 4
+num_steps = 3001
+
+save_freq = 100
 
 # ============================================================
 # CURRENT CONTROL
@@ -55,13 +57,13 @@ Vsr0 = 0.009466
 anode_materials = Graphite
 
 # ============================================================
-# INITIAL PARTICLE STOICHIOMETRIES
+# INITIAL PARTICLE CONCENTRATION
 # ============================================================
 
 init_anode_particles = 0.03
 
 # ============================================================
-# INITIAL ELECTROLYTE
+# INITIAL ELECTROLYTE CONCENTRATION
 # ============================================================
 
 init_CnE = 0.001

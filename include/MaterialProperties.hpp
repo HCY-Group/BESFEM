@@ -9,6 +9,8 @@
 
 #pragma once
 #include "SimTypes.hpp"
+#include <string>
+#include <unordered_map>
 
 /**
  * @namespace MaterialProperties
@@ -20,6 +22,16 @@
  */
 namespace MaterialProperties
 {
+    /** Load per-material default text files, then apply material.* overrides.
+     * Override paths and materials_dir are relative to the config file.
+     * Tables use increasing concentrations and clamp to their endpoint values.
+     * Input is not validated; missing data defaults to zero.
+     * Call before validation/initialization, not during a solve.
+     * The existing material API supports one active configuration per process.
+     */
+    void Configure(const std::unordered_map<std::string, std::string>& values,
+                   const std::string& config_file);
+
     /**
      * @brief Return the open-circuit voltage (OCV).
      *
@@ -46,17 +58,6 @@ namespace MaterialProperties
      * @return Exchange current density.
      */
     double ExchangeCurrentDensity(sim::MaterialType material, double c);
-
-    /**
-     * @brief Return the tabulated LFP chemical-potential value.
-     *
-     * This function evaluates the tabulated chemical-potential curve used for
-     * lithium iron phosphate (LFP).
-     *
-     * @param c Normalized lithium concentration.
-     * @return LFP chemical-potential value.
-     */
-    double LFP_ChpValue(double c);
 
     /**
      * @brief Return the lithium diffusivity.

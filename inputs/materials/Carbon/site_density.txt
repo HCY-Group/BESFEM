@@ -1,0 +1,2 @@
+# Carbon site_density; solver units (see ../README.md)
+0.022700000000000001

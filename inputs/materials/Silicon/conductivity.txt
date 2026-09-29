@@ -1,0 +1,2 @@
+# Silicon conductivity; solver units (see ../README.md)
+2.1499999999999999

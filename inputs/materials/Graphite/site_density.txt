@@ -1,0 +1,2 @@
+# Graphite site_density; solver units (see ../README.md)
+0.031199999999999999

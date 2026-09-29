@@ -1,0 +1,2 @@
+# LFP site_density; solver units (see ../README.md)
+0.022735444979999998

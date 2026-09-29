@@ -37,9 +37,11 @@ gc = 5e-15
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = voltage       
+stop_mode = steps       
 VCut = 3.2
-num_steps = 3000001
+num_steps = 3001
+
+save_freq = 100
 
 # ============================================================
 # CURRENT CONTROL
@@ -55,13 +57,13 @@ Vsr0 = 0.009466
 cathode_materials = LFP
 
 # ============================================================
-# INITIAL PARTICLE STOICHIOMETRIES
+# INITIAL PARTICLE CONCENTRATION
 # ============================================================
 
 init_cathode_particles = 0.20
 
 # ============================================================
-# INITIAL ELECTROLYTE
+# INITIAL ELECTROLYTE CONCENTRATION
 # ============================================================
 
 init_CnE = 0.001

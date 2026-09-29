@@ -14,10 +14,10 @@ mesh_file = ../inputs/mesh/colored_labels_labels.tif
 combine_particles = true
 
 # TIFF crop bounds
-row_begin = 200
+row_begin = 370
 row_end = 400
-column_begin = 200
-column_end = 400
+column_begin = 340
+column_end = 370
 
 amr_levels = 1
 
@@ -36,9 +36,11 @@ dh = 2.07407e-05
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = voltage       
+stop_mode = steps       
 VCut = 0.02
-num_steps = 4
+num_steps = 3001
+
+save_freq = 100
 
 # ============================================================
 # CURRENT CONTROL
@@ -54,13 +56,13 @@ Vsr0 = 0.009466
 anode_materials = Carbon
 
 # ============================================================
-# INITIAL PARTICLE STOICHIOMETRIES
+# INITIAL PARTICLE CONCENTRATION
 # ============================================================
 
 init_anode_particles = 0.10
 
 # ============================================================
-# INITIAL ELECTROLYTE
+# INITIAL ELECTROLYTE CONCENTRATION
 # ============================================================
 
 init_CnE = 0.001

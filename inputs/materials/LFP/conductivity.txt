@@ -1,0 +1,2 @@
+# LFP conductivity; solver units (see ../README.md)
+0.0001

@@ -1,0 +1,2 @@
+# Silicon diffusivity; solver units (see ../README.md)
+1.6700000000000002e-10

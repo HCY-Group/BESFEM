@@ -19,7 +19,7 @@ namespace Constants {
     const double thres = 1.0e-3;
     const double eps = 1.0e-6;
 
-    const double Perm = 1e-5;
+    const double Perm = 1e-7;
 
     const double init_Rxn = 1e-7;
     const double init_RxA = 1e-7;
