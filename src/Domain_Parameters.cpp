@@ -1,46 +1,45 @@
-#include "../include/Constants.hpp"
 #include "../include/Initialize_Geometry.hpp"
 #include "../include/Domain_Parameters.hpp"
 #include "../include/MaterialProperties.hpp"
-#include "../include/readtiff.h"
-#include "mfem.hpp"
-#include <tiffio.h>
-#include <mpi.h>
-#include <cmath>
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <limits>
-#include <memory>
-#include <stdexcept>
-#include <vector>
-#include <sstream>
 
-static inline void GlobalMinMax(const mfem::ParGridFunction& gf, double& gmin, double& gmax, MPI_Comm comm = MPI_COMM_WORLD)
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+
+namespace
 {
-    double lmin =  std::numeric_limits<double>::infinity();
-    double lmax = -std::numeric_limits<double>::infinity();
-    for (int i = 0; i < gf.Size(); ++i) {
-        const double v = gf(i);
-        if (v < lmin) lmin = v;
-        if (v > lmax) lmax = v;
+void ClampPhase(mfem::ParGridFunction& phase)
+{
+    for (int i = 0; i < phase.Size(); ++i)
+    {
+        phase(i) = std::clamp(phase(i), 1.0e-6, 1.0);
     }
-    MPI_Allreduce(&lmin, &gmin, 1, MPI_DOUBLE, MPI_MIN, comm);
-    MPI_Allreduce(&lmax, &gmax, 1, MPI_DOUBLE, MPI_MAX, comm);
 }
 
-double gTrgI = 0.0;
+void PrintParticleTotals(const char* prefix, const std::vector<double>& totals,
+    const std::vector<double>& currents)
+{
+    for (std::size_t k = 0; k < totals.size(); ++k)
+    {
+        std::cout << prefix << k << " phase total: " << totals[k]
+            << ", target current: " << currents[k] << '\n';
+    }
+}
+
+}
 
 Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo, const SimulationConfig &cfg)
-    : geometry(geo), cfg(cfg), nV(geo.nV), nE(geo.nE), nC(geo.nC), 
+    : geometry(geo), cfg(cfg),
     pmesh(geo.parallelMesh.get()), fespace(geo.parfespace),
     particle_labels(geo.particle_labels), anode_particle_labels(geo.anode_particle_labels), cathode_particle_labels(geo.cathode_particle_labels)
 {}
 
-// Destructor
-Domain_Parameters::~Domain_Parameters() {}
+Domain_Parameters::~Domain_Parameters() = default;
 
-void Domain_Parameters::SetupDomainParameters(){
+void Domain_Parameters::SetupDomainParameters()
+{
 
     InitializeGridFunctions();
     InterpolateDomainParameters();
@@ -65,227 +64,155 @@ void Domain_Parameters::SetupDomainParameters(){
     PrintInfo();
 }
 
-void Domain_Parameters::InitializeGridFunctions() {
+void Domain_Parameters::InitializeGridFunctions()
+{
 
     if (!fespace) {
         throw std::runtime_error("Finite element space is not initialized.");
     }
 
-    psi = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    pse = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    AvP = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    AvB = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    AvE = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    denom = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    for (auto* field : {&psi, &pse, &AvP, &AvB, &AvE, &denom})
+    {
+        *field = std::make_unique<mfem::ParGridFunction>(fespace.get());
+    }
 
     if (cfg.mode == sim::CellMode::HALF)
     {
         InitializeHalfCellGridFunctions();
     }
-    else 
+    else
     {
         InitializeFullCellGridFunctions();
-    }    
+    }
+}
+
+Domain_Parameters::ParticleGroups Domain_Parameters::GetParticleGroups(sim::Electrode electrode)
+{
+    if (cfg.mode == sim::CellMode::HALF)
+    {
+        return {ps, AvPs, AvEs, WeightEs, AvP_Pairs, psi_Pairs, WeightPairs, tPs, gtPs, gTrgPs};
+    }
+    if (electrode == sim::Electrode::ANODE)
+    {
+        return {psA, AvPsA, AvEsA, WeightEsA, AvP_PairsA, psi_PairsA, WeightPairsA, tPsA, gtPsA, gTrgPsA};
+    }
+    MFEM_VERIFY(electrode == sim::Electrode::CATHODE, "Select one electrode's particle groups.");
+    return {psC, AvPsC, AvEsC, WeightEsC, AvP_PairsC, psi_PairsC, WeightPairsC, tPsC, gtPsC, gTrgPsC};
+}
+
+void Domain_Parameters::AllocateParticleGroups(ParticleGroups groups, std::size_t count)
+{
+    for (auto* fields : {&groups.phase, &groups.gradient, &groups.electrolyte_interface, &groups.electrolyte_weight})
+    {
+        fields->clear();
+        fields->resize(count);
+        for (auto& field : *fields)
+        {
+            field = std::make_unique<mfem::ParGridFunction>(fespace.get());
+        }
+    }
+    for (auto* pairs : {&groups.pair_interface, &groups.pair_phase, &groups.pair_weight})
+    {
+        pairs->clear();
+        pairs->resize(count);
+        for (std::size_t j = 0; j < count; ++j)
+        {
+            (*pairs)[j].resize(count);
+            // All consumers address unordered pairs through j < k.
+            for (std::size_t k = j + 1; k < count; ++k)
+            {
+                (*pairs)[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
+            }
+        }
+    }
+    groups.local_total.assign(count, 0.0);
+    groups.global_total.assign(count, 0.0);
+    groups.target_current.assign(count, 0.0);
+}
+
+void Domain_Parameters::CopyParticleMasks(ParticleGroups groups, const FieldList& masks,
+    mfem::ParGridFunction& total)
+{
+    MFEM_VERIFY(masks.size() == groups.phase.size(), "One geometry mask is required per particle group.");
+    total = 0.0;
+    for (std::size_t k = 0; k < masks.size(); ++k)
+    {
+        *groups.phase[k] = *masks[k];
+        total += *groups.phase[k];
+        ClampPhase(*groups.phase[k]);
+    }
+}
+
+void Domain_Parameters::BuildParticleInterfaces(ParticleGroups groups, mfem::ParGridFunction& denominator)
+{
+    const std::size_t count = groups.phase.size();
+    for (std::size_t k = 0; k < count; ++k)
+    {
+        ComputeGradientMagnitude(*groups.phase[k], *groups.gradient[k]);
+        BuildInterface(*groups.electrolyte_interface[k], *AvE, *groups.gradient[k]);
+    }
+    denominator = 0.0;
+    for (std::size_t j = 0; j < count; ++j)
+    {
+        for (std::size_t k = j + 1; k < count; ++k)
+        {
+            BuildInterface(*groups.pair_interface[j][k], *groups.gradient[j], *groups.gradient[k]);
+            BuildPairPhaseMask(*groups.pair_phase[j][k], *groups.phase[j], *groups.phase[k]);
+            denominator += *groups.pair_interface[j][k];
+        }
+    }
+    for (const auto& interface : groups.electrolyte_interface)
+    {
+        denominator += *interface;
+    }
+    for (std::size_t k = 0; k < count; ++k)
+    {
+        ComputeInterfaceWeight(*groups.electrolyte_weight[k], *groups.electrolyte_interface[k], denominator);
+    }
+    for (std::size_t j = 0; j < count; ++j)
+    {
+        for (std::size_t k = j + 1; k < count; ++k)
+        {
+            ComputeInterfaceWeight(*groups.pair_weight[j][k], *groups.pair_interface[j][k],
+                denominator, groups.pair_phase[j][k].get());
+        }
+    }
+}
+
+double Domain_Parameters::CalculateParticleTotals(ParticleGroups groups,
+    const std::vector<sim::MaterialType>& materials)
+{
+    MFEM_VERIFY(materials.size() == groups.phase.size(), "One material is required per particle group.");
+    double target = 0.0;
+    for (std::size_t k = 0; k < groups.phase.size(); ++k)
+    {
+        CalculateTotalPhaseField(*groups.phase[k], groups.local_total[k], groups.global_total[k]);
+        CalculateTargetCurrent(groups.local_total[k], groups.target_current[k], materials[k]);
+        target += groups.target_current[k];
+    }
+    return target;
 }
 
 void Domain_Parameters::InitializeHalfCellGridFunctions()
 {
-    ps.clear();
-    ps.resize(particle_labels.size());
-
-    AvPs.clear();
-    AvPs.resize(particle_labels.size());
-
-    AvEs.clear();
-    AvEs.resize(particle_labels.size());
-
-    WeightEs.clear();
-    WeightEs.resize(particle_labels.size());
-
-    for (int k = 0; k < (int)particle_labels.size(); ++k)
-    {
-        ps[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        AvPs[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        AvEs[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        WeightEs[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    }
-
-    AvP_Pairs.clear();
-    AvP_Pairs.resize(particle_labels.size());
-    psi_Pairs.clear();
-    psi_Pairs.resize(particle_labels.size());
-    WeightPairs.clear();
-    WeightPairs.resize(particle_labels.size());
-
-    for (int j = 0; j < (int)particle_labels.size(); ++j)
-    {
-        AvP_Pairs[j].resize(particle_labels.size());
-        psi_Pairs[j].resize(particle_labels.size());
-        WeightPairs[j].resize(particle_labels.size());
-
-        for (int k = 0; k < (int)particle_labels.size(); ++k)
-        {
-            if (k != j)
-            {
-                AvP_Pairs[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-                psi_Pairs[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-                WeightPairs[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-            }
-        }
-    }
-
-    tPs.clear();
-    tPs.resize(particle_labels.size());
-
-    gtPs.clear();
-    gtPs.resize(particle_labels.size());
-
-    gTrgPs.clear();
-    gTrgPs.resize(particle_labels.size());
-
-    for (int k = 0; k < (int)particle_labels.size(); ++k)
-    { 
-        tPs[k] = 0.0; 
-        gtPs[k] = 0.0;
-        gTrgPs[k] = 0.0;
-    }
+    AllocateParticleGroups(GetParticleGroups(cfg.half_electrode), particle_labels.size());
 }
 
 void Domain_Parameters::InitializeFullCellGridFunctions()
 {
-    psiA = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    psiC = std::make_unique<mfem::ParGridFunction>(fespace.get());
-
-    AvPA = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    AvPC = std::make_unique<mfem::ParGridFunction>(fespace.get());
-
-    denomA = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    denomC = std::make_unique<mfem::ParGridFunction>(fespace.get());
-
-    const int numAnode = static_cast<int>(anode_particle_labels.size());
-    const int numCathode = static_cast<int>(cathode_particle_labels.size());
-
-    psA.resize(numAnode);
-    AvPsA.resize(numAnode);
-    AvEsA.resize(numAnode);
-    WeightEsA.resize(numAnode);
-
-    for (int k = 0; k < numAnode; ++k)
+    for (auto* field : {&psiA, &psiC, &AvPA, &AvPC, &denomA, &denomC})
     {
-        psA[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        AvPsA[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        AvEsA[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        WeightEsA[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
+        *field = std::make_unique<mfem::ParGridFunction>(fespace.get());
     }
-
-    psC.resize(numCathode);
-    AvPsC.resize(numCathode);
-    AvEsC.resize(numCathode);
-    WeightEsC.resize(numCathode);
-
-    for (int k = 0; k < numCathode; ++k)
-    {
-        psC[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        AvPsC[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        AvEsC[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        WeightEsC[k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-    }
-
-    const int num_anode_particles = static_cast<int>(psA.size());
-
-    AvP_PairsA.clear();
-    psi_PairsA.clear();
-    WeightPairsA.clear();
-
-    AvP_PairsA.resize(num_anode_particles);
-    psi_PairsA.resize(num_anode_particles);
-
-    WeightPairsA.resize(num_anode_particles);
-
-    for (int j = 0;
-        j < num_anode_particles; ++j)
-    {
-        AvP_PairsA[j].resize(num_anode_particles);
-        psi_PairsA[j].resize(num_anode_particles);
-        WeightPairsA[j].resize(num_anode_particles);
-
-        for (int k = j + 1;
-            k < num_anode_particles; ++k)
-        {
-            AvP_PairsA[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-            psi_PairsA[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-            WeightPairsA[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        }
-    }
-
-    const int num_cathode_particles = static_cast<int>(psC.size());
-
-    AvP_PairsC.clear();
-    psi_PairsC.clear();
-    WeightPairsC.clear();
-
-    AvP_PairsC.resize(num_cathode_particles);
-    psi_PairsC.resize(num_cathode_particles);
-
-    WeightPairsC.resize(num_cathode_particles);
-
-    for (int j = 0;
-        j < num_cathode_particles; ++j)
-    {
-        AvP_PairsC[j].resize(num_cathode_particles);
-        psi_PairsC[j].resize(num_cathode_particles);
-        WeightPairsC[j].resize(num_cathode_particles);
-
-        for (int k = j + 1;
-            k < num_cathode_particles; ++k)
-        {
-            AvP_PairsC[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-            psi_PairsC[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-            WeightPairsC[j][k] = std::make_unique<mfem::ParGridFunction>(fespace.get());
-        }
-    }
-
-    tPsA.clear();
-    tPsA.resize(num_anode_particles);
-
-    tPsC.clear();
-    tPsC.resize(num_cathode_particles);
-
-    gtPsA.clear();
-    gtPsA.resize(num_anode_particles);
-
-    gtPsC.clear();
-    gtPsC.resize(num_cathode_particles);
-
-    gTrgPsA.clear();
-    gTrgPsA.resize(num_anode_particles);
-
-    gTrgPsC.clear();
-    gTrgPsC.resize(num_cathode_particles);
-
-    for (int j = 0; j < num_anode_particles; ++j)
-    {
-        tPsA[j] = 0.0;
-        gtPsA[j] = 0.0;
-        gTrgPsA[j] = 0.0;
-    }
-
-    for (int j = 0; j < num_cathode_particles; ++j)
-    {
-        tPsC[j] = 0.0;
-        gtPsC[j] = 0.0;
-        gTrgPsC[j] = 0.0;
-    }
-
+    AllocateParticleGroups(GetParticleGroups(sim::Electrode::ANODE), anode_particle_labels.size());
+    AllocateParticleGroups(GetParticleGroups(sim::Electrode::CATHODE), cathode_particle_labels.size());
 }
 
-void Domain_Parameters::InterpolateDomainParameters() {
+void Domain_Parameters::InterpolateDomainParameters()
+{
 
-    nV = pmesh->GetNV();
-    nE = pmesh->GetNE();
-    nC = pmesh->GetElement(0)->GetNVertices();
-
-    if (cfg.mode == sim::CellMode::HALF){
+    if (cfg.mode == sim::CellMode::HALF)
+    {
         InterpolateHalfCellMasks();
         BuildHalfCellInterfaces();
     }
@@ -298,84 +225,24 @@ void Domain_Parameters::InterpolateDomainParameters() {
 
 void Domain_Parameters::InterpolateHalfCellMasks()
 {
-    // Shared electrolyte field.
     *pse = *geometry.MaskFilterPse;
-    *psi = 0.0;
-
-    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
-    {
-        *ps[k] = *geometry.MaskFilters[k];
-        *psi += *ps[k];
-    }
-
-    // Clamp total electrode and electrolyte phase fields.
-    for (int i = 0; i < psi->Size(); ++i)
-    {
-        (*psi)(i) = std::max(1.0e-6, std::min(1.0, (*psi)(i)));
-        (*pse)(i) = std::max(1.0e-6, std::min(1.0, (*pse)(i)));
-    }
-
-    // Clamp each individual particle phase field.
-    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
-    {
-        for (int i = 0; i < ps[k]->Size(); ++i)
-        {
-            (*ps[k])(i) = std::max(1.0e-6, std::min(1.0, (*ps[k])(i)));
-        }
-    }
+    CopyParticleMasks(GetParticleGroups(cfg.half_electrode), geometry.MaskFilters, *psi);
+    ClampPhase(*psi);
+    ClampPhase(*pse);
 }
 
 void Domain_Parameters::InterpolateFullCellMasks()
 {
-    // Shared electrolyte field.
     *pse = *geometry.MaskFilterPse;
+    CopyParticleMasks(GetParticleGroups(sim::Electrode::ANODE), geometry.MaskFiltersAnode, *psiA);
+    CopyParticleMasks(GetParticleGroups(sim::Electrode::CATHODE), geometry.MaskFiltersCathode, *psiC);
 
-    // Initialize total electrode fields.
-    *psiA = 0.0;
-    *psiC = 0.0;
-    *psi  = 0.0;
-
-    for (int k = 0;
-         k < static_cast<int>(psA.size());
-         ++k)
-    {
-        *psA[k] = *geometry.MaskFiltersAnode[k];
-        *psiA += *psA[k];
-    }
-
-    for (int k = 0;
-         k < static_cast<int>(psC.size());
-         ++k)
-    {
-        *psC[k] = *geometry.MaskFiltersCathode[k];
-        *psiC += *psC[k];
-    }
-
+    // Sum the raw electrode masks before clamping either electrode total.
     *psi = *psiA;
     *psi += *psiC;
-
-    for (int i = 0; i < psi->Size(); ++i)
+    for (auto* phase : {psiA.get(), psiC.get(), psi.get(), pse.get()})
     {
-        (*psiA)(i) = std::max(1.0e-6, std::min(1.0, (*psiA)(i)));
-        (*psiC)(i) = std::max(1.0e-6, std::min(1.0, (*psiC)(i)));
-        (*psi)(i) = std::max(1.0e-6, std::min(1.0, (*psi)(i)));
-        (*pse)(i) = std::max(1.0e-6, std::min(1.0, (*pse)(i)));
-    }
-
-    for (int k = 0; k < static_cast<int>(psA.size()); ++k)
-    {
-        for (int i = 0; i < psA[k]->Size(); ++i)
-        {
-            (*psA[k])(i) = std::max(1.0e-6, std::min(1.0, (*psA[k])(i)));
-        }
-    }
-
-    for (int k = 0; k < static_cast<int>(psC.size()); ++k)
-    {
-        for (int i = 0; i < psC[k]->Size(); ++i)
-        {
-            (*psC[k])(i) = std::max(1.0e-6, std::min(1.0, (*psC[k])(i)));
-        }
+        ClampPhase(*phase);
     }
 }
 
@@ -406,51 +273,14 @@ void Domain_Parameters::ComputeGradientMagnitude(const mfem::ParGridFunction &ph
     }
 }
 
-void Domain_Parameters::BuildPairInterface(mfem::ParGridFunction &out, const mfem::ParGridFunction &phase_a, const mfem::ParGridFunction &phase_b,
-    const mfem::ParGridFunction &gradient_a, const mfem::ParGridFunction &gradient_b)
+void Domain_Parameters::BuildInterface(mfem::ParGridFunction& out,
+    const mfem::ParGridFunction& gradient_a, const mfem::ParGridFunction& gradient_b)
 {
-
-
     out = gradient_a;
     out *= gradient_b;
-    for (int i=0; i<out.Size(); i++){
-        out(i) = std::sqrt( out(i) );
-    }
-
-
-    //out = phase_a;
-    //out *= gradient_b;
-    //
-    //mfem::ParGridFunction temporary(fespace.get());
-    //
-    //temporary = phase_b;
-    //temporary *= gradient_a;
-    //
-    //out += temporary;
-    //
-    //mfem::ParGridFunction overlap(fespace.get());
-    //
-    //overlap = phase_a;
-    //overlap *= phase_b;
-    //
-    //out *= overlap;
-    //out *= 4.0;
-    //
-    //for (int i = 0; i < out.Size(); ++i)
-    //{
-    //    if (out(i) > 9000.0)
-    //    {
-    //        out(i) = 1.4e4;
-    //    }
-    //}
-}
-
-void Domain_Parameters::BuildElectrolyteInterface(mfem::ParGridFunction &out, const mfem::ParGridFunction &electrolyte_gradient, const mfem::ParGridFunction &particle_gradient)
-{
-    out = electrolyte_gradient;
-    out *= particle_gradient;
-    for (int i=0; i<out.Size(); i++){
-        out(i) = std::sqrt( out(i) );
+    for (int i = 0; i < out.Size(); ++i)
+    {
+        out(i) = std::sqrt(out(i));
     }
 }
 
@@ -495,56 +325,14 @@ void Domain_Parameters::BuildHalfCellInterfaces()
 {
     ComputeGradientMagnitude(*psi, *AvP);
     ComputeGradientMagnitude(*pse, *AvE);
+    BuildParticleInterfaces(GetParticleGroups(cfg.half_electrode), *denom);
 
-    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
+    for (std::size_t j = 0; j < ps.size(); ++j)
     {
-        ComputeGradientMagnitude(*ps[k], *AvPs[k]);
-    }
-
-    for (int j = 0; j < static_cast<int>(ps.size()); ++j)
-    {
-        for (int k = j + 1; k < static_cast<int>(ps.size()); ++k)
+        for (std::size_t k = j + 1; k < ps.size(); ++k)
         {
-            BuildPairInterface(*AvP_Pairs[j][k], *ps[j], *ps[k], *AvPs[j], *AvPs[k]);
-            BuildPairPhaseMask(*psi_Pairs[j][k], *ps[j], *ps[k]);
-
-            std::ostringstream filename;
-            filename << "AvP_Pair_" << j << "_" << k;
-            AvP_Pairs[j][k]->SaveAsOne(filename.str().c_str());
-        }
-    }
-
-    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
-    {
-        //BuildElectrolyteInterface(*AvEs[k], *pse, *AvPs[k]);
-        BuildElectrolyteInterface(*AvEs[k], *AvE, *AvPs[k]);
-    }
-
-    *denom = 0.0;
-
-    for (int j = 0; j < static_cast<int>(ps.size()); ++j)
-    {
-        for (int k = j + 1; k < static_cast<int>(ps.size()); ++k)
-        {
-            *denom += *AvP_Pairs[j][k];
-        }
-    }
-
-    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
-    {
-        *denom += *AvEs[k];
-    }
-
-    for (int k = 0; k < static_cast<int>(ps.size()); ++k)
-    {
-        ComputeInterfaceWeight(*WeightEs[k], *AvEs[k], *denom);
-    }
-
-    for (int j = 0; j < static_cast<int>(ps.size()); ++j)
-    {
-        for (int k = j + 1; k < static_cast<int>(ps.size()); ++k)
-        {
-            ComputeInterfaceWeight(*WeightPairs[j][k], *AvP_Pairs[j][k], *denom, psi_Pairs[j][k].get());
+            const std::string filename = "AvP_Pair_" + std::to_string(j) + "_" + std::to_string(k);
+            AvP_Pairs[j][k]->SaveAsOne(filename.c_str());
         }
     }
 }
@@ -555,104 +343,9 @@ void Domain_Parameters::BuildFullCellInterfaces()
     ComputeGradientMagnitude(*psiA, *AvPA);
     ComputeGradientMagnitude(*psiC, *AvPC);
     ComputeGradientMagnitude(*pse, *AvE);
-
-    for (int k = 0; k < static_cast<int>(psA.size()); ++k)
-    {
-        ComputeGradientMagnitude(*psA[k], *AvPsA[k]);
-    }
-
-    for (int k = 0; k < static_cast<int>(psC.size()); ++k)
-    {
-        ComputeGradientMagnitude(*psC[k], *AvPsC[k]);
-    }
-
-    for (int j = 0; j < static_cast<int>(psA.size()); ++j)
-    {
-        for (int k = j + 1; k < static_cast<int>(psA.size()); ++k)
-        {
-            BuildPairInterface(*AvP_PairsA[j][k], *psA[j], *psA[k], *AvPsA[j], *AvPsA[k]);
-            BuildPairPhaseMask(*psi_PairsA[j][k], *psA[j], *psA[k]);
-        }
-    }
-
-    for (int j = 0; j < static_cast<int>(psC.size()); ++j)
-    {
-        for (int k = j + 1; k < static_cast<int>(psC.size()); ++k)
-        {
-            BuildPairInterface(*AvP_PairsC[j][k], *psC[j], *psC[k], *AvPsC[j], *AvPsC[k]);
-            BuildPairPhaseMask(*psi_PairsC[j][k], *psC[j], *psC[k]);
-        }
-    }
-
-    for (int k = 0; k < static_cast<int>(psA.size()); ++k)
-    {
-        //BuildElectrolyteInterface(*AvEsA[k], *pse, *AvPsA[k]);
-        BuildElectrolyteInterface(*AvEsA[k], *AvE, *AvPsA[k]);
-    }
-
-    for (int k = 0; k < static_cast<int>(psC.size()); ++k)
-    {
-        //BuildElectrolyteInterface(*AvEsC[k], *pse, *AvPsC[k]);
-        BuildElectrolyteInterface(*AvEsC[k], *AvE, *AvPsC[k]);
-    }
-
-    *denomA = 0.0;
-
-    for (int j = 0; j < static_cast<int>(psA.size()); ++j)
-    {
-        for (int k = j + 1; k < static_cast<int>(psA.size()); ++k)
-        {
-            *denomA += *AvP_PairsA[j][k];
-        }
-    }
-
-    for (int k = 0; k < static_cast<int>(psA.size()); ++k)
-    {
-        *denomA += *AvEsA[k];
-    }
-
-    *denomC = 0.0;
-
-    for (int j = 0; j < static_cast<int>(psC.size()); ++j)
-    {
-        for (int k = j + 1; k < static_cast<int>(psC.size()); ++k)
-        {
-            *denomC += *AvP_PairsC[j][k];
-        }
-    }
-
-    for (int k = 0; k < static_cast<int>(psC.size()); ++k)
-    {
-        *denomC += *AvEsC[k];
-    }
-
-    for (int k = 0; k < static_cast<int>(psA.size()); ++k)
-    {
-        ComputeInterfaceWeight(*WeightEsA[k], *AvEsA[k], *denomA);
-    }
-
-    for (int k = 0; k < static_cast<int>(psC.size()); ++k)
-    {
-        ComputeInterfaceWeight(*WeightEsC[k], *AvEsC[k], *denomC);
-    }
-
-    for (int j = 0; j < static_cast<int>(psA.size()); ++j)
-    {
-        for (int k = j + 1; k < static_cast<int>(psA.size()); ++k)
-        {
-            ComputeInterfaceWeight(*WeightPairsA[j][k], *AvP_PairsA[j][k], *denomA, psi_PairsA[j][k].get());
-        }
-    }
-
-    for (int j = 0; j < static_cast<int>(psC.size()); ++j)
-    {
-        for (int k = j + 1; k < static_cast<int>(psC.size()); ++k)
-        {
-            ComputeInterfaceWeight(*WeightPairsC[j][k], *AvP_PairsC[j][k], *denomC, psi_PairsC[j][k].get());
-        }
-    }
+    BuildParticleInterfaces(GetParticleGroups(sim::Electrode::ANODE), *denomA);
+    BuildParticleInterfaces(GetParticleGroups(sim::Electrode::CATHODE), *denomC);
 }
-
 
 void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction &grid_function, const mfem::Vector &element_volumes, double &local_total, double &global_total)
 {
@@ -682,8 +375,12 @@ void Domain_Parameters::CalculateTotals(const mfem::ParGridFunction &grid_functi
     MPI_Allreduce(&local_total, &global_total, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 }
 
-
 void Domain_Parameters::CalculateTotalPhaseField(const mfem::ParGridFunction &grid_function, double &local_total, double &global_total)
+{
+    CalculateTotals(grid_function, EVol, local_total, global_total);
+}
+
+void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent()
 {
     const int local_element_count = pmesh->GetNE();
     EVol.SetSize(local_element_count);
@@ -693,11 +390,6 @@ void Domain_Parameters::CalculateTotalPhaseField(const mfem::ParGridFunction &gr
         EVol(ei) = pmesh->GetElementVolume(ei);
     }
 
-    CalculateTotals(grid_function, EVol, local_total, global_total);
-}
-
-void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent()
-{
     // Electrolyte is shared by both half-cell and full-cell modes.
     CalculateTotalPhaseField(*pse, tPse, gtPse);
 
@@ -713,47 +405,20 @@ void Domain_Parameters::CalculatePhasePotentialsAndTargetCurrent()
 
 void Domain_Parameters::CalculateHalfCellPhasePotentialsAndTargetCurrent()
 {
-    const std::vector<sim::MaterialType> &active_materials = (cfg.half_electrode == sim::Electrode::CATHODE) ? cfg.cathode_materials : cfg.anode_materials;
-
-    MFEM_VERIFY(active_materials.size() == ps.size(), "Half-cell material count does not match particle count.");
-
-    gTrgI = 0.0;
+    const auto& materials = cfg.half_electrode == sim::Electrode::CATHODE
+        ? cfg.cathode_materials : cfg.anode_materials;
     CalculateTotalPhaseField(*psi, tPsi, gtPsi);
-
-    for (std::size_t k = 0; k < ps.size(); ++k)
-    {
-        CalculateTotalPhaseField(*ps[k], tPs[k], gtPs[k]);
-        CalculateTargetCurrent(tPs[k], gTrgPs[k], active_materials[k]);
-        gTrgI += gTrgPs[k];
-    }
+    gTrgI = CalculateParticleTotals(GetParticleGroups(cfg.half_electrode), materials);
 }
 
 void Domain_Parameters::CalculateFullCellPhasePotentialsAndTargetCurrent()
 {
-    gTrgIA = 0.0;
-    gTrgIC = 0.0;
-    gTrgI = 0.0;
-
-    CalculateTotalPhaseField(*psiA, tPsiA,gtPsiA);
+    CalculateTotalPhaseField(*psiA, tPsiA, gtPsiA);
     CalculateTotalPhaseField(*psiC, tPsiC, gtPsiC);
-
     CalculateTotalPhaseField(*psi, tPsi, gtPsi);
-
-    for (std::size_t k = 0; k < psA.size(); ++k)
-    {
-        CalculateTotalPhaseField(*psA[k], tPsA[k], gtPsA[k]);
-        CalculateTargetCurrent(tPsA[k], gTrgPsA[k], cfg.anode_materials[k]);
-        gTrgIA += gTrgPsA[k];
-    }
-
-    for (std::size_t k = 0; k < psC.size(); ++k)
-    {
-        CalculateTotalPhaseField(*psC[k], tPsC[k], gtPsC[k]);
-        CalculateTargetCurrent(tPsC[k], gTrgPsC[k], cfg.cathode_materials[k]);
-        gTrgIC += gTrgPsC[k];
-    }
-
-    gTrgI = gTrgIC; // use cathode target current in the full cell
+    gTrgIA = CalculateParticleTotals(GetParticleGroups(sim::Electrode::ANODE), cfg.anode_materials);
+    gTrgIC = CalculateParticleTotals(GetParticleGroups(sim::Electrode::CATHODE), cfg.cathode_materials);
+    gTrgI = gTrgIC; // Preserve the cathode-based target for full cells.
 }
 
 void Domain_Parameters::CalculateTargetCurrent(double local_phase_volume, double &global_target_current, sim::MaterialType material)
@@ -762,7 +427,6 @@ void Domain_Parameters::CalculateTargetCurrent(double local_phase_volume, double
     const double local_target_current = local_phase_volume * rho * (0.95 - 0.3) / (3600.0 / cfg.Cr);
     MPI_Allreduce(&local_target_current, &global_target_current, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 }
-
 
 void Domain_Parameters::PrintInfo()
 {
@@ -777,10 +441,7 @@ void Domain_Parameters::PrintInfo()
     {
         std::cout << "Target Current: " << gTrgI << '\n';
 
-        for (std::size_t k = 0; k < gtPs.size(); ++k)
-        {
-            std::cout << "Particle " << k << " phase total: " << gtPs[k] << ", target current: " << gTrgPs[k] << '\n';
-        }
+        PrintParticleTotals("Particle ", gtPs, gTrgPs);
     }
     else
     {
@@ -788,16 +449,9 @@ void Domain_Parameters::PrintInfo()
             << "Anode capacity-based current: " << gTrgIA << '\n' << "Cathode capacity-based current: " << gTrgIC << '\n'
             << "Selected full-cell target current: " << gTrgI << '\n';
 
-        for (std::size_t k = 0; k < gtPsA.size(); ++k)
-        {
-            std::cout << "Anode particle " << k << " phase total: "
-                << gtPsA[k] << ", target current: " << gTrgPsA[k] << '\n';
-        }
+        PrintParticleTotals("Anode particle ", gtPsA, gTrgPsA);
 
-        for (std::size_t k = 0; k < gtPsC.size(); ++k)
-        {
-            std::cout << "Cathode particle " << k  << " phase total: " << gtPsC[k] << ", target current: " << gTrgPsC[k] << '\n';
-        }
+        PrintParticleTotals("Cathode particle ", gtPsC, gTrgPsC);
     }
 }
 
