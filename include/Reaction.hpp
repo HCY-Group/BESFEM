@@ -58,17 +58,6 @@ public:
     void Initialize(mfem::ParGridFunction &Rx, double initial_value);
 
     /**
-     * @brief Compute exchange-current density using lookup tables.
-     *
-     * Uses concentration-dependent \( i_0(c) \) and OCV(c) tables
-     * to populate reaction-related material fields.
-     *
-     * @param Cn Concentration field used in the lookup.
-     * @param AvP_in Surface-area weighting function for the interface.
-     */
-    void TableExchangeCurrentDensity(mfem::ParGridFunction &Cn, mfem::ParGridFunction &AvP_in);
-
-    /**
      * @brief Compute exchange-current density (single concentration field).
      *
      * @param Cn Concentration field.
@@ -148,23 +137,6 @@ private:
     double local_current = 0.0; ///< Local reaction current (before MPI reduce).
     std::unique_ptr<mfem::ParGridFunction> dPHE; ///< Potential drop (electrolyte).
     const mfem::Vector &EVol; ///< Element volumes.
-
-    // -------------------------------------------------------------------------
-    // Lookup-table data (size = 101)
-    // -------------------------------------------------------------------------
-    mfem::Vector Ticks     = mfem::Vector(101); ///< Concentration ticks.
-    mfem::Vector OCV_file  = mfem::Vector(101); ///< OCV lookup.
-    mfem::Vector i0_file   = mfem::Vector(101); ///< Exchange-current lookup.
-
-    /**
-     * @brief Linearly interpolate from a reaction lookup table.
-     *
-     * @param cn    Concentration value (0–1).
-     * @param ticks Sorted tick positions.
-     * @param data  Tabulated values.
-     * @return Interpolated value.
-     */
-    double GetTableValues(double cn, const mfem::Vector &ticks, const mfem::Vector &data);
 };
 
 #endif // REACTION_HPP
