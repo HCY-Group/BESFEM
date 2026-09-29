@@ -58,8 +58,6 @@ void ElectrodeCahnHilliard::UpdateConcentration(mfem::ParGridFunction &Rx, mfem:
         }
     }
 
-    RxA.SaveAsOne("RxA_test_CH.gf");
-
     cAp.SetGridFunction(&RxA); 
 
     fem.Update(B_init); 
