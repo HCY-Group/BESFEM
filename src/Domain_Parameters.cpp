@@ -52,6 +52,13 @@ void Domain_Parameters::SetupDomainParameters(const std::string& output_director
     AvB->SaveAsOne((output_directory + "/AvB").c_str());
     pmesh->SaveAsOne((output_directory + "/pmesh").c_str());
 
+    for (std::size_t k = 0; k < ps.size(); ++k)
+    {
+        const std::string filename =
+            output_directory + "/ps_" + std::to_string(k);
+        ps[k]->SaveAsOne(filename.c_str());
+    }
+
     if (cfg.mode == sim::CellMode::FULL)
     {
         psiA->SaveAsOne((output_directory + "/psiA").c_str());
