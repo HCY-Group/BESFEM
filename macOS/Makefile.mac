@@ -1,0 +1,135 @@
+
+# ============================================================
+# BESFEM Makefile for macOS (Homebrew)
+# ============================================================
+
+# Homebrew dependencies
+MFEM_DIR  := $(shell brew --prefix mfem)
+TIFF_DIR  := $(shell brew --prefix libtiff)
+HYPRE_DIR := $(shell brew --prefix hypre)
+SUITE_DIR := $(shell brew --prefix suite-sparse)
+
+# Compiler and optimization
+CXX := mpicxx
+CXXFLAGS := -g -O3 -std=c++17 -w
+
+# Material properties
+MATERIALS_DIR ?= $(abspath inputs/materials)
+
+CPPFLAGS += -DBESFEM_MATERIALS_DIR='"$(MATERIALS_DIR)"'
+
+# Include directories
+INCLUDE_FLAGS := \
+    -Iinclude \
+    -I$(MFEM_DIR)/include \
+    -I$(TIFF_DIR)/include \
+    -I$(HYPRE_DIR)/include \
+    -I$(SUITE_DIR)/include/suitesparse
+
+# Library directories and dependencies
+LIB_FLAGS := \
+    -L$(MFEM_DIR)/lib \
+    -L$(HYPRE_DIR)/lib \
+    -L$(SUITE_DIR)/lib \
+    -lmfem \
+    -lHYPRE \
+    -lumfpack
+
+# TIFF
+LDFLAGS := -L$(TIFF_DIR)/lib -ltiff
+
+# ============================================================
+# Source files
+# ============================================================
+
+SRC_FILES := \
+    src/SimulationConfig.cpp \
+    src/Initialize_Geometry.cpp \
+    src/readtiff.cpp \
+    src/Domain_Parameters.cpp \
+    src/BoundaryConditions.cpp \
+    src/Concentrations_Base.cpp \
+    src/ElectrolyteDiffusion.cpp \
+    src/ElectrodeCahnHilliard.cpp \
+    src/ElectrodeDiffusion.cpp \
+    src/Reaction.cpp \
+    src/FEMOperators.cpp \
+    src/Potentials_Base.cpp \
+    src/Adjust.cpp \
+    src/Utils.cpp \
+    src/dist_solver.cpp \
+    src/SimulationState.cpp \
+    src/MaterialProperties.cpp \
+    src/ElectrodePotential.cpp \
+    src/ElectrolytePotential.cpp \
+    src/Constants.cpp
+
+# ============================================================
+# Executables
+# ============================================================
+
+EXEC_DIR := bin
+
+EXEC_NAME := battery_simulation
+EXEC := $(EXEC_DIR)/$(EXEC_NAME)
+
+EXEC_SRC_FILES := $(SRC_FILES) src/battery_simulation.cpp
+
+TEST_NAME := unit_tests
+TEST_EXEC := $(EXEC_DIR)/$(TEST_NAME)
+
+TEST_SRC_FILES := \
+    $(SRC_FILES) \
+    tests/unit_tests.cpp \
+    tests/unit_tests_main.cpp
+
+# ============================================================
+# Build targets
+# ============================================================
+
+.PHONY: all test clean rebuild check-deps
+
+all: $(EXEC)
+
+# Check installed dependencies
+check-deps:
+	@echo "Checking BESFEM dependencies..."
+	@echo "MFEM:        $(MFEM_DIR)"
+	@echo "TIFF:        $(TIFF_DIR)"
+	@echo "Hypre:       $(HYPRE_DIR)"
+	@echo "SuiteSparse: $(SUITE_DIR)"
+	@echo "MPI compiler:"
+	@command -v $(CXX)
+	@test -f "$(MFEM_DIR)/include/mfem.hpp" || \
+	    (echo "ERROR: MFEM header not found"; exit 1)
+	@test -f "$(HYPRE_DIR)/include/HYPRE_utilities.h" || \
+	    (echo "ERROR: Hypre header not found"; exit 1)
+	@test -f "$(SUITE_DIR)/include/suitesparse/umfpack.h" || \
+	    (echo "ERROR: SuiteSparse header not found"; exit 1)
+	@test -f "$(TIFF_DIR)/include/tiffio.h" || \
+	    (echo "ERROR: TIFF header not found"; exit 1)
+	@echo "Dependency header checks passed."
+
+# Build simulation
+$(EXEC): $(EXEC_SRC_FILES) $(wildcard include/*.hpp) include/readtiff.h
+	@mkdir -p $(EXEC_DIR)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) \
+	    $(EXEC_SRC_FILES) -o $@ $(LIB_FLAGS) $(LDFLAGS)
+
+# Build and run unit tests
+test: $(TEST_EXEC)
+	./$(TEST_EXEC)
+
+$(TEST_EXEC): $(TEST_SRC_FILES) $(wildcard include/*.hpp) include/readtiff.h
+	@mkdir -p $(EXEC_DIR)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) \
+	    $(TEST_SRC_FILES) -o $@ $(LIB_FLAGS) $(LDFLAGS)
+
+# Remove generated executables
+clean:
+	rm -f $(EXEC) $(TEST_EXEC)
+	rm -rf *.o *.dSYM
+
+# Clean and rebuild
+rebuild: clean
+	$(MAKE) -f Makefile.mac all
