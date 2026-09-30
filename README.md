@@ -73,6 +73,15 @@ Specify a configuration file:
 mpirun -np 8 ./battery_simulation -cfg ../inputs/run_config.txt
 ```
 
+Initialize geometry and domain fields without running electrochemical physics:
+
+```bash
+mpirun -np 8 ./battery_simulation -cfg ../inputs/run_config.txt --geometry-only
+```
+
+Alternatively, set `geometry_only = true` in the config file. The default is
+`false`.
+
 Save terminal output:
 
 ```bash

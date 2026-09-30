@@ -238,6 +238,9 @@ static void ApplyConfigFile(SimulationConfig& cfg)
     if (HasKey(data, "num_steps"))
         cfg.num_timesteps = std::stoi(GetValue(data, "num_steps"));
 
+    if (HasKey(data, "geometry_only"))
+        cfg.geometry_only = ParseBool(GetValue(data, "geometry_only"));
+
     if (HasKey(data, "combine_particles"))
         cfg.combine_particle_groups = ParseBool(GetValue(data, "combine_particles"));
 
@@ -374,6 +377,10 @@ SimulationConfig ParseSimulationArgs(int argc, char *argv[])
                    "-opts", "--list-options",
                    "-no-opts", "--no-list-options",
                    "Print available BESFEM option choices.");
+
+    args.AddOption(&cfg.geometry_only, "-geo", "--geometry-only",
+                   "-no-geo", "--no-geometry-only",
+                   "Save geometry and domain fields without running physics.");
 
     args.AddOption(&cfg.mesh_file, "-m", "--mesh", "Mesh file to use.");
     args.AddOption(&cfg.order, "-o", "--order", "Finite element polynomial degree.");
@@ -533,7 +540,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
         }
     }
 
-    if (cfg.stop_mode == sim::StopMode::STEPS)
+    if (!cfg.geometry_only && cfg.stop_mode == sim::StopMode::STEPS)
     {
         if (cfg.num_timesteps <= 0)
         {
@@ -541,7 +548,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
                 "stop_mode=steps requires num_steps > 0.");
         }
     }
-    else if (cfg.stop_mode == sim::StopMode::VOLTAGE)
+    else if (!cfg.geometry_only && cfg.stop_mode == sim::StopMode::VOLTAGE)
     {
         if (cfg.VCut <= 0.0)
         {
@@ -658,7 +665,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
     // if (cfg.Cr <= 0.0)
     //     mfem::mfem_error("Cr must be positive.");
     
-    if (cfg.stop_mode == sim::StopMode::STEPS)
+    if (!cfg.geometry_only && cfg.stop_mode == sim::StopMode::STEPS)
     {
         if (cfg.num_timesteps <= 0)
         {
@@ -666,7 +673,7 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
                 "stop_mode=steps requires num_steps > 0.");
         }
     }
-    else if (cfg.stop_mode == sim::StopMode::VOLTAGE)
+    else if (!cfg.geometry_only && cfg.stop_mode == sim::StopMode::VOLTAGE)
     {
         if (cfg.VCut <= 0.0)
         {
@@ -821,6 +828,10 @@ void PrintAvailableSimulationOptions()
 
     std::cout << "  Run config:\n";
     std::cout << "    -cfg ../inputs/run_config.txt\n\n";
+
+    std::cout << "  Geometry preview:\n";
+    std::cout << "    geometry_only = true | false (default false)\n";
+    std::cout << "    --geometry-only | --no-geometry-only\n\n";
 
     std::cout << "  Cell modes:\n";
     std::cout << "    half\n\n";

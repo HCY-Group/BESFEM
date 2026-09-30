@@ -2,6 +2,9 @@
 # SIMULATION MODE
 # ============================================================
 
+# Set true to save geometry/domain fields without running physics.
+geometry_only = false
+
 mode = half
 electrode = cathode
 
