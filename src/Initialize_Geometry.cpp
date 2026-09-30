@@ -26,8 +26,8 @@ using sim::BoundarySide;
 
 
 // Constructor
-Initialize_Geometry::Initialize_Geometry(const SimulationConfig& cfg)
-    : cfg(cfg)
+Initialize_Geometry::Initialize_Geometry(const SimulationConfig& cfg, const std::string& output_directory)
+    : output_directory(output_directory), cfg(cfg)
 {}
 
 // Destructor
@@ -406,9 +406,9 @@ void Initialize_Geometry::InitializeMesh(const char* meshFile, MPI_Comm comm, in
   
     PrintMeshInfo();
 
-    parallelMesh->SaveAsOne("pmesh");
-    MaskFilter->SaveAsOne("MaskFilter.gf");
-    MaskFilterPse->SaveAsOne("MaskFilter_pse.gf");
+    parallelMesh->SaveAsOne((output_directory + "/pmesh").c_str());
+    MaskFilter->SaveAsOne((output_directory + "/MaskFilter.gf").c_str());
+    MaskFilterPse->SaveAsOne((output_directory + "/MaskFilter_pse.gf").c_str());
 }
 
 void Initialize_Geometry::AllocateHalfCellGeometryFields()
@@ -657,7 +657,7 @@ std::vector<std::vector<std::vector<int>>> Initialize_Geometry::MergeMeshes(cons
         std::cout << "  Total columns:    " << mergedNx << "\n";
     }
 
-    SaveTiffDataToPGM(mergedData, "full_cell_geometry.pgm");
+    SaveTiffDataToPGM(mergedData, output_directory + "/full_cell_geometry.pgm");
 
     return mergedData;
 }
@@ -684,10 +684,10 @@ void Initialize_Geometry::InitializeMesh(const char* AnodeMeshFile, const char* 
     BuildFullCellGeometryFields();
     UpdateMeshData();
 
-    parallelMesh->SaveAsOne("pmesh");
-    MaskFilterAnode->SaveAsOne("MaskFilter_anode.gf");
-    MaskFilterCathode->SaveAsOne("MaskFilter_cathode.gf");
-    MaskFilterPse->SaveAsOne("MaskFilter_pse.gf");
+    parallelMesh->SaveAsOne((output_directory + "/pmesh").c_str());
+    MaskFilterAnode->SaveAsOne((output_directory + "/MaskFilter_anode.gf").c_str());
+    MaskFilterCathode->SaveAsOne((output_directory + "/MaskFilter_cathode.gf").c_str());
+    MaskFilterPse->SaveAsOne((output_directory + "/MaskFilter_pse.gf").c_str());
 
     if (myid == 0)
     {
@@ -1003,7 +1003,7 @@ void Initialize_Geometry::InitializeParallelMesh(MPI_Comm comm) {
         throw std::runtime_error("Global mesh must be initialized before creating a parallel mesh.");
     }
     parallelMesh = std::make_shared<mfem::ParMesh>(comm, *globalMesh);
-    parallelMesh->SaveAsOne("pmesh");
+    parallelMesh->SaveAsOne((output_directory + "/pmesh").c_str());
 
 }
 

@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     Utils::PrintSimulationParameters(cfg, outdir);
 
     // Initialize Mesh & Geometry
-    Initialize_Geometry geometry(cfg);
+    Initialize_Geometry geometry(cfg, outdir);
     geometry.combine_particle_groups = cfg.combine_particle_groups;
 
     if (cfg.mode == sim::CellMode::HALF) {
@@ -55,29 +55,31 @@ int main(int argc, char *argv[]) {
 
     // Initialize and Calculate Domain Parameters
     Domain_Parameters domain_parameters(geometry, cfg);
-    domain_parameters.SetupDomainParameters();
+    domain_parameters.SetupDomainParameters(outdir);
 
-    // Initialize Boundary Conditions 
-    BoundaryConditions bc(geometry, domain_parameters);
-    if (cfg.mode == sim::CellMode::HALF) {
-        bc.SetupBoundaryConditions(sim::CellMode::HALF, cfg.half_electrode);
-    } else {
-        bc.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
-    }
-    bc.SaveBoundaryConditionFields();
+    if (!cfg.geometry_only)
+    {
+        // Initialize Boundary Conditions
+        BoundaryConditions bc(geometry, domain_parameters);
+        if (cfg.mode == sim::CellMode::HALF) {
+            bc.SetupBoundaryConditions(sim::CellMode::HALF, cfg.half_electrode);
+        } else {
+            bc.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
+        }
+        bc.SaveBoundaryConditionFields();
 
-    // Define Adjuster for Surface Voltage & Current
-    Adjust adjust(geometry, domain_parameters, cfg);
+        // Define Adjuster for Surface Voltage & Current
+        Adjust adjust(geometry, domain_parameters, cfg);
 
-    // Initialize Concentration & Potential & Reaction Fields
-    SimulationState state;
-    state.InitializeFields(geometry, domain_parameters, bc, cfg);
+        // Initialize Concentration & Potential & Reaction Fields
+        SimulationState state;
+        state.InitializeFields(geometry, domain_parameters, bc, cfg);
 
-    double VCell = 0.0;
+        double VCell = 0.0;
 
-    // ============================================================================
-    // =====================  HALF-CELL TIME STEP LOOP  ===========================
-    // ============================================================================
+        // ============================================================================
+        // =====================  HALF-CELL TIME STEP LOOP  ===========================
+        // ============================================================================
 
         if (cfg.mode == sim::CellMode::HALF)
         {
@@ -96,7 +98,7 @@ int main(int argc, char *argv[]) {
             }
 
             int t = 0;
-    
+
             while (true) {
 
                 VCell = solid_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
@@ -284,8 +286,15 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    if (mfem::Mpi::WorldRank() == 0)
+    {
+        std::cout << (cfg.geometry_only ? "Geometry-only setup complete. Fields saved to "
+                                       : "Simulation complete. Output saved to ")
+                  << outdir << '\n';
+    }
+    }
     
-    if (mfem::Mpi::WorldRank() == 0) { std::cout << "Simulation complete.\n"; }
 
     auto program_end = std::chrono::high_resolution_clock::now();
 

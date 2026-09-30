@@ -36,6 +36,7 @@ using namespace std;
  */
 class Initialize_Geometry {
 private:
+    const std::string output_directory; ///< Existing directory for geometry output.
     const SimulationConfig& cfg; ///< Borrowed configuration; must outlive this geometry handler.
 
     /**
@@ -121,8 +122,9 @@ public:
      * Stores the simulation configuration and prepares geometry-related storage.
      *
      * @param cfg Reference to the simulation configuration.
+     * @param output_directory Existing directory for saved geometry fields.
      */
-    Initialize_Geometry(const SimulationConfig& cfg);
+    Initialize_Geometry(const SimulationConfig& cfg, const std::string& output_directory = ".");
 
     /// Destructor.
     virtual ~Initialize_Geometry();

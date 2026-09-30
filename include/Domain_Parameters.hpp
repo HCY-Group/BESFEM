@@ -50,9 +50,10 @@ public:
      * - Computes element volumes (EVol)
      * - Integrates ψ and ψₑ to compute gtPsi, gtPse
      * - Computes global target current gTrgI
+     * - Saves mesh and domain fields to the existing output_directory
      *
      */
-    void SetupDomainParameters();
+    void SetupDomainParameters(const std::string& output_directory = ".");
 
     // -------------------------------------------------------------------------
     // Phase fields (grid functions)

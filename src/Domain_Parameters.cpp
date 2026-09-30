@@ -38,27 +38,36 @@ Domain_Parameters::Domain_Parameters(Initialize_Geometry &geo, const SimulationC
 
 Domain_Parameters::~Domain_Parameters() = default;
 
-void Domain_Parameters::SetupDomainParameters()
+void Domain_Parameters::SetupDomainParameters(const std::string& output_directory)
 {
 
     InitializeGridFunctions();
     InterpolateDomainParameters();
     CalculatePhasePotentialsAndTargetCurrent();
 
-    psi->SaveAsOne("psi");
-    pse->SaveAsOne("pse");
-    AvP->SaveAsOne("AvP");
-    AvE->SaveAsOne("AvE");
-    AvB->SaveAsOne("AvB");
-    pmesh->SaveAsOne("pmesh");
+    psi->SaveAsOne((output_directory + "/psi").c_str());
+    pse->SaveAsOne((output_directory + "/pse").c_str());
+    AvP->SaveAsOne((output_directory + "/AvP").c_str());
+    AvE->SaveAsOne((output_directory + "/AvE").c_str());
+    AvB->SaveAsOne((output_directory + "/AvB").c_str());
+    pmesh->SaveAsOne((output_directory + "/pmesh").c_str());
 
     if (cfg.mode == sim::CellMode::FULL)
     {
-        psiA->SaveAsOne("psiA");
-        psiC->SaveAsOne("psiC");
+        psiA->SaveAsOne((output_directory + "/psiA").c_str());
+        psiC->SaveAsOne((output_directory + "/psiC").c_str());
 
-        AvPA->SaveAsOne("AvPA");
-        AvPC->SaveAsOne("AvPC");
+        AvPA->SaveAsOne((output_directory + "/AvPA").c_str());
+        AvPC->SaveAsOne((output_directory + "/AvPC").c_str());
+    }
+
+    for (std::size_t j = 0; j < ps.size(); ++j)
+    {
+        for (std::size_t k = j + 1; k < ps.size(); ++k)
+        {
+            const std::string filename = output_directory + "/AvP_Pair_" + std::to_string(j) + "_" + std::to_string(k);
+            AvP_Pairs[j][k]->SaveAsOne(filename.c_str());
+        }
     }
 
     PrintInfo();
@@ -326,15 +335,6 @@ void Domain_Parameters::BuildHalfCellInterfaces()
     ComputeGradientMagnitude(*psi, *AvP);
     ComputeGradientMagnitude(*pse, *AvE);
     BuildParticleInterfaces(GetParticleGroups(cfg.half_electrode), *denom);
-
-    for (std::size_t j = 0; j < ps.size(); ++j)
-    {
-        for (std::size_t k = j + 1; k < ps.size(); ++k)
-        {
-            const std::string filename = "AvP_Pair_" + std::to_string(j) + "_" + std::to_string(k);
-            AvP_Pairs[j][k]->SaveAsOne(filename.c_str());
-        }
-    }
 }
 
 void Domain_Parameters::BuildFullCellInterfaces()

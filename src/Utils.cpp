@@ -260,6 +260,7 @@ void Utils::PrintSimulationParameters(const SimulationConfig &cfg, const std::st
 
     std::cout << "\n===== Simulation Parameters =====\n"
               << "output_dir = " << outdir << "\n"
+              << "geometry_only = " << (cfg.geometry_only ? "true" : "false") << "\n"
               << "dt   = " << cfg.dt << "\n"
               << "dh   = " << cfg.dh << "\n"
               << "gc   = " << cfg.gc << "\n"
