@@ -99,9 +99,17 @@ int main(int argc, char *argv[]) {
 
             int t = 0;
 
+            double VCell_constant = 3.9;
+            double VCell_difference = 0.0;
+
             while (true) {
 
                 VCell = solid_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
+                // std::cout << "Timestep: " << t << ", VCell: " << VCell << std::endl;
+                // std::cout << "Timestep: " << t << ", VCell_constant " << VCell_constant << std::endl;
+
+                // VCell_difference = VCell - VCell_constant;
+                // std::cout << "Timestep: " << t << ", VCell_difference " << VCell_difference << std::endl;
 
                 if (Utils::ShouldStopSimulation(cfg, t, VCell)){break;}
 
@@ -160,7 +168,10 @@ int main(int argc, char *argv[]) {
 
                 VCell = solid_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
 
-                adjust.AdjustHalfCellCurrent(total_current, total_target, *state.electrolyte_potential, *state.phE_gf);
+                if (cfg.Cr > 0 ? VCell >= VCell_constant : VCell <= VCell_constant)
+                {
+                    adjust.AdjustHalfCellCurrent(total_current, total_target, *state.electrolyte_potential, *state.phE_gf);
+                }
 
                 if (t % cfg.save_freq == 0)
                 {

@@ -86,8 +86,6 @@ void ElectrodePotential::SetupField(mfem::ParGridFunction &ph, double initial_va
 void ElectrodePotential::AssembleSystem(const std::vector<mfem::ParGridFunction*> &Cn_groups, const std::vector<mfem::ParGridFunction*> &psi_groups, const std::vector<sim::MaterialType> &materials, mfem::ParGridFunction &potential)
 {
     mfem::ConstantCoefficient dbc_Coef(Bv);
-    // cgPP_solver.SetPreconditioner(*Mpp);
-    // cgPP_solver.SetOperator(KmP);
 
     ParticleConductivityMulti(Cn_groups, psi_groups, materials);
     fem.Update(Kp2);

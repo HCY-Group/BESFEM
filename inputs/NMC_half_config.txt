@@ -17,9 +17,9 @@ combine_particles = true
 
 # TIFF crop bounds
 row_begin = 15
-row_end = 200
+row_end = 80
 column_begin = 10
-column_end = 100
+column_end = 60
 
 amr_levels = 0
 
@@ -38,17 +38,17 @@ dh = 2.07407e-05
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = steps       
-VCut = 3.2
-num_steps = 3001
+stop_mode = voltage       
+VCut = 4.0
+num_steps = 4000
 
-save_freq = 500
+save_freq = 2000
 
 # ============================================================
 # CURRENT CONTROL
 # ============================================================
 
-Cr = 1.0
+Cr = -1.0
 Vsr0 = 0.009466
 
 # ============================================================
@@ -57,13 +57,13 @@ Vsr0 = 0.009466
 
 cathode_materials = NMC
 
-# material.NMC.exchange_current_density = table materials/NMC/pybamm_exchange_current_density.txt
+material.NMC.exchange_current_density = table materials/NMC/pybamm_exchange_current_density.txt
 
 # ============================================================
 # INITIAL PARTICLE CONCENTRATION
 # ============================================================
 
-init_cathode_particles = 0.30
+init_cathode_particles = 0.90
 
 # ============================================================
 # INITIAL ELECTROLYTE CONCENTRATION
@@ -75,5 +75,5 @@ init_CnE = 0.001
 # INITIAL POTENTIALS
 # ============================================================
 
-init_BvC = 3.96
+init_BvC = 3.36
 init_BvE = -0.1
