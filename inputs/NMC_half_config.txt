@@ -2,6 +2,8 @@
 # SIMULATION MODE
 # ============================================================
 
+geometry_only = false
+
 mode = half
 electrode = cathode
 
@@ -15,9 +17,9 @@ combine_particles = true
 
 # TIFF crop bounds
 row_begin = 15
-row_end = 80
+row_end = 200
 column_begin = 10
-column_end = 60
+column_end = 100
 
 amr_levels = 0
 
@@ -36,11 +38,11 @@ dh = 2.07407e-05
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = voltage       
+stop_mode = steps       
 VCut = 3.2
 num_steps = 3001
 
-save_freq = 3000
+save_freq = 500
 
 # ============================================================
 # CURRENT CONTROL

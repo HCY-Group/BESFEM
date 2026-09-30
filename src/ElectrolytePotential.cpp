@@ -59,7 +59,6 @@ void ElectrolytePotential::SetupField(mfem::ParGridFunction &ph, double initial_
         fem.SolverConditions(Kml, cgPE_solver, *Mpe); // Set up the solver conditions
 
         fem.InitializeForceTerm(cRe, Bl2); // Initialize the force term
-        fem.Update(Bl2); // Update the force term
         Flt = *Bl2; // Move the force term
 
         fem.FormLinearSystem(Kl2, ess_tdof_potE, ph, Flt, Kml, X1v, Flb); // Assemble the force term system

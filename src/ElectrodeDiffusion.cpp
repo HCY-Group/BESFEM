@@ -34,6 +34,9 @@ void ElectrodeDiffusion::SetupField(mfem::ParGridFunction &Cn, double initial_va
     fem.InitializeStiffnessMatrix(cDp, Kc2);
     psx.GetTrueDofs(PsVc);
 
+    fem.InitializeForceTerm(cAp, Bc2);
+
+
 }
 
 void ElectrodeDiffusion::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::ParGridFunction &Cn, mfem::ParGridFunction &psx,
@@ -50,17 +53,11 @@ void ElectrodeDiffusion::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::Pa
         for (const auto &pair : pair_terms)
         {
             utils.ComputePairFlux(*pair.sum_part, *pair.weight, *pair.grad_psi, *pair.mu_self, *pair.mu_nbr, rho);
-            // pair.sum_part->SaveAsOne("pair_sum_part_test_diffusion.gf"); // reaction field for particle-particle
             Rxn += *pair.sum_part;
         }
     }
 
-    // Rxn.SaveAsOne("Rxn_test_diffusion.gf"); // reaction field for particle-electrolyte
-
-    cAp.SetGridFunction(&Rxn);
-
-    fem.InitializeForceTerm(cAp, Bc2);
-    fem.Update(Bc2);
+    Bc2->Assemble();
     Fct = *Bc2;
 
     for (int vi = 0; vi < nV; vi++){

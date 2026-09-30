@@ -78,7 +78,6 @@ void ElectrodePotential::SetupField(mfem::ParGridFunction &ph, double initial_va
     cgPP_solver.SetOperator(KmP);
 
     fem.InitializeForceTerm(cRp, Bp2);
-    Bp2->Assemble();
     Fpt = *Bp2;
 
     fem.FormLinearSystem(Kp2, ess_tdof_list, ph, Fpt, KmP, X1v, Fpb);
@@ -87,8 +86,8 @@ void ElectrodePotential::SetupField(mfem::ParGridFunction &ph, double initial_va
 void ElectrodePotential::AssembleSystem(const std::vector<mfem::ParGridFunction*> &Cn_groups, const std::vector<mfem::ParGridFunction*> &psi_groups, const std::vector<sim::MaterialType> &materials, mfem::ParGridFunction &potential)
 {
     mfem::ConstantCoefficient dbc_Coef(Bv);
-    cgPP_solver.SetPreconditioner(*Mpp);
-    cgPP_solver.SetOperator(KmP);
+    // cgPP_solver.SetPreconditioner(*Mpp);
+    // cgPP_solver.SetOperator(KmP);
 
     ParticleConductivityMulti(Cn_groups, psi_groups, materials);
     fem.Update(Kp2);
@@ -135,7 +134,6 @@ void ElectrodePotential::UpdatePotential(mfem::ParGridFunction &Rx, mfem::ParGri
     RpP = Rx;
     RpP *= Constants::Frd;
 
-    Bp2->Update();
     Bp2->Assemble();
     Fpt = *Bp2;
 

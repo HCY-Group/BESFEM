@@ -77,21 +77,16 @@ void ElectrolyteDiffusion::UpdateConcentration(mfem::ParGridFunction &Rx, mfem::
     (void)pair_terms;
 
     utils.InitializeReaction(Rx, Rxe, (-1.0 * Constants::t_minus));
-    cAe.SetGridFunction(&Rxe);
-    utils.CalculateReactionInfx(Rxe, infx);
+ 
+    if (mode_ == sim::CellMode::HALF)
+    {
+        utils.CalculateReactionInfx(Rxe, infx);
+        nbcCoef.constant = infx;
+    }
 
-    // std::cout << "infx: " << infx << std::endl;
-
-    nbcCoef.constant = infx;
-    mfem::ProductCoefficient m_nbcCoef(matCoef_R, nbcCoef);
-
-    Be_init = std::make_unique<mfem::ParLinearForm>(fespace.get());
-    Be_init->AddDomainIntegrator(new mfem::DomainLFIntegrator(cAe));
-    Be_init->AddBoundaryIntegrator(new mfem::BoundaryLFIntegrator(m_nbcCoef), nbc_bdr);
-
+    // Reassemble the changing load using the existing integrators.
     Be_init->Assemble();
-    Fet = *Be_init; 
-
+    Fet = *Be_init;
 
     for (int vi = 0; vi < nV; vi++){
         const double cn_val = Cn(vi);
