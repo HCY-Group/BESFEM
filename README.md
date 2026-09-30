@@ -61,11 +61,11 @@ All simulations are configured through
 inputs/run_config.txt
 ```
 
-Run using the default configuration:
+<!-- Run using the default configuration:
 
 ```bash
 mpirun -np 8 ./battery_simulation
-```
+``` -->
 
 Specify a configuration file:
 
@@ -94,7 +94,7 @@ Extract timestep information:
 grep timestep output.txt > timestep.txt
 ```
 
----
+<!-- ---
 
 # Simulation Workflow
 
@@ -115,7 +115,7 @@ Solve Coupled Electrochemical Equations
           │
           ▼
 Write Output Files
-```
+``` -->
 
 ---
 
@@ -264,7 +264,7 @@ Currently supported materials include
 Every built-in material property comes from a text file under
 `inputs/materials/<Material>/<property>.txt`:
 
-```text
+<!-- ```text
 inputs/materials/
 ├── Graphite/
 ├── LFP/
@@ -300,7 +300,7 @@ Keep the defaults or override any individual property in the run config:
 material.Graphite.ocv = table materials/Graphite/ocv.txt
 material.Graphite.exchange_current_density = table materials/Graphite/exchange_current_density.txt
 material.Graphite.conductivity = constant 3.3
-```
+``` -->
 
 <!-- Override filenames are arbitrary; their paths are relative to the **config file**.
 Quote table paths containing spaces. Config keys use the exact form
@@ -360,7 +360,6 @@ init_CnE = 0.001
 Initial electrode and electrolyte potentials
 
 ```ini
-init_BvA = -0.10
 init_BvC = 3.40
 init_BvE = -0.10
 ```
@@ -455,8 +454,8 @@ The website source is in `docs/`, and `Doxyfile` configures the API reference
 generated from `src/` and `include/`.
 
 The workflow in `.github/workflows/pages.yml` rebuilds and publishes the full
-website, including fresh Doxygen API documentation, on every push to `main`.
-It can also be started from the **Actions** tab using **Run workflow**. The website is published at <https://hcy-group.github.io/BESFEM/> and the API at <https://hcy-group.github.io/BESFEM/api/>.
+website, including fresh Doxygen API documentation, on every push to `main`. The website is published at <https://hcy-group.github.io/BESFEM/> and the API at <https://hcy-group.github.io/BESFEM/api/>.
+<!-- It can also be started from the **Actions** tab using **Run workflow**. The website is published at <https://hcy-group.github.io/BESFEM/> and the API at <https://hcy-group.github.io/BESFEM/api/>. -->
 
 <!-- To enable it, commit and push the workflow, then in the GitHub repository go to
 **Settings → Pages → Build and deployment → Source** and select **GitHub Actions**.
@@ -520,7 +519,7 @@ Update the mesh and GridFunction filenames within the notebook to visualize diff
 
 > **Note:** For a MathJax-rendered version of the governing equations, please visit the [BESFEM documentation](https://hcy-group.github.io/BESFEM/equations.html).
 
-## Butler-Volmer Kinetics
+<!-- ## Butler-Volmer Kinetics
 
 $$r_{xn} = k_f C_e {\text{exp}}\left[{\frac{-\alpha F \Delta \phi }{RT}}\right] - k_b C_p {\text{exp}}\left[{\frac{(1-\alpha)F \Delta \phi}{RT}}\right]$$ 
 
@@ -558,7 +557,7 @@ $$\frac{\partial C_a}{\partial t}=\frac{1}{\psi_a}\nabla\cdot\left[\psi_aM_a\nab
 
 ## Anode Potential
 
-$$\nabla\cdot\left(\psi_a\kappa_a\nabla\phi_a\right)-|\nabla\psi_a|z_-Fr_a=0$$
+$$\nabla\cdot\left(\psi_a\kappa_a\nabla\phi_a\right)-|\nabla\psi_a|z_-Fr_a=0$$ -->
 
 ---
 
