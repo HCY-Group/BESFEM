@@ -3,6 +3,7 @@
 #include "mfem.hpp"
 
 #include <cstring>
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -163,8 +164,10 @@ static sim::StopMode ParseStopMode(const std::string& value)
     if (value == "voltage")
         return sim::StopMode::VOLTAGE;
 
-    mfem::mfem_error(("Invalid stop_mode: " + value +
-                      ". Use steps or voltage.").c_str());
+    if (value == "soc")
+        return sim::StopMode::SOC;
+
+    mfem::mfem_error(("Invalid stop_mode: " + value + ". Use steps, voltage, or soc.").c_str());
 
     return sim::StopMode::STEPS;
 }
@@ -280,11 +283,30 @@ static void ApplyConfigFile(SimulationConfig& cfg)
     if (HasKey(data, "Cr"))
         cfg.Cr = std::stod(GetValue(data, "Cr"));
 
+    if (HasKey(data, "control_mode"))
+    {
+        const auto value = GetValue(data, "control_mode");
+        if (value == "cc")
+            cfg.control_mode = sim::ControlMode::CC;
+        else if (value == "cv")
+            cfg.control_mode = sim::ControlMode::CV;
+        else if (value == "cc/cv")
+            cfg.control_mode = sim::ControlMode::CC_CV;
+        else
+            mfem::mfem_error("Invalid control_mode. Use: cc | cv | cc/cv.");
+    }
+
+    if (HasKey(data, "cc_cv_soc"))
+        cfg.cc_cv_soc = std::stod(GetValue(data, "cc_cv_soc"));
+
     if (HasKey(data, "Vsr0"))
         cfg.Vsr0 = std::stod(GetValue(data, "Vsr0"));
 
     if (HasKey(data, "stop_mode"))
         cfg.stop_mode = ParseStopMode(GetValue(data, "stop_mode"));
+
+    if (HasKey(data, "SOCCut"))
+        cfg.SOCCut = std::stod(GetValue(data, "SOCCut"));
 
     if (HasKey(data, "VCut"))
         cfg.VCut = std::stod(GetValue(data, "VCut"));
@@ -365,7 +387,8 @@ SimulationConfig ParseSimulationArgs(int argc, char *argv[])
         (cfg.half_electrode == sim::Electrode::CATHODE) ? "cathode" : "anode";
 
     const char* stop_mode =
-        (cfg.stop_mode == sim::StopMode::STEPS) ? "steps" : "voltage";
+        (cfg.stop_mode == sim::StopMode::STEPS) ? "steps" :
+        (cfg.stop_mode == sim::StopMode::VOLTAGE) ? "voltage" : "soc";
 
     mfem::OptionsParser args(argc, argv);
 
@@ -387,7 +410,7 @@ SimulationConfig ParseSimulationArgs(int argc, char *argv[])
     args.AddOption(&mode, "-mode", "--mode", "Cell mode: half | full.");
     args.AddOption(&half_elec, "-elec", "--electrode", "HALF mode only: anode | cathode.");
     args.AddOption(&cfg.combine_particle_groups, "-combine", "--combine-particles", "-separate", "--separate-particles", "Combine all particle groups into one.");
-    args.AddOption(&stop_mode, "-stop", "--stop-mode", "Stopping mode: steps | voltage.");
+    args.AddOption(&stop_mode, "-stop", "--stop-mode", "Stopping mode: steps | voltage | soc.");
 
     args.ParseCheck();
 
@@ -405,12 +428,7 @@ SimulationConfig ParseSimulationArgs(int argc, char *argv[])
     else
         mfem::mfem_error("Invalid -elec. Use: anode | cathode.");
 
-    if (std::strcmp(stop_mode, "steps") == 0)
-        cfg.stop_mode = sim::StopMode::STEPS;
-    else if (std::strcmp(stop_mode, "voltage") == 0)
-        cfg.stop_mode = sim::StopMode::VOLTAGE;
-    else
-        mfem::mfem_error("Invalid stop mode. Use: steps | voltage.");
+    cfg.stop_mode = ParseStopMode(stop_mode);
 
     return cfg;
 }
@@ -513,6 +531,21 @@ static void CheckParticleStoichiometry(
 
 void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
 {
+    if (!cfg.geometry_only && cfg.stop_mode == sim::StopMode::SOC)
+    {
+        if (!std::isfinite(cfg.SOCCut) || cfg.SOCCut < 0.0 || cfg.SOCCut > 1.0)
+            mfem::mfem_error("stop_mode=soc requires SOCCut between 0 and 1.");
+        if (!std::isfinite(cfg.Cr) || cfg.Cr == 0.0)
+            mfem::mfem_error("stop_mode=soc requires a finite, nonzero Cr to determine the stopping direction.");
+    }
+    if (cfg.mode == sim::CellMode::HALF &&
+        cfg.control_mode == sim::ControlMode::CC_CV)
+    {
+        if (!(cfg.Cr < 0.0))
+            mfem::mfem_error("Half-cell cc/cv control requires charging (Cr < 0).");
+        if (!std::isfinite(cfg.cc_cv_soc) || cfg.cc_cv_soc < 0.0 || cfg.cc_cv_soc > 1.0)
+            mfem::mfem_error("Half-cell cc/cv control requires cc_cv_soc between 0 and 1.");
+    }
     
     const bool cathode = cfg.half_electrode == sim::Electrode::CATHODE;
 
@@ -874,9 +907,14 @@ void PrintAvailableSimulationOptions()
     std::cout << "    Voltage Scanning Rate Vsr0 = 0.009\n";
     std::cout << "    Cahn Hilliard Gradient Coef gc = 1.014e-9\n\n";
 
+    std::cout << "  Half-cell control:\n";
+    std::cout << "    Half-cell control_mode = cc | cv | cc/cv (default cc)\n";
+    std::cout << "    cc/cv requires Cr < 0 and cc_cv_soc in [0, 1]; current adjustment stops at that SOC (holds voltage).\n\n";
     std::cout << "  Stopping criteria:\n";
     std::cout << "    stop_mode = steps\n";
     std::cout << "    stop_mode = voltage\n";
+    std::cout << "    stop_mode = soc (SOCCut in [0, 1])\n";
+    std::cout << "    SOCCut = 0.9\n";
     std::cout << "    VCut = 3.2\n\n";
 
     std::cout << "  Example command:\n";

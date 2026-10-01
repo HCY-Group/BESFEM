@@ -38,9 +38,15 @@ dh = 2.07407e-05
 # STOPPING CRITERIA
 # ============================================================
 
-stop_mode = voltage       
-VCut = 4.0
+stop_mode = steps       
+VCut = 3.6
 num_steps = 4000
+
+SOCCut = 0.9
+
+control_mode = cc
+cc_cv_soc = 0.8
+
 
 save_freq = 2000
 

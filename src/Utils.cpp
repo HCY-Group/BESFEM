@@ -138,8 +138,6 @@ void Utils::ComputePairFlux(mfem::ParGridFunction &sum_part, mfem::ParGridFuncti
         double mu1_val = mu_1(vi);
         double mu2_val = mu_2(vi);
 
-        // const double rho = MaterialProperties::SiteDensity(cfg.cathode_materials[0]);
-
         sum_part(vi) = weight_val * grad_psi_val * rho * (1.0/Constants::RT) * Constants::Perm * (mu2_val - mu1_val);
     }
 
@@ -427,24 +425,42 @@ void Utils::PrintProgramTime(std::chrono::high_resolution_clock::time_point star
     std::cout << "Total Program Time: " << elapsed.count() << " seconds" << std::endl;
 }
 
-bool Utils::ShouldStopSimulation(const SimulationConfig& cfg, int t, double VCell)
+double Utils::CalculateSOC(const SimulationState& state, const Domain_Parameters& para, const SimulationConfig& cfg)
 {
-    if (cfg.stop_mode == sim::StopMode::STEPS &&
-        t >= cfg.num_timesteps)
+    const bool full = cfg.mode == sim::CellMode::FULL;
+    const bool anode = full || cfg.half_electrode == sim::Electrode::ANODE;
+    const auto& particles = anode ? state.anode.particles : state.cathode.particles;
+    const auto& volumes = full ? para.gtPsA : para.gtPs;
+    double weighted_lithiation = 0.0;
+    double total_volume = 0.0;
+    for (size_t j = 0; j < particles.size(); ++j)
+    {
+        weighted_lithiation += volumes[j] * particles[j].concentration->GetLithiation();
+        total_volume += volumes[j];
+    }
+    MFEM_VERIFY(total_volume > 0.0, "SOC requires positive particle volume.");
+    const double lithiation = weighted_lithiation / total_volume;
+    return anode ? lithiation : 1.0 - lithiation;
+}
+
+bool Utils::ShouldStopSimulation(const SimulationConfig& cfg, int t, double VCell, double soc)
+{
+    if (cfg.stop_mode == sim::StopMode::SOC)
+    {
+        MFEM_VERIFY(std::isfinite(soc), "SOC stopping requires a finite state of charge.");
+        return cfg.Cr < 0.0 ? soc >= cfg.SOCCut : cfg.Cr > 0.0 && soc <= cfg.SOCCut;
+    }
+    if (cfg.stop_mode == sim::StopMode::STEPS && t >= cfg.num_timesteps)
     {
         return true;
     }
 
-    if (cfg.stop_mode == sim::StopMode::VOLTAGE &&
-        cfg.Cr > 0 &&
-        VCell <= cfg.VCut)
+    if (cfg.stop_mode == sim::StopMode::VOLTAGE && cfg.Cr > 0 && VCell <= cfg.VCut)
     {
         return true;
     }
 
-    if (cfg.stop_mode == sim::StopMode::VOLTAGE &&
-        cfg.Cr < 0 &&
-        VCell >= cfg.VCut)
+    if (cfg.stop_mode == sim::StopMode::VOLTAGE && cfg.Cr < 0 && VCell >= cfg.VCut)
     {
         return true;
     }

@@ -732,20 +732,3 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
 
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -42,6 +42,8 @@ gc = 6.38e-12
 # STOPPING CRITERIA
 # ============================================================
 
+# Options: steps, voltage, soc. SOC stops at/above SOCCut on charge, at/below on discharge.
+# SOCCut = 0.9  # Required for stop_mode = soc; fraction in [0, 1].
 stop_mode = steps       
 VCut = 3.41
 num_steps = 1501
@@ -54,6 +56,8 @@ save_freq = 500
 
 Cr = 1.0
 Vsr0 = 0.9466
+
+control_mode = cc
 
 # ============================================================
 # MATERIALS

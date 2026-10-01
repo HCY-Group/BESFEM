@@ -59,7 +59,16 @@ enum class MaterialType {
 enum class StopMode
 {
     STEPS, ///< Stop after a fixed number of timesteps
-    VOLTAGE ///< Stop when the cell voltage reaches a specified threshold
+    VOLTAGE, ///< Stop when the cell voltage reaches a specified threshold
+    SOC ///< Stop when state of charge reaches a specified threshold
+};
+
+/// Half-cell current/voltage control protocol.
+enum class ControlMode
+{
+    CC,
+    CV,
+    CC_CV
 };
 
 

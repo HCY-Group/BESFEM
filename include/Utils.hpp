@@ -13,6 +13,7 @@
 #include <ctime>
 #include <memory>
 #include <vector>
+#include <limits>
 
 #include "mfem.hpp"
 #include "Initialize_Geometry.hpp"
@@ -238,17 +239,25 @@ public:
     static void PrintProgramTime(std::chrono::high_resolution_clock::time_point start, std::chrono::high_resolution_clock::time_point end);
 
     /**
-     * @brief Check the configured timestep or voltage stopping condition.
+     * @brief Check the configured timestep, voltage, or SOC stopping condition.
      *
      * STEPS mode stops at t >= num_timesteps. VOLTAGE mode stops at
      * VCell <= VCut for positive Cr or VCell >= VCut for negative Cr.
      * A zero Cr does not trigger a voltage stop.
+     * SOC mode stops at SOC <= SOCCut for discharge (Cr > 0), or
+     * SOC >= SOCCut for charge (Cr < 0).
      * @param cfg Configuration specifying stop mode, step limit, Cr, and VCut.
      * @param t Current timestep index.
      * @param VCell Current cell voltage.
+     * @param soc Current state of charge; required in SOC mode.
      * @return True when the selected stopping condition is met; false otherwise.
      */
-    static bool ShouldStopSimulation(const SimulationConfig& cfg, int t, double VCell);
+    static bool ShouldStopSimulation(const SimulationConfig& cfg, int t, double VCell,
+                                    double soc = std::numeric_limits<double>::quiet_NaN());
+
+    /// Volume-weighted SOC: half cathode uses 1-x; half anode/full cell use anode x.
+    static double CalculateSOC(const SimulationState& state, const Domain_Parameters& para,
+                               const SimulationConfig& cfg);
 
 private:
     Initialize_Geometry &geometry_; ///< Geometry handler.

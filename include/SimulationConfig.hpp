@@ -88,9 +88,12 @@ struct SimulationConfig
     double gc = 3.38e-10 * 3.0; ///< Cahn--Hilliard gradient-energy coefficient.
     double dt = 0.001; ///< Simulation timestep.
     double Cr = 1.0; ///< Applied C-rate.
+    sim::ControlMode control_mode = sim::ControlMode::CC; ///< Half-cell control: cc, cv, or cc/cv.
+    double cc_cv_soc = -1.0; ///< Required SOC threshold in [0, 1] for half-cell cc/cv charging.
     double Vsr0 = 2.0; ///< Voltage-adjustment rate for constant-current control.
 
-    sim::StopMode stop_mode = sim::StopMode::STEPS; ///< Simulation stopping condition (by steps or voltage).
+    sim::StopMode stop_mode = sim::StopMode::STEPS; ///< Simulation stopping condition (by steps, voltage, or SOC).
+    double SOCCut = -1.0; ///< SOC cutoff in [0, 1]; required for stop_mode=soc.
     double VCut = -1.0; ///< Voltage cutoff for stopping the simulation (V).
     double amr_levels = 0; ///< Number of AMR levels to apply near phase interfaces.
 

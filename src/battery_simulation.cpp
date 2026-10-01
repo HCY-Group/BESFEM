@@ -84,6 +84,7 @@ int main(int argc, char *argv[]) {
         if (cfg.mode == sim::CellMode::HALF)
         {
             const bool is_anode = (cfg.half_electrode == sim::Electrode::ANODE);
+            bool soc_threshold_reached = false;
             auto& electrode = is_anode ? state.anode : state.cathode;
             auto& particles = electrode.particles;
             auto& solid_potential = electrode.potential;
@@ -99,19 +100,12 @@ int main(int argc, char *argv[]) {
 
             int t = 0;
 
-            double VCell_constant = 3.9;
-            double VCell_difference = 0.0;
-
             while (true) {
 
                 VCell = solid_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
-                // std::cout << "Timestep: " << t << ", VCell: " << VCell << std::endl;
-                // std::cout << "Timestep: " << t << ", VCell_constant " << VCell_constant << std::endl;
 
-                // VCell_difference = VCell - VCell_constant;
-                // std::cout << "Timestep: " << t << ", VCell_difference " << VCell_difference << std::endl;
-
-                if (Utils::ShouldStopSimulation(cfg, t, VCell)){break;}
+                const double soc = cfg.stop_mode == sim::StopMode::SOC ? Utils::CalculateSOC(state, domain_parameters, cfg) : 0.0;
+                if (Utils::ShouldStopSimulation(cfg, t, VCell, soc)){break;}
 
                 // PAIR CHEMICAL POTENTIALS
                 electrode.UpdatePairChemicalPotentials(geometry, domain_parameters.AvP_Pairs);
@@ -168,7 +162,14 @@ int main(int argc, char *argv[]) {
 
                 VCell = solid_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
 
-                if (cfg.Cr > 0 ? VCell >= VCell_constant : VCell <= VCell_constant)
+                if (cfg.control_mode == sim::ControlMode::CC_CV && cfg.Cr < 0.0 && !soc_threshold_reached)
+                {
+                    const double soc = Utils::CalculateSOC(state, domain_parameters, cfg);
+                    soc_threshold_reached = soc >= cfg.cc_cv_soc;
+                }
+
+                // Maintain constant current until the SOC threshold, then hold voltage.
+                if (cfg.control_mode == sim::ControlMode::CC || (cfg.control_mode == sim::ControlMode::CC_CV && cfg.Cr < 0.0 && !soc_threshold_reached))
                 {
                     adjust.AdjustHalfCellCurrent(total_current, total_target, *state.electrolyte_potential, *state.phE_gf);
                 }
@@ -203,7 +204,9 @@ int main(int argc, char *argv[]) {
 
                 VCell = state.cathode.potential->GetBoundaryVoltage() - state.anode.potential->GetBoundaryVoltage();
 
-                if (Utils::ShouldStopSimulation(cfg, t, VCell)){break;}
+                const double soc = cfg.stop_mode == sim::StopMode::SOC
+                    ? Utils::CalculateSOC(state, domain_parameters, cfg) : 0.0;
+                if (Utils::ShouldStopSimulation(cfg, t, VCell, soc)){break;}
 
                 // PAIR CHEMICAL POTENTIALS
                 state.anode.UpdatePairChemicalPotentials(geometry, domain_parameters.AvP_PairsA);
@@ -301,8 +304,8 @@ int main(int argc, char *argv[]) {
     if (mfem::Mpi::WorldRank() == 0)
     {
         std::cout << (cfg.geometry_only ? "Geometry-only setup complete. Fields saved to "
-                                       : "Simulation complete. Output saved to ")
-                  << outdir << '\n';
+                                    : "Simulation complete. Output saved to ")
+                << outdir << '\n';
     }
     }
     

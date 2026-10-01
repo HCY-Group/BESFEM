@@ -217,7 +217,7 @@ init_BvE = -0.1
 ### Stopping Criteria
 
 * `stop_mode`
-  * Choose how the simulation will stop - either by `steps` or `voltage`.
+  * Choose how the simulation will stop - by `steps`, `voltage`, or `soc`.
 
 * `num_steps`
 
@@ -225,6 +225,25 @@ init_BvE = -0.1
 
 * `VCut`
   * Cut Off Voltage.
+
+* `SOCCut`
+  * SOC cutoff in [0, 1], required for `stop_mode = soc`. Charging (`Cr < 0`)
+    stops at or above the cutoff; discharging (`Cr > 0`) stops at or below it.
+    SOC stopping requires a nonzero C-rate.
+
+SOC uses the volume-weighted particle averages: `1 - XfrC_avg` for half-cell
+cathodes, `XfrA_avg` for half-cell anodes, and `XfrA_avg` for full cells.
+It is checked before each timestep, including the initial state.
+
+```ini
+stop_mode = soc
+SOCCut = 0.9
+Cr = -1.0
+```
+
+The stopping cutoff is independent of `cc_cv_soc`, which controls the half-cell
+CC → CV transition. For example, switch at `cc_cv_soc = 0.8` and stop at
+`SOCCut = 0.9`.
 
 ---
 
@@ -371,6 +390,25 @@ A positive rate (+) is a discharge simulation and a negative rate (-) is a charg
 Cr = 1.0     # discharge simulation
 Cr = -1.0    # charge simulation
 ```
+
+Half-cell current control is configured with `control_mode` (default `cc`):
+
+* `cc`: adjust the boundary voltage every timestep to maintain constant current.
+* `cv`: never apply the current adjustment; retain the initial boundary voltages.
+* `cc/cv`: maintain constant current until SOC reaches `cc_cv_soc`, then stop
+  current adjustment and hold the boundary voltages reached at the transition.
+  This switches from constant current to constant voltage and requires charging
+  (`Cr < 0`).
+
+```ini
+control_mode = cc/cv
+Cr = -1.0
+cc_cv_soc = 0.8
+```
+
+<!-- `cc_cv_soc` is required for `cc/cv` and must be between 0 and 1. SOC is the
+particle-volume-weighted lithiation for anodes and one minus that value for
+cathodes. These settings do not change full-cell control. -->
 
 ---
 
