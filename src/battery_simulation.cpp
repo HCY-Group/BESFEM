@@ -193,6 +193,7 @@ int main(int argc, char *argv[]) {
 
             const int npA = static_cast<int>(state.anode.particles.size());
             const int npC = static_cast<int>(state.cathode.particles.size());
+            bool soc_threshold_reached = false;
 
             if (mfem::Mpi::WorldRank() == 0)
             {
@@ -204,8 +205,7 @@ int main(int argc, char *argv[]) {
 
                 VCell = state.cathode.potential->GetBoundaryVoltage() - state.anode.potential->GetBoundaryVoltage();
 
-                const double soc = cfg.stop_mode == sim::StopMode::SOC
-                    ? Utils::CalculateSOC(state, domain_parameters, cfg) : 0.0;
+                const double soc = cfg.stop_mode == sim::StopMode::SOC ? Utils::CalculateSOC(state, domain_parameters, cfg) : 0.0;
                 if (Utils::ShouldStopSimulation(cfg, t, VCell, soc)){break;}
 
                 // PAIR CHEMICAL POTENTIALS
@@ -286,7 +286,12 @@ int main(int argc, char *argv[]) {
 
                 // ADJUST BOUNDARY VOLTAGES TO MAINTAIN GLOBAL CURRENT CONSERVATION
                 VCell = state.cathode.potential->GetBoundaryVoltage() - state.anode.potential->GetBoundaryVoltage();
-                adjust.AdjustConstantCurrent(global_current_A, global_current_C, *state.anode.potential, *state.cathode.potential, *state.anode.ph_gf, *state.cathode.ph_gf, VCell);
+
+                if (cfg.control_mode == sim::ControlMode::CC || cfg.control_mode == sim::ControlMode::CC_CV && cfg.Cr < 0.0 && !soc_threshold_reached)
+                {
+                    adjust.AdjustConstantCurrent(global_current_A, global_current_C, *state.anode.potential, *state.cathode.potential, *state.anode.ph_gf, *state.cathode.ph_gf, VCell);
+                }
+
                 VCell = state.cathode.potential->GetBoundaryVoltage() - state.anode.potential->GetBoundaryVoltage();
 
                 if (t % cfg.save_freq == 0)
