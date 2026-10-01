@@ -364,13 +364,16 @@ init_BvC = 3.40
 init_BvE = -0.10
 ```
 
-The battery discharge and charge rate can be declared. 
-A positive rate (+) is a discharge simulation and a negative rate (-) is a charge simulation.
+The battery discharge and charge rate (`Cr`) can be declared.
 
-```ini
+For a full cell simulation, a positive rate (+) is a discharge simulation and a negative rate (-) is a charge simulation.
+
+For a half cell simulation, a positive rate (+) will lithiate the electrode and a negative rate (-) will delithiate the electrode.
+
+<!-- ```ini
 Cr = 1.0     # discharge simulation
 Cr = -1.0    # charge simulation
-```
+``` -->
 
 ---
 
