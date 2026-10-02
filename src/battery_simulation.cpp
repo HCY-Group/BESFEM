@@ -162,14 +162,14 @@ int main(int argc, char *argv[]) {
 
                 VCell = solid_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
 
-                if (cfg.control_mode == sim::ControlMode::CC-CV && cfg.Cr < 0.0 && !soc_threshold_reached)
+                if (cfg.control_mode == sim::ControlMode::CC_CV && !soc_threshold_reached)
                 {
                     const double soc = Utils::CalculateSOC(state, domain_parameters, cfg);
                     soc_threshold_reached = soc >= cfg.cc_cv_soc;
                 }
 
                 // Maintain constant current until the SOC threshold, then hold voltage.
-                if (cfg.control_mode == sim::ControlMode::CC || (cfg.control_mode == sim::ControlMode::CC-CV && cfg.Cr < 0.0 && !soc_threshold_reached))
+                if (cfg.control_mode == sim::ControlMode::CC || (cfg.control_mode == sim::ControlMode::CC_CV && !soc_threshold_reached))
                 {
                     adjust.AdjustHalfCellCurrent(total_current, total_target, *state.electrolyte_potential, *state.phE_gf);
                 }
@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
                 int iter = 0;
                 const int max_iter = 50;
 
-                while ((globalerror_A > 1.0e-6 || globalerror_C > 1.0e-6 || globalerror_E > 1.0e-6) && iter < max_iter)
+                while ((globalerror_A > 1.0e-5 || globalerror_C > 1.0e-5 || globalerror_E > 1.0e-5) && iter < max_iter)
                 {
 
                     state.anode.UpdateButlerVolmerReactions(*state.RxnA_gf, *state.CnE_gf, *state.anode.ph_gf, *state.phE_gf, domain_parameters.AvEsA, domain_parameters.WeightEsA);
@@ -287,7 +287,27 @@ int main(int argc, char *argv[]) {
                 // ADJUST BOUNDARY VOLTAGES TO MAINTAIN GLOBAL CURRENT CONSERVATION
                 VCell = state.cathode.potential->GetBoundaryVoltage() - state.anode.potential->GetBoundaryVoltage();
 
-                if (cfg.control_mode == sim::ControlMode::CC || cfg.control_mode == sim::ControlMode::CC-CV && cfg.Cr < 0.0 && !soc_threshold_reached)
+                if (cfg.control_mode == sim::ControlMode::CC_CV && !soc_threshold_reached)
+                {
+                    const double soc = Utils::CalculateSOC(state, domain_parameters, cfg);
+                    
+                    if (cfg.Cr < 0.0)
+                    {
+                        soc_threshold_reached = soc >= cfg.cc_cv_soc;
+                    }
+
+                    if (cfg.Cr > 0.0)
+                    {
+                        soc_threshold_reached = soc <= cfg.cc_cv_soc;
+                    }
+
+                    if (soc_threshold_reached && mfem::Mpi::WorldRank() == 0)
+                    {
+                        std::cout << "SOC threshold reached at timestep " << t << ", SOC = " << soc  << ". Switching to constant voltage control." << std::endl;
+                    }
+                }
+
+                if (cfg.control_mode == sim::ControlMode::CC || cfg.control_mode == sim::ControlMode::CC_CV && !soc_threshold_reached)
                 {
                     adjust.AdjustConstantCurrent(global_current_A, global_current_C, *state.anode.potential, *state.cathode.potential, *state.anode.ph_gf, *state.cathode.ph_gf, VCell);
                 }

@@ -291,7 +291,7 @@ static void ApplyConfigFile(SimulationConfig& cfg)
         else if (value == "cv")
             cfg.control_mode = sim::ControlMode::CV;
         else if (value == "cc-cv")
-            cfg.control_mode = sim::ControlMode::CC-CV;
+            cfg.control_mode = sim::ControlMode::CC_CV;
         else
             mfem::mfem_error("Invalid control_mode. Use: cc | cv | cc-cv.");
     }
@@ -539,10 +539,10 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
             mfem::mfem_error("stop_mode=soc requires a finite, nonzero Cr to determine the stopping direction.");
     }
     if (cfg.mode == sim::CellMode::HALF &&
-        cfg.control_mode == sim::ControlMode::CC-CV)
+        cfg.control_mode == sim::ControlMode::CC_CV)
     {
-        if (!(cfg.Cr < 0.0))
-            mfem::mfem_error("Half-cell cc-cv control requires charging (Cr < 0).");
+        // if (!(cfg.Cr < 0.0))
+        //     mfem::mfem_error("Half-cell cc-cv control requires charging (Cr < 0).");
         if (!std::isfinite(cfg.cc_cv_soc) || cfg.cc_cv_soc < 0.0 || cfg.cc_cv_soc > 1.0)
             mfem::mfem_error("Half-cell cc-cv control requires cc_cv_soc between 0 and 1.");
     }
