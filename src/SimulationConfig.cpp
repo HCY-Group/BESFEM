@@ -290,10 +290,10 @@ static void ApplyConfigFile(SimulationConfig& cfg)
             cfg.control_mode = sim::ControlMode::CC;
         else if (value == "cv")
             cfg.control_mode = sim::ControlMode::CV;
-        else if (value == "cc/cv")
-            cfg.control_mode = sim::ControlMode::CC_CV;
+        else if (value == "cc-cv")
+            cfg.control_mode = sim::ControlMode::CC-CV;
         else
-            mfem::mfem_error("Invalid control_mode. Use: cc | cv | cc/cv.");
+            mfem::mfem_error("Invalid control_mode. Use: cc | cv | cc-cv.");
     }
 
     if (HasKey(data, "cc_cv_soc"))
@@ -539,12 +539,12 @@ void ValidateConfig(const SimulationConfig &cfg, int argc, char *argv[])
             mfem::mfem_error("stop_mode=soc requires a finite, nonzero Cr to determine the stopping direction.");
     }
     if (cfg.mode == sim::CellMode::HALF &&
-        cfg.control_mode == sim::ControlMode::CC_CV)
+        cfg.control_mode == sim::ControlMode::CC-CV)
     {
         if (!(cfg.Cr < 0.0))
-            mfem::mfem_error("Half-cell cc/cv control requires charging (Cr < 0).");
+            mfem::mfem_error("Half-cell cc-cv control requires charging (Cr < 0).");
         if (!std::isfinite(cfg.cc_cv_soc) || cfg.cc_cv_soc < 0.0 || cfg.cc_cv_soc > 1.0)
-            mfem::mfem_error("Half-cell cc/cv control requires cc_cv_soc between 0 and 1.");
+            mfem::mfem_error("Half-cell cc-cv control requires cc_cv_soc between 0 and 1.");
     }
     
     const bool cathode = cfg.half_electrode == sim::Electrode::CATHODE;
@@ -908,8 +908,8 @@ void PrintAvailableSimulationOptions()
     std::cout << "    Cahn Hilliard Gradient Coef gc = 1.014e-9\n\n";
 
     std::cout << "  Half-cell control:\n";
-    std::cout << "    Half-cell control_mode = cc | cv | cc/cv (default cc)\n";
-    std::cout << "    cc/cv requires Cr < 0 and cc_cv_soc in [0, 1]; current adjustment stops at that SOC (holds voltage).\n\n";
+    std::cout << "    Half-cell control_mode = cc | cv | cc-cv (default cc)\n";
+    std::cout << "    cc-cv requires Cr < 0 and cc_cv_soc in [0, 1]; current adjustment stops at that SOC (holds voltage).\n\n";
     std::cout << "  Stopping criteria:\n";
     std::cout << "    stop_mode = steps\n";
     std::cout << "    stop_mode = voltage\n";
