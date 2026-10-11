@@ -15,6 +15,7 @@ ElectrodeCahnHilliard::ElectrodeCahnHilliard(Initialize_Geometry &geo, Domain_Pa
 
 void ElectrodeCahnHilliard::SetupField(mfem::ParGridFunction &Cn, double initial_value, mfem::ParGridFunction &psx, double gtPsx)
 {
+    concentration_updates = 0;
     utils.SetInitialValue(Cn, initial_value); 
     utils.CalculateLithiation(Cn, psx, gtPsx); 
     Xfr = utils.GetLithiation();
@@ -25,6 +26,9 @@ void ElectrodeCahnHilliard::SetupField(mfem::ParGridFunction &Cn, double initial
     
     MCH_prec.SetType(mfem::HypreSmoother::Jacobi); 
     fem.SolverConditions(MmatCH, MCH_solver, MCH_prec); 
+    // Solve the small timestep increment accurately, rather than tolerating
+    // errors relative to the much larger existing lithium inventory.
+    MCH_solver.SetRelTol(1.0e-12);
 
     // MCH_solver.iterative_mode = true;
     fem.InitializeStiffnessMatrix(cDp, Grad_MForm); 
@@ -100,23 +104,55 @@ void ElectrodeCahnHilliard::UpdateConcentration(mfem::ParGridFunction &Rx, mfem:
     Fcb *= cfg.dt;
     Lp2 += Fcb; 
 
-    // Update the right-hand side vector for the Cahn-Hilliard equation
-    MmatCH.Mult(CpV0, RHCp); 
-    RHCp += Lp2; 
-
+    // M * delta_c = dt * (reaction - transport). Keeping the baseline out
+    // of the solve prevents CG error from acting as a per-step lithium sink.
+    RHCp = Lp2;
     MCH_solver.Mult(RHCp, CpVn); 
+    MFEM_VERIFY(MCH_solver.GetConverged(), "CH concentration increment solve failed.");
+    CpVn += CpV0;
+
+    const bool diagnose = concentration_updates++ % std::max(1, cfg.save_freq) == 0;
+    double balance[3] = {}; // raw inventory increment, RHS, clipping change
+    if (diagnose)
+    {
+        mfem::Vector delta(CpVn), inventory(CpVn.Size());
+        delta -= CpV0;
+        MmatCH.Mult(delta, inventory);
+        balance[0] = inventory.Sum();
+        balance[1] = Lp2.Sum();
+    }
+    mfem::Vector raw(CpVn);
+    long long clips[2] = {};
 
     // Ensure that the concentration values are within the valid range
     for (int i = 0; i < CpV0.Size(); i++) {
-        if (PsVc(i) < 1.0e-5) {
-            (CpVn)(i) = CpV0(i);
-        }
+        // The phase mask has a positive floor in Domain_Parameters. Its tail
+        // therefore has storage and must retain its update for conservation.
 
         if (CpVn(i) < 0.0){
+            ++clips[0];
             (CpVn)(i) = 1.0e-6;}
 
         if (CpVn(i) > 0.96){
+            ++clips[1];
             (CpVn)(i) = 0.96;}
+    }
+
+    if (diagnose)
+    {
+        mfem::Vector correction(CpVn), inventory(CpVn.Size());
+        correction -= raw;
+        MmatCH.Mult(correction, inventory);
+        balance[2] = inventory.Sum();
+        MPI_Allreduce(MPI_IN_PLACE, balance, 3, MPI_DOUBLE, MPI_SUM, fespace->GetComm());
+        MPI_Allreduce(MPI_IN_PLACE, clips, 2, MPI_LONG_LONG_INT, MPI_SUM, fespace->GetComm());
+        if (mfem::Mpi::WorldRank() == 0)
+        {
+            std::cout << "[CH balance] update=" << concentration_updates
+                      << " raw_delta=" << balance[0] << " expected_delta=" << balance[1]
+                      << " clipping_delta=" << balance[2]
+                      << " lower_clips=" << clips[0] << " upper_clips=" << clips[1] << std::endl;
+        }
     }
 
     // recover the GridFunction from the HypreParVector

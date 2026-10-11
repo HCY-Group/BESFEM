@@ -65,7 +65,9 @@ void ParticleState::Initialize(Initialize_Geometry& geometry, Domain_Parameters&
     Rxn_gf = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
     Rx_src = std::make_unique<mfem::ParGridFunction>(geometry.parfespace.get());
 
-    reaction->Initialize(*Rxn_gf, Constants::init_Rxn);
+    // The first concentration step precedes BV evaluation. A uniform seed
+    // reaction would inject lithium throughout the low-storage phase tail.
+    reaction->Initialize(*Rxn_gf, 0.0);
     concentration->SetupField(*Cn_gf, init_cn, particle_field, particle_total);
 }
 
