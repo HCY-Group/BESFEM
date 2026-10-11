@@ -2,6 +2,7 @@
 #include "../include/Constants.hpp"
 #include "../include/MaterialProperties.hpp"
 #include "../include/SimulationConfig.hpp"
+#include "../include/ConservativeBounds.hpp"
 #include "mfem.hpp"
 
 ElectrodeCahnHilliard::ElectrodeCahnHilliard(Initialize_Geometry &geo, Domain_Parameters &para, sim::MaterialType mat, const SimulationConfig &cfg)
@@ -23,6 +24,11 @@ void ElectrodeCahnHilliard::SetupField(mfem::ParGridFunction &Cn, double initial
     mfem::GridFunctionCoefficient coef(&psx); 
     fem.InitializeMassMatrix(coef, M_init); 
     fem.FormSystemMatrix(M_init, boundary_dofs, MmatCH); 
+    mfem::Vector ones(MmatCH.Height());
+    ones = 1.0;
+    storage_weights.SetSize(MmatCH.Height());
+    // Symmetric storage matrix: M * 1 gives both row and column sums.
+    MmatCH.Mult(ones, storage_weights);
     
     MCH_prec.SetType(mfem::HypreSmoother::Jacobi); 
     fem.SolverConditions(MmatCH, MCH_solver, MCH_prec); 
@@ -124,18 +130,28 @@ void ElectrodeCahnHilliard::UpdateConcentration(mfem::ParGridFunction &Rx, mfem:
     mfem::Vector raw(CpVn);
     long long clips[2] = {};
 
-    // Ensure that the concentration values are within the valid range
+    // Count violations before the conservative correction.
     for (int i = 0; i < CpV0.Size(); i++) {
         // The phase mask has a positive floor in Domain_Parameters. Its tail
         // therefore has storage and must retain its update for conservation.
 
-        if (CpVn(i) < 0.0){
-            ++clips[0];
-            (CpVn)(i) = 1.0e-6;}
+        if (CpVn(i) < 1.0e-6) ++clips[0];
 
-        if (CpVn(i) > 0.96){
-            ++clips[1];
-            (CpVn)(i) = 0.96;}
+        if (CpVn(i) > 0.96) ++clips[1];
+    }
+    double redistributed_inventory = 0.0;
+    try
+    {
+        redistributed_inventory = sim::ConservativeBounds(CpVn.GetData(), storage_weights.GetData(),
+            CpVn.Size(), 1.0e-6, 0.96, [this](double local) {
+                double global = 0.0;
+                MPI_Allreduce(&local, &global, 1, MPI_DOUBLE, MPI_SUM, fespace->GetComm());
+                return global;
+            });
+    }
+    catch (const std::exception& error)
+    {
+        MFEM_ABORT(error.what());
     }
 
     if (diagnose)
@@ -151,6 +167,7 @@ void ElectrodeCahnHilliard::UpdateConcentration(mfem::ParGridFunction &Rx, mfem:
             std::cout << "[CH balance] update=" << concentration_updates
                       << " raw_delta=" << balance[0] << " expected_delta=" << balance[1]
                       << " clipping_delta=" << balance[2]
+                      << " redistributed_inventory=" << redistributed_inventory
                       << " lower_clips=" << clips[0] << " upper_clips=" << clips[1] << std::endl;
         }
     }

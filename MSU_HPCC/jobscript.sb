@@ -1,6 +1,6 @@
 #!/bin/bash --login
 # Job name: 
-#SBATCH --job-name=4-test-graphite
+#SBATCH --job-name=5-test-graphite
 
 # Number of nodes
 #SBATCH --nodes=4
