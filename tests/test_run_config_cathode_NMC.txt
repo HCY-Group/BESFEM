@@ -26,7 +26,11 @@ column_end = 100
 # NUMERICAL PARAMETERS
 # ============================================================
 
-# dt = 0.00001
+# dt = 1.0e-4
+# dt = 1.0e-5
+# dt = 1.0e-6
+# dt = 1.0e-7
+# dt = 1.0e-8
 dt = 1.0e-12
 dh = 3.0e-06
 gc = 3.38e-10
@@ -37,7 +41,7 @@ gc = 3.38e-10
 
 stop_mode = steps        # options: steps, voltage
 VCut = 3.454
-num_steps = 100
+num_steps = 200
 
 # ============================================================
 # CURRENT CONTROL
@@ -53,6 +57,9 @@ Vsr0 = 0.09466
 # cathode_materials = LFP
 cathode_materials = NMC
 anode_materials = graphite, graphite, graphite
+
+material.NMC.diffusivity = constant 2.0e-10
+material.Electrolyte.diffusivity = constant 1.0e-6
 
 # ============================================================
 # INITIAL PARTICLE STOICHIOMETRIES
