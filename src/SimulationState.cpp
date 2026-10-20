@@ -330,3 +330,22 @@ void ElectrodeState::UpdateButlerVolmerReactions(mfem::ParGridFunction& total_rx
         total_rxn += weighted_rxn;
     }
 }
+
+
+
+void SimulationState::AdjustHalfCellCurrent(double total_target, sim::Electrode half_electrode, double dt, double Vsr0)
+{
+    bool is_anode = (half_electrode == sim::Electrode::ANODE);
+    auto& electrode = is_anode ? this->anode : this->cathode;
+
+    std::vector<double> global_currents;
+    double total_current = electrode.CalculateElectrodeCurrent(global_currents);
+
+    const double sgn = std::copysign(1.0, total_target - total_current);
+    const double dV = dt * Vsr0 * sgn;
+
+    this->electrolyte_potential->AddBoundaryVoltage(dV);
+    *this->phE_gf += dV;
+
+}
+

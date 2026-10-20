@@ -155,15 +155,19 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                std::vector<double> global_currents;
-                double total_current = electrode.CalculateElectrodeCurrent(global_currents);
+                //std::vector<double> global_currents;
+                //double total_current = electrode.CalculateElectrodeCurrent(global_currents);
 
                 VCell = solid_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
 
-                adjust.AdjustHalfCellCurrent(total_current, total_target, *state.electrolyte_potential, *state.phE_gf);
+                //adjust.AdjustHalfCellCurrent(total_current, total_target, *state.electrolyte_potential, *state.phE_gf);
+                state.AdjustHalfCellCurrent(total_target, cfg.half_electrode, cfg.dt, cfg.Vsr0);
 
                 if (t % cfg.save_freq == 0)
                 {
+                    std::vector<double> global_currents;
+                    double total_current = electrode.CalculateElectrodeCurrent(global_currents);
+
                     Utils::PrintHalfCellStatus(t, VCell, total_current, total_target, global_currents, state, domain_parameters, cfg.half_electrode);
                 }
 

@@ -218,6 +218,13 @@ struct SimulationState
      */
     void InitializeFields(Initialize_Geometry& geometry, Domain_Parameters& domain_parameters,
         BoundaryConditions& bc, const SimulationConfig& cfg);
+
+    /**
+     * @brief Shift electrolyte voltage according to the sign of the current error.
+     */
+    void AdjustHalfCellCurrent(double total_target, sim::Electrode half_electrode, double dt, double Vsr0);
+
+
 };
 
 #endif // SIMULATION_STATE_HPP
