@@ -221,8 +221,23 @@ struct SimulationState
 
     /**
      * @brief Shift electrolyte voltage according to the sign of the current error.
+     * @param total_target Target current
+     * @param half_electrode Indicator of anode or cathode half cell simulation
+     * @param dt Size of time step
+     * @param Vsr0 Scanning rate
      */
     void AdjustHalfCellCurrent(double total_target, sim::Electrode half_electrode, double dt, double Vsr0);
+
+    /**
+     * @brief Adjust electrode potentials to satisfy a target global current.
+     *
+     * Compares the computed anode and cathode currents against the target
+     * current stored in the domain parameters, then updates the applied
+     * electrode potentials. The corresponding potential grid functions are
+     * also updated so the next FEM solve uses the adjusted boundary values.
+     */
+    void AdjustConstantCurrent(double gTrgI, double Vsr0, double dt);
+
 
 
 };

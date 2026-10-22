@@ -276,7 +276,8 @@ int main(int argc, char *argv[]) {
 
                 // ADJUST BOUNDARY VOLTAGES TO MAINTAIN GLOBAL CURRENT CONSERVATION
                 VCell = state.cathode.potential->GetBoundaryVoltage() - state.anode.potential->GetBoundaryVoltage();
-                adjust.AdjustConstantCurrent(global_current_A, global_current_C, *state.anode.potential, *state.cathode.potential, *state.anode.ph_gf, *state.cathode.ph_gf, VCell);
+                //adjust.AdjustConstantCurrent(global_current_A, global_current_C, *state.anode.potential, *state.cathode.potential, *state.anode.ph_gf, *state.cathode.ph_gf, VCell);
+                state.AdjustConstantCurrent(domain_parameters.gTrgI, cfg.Vsr0, cfg.dt);
                 VCell = state.cathode.potential->GetBoundaryVoltage() - state.anode.potential->GetBoundaryVoltage();
 
                 if (t % cfg.save_freq == 0)
