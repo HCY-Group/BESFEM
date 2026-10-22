@@ -157,7 +157,6 @@ int main(int argc, char *argv[]) {
 
                 VCell = solid_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
 
-                //adjust.AdjustHalfCellCurrent(total_current, total_target, *state.electrolyte_potential, *state.phE_gf);
                 state.AdjustHalfCellCurrent(total_target, cfg.half_electrode, cfg.dt, cfg.Vsr0);
 
                 if (t % cfg.save_freq == 0)
@@ -273,7 +272,6 @@ int main(int argc, char *argv[]) {
 
                 // ADJUST BOUNDARY VOLTAGES TO MAINTAIN GLOBAL CURRENT CONSERVATION
                 VCell = state.cathode.potential->GetBoundaryVoltage() - state.anode.potential->GetBoundaryVoltage();
-                //adjust.AdjustConstantCurrent(global_current_A, global_current_C, *state.anode.potential, *state.cathode.potential, *state.anode.ph_gf, *state.cathode.ph_gf, VCell);
                 state.AdjustConstantCurrent(domain_parameters.gTrgI, cfg.Vsr0, cfg.dt);
                 VCell = state.cathode.potential->GetBoundaryVoltage() - state.anode.potential->GetBoundaryVoltage();
 
