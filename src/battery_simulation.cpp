@@ -68,9 +68,6 @@ int main(int argc, char *argv[]) {
         }
         bc.SaveBoundaryConditionFields();
 
-        // Define Adjuster for Surface Voltage & Current
-        Adjust adjust(geometry, domain_parameters, cfg);
-
         // Initialize Concentration & Potential & Reaction Fields
         SimulationState state;
         state.InitializeFields(geometry, domain_parameters, bc, cfg);

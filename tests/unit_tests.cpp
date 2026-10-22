@@ -206,9 +206,6 @@ TEST_CASE("UpdatePotential", "[phi]") {
             "Full cell mode is not yet implemented. Please use half-cell mode.";
         }
 
-        // Define Adjuster for Surface Voltage & Current
-        Adjust adjust(geometry, domain_parameters, cfg);
-
         // Initialize Concentration & Potential & Reaction Fields
         SimulationState state;
         state.InitializeFields(geometry, domain_parameters, bc, cfg);
@@ -406,9 +403,6 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
             // bc.SetupBoundaryConditions(sim::CellMode::FULL, sim::Electrode::BOTH);
             "Full cell mode is not yet implemented. Please use half-cell mode.";
         }
-
-        // Define Adjuster for Surface Voltage & Current
-        Adjust adjust(geometry, domain_parameters, cfg);
 
         // Initialize Concentration & Potential & Reaction Fields
         SimulationState state;
