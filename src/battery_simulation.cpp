@@ -68,9 +68,6 @@ int main(int argc, char *argv[]) {
         }
         bc.SaveBoundaryConditionFields();
 
-        // Define Adjuster for Surface Voltage & Current
-        Adjust adjust(geometry, domain_parameters, cfg);
-
         // Initialize Concentration & Potential & Reaction Fields
         SimulationState state;
         state.InitializeFields(geometry, domain_parameters, bc, cfg);
@@ -155,15 +152,18 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                std::vector<double> global_currents;
-                double total_current = electrode.CalculateElectrodeCurrent(global_currents);
+                //std::vector<double> global_currents;
+                //double total_current = electrode.CalculateElectrodeCurrent(global_currents);
 
                 VCell = solid_potential->GetBoundaryVoltage() - state.electrolyte_potential->GetBoundaryVoltage();
 
-                adjust.AdjustHalfCellCurrent(total_current, total_target, *state.electrolyte_potential, *state.phE_gf);
+                state.AdjustHalfCellCurrent(total_target, cfg.half_electrode, cfg.dt, cfg.Vsr0);
 
                 if (t % cfg.save_freq == 0)
                 {
+                    std::vector<double> global_currents;
+                    double total_current = electrode.CalculateElectrodeCurrent(global_currents);
+
                     Utils::PrintHalfCellStatus(t, VCell, total_current, total_target, global_currents, state, domain_parameters, cfg.half_electrode);
                 }
 
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
 
                 // ADJUST BOUNDARY VOLTAGES TO MAINTAIN GLOBAL CURRENT CONSERVATION
                 VCell = state.cathode.potential->GetBoundaryVoltage() - state.anode.potential->GetBoundaryVoltage();
-                adjust.AdjustConstantCurrent(global_current_A, global_current_C, *state.anode.potential, *state.cathode.potential, *state.anode.ph_gf, *state.cathode.ph_gf, VCell);
+                state.AdjustConstantCurrent(domain_parameters.gTrgI, cfg.Vsr0, cfg.dt);
                 VCell = state.cathode.potential->GetBoundaryVoltage() - state.anode.potential->GetBoundaryVoltage();
 
                 if (t % cfg.save_freq == 0)

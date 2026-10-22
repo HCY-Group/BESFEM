@@ -330,3 +330,77 @@ void ElectrodeState::UpdateButlerVolmerReactions(mfem::ParGridFunction& total_rx
         total_rxn += weighted_rxn;
     }
 }
+
+
+
+void SimulationState::AdjustHalfCellCurrent(double total_target, sim::Electrode half_electrode, double dt, double Vsr0)
+{
+    bool is_anode = (half_electrode == sim::Electrode::ANODE);
+    auto& electrode = is_anode ? this->anode : this->cathode;
+
+    std::vector<double> global_currents;
+    double total_current = electrode.CalculateElectrodeCurrent(global_currents);
+
+    const double sgn = std::copysign(1.0, total_target - total_current);
+    const double dV = dt * Vsr0 * sgn;
+
+    this->electrolyte_potential->AddBoundaryVoltage(dV);
+    *this->phE_gf += dV;
+
+}
+
+// Apply constant-current voltage correction for full-cell simulations.
+void SimulationState::AdjustConstantCurrent(double gTrgI, double Vsr0, double dt)
+{
+    std::vector<double> anode_currents;
+    std::vector<double> cathode_currents;
+
+    double current_A = this->anode.CalculateElectrodeCurrent(anode_currents);
+    double current_C = this->cathode.CalculateElectrodeCurrent(cathode_currents);
+
+    double VsrC;
+    double dCrntC = std::abs(current_C - gTrgI);
+
+    // --- Current deviation scaling ---
+    if (dCrntC < std::abs(gTrgI) * 0.05) // if the current deviation is less than 5% of the target current
+        VsrC = 0.025 * Vsr0;
+    else if (dCrntC < std::abs(gTrgI) * 0.10) // if the current deviation is less than 10% of the target current
+        VsrC = 0.25 * Vsr0;
+    else
+        VsrC = 1.0 * Vsr0;
+
+    double VsrA;
+    double dCrntA = gTrgI + current_A;
+    
+    // double dCrntA = std::abs(current_A - domain_parameters.gTrgI);
+    // double dCrntA = std::abs(std::abs(current_A) - std::abs(domain_parameters.gTrgI));
+
+    // std::cout << "dCrntA: " << dCrntA << std::endl;
+    // std::cout << "5% threshold: " << std::abs(domain_parameters.gTrgI) * 0.05 << std::endl;
+    // std::cout << "10% threshold: " << std::abs(domain_parameters.gTrgI) * 0.10 << std::endl;
+
+    // --- Current deviation scaling ---
+    if (dCrntA < std::abs(gTrgI) * 0.05) // if the current deviation is less than 5% of the target current
+        VsrA = 0.025 * Vsr0;
+    else if (dCrntA < std::abs(gTrgI) * 0.10) // if the current deviation is less than 10% of the target current
+        VsrA = 0.25 * Vsr0;
+    else
+        VsrA = 1.0 * Vsr0;
+
+    // --- Anode voltage correction ---
+    double sgnA = std::copysign(1.0, gTrgI - std::abs(current_A));
+    double dV_A = dt * VsrA * sgnA * 0.25;
+    this->anode.potential->AddBoundaryVoltage(dV_A);
+    *this->anode.ph_gf += dV_A;
+
+    // --- Cathode voltage correction ---
+    double sgnC = std::copysign(1.0, gTrgI - current_C);
+    double dV_C = dt * VsrC * sgnC * 2.0;
+    this->cathode.potential->AddBoundaryVoltage(-dV_C);
+    *this->cathode.ph_gf -= dV_C;
+
+    // --- Compute overall cell voltage ---
+    //VCell = this->cathode.potential->GetBoundaryVoltage() - this->anode.potential->GetBoundaryVoltage();
+}
+
+
