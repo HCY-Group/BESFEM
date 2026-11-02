@@ -6,7 +6,6 @@
 #include "mfem.hpp"
 #include "mpi.h"
 
-#include "../include/Adjust.hpp"
 #include "../include/BoundaryConditions.hpp"
 #include "../include/Concentrations_Base.hpp"
 #include "../include/Constants.hpp"
