@@ -33,7 +33,6 @@ SRC_FILES = \
     src/Reaction.cpp \
     src/FEMOperators.cpp \
     src/Potentials_Base.cpp \
-    src/Adjust.cpp \
     src/Utils.cpp \
     src/dist_solver.cpp \
     src/SimulationState.cpp \
