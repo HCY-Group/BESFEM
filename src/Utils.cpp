@@ -273,6 +273,16 @@ void Utils::PrintSimulationParameters(const SimulationConfig &cfg, const std::st
 void Utils::PrintHalfCellStatus(int t, double VCell,double total_current, double total_target,
     const std::vector<double> &particle_currents, const SimulationState &state, const Domain_Parameters &para, sim::Electrode electrode)
 {
+    const auto& particles = electrode == sim::Electrode::ANODE
+        ? state.anode.particles : state.cathode.particles;
+    double cp_min = 0.0, cp_max = 0.0;
+    if (!particles.empty())
+    {
+        const double local_min = particles[0].Cn_gf->Min();
+        const double local_max = particles[0].Cn_gf->Max();
+        MPI_Allreduce(&local_min, &cp_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+        MPI_Allreduce(&local_max, &cp_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    }
     if (mfem::Mpi::WorldRank() != 0)
     {
         return;
@@ -299,13 +309,11 @@ void Utils::PrintHalfCellStatus(int t, double VCell,double total_current, double
     {
         if (is_anode)
         {
-            std::cout << ", Cp_min = " << state.anode.particles[0].Cn_gf->Min()
-                    << ", Cp_max = " << state.anode.particles[0].Cn_gf->Max();
+            std::cout << ", Cp_min = " << cp_min << ", Cp_max = " << cp_max;
         }
         else
         {
-            std::cout << ", Cp_min = " << state.cathode.particles[0].Cn_gf->Min()
-                    << ", Cp_max = " << state.cathode.particles[0].Cn_gf->Max();
+            std::cout << ", Cp_min = " << cp_min << ", Cp_max = " << cp_max;
         }
     }
 

@@ -1,0 +1,26 @@
+# NOTE: you will have to run the following command
+# to ensure that git runs this hook:
+# git config core.hooksPath .githooks
+# NOTE 2: you will have to run this command 
+# to make the pre-commit executable:
+# chmod +x .githooks/pre-commit
+
+
+
+#!/bin/sh
+
+
+echo "Running unit tests before committing..."
+
+# load MFEM and Catch2
+# TODO: find a better way to incorporate Catch2?
+module load MFEM
+export CPATH=/opt/software-current/2023.06/x86_64/generic/software/Catch2/2.13.9-GCCcore-12.3.0/include/catch2/:$CPATH
+
+
+# compile unit tests
+make test
+
+# run unit test executable
+cd bin/
+./unit_tests

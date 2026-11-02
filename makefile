@@ -71,6 +71,13 @@ $(EXEC): $(EXEC_SRC_FILES)
 
 
 test: $(TEST_EXEC)
+
+.PHONY: test-conservative-bounds
+test-conservative-bounds:
+	$(CXX) -std=c++17 tests/conservative_bounds_test.cpp -o /tmp/besfem-conservative-bounds-test
+	/tmp/besfem-conservative-bounds-test
+	$(CXX) -std=c++17 tests/conservative_bounds_mpi_test.cpp -o /tmp/besfem-conservative-bounds-mpi-test
+	mpirun -np 2 /tmp/besfem-conservative-bounds-mpi-test
 # Build test binary
 $(TEST_EXEC): $(TEST_SRC_FILES)
 	@mkdir -p $(EXEC_DIR)

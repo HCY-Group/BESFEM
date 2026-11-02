@@ -88,6 +88,8 @@ public:
     }
 
 private:
+    mfem::Vector storage_weights;
+    unsigned long concentration_updates = 0;
     mfem::ParGridFunction Mub; ///< Chemical-potential field.
     mfem::ParGridFunction Mob; ///< Mobility field.
     mfem::ParGridFunction RxA; ///< Reaction/source workspace field.

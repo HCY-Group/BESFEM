@@ -162,10 +162,24 @@ void Domain_Parameters::CopyParticleMasks(ParticleGroups groups, const FieldList
 void Domain_Parameters::BuildParticleInterfaces(ParticleGroups groups, mfem::ParGridFunction& denominator)
 {
     const std::size_t count = groups.phase.size();
+    // Integrate over local elements; summing ranks counts each element once.
+    mfem::ConstantCoefficient one(1.0);
+    mfem::ParLinearForm volume(fespace.get());
+    volume.AddDomainIntegrator(new mfem::DomainLFIntegrator(one));
+    volume.Assemble();
     for (std::size_t k = 0; k < count; ++k)
     {
         ComputeGradientMagnitude(*groups.phase[k], *groups.gradient[k]);
         BuildInterface(*groups.electrolyte_interface[k], *AvE, *groups.gradient[k]);
+        auto& interface = *groups.electrolyte_interface[k];
+        const double local_area = volume * interface;
+        // A solid-side diffuse delta: reaction vanishes with solid storage.
+        // Normalize area, not the signed reaction, so cancellation in BV is safe.
+        interface *= *groups.phase[k];
+        const double local_weighted_area = volume * interface;
+        double areas[2] = {local_area, local_weighted_area};
+        MPI_Allreduce(MPI_IN_PLACE, areas, 2, MPI_DOUBLE, MPI_SUM, fespace->GetComm());
+        if (areas[1] > 0.0) { interface *= areas[0] / areas[1]; }
     }
     denominator = 0.0;
     for (std::size_t j = 0; j < count; ++j)
