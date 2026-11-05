@@ -28,7 +28,7 @@ column_end = 100
 
 # dt = 1.0e-4
 # dt = 1.0e-5
-# dt = 1.0e-6
+# dt = 3.0e-6
 # dt = 1.0e-7
 # dt = 1.0e-8
 dt = 1.0e-12
@@ -58,8 +58,10 @@ Vsr0 = 0.09466
 cathode_materials = NMC
 anode_materials = graphite, graphite, graphite
 
-material.NMC.diffusivity = constant 2.0e-10
-material.Electrolyte.diffusivity = constant 1.0e-6
+# material.NMC.diffusivity = constant 2.0e-10
+# material.Electrolyte.diffusivity = constant 1.0e-6
+material.NMC.diffusivity = constant 2.0e-7
+material.Electrolyte.diffusivity = constant 1.0e-7
 
 # ============================================================
 # INITIAL PARTICLE STOICHIOMETRIES

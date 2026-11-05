@@ -417,6 +417,8 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
         // However, we don't do it in actual BESFEM simulation code.
         // =================================
 std::cout << "BEFORE INITIAL CONDITION" << std::endl;
+        double psi_thrs = 0.01;
+        
         state.CnE_gf->FESpace()->GetMesh()->EnsureNodes();
         mfem::GridFunction *nodes = state.CnE_gf->FESpace()->GetMesh()->GetNodes();
 
@@ -462,7 +464,9 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
                 double c = xprime*( 1.0-std::erf( xprime/2.0/std::sqrt(diff_e*time_elapsed)  )  );
 
                 
-                (*state.CnE_gf)(i) += B_n * (a*b - c);
+                if ( (*domain_parameters.pse)(i) > psi_thrs ) (*state.CnE_gf)(i) += B_n * (a*b - c);
+                //(*state.CnE_gf)(i) += B_n * (a*b - c);
+                //(*state.CnE_gf)(i) *= (*domain_parameters.pse)(i);
                 //std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
                 //std::cout << CnE_an(i) << std::endl;
                 //std::cout << B_n * (a*b -c) << std::endl;
@@ -488,8 +492,10 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
                   double c = xprime*( 1.0-std::erf( xprime/2.0/std::sqrt(diff_p*time_elapsed)  )  );
 
                 
-                    (*state.cathode.particles[j].Cn_gf)(i) += B_n * (a*b - c);
-                  
+                  if ( (*domain_parameters.psi)(i) > psi_thrs ) (*state.cathode.particles[j].Cn_gf)(i) += B_n * (a*b - c);
+                  //(*state.cathode.particles[j].Cn_gf)(i) += B_n * (a*b - c);
+                  //(*state.cathode.particles[j].Cn_gf)(i) *= (*domain_parameters.psi)(i);
+
                   //std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
                   //std::cout << CnE_an(i) << std::endl;
                   //std::cout << B_n * (a*b -c) << std::endl;
@@ -571,12 +577,6 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
                 *particles[j].Rxn_gf = *domain_parameters.AvEs[j];
                 *particles[j].Rxn_gf *= Rxn_const;
 
-                *particles[j].Rx_src = *particles[j].Rxn_gf;
-                *state.Rxn_gf += *particles[j].Rxn_gf;
-
-
-                electrode.UpdateParticleConcentrations(domain_parameters.WeightPairs, domain_parameters.AvP_Pairs, domain_parameters.ps, domain_parameters.gtPs, domain_parameters.WeightEs, *state.Rxn_gf);
-
                 //std::vector<ConcentrationBase::PairCoupling> pair_terms;
                 //Pairs(state, geometry, domain_parameters, j, pair_terms, np, 0);
 
@@ -585,10 +585,23 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
                 //state.cathode.particles[j].concentration->UpdateConcentration(*domain_parameters.AvEs[j], *state.cathode.particles[j].Cn_gf,
                 //    *domain_parameters.ps[j], domain_parameters.gtPs[j], *domain_parameters.WeightEs[j], pair_terms);
         
-                string CnP_name = "CnP" + std::to_string(j);
-                particles[j].Cn_gf->SaveAsOne(CnP_name.c_str());
+                //string CnP_name = "CnP" + std::to_string(j);
+                //particles[j].Cn_gf->SaveAsOne(CnP_name.c_str());
 
             }
+
+            //*particles[j].Rx_src = *particles[j].Rxn_gf;
+            //*state.Rxn_gf += *particles[j].Rxn_gf;
+            // above are updated by electrode.UpdateParticleConcentrations()
+
+            electrode.UpdateParticleConcentrations(domain_parameters.WeightPairs, domain_parameters.AvP_Pairs, domain_parameters.ps, domain_parameters.gtPs, domain_parameters.WeightEs, *state.Rxn_gf);
+
+            for (int j = 0; j < np; ++j)
+            {
+                string CnP_name = "CnP" + std::to_string(j);
+                particles[j].Cn_gf->SaveAsOne(CnP_name.c_str());
+            }
+
             state.Rxn_gf->SaveAsOne("Rxn_test");
 
             state.electrolyte_concentration->UpdateConcentration(*state.Rxn_gf, *state.CnE_gf,
@@ -643,7 +656,7 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
                 double c = xprime*( 1.0-std::erf( xprime/2.0/std::sqrt(diff_e*time_elapsed)  )  );
 
                 
-                CnE_an(i) += B_n * (a*b - c);
+                 if ( (*domain_parameters.pse)(i) > psi_thrs ) CnE_an(i) += B_n * (a*b - c);
                 //std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
                 //std::cout << CnE_an(i) << std::endl;
                 //std::cout << B_n * (a*b -c) << std::endl;
@@ -691,7 +704,7 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
                   double c = xprime*( 1.0-std::erf( xprime/2.0/std::sqrt(diff_p*time_elapsed)  )  );
 
                 
-                  CnP_an(i) += B_n * (a*b - c);
+                  if ( (*domain_parameters.psi)(i) > psi_thrs ) CnP_an(i) += B_n * (a*b - c);
                   //std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
                   //std::cout << CnE_an(i) << std::endl;
                   //std::cout << B_n * (a*b -c) << std::endl;
