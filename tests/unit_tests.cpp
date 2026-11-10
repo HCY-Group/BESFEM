@@ -366,7 +366,10 @@ TEST_CASE("UpdatePotential", "[phi]") {
 }
 
 
-
+// check to see if boundary conditions at electrode/electrolyte interface is met
+// Electrolyte diffusion: rxn*tminus ?= D grad(C)
+// Fickian diffusion: rxn ?= D rho grad(C) 
+// CH transport: rxn ?= -M grad(mu) = -M grad(df/dC - eps Lap(C) )
 TEST_CASE("UpdateConcentration", "[Cn]") {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
