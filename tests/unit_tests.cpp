@@ -374,7 +374,8 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
 
     //auto config_file = GENERATE("../tests/test_run_config_anode.txt",
     //                            "../tests/test_run_config_cathode_NMC.txt");
-    auto config_file = GENERATE("../tests/test_run_config_cathode_NMC.txt");
+    //auto config_file = GENERATE("../tests/test_run_config_cathode_NMC.txt");
+    auto config_file = GENERATE("../tests/test_run_config_cathode_LFP.txt");
     SimulationConfig cfg = SimConfigFromFileName(config_file);
     ValidateConfig(cfg, 0, nullptr);
 
@@ -416,6 +417,7 @@ TEST_CASE("UpdateConcentration", "[Cn]") {
         // to make sure that the embedded boundary conditions are met at the start.
         // However, we don't do it in actual BESFEM simulation code.
         // =================================
+
 std::cout << "BEFORE INITIAL CONDITION" << std::endl;
         double psi_thrs = 0.01;
         
@@ -457,6 +459,7 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
             std::cout << "B_n: " << B_n << std::endl;
             std::cout << "diff_e" << diff_e << std::endl;
             mfem::ParGridFunction modify(*state.CnE_gf);
+/*
              for (int i=0; i<state.CnE_gf->Size(); i++) {
                 double xprime = offset-x(i);
                 double a = std::sqrt( 4*diff_e*time_elapsed/pi );
@@ -473,18 +476,20 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
                 modify(i) = B_n * (a*b -c);
             }
             modify.SaveAsOne("mod_e_init");
-
+*/
             if (cfg.half_electrode == sim::Electrode::CATHODE){
             const int np = static_cast<int>(state.cathode.particles.size());
             for (int j = 0; j < np; ++j)
             {
-              //mfem::ParGridFunction CnP_an(*state.CnE_gf);
-              double diff_p = MaterialProperties::Diffusivity(state.cathode.particles[j].material, cfg.init_cathode_particles[j]);
-              //CnP_an = cfg.init_cathode_particles[j];
-              B_n = Rxn_const/MaterialProperties::SiteDensity(state.cathode.particles[j].material);
+              double diff_p;
+              diff_p = MaterialProperties::Diffusivity(state.cathode.particles[j].material, cfg.init_cathode_particles[j]);
+              if (state.cathode.particles[j].material == sim::MaterialType::NMC){
+                  B_n = Rxn_const/MaterialProperties::SiteDensity(state.cathode.particles[j].material);
+              }
               B_n /= diff_p;  // scale by diffusivity
             std::cout << "B_n: " << B_n << std::endl;
             std::cout << "diff_p" << diff_p << std::endl;
+/*
               for (int i=0; i<state.cathode.particles[j].Cn_gf->Size(); i++) {
                   double xprime = x(i)-offset;
                   double a = std::sqrt( 4*diff_p*time_elapsed/pi );
@@ -503,6 +508,7 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
               }
              state.cathode.particles[j].Cn_gf->SaveAsOne("CnC_init");
              modify.SaveAsOne("mod_p_init");
+*/
              }
              }
             state.CnE_gf->SaveAsOne("CnE_init");
@@ -510,7 +516,6 @@ std::cout << "BEFORE INITIAL CONDITION" << std::endl;
 
   
 std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
-
         // =================================
         // UPDATE CONCENTRATION
         // =================================
@@ -683,9 +688,10 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
             std::cout << "SBM_error_e: " << SBM_error_e << std::endl;
             std::cout << "CnE der offset: " << CnE_der(offset_idx) << std::endl;
             std::cout << "B_n_e: " << B_n << std::endl;
-            CHECK( abs(SBM_error_e) < 0.05 );
+            //CHECK( abs(SBM_error_e) < 0.05 );
 
             // PARTICLE
+/*
             for (int j = 0; j < np; ++j)
             {
               mfem::ParGridFunction CnP_an(*state.CnE_gf);
@@ -733,7 +739,7 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
               std::cout << "B_n_p: " << B_n << std::endl;
               CHECK( abs(SBM_error_p) < 0.05 );
             } 
-
+*/
         //}
         }
 

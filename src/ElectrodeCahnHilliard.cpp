@@ -140,6 +140,10 @@ void ElectrodeCahnHilliard::UpdateConcentration(mfem::ParGridFunction &Rx, mfem:
         if (CpVn(i) > 0.96) ++clips[1];
     }
     double redistributed_inventory = 0.0;
+
+    std::cout << "Min CpVn: " << CpVn.Min() << std::endl;
+    std::cout << "Max CpVn: " << CpVn.Max() << std::endl;
+
     try
     {
         redistributed_inventory = sim::ConservativeBounds(CpVn.GetData(), storage_weights.GetData(),
