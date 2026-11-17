@@ -698,29 +698,43 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
             // calculate -M*grad(mu) dot n = -M*grad( df/dC - eps*Lap(C) ) dot n
             // should be equal to Rxn
 
-            // df/dC
             for (int j = 0; j < np; ++j){
+
+                // df/dC
+                mfem::ParGridFunction chempot(*state.CnE_gf);
+                mfem::HypreParVector chempot_dofs(CnE_der.ParFESpace());
+                mfem::ParGridFunction Mob(*state.CnE_gf);
                 for (int i = 0; i < state.CnE_gf->Size(); i++) {
                     double val = std::clamp((*state.CnE_gf)(i), 1.0e-6, 0.96);
                     double df_dC = MaterialProperties::ChemicalPotential(state.cathode.particles[j].material, val);
+                    chempot(i) = df_dC;
+
+                    // while in the loop, return mobility
+                    Mob(i) = MaterialProperties::Mobility(state.cathode.particles[j].material, val);
                 }
+                chempot.GetTrueDofs(chempot_dofs);
+
                 // eps*Lap(C)
                 mfem::HypreParVector Lp1(CnE_der.ParFESpace());
                 //state.cathode.particles[j].concentration->Grad_EM->Mult(
                 //                           state.cathode.particles[j].concentration->CpV0,
                 //                           Lp1);
-                std::cout << "before CH" << std::endl;
                 if ( ElectrodeCahnHilliard* con = dynamic_cast<ElectrodeCahnHilliard*>(particles[j].concentration.get()) ) {
                     mfem::HypreParMatrix GradEM(con->GetGradEM());
-                    std::cout << "after GradEM" << std::endl;
                     mfem::HypreParVector CpV0(CnE_der.ParFESpace());
-                    std::cout << "after CpV0" << std::endl;
                     state.CnE_gf->GetTrueDofs(CpV0);
-                    std::cout << "after Dofs" << std::endl;
                     GradEM.Mult(CpV0,Lp1);
-                    std::cout << "after Mult" << std::endl;
                 }
-                std::cout << "after CH" << std::endl;
+                
+                //mu = df/dC - eps*Lap(C)
+                chempot_dofs += Lp1;
+                chempot.Distribute(chempot_dofs);
+
+                //M*grad(mu)
+                mfem::ParGridFunction mu_der(*state.CnE_gf);
+                chempot.GetDerivative(1,0,mu_der);
+                mu_der *= Mob;
+                std::cout << "Mobility: " << Mob(offset_idx) << std::endl;
             }
 /*
             // FICKIAN DIFFUSION
