@@ -369,7 +369,7 @@ TEST_CASE("UpdatePotential", "[phi]") {
 // check to see if boundary conditions at electrode/electrolyte interface is met
 // Electrolyte diffusion: rxn*tminus ?= D grad(C)
 // Fickian diffusion: rxn ?= D rho grad(C) 
-// CH transport: rxn ?= -M grad(mu) = -M grad(df/dC - eps Lap(C) )
+// CH transport: rxn ?= -M grad(mu) dot n = -M grad(df/dC - eps Lap(C) ) dot n
 TEST_CASE("UpdateConcentration", "[Cn]") {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -694,7 +694,38 @@ std::cout << "BEFORE TIME, AFTER INITIAL CONDITION" << std::endl;
             //CHECK( abs(SBM_error_e) < 0.05 );
 
             // PARTICLE
+            // CAHN-HILLIARD TRANSPORT
+            // calculate -M*grad(mu) dot n = -M*grad( df/dC - eps*Lap(C) ) dot n
+            // should be equal to Rxn
+
+            // df/dC
+            for (int j = 0; j < np; ++j){
+                for (int i = 0; i < state.CnE_gf->Size(); i++) {
+                    double val = std::clamp((*state.CnE_gf)(i), 1.0e-6, 0.96);
+                    double df_dC = MaterialProperties::ChemicalPotential(state.cathode.particles[j].material, val);
+                }
+                // eps*Lap(C)
+                mfem::HypreParVector Lp1(CnE_der.ParFESpace());
+                //state.cathode.particles[j].concentration->Grad_EM->Mult(
+                //                           state.cathode.particles[j].concentration->CpV0,
+                //                           Lp1);
+                std::cout << "before CH" << std::endl;
+                if ( ElectrodeCahnHilliard* con = dynamic_cast<ElectrodeCahnHilliard*>(particles[j].concentration.get()) ) {
+                    mfem::HypreParMatrix GradEM(con->GetGradEM());
+                    std::cout << "after GradEM" << std::endl;
+                    mfem::HypreParVector CpV0(CnE_der.ParFESpace());
+                    std::cout << "after CpV0" << std::endl;
+                    state.CnE_gf->GetTrueDofs(CpV0);
+                    std::cout << "after Dofs" << std::endl;
+                    GradEM.Mult(CpV0,Lp1);
+                    std::cout << "after Mult" << std::endl;
+                }
+                std::cout << "after CH" << std::endl;
+            }
 /*
+            // FICKIAN DIFFUSION
+            // calculate rxn/rho/D
+            // should equal grad(C)
             for (int j = 0; j < np; ++j)
             {
               mfem::ParGridFunction CnP_an(*state.CnE_gf);

@@ -87,6 +87,8 @@ public:
         mfem::mfem_error("GetDiffusivity not implemented for CahnHilliard");
     }
 
+    mfem::HypreParMatrix GetGradEM() {return Grad_EM;}
+
 private:
     mfem::Vector storage_weights;
     unsigned long concentration_updates = 0;
